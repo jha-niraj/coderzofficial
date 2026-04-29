@@ -114,37 +114,34 @@ export default function Leaderboard() {
 
     return (
         <SmoothScroll>
-            <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans">
-                <div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-neutral-950 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
-                <div className="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-yellow-500 opacity-10 blur-[100px] dark:opacity-20" />
-                <section className="relative pt-32 pb-20 overflow-hidden">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5 }}
-                            className="text-center mb-16"
-                        >
-                            <Badge variant="outline" className="px-4 py-1.5 rounded-full border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 font-medium text-sm backdrop-blur-sm mb-6">
-                                <Trophy className="w-3.5 h-3.5 mr-2 text-yellow-500" />
-                                Top Performers
-                            </Badge>
-                            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-neutral-950 dark:text-white mb-4">
-                                <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500">
-                                    Leaderboard
-                                </span>
-                            </h1>
-                            <p className="text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto leading-relaxed font-light">
-                                Compete with thousands of developers and climb the ranks by completing projects, maintaining streaks, and contributing to the community.
-                            </p>
-                        </motion.div>
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: 0.1 }}
-                            className="flex justify-center mb-12"
-                        >
-                            <div className="inline-flex rounded-full border border-neutral-200 dark:border-neutral-800 p-1 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-6 pb-10">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    className="flex flex-col gap-2 border-b border-neutral-200 dark:border-neutral-800 pb-6 sm:flex-row sm:items-end sm:justify-between"
+                >
+                    <div>
+                        <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-white">
+                            Leaderboard
+                        </h1>
+                        <p className="mt-1 text-neutral-500 dark:text-neutral-400">
+                            Compete with developers worldwide and climb the ranks.
+                        </p>
+                    </div>
+                    <Badge variant="outline" className="w-fit px-3 py-1.5 rounded-full border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 font-medium text-sm">
+                        <Trophy className="w-3.5 h-3.5 mr-1.5 text-yellow-500" />
+                        Top Performers
+                    </Badge>
+                </motion.div>
+                <div className="space-y-6">
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                        className="flex justify-start"
+                    >
+                        <div className="inline-flex rounded-full border border-neutral-200 dark:border-neutral-800 p-1 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm shadow-sm">
                                 <Button
                                     variant={timeFilter === "month" ? "default" : "ghost"}
                                     size="sm"
@@ -171,10 +168,10 @@ export default function Leaderboard() {
                                 >
                                     Lifetime
                                 </Button>
-                            </div>
-                        </motion.div>
-                        <Tabs defaultValue="streak" className="w-full">
-                            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-12 h-auto p-1 bg-neutral-100 dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
+                        </div>
+                    </motion.div>
+                    <Tabs defaultValue="streak" className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-8 h-auto p-1 bg-neutral-100 dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
                                 <TabsTrigger value="streak" className="flex items-center gap-2 rounded-xl py-3 data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800">
                                     <Flame className="h-4 w-4" />
                                     <span className="hidden sm:inline">Visit Streak</span>
@@ -194,9 +191,9 @@ export default function Leaderboard() {
                                     <span className="hidden sm:inline">Contributors</span>
                                     <span className="inline sm:hidden">Contrib</span>
                                 </TabsTrigger>
-                            </TabsList>
-                            {
-                                Object.entries(leaderboardData).map(([category, data]) => (
+                        </TabsList>
+                        {
+                            Object.entries(leaderboardData).map(([category, data]) => (
                                     <TabsContent key={category} value={category} className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             {
@@ -292,17 +289,14 @@ export default function Leaderboard() {
                                 ))
                             }
                         </Tabs>
-                    </div>
-                </section>
-                <section className="py-12 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-950">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                    <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                             {
                                 [
-                                    { icon: Users, label: "Active Users", value: "12.5K", color: "from-blue-500 to-cyan-500" },
-                                    { icon: Trophy, label: "Total Points", value: "2.4M", color: "from-yellow-500 to-orange-500" },
-                                    { icon: Flame, label: "Longest Streak", value: "365 days", color: "from-red-500 to-orange-500" },
-                                    { icon: TrendingUp, label: "Growing", value: "+23%", color: "from-green-500 to-emerald-500" },
+                                    { icon: Users, label: "Active Users", value: "12.5K", iconColor: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400" },
+                                    { icon: Trophy, label: "Total Points", value: "2.4M", iconColor: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400" },
+                                    { icon: Flame, label: "Longest Streak", value: "365 days", iconColor: "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400" },
+                                    { icon: TrendingUp, label: "Growing", value: "+23%", iconColor: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
                                 ].map((stat, index) => (
                                     <motion.div
                                         key={index}
@@ -310,23 +304,23 @@ export default function Leaderboard() {
                                         whileInView={{ opacity: 1, y: 0 }}
                                         viewport={{ once: true }}
                                         transition={{ delay: index * 0.1 }}
-                                        className="flex flex-col items-center text-center group"
+                                        className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-950"
                                     >
-                                        <div className={cn("mb-3 p-3 rounded-xl bg-gradient-to-br", stat.color, "text-white shadow-lg group-hover:scale-110 transition-transform")}>
-                                            <stat.icon className="w-6 h-6" />
+                                        <div className="flex items-center gap-3">
+                                            <div className={`rounded-xl p-2.5 ${stat.iconColor}`}>
+                                                <stat.icon className="h-5 w-5" />
+                                            </div>
+                                            <p className="text-sm text-neutral-500 dark:text-neutral-400">{stat.label}</p>
                                         </div>
-                                        <div className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
+                                        <p className="mt-3 text-3xl font-semibold text-neutral-900 dark:text-white tracking-tight">
                                             {stat.value}
-                                        </div>
-                                        <div className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mt-1">
-                                            {stat.label}
-                                        </div>
+                                        </p>
                                     </motion.div>
                                 ))
                             }
                         </div>
                     </div>
-                </section>
+                </div>
             </div>
         </SmoothScroll>
     )

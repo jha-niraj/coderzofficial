@@ -82,7 +82,7 @@ export default function AIVideoMockPage() {
     }
 
     return (
-        <main className="min-h-screen bg-white dark:bg-neutral-950">
+        <main className="">
             <div className="max-w-7xl mx-auto px-6 py-8">
                 <Link href="/mockinterview">
                     <Button variant="ghost" className="mb-4">

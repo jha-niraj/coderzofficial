@@ -201,7 +201,7 @@ export default function MySetsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950 py-8">
+        <div className="py-8">
             <div className="container max-w-5xl mx-auto px-4">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}

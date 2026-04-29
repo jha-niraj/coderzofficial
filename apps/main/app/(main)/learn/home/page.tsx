@@ -31,7 +31,7 @@ export default async function LearnsHomePage() {
     }
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950">
+        <div>
             <Suspense fallback={<HomePageSkeleton />}>
                 <LearnsHomeClient
                     learns={stats.learns || []}

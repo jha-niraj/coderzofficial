@@ -65,7 +65,7 @@ export default async function LearnsPage({ searchParams }: PageProps) {
     if (searchQuery) title = `Search: "${searchQuery}"`;
 
     return (
-        <main className="min-h-screen bg-white dark:bg-neutral-950">
+        <main>
             <Suspense fallback={<ContentSkeleton />}>
                 <LearnsContent
                     learns={learns}

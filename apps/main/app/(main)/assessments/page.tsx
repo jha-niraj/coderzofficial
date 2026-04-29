@@ -165,140 +165,76 @@ export default function AssessmentsPage() {
 	}
 
 	return (
-		<main className="min-h-screen bg-white dark:bg-neutral-950">
-			<section className="relative overflow-hidden py-16 bg-white dark:bg-neutral-950">
-				<div className="absolute inset-0 overflow-hidden">
-					<motion.div
-						className="absolute top-20 left-1/4 w-64 h-64 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-3xl"
-						animate={{
-							scale: [1, 1.2, 1],
-							opacity: [0.3, 0.5, 0.3],
-						}}
-						transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-					/>
-					<motion.div
-						className="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-500/5 dark:bg-purple-500/10 rounded-full blur-3xl"
-						animate={{
-							scale: [1, 1.3, 1],
-							opacity: [0.2, 0.4, 0.2],
-						}}
-						transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-					/>
-				</div>
-				<div className="relative max-w-7xl mx-auto px-6">
-					<motion.div
-						className="text-center space-y-6"
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.6 }}
-					>
-						<motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
-							<Badge className="bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 px-4">
-								<Brain className="w-3 h-3 mr-1.5" />
-								Skill Assessments
-							</Badge>
-						</motion.div>
-						<motion.h1
-							className="text-4xl md:text-6xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-600 dark:from-neutral-50 dark:to-neutral-400"
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.2 }}
-						>
-							Master Your Skills.
-							<br />
-							Get Certified.
-						</motion.h1>
-						<motion.p
-							className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto"
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							transition={{ delay: 0.3 }}
-						>
-							Practice with structured modules, take AI-generated exams, and earn
-							verified certificates to showcase your expertise.
-						</motion.p>
-						<motion.div
-							className="flex flex-col sm:flex-row gap-4 justify-center pt-4"
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							transition={{ delay: 0.4 }}
-						>
-							<Button
-								size="lg"
-								className="bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200"
-								onClick={() => document.getElementById('assessment-section')?.scrollIntoView({ behavior: 'smooth' })}
-							>
-								Start Assessment
-								<ArrowRight className="w-4 h-4 ml-2" />
-							</Button>
-							<Link href="/assessments/certificates">
-								<Button
-									size="lg"
-									variant="outline"
-									className="border-neutral-300 dark:border-neutral-700"
-								>
-									<Medal className="w-4 h-4 mr-2" />
-									View Certificates
-								</Button>
-							</Link>
-						</motion.div>
-						<motion.div
-							className="flex flex-wrap gap-3 justify-center pt-4"
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							transition={{ delay: 0.5 }}
-						>
-							<Link href="/assessments/practice">
-								<Button variant="ghost" size="sm" className="text-neutral-600 dark:text-neutral-400">
-									<BookOpen className="w-4 h-4 mr-2" />
-									Practice Mode
-								</Button>
-							</Link>
-							<Link href="/assessments/leaderboard">
-								<Button variant="ghost" size="sm" className="text-neutral-600 dark:text-neutral-400">
-									<Trophy className="w-4 h-4 mr-2" />
-									Leaderboard
-								</Button>
-							</Link>
-							<Link href="/assessments/history">
-								<Button variant="ghost" size="sm" className="text-neutral-600 dark:text-neutral-400">
-									<BarChart3 className="w-4 h-4 mr-2" />
-									My Progress
-								</Button>
-							</Link>
-						</motion.div>
-					</motion.div>
-				</div>
-			</section>
-			<section className="py-8 border-y border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
-				<div className="max-w-7xl mx-auto px-6">
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-						{
-							stats.map((stat, index) => (
-								<motion.div
-									key={index}
-									initial={{ opacity: 0, scale: 0.9 }}
-									whileInView={{ opacity: 1, scale: 1 }}
-									transition={{ delay: index * 0.1 }}
-									viewport={{ once: true }}
-									className="text-center"
-								>
-									<div className="flex justify-center mb-2">
-										<stat.icon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-									</div>
-									<div className="text-2xl font-bold text-neutral-900 dark:text-white mb-1">
-										{stat.value}
-									</div>
-									<div className="text-sm text-neutral-600 dark:text-neutral-400">
-										{stat.label}
-									</div>
-								</motion.div>
-							))
-						}
+		<main>
+			<div className="max-w-7xl mx-auto px-4 pt-6 pb-4 sm:px-6 lg:px-8">
+				<motion.div
+					initial={{ opacity: 0, y: 16 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.4 }}
+					className="flex flex-col gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-6 sm:flex-row sm:items-end sm:justify-between"
+				>
+					<div>
+						<h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-white">
+							Assessments
+						</h1>
+						<p className="mt-1 text-neutral-500 dark:text-neutral-400">
+							Practice with structured modules, take AI-generated exams, and earn verified certificates.
+						</p>
 					</div>
+					<div className="flex flex-wrap gap-2">
+						<Button
+							size="sm"
+							className="h-9 rounded-xl bg-orange-500 text-white hover:bg-orange-600 font-medium"
+							onClick={() => document.getElementById('assessment-section')?.scrollIntoView({ behavior: 'smooth' })}
+						>
+							Start Assessment
+							<ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+						</Button>
+						<Link href="/assessments/certificates">
+							<Button size="sm" variant="outline" className="h-9 rounded-xl border-neutral-200 dark:border-neutral-800">
+								<Medal className="w-3.5 h-3.5 mr-1.5" />
+								Certificates
+							</Button>
+						</Link>
+						<Link href="/assessments/practice">
+							<Button size="sm" variant="ghost" className="h-9 rounded-xl text-neutral-600 dark:text-neutral-400">
+								<BookOpen className="w-3.5 h-3.5 mr-1.5" />
+								Practice
+							</Button>
+						</Link>
+						<Link href="/assessments/history">
+							<Button size="sm" variant="ghost" className="h-9 rounded-xl text-neutral-600 dark:text-neutral-400">
+								<BarChart3 className="w-3.5 h-3.5 mr-1.5" />
+								My Progress
+							</Button>
+						</Link>
+					</div>
+				</motion.div>
+				<div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6">
+					{
+						stats.map((stat, index) => (
+							<motion.div
+								key={index}
+								initial={{ opacity: 0, scale: 0.95 }}
+								animate={{ opacity: 1, scale: 1 }}
+								transition={{ delay: index * 0.08 }}
+								className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+							>
+								<div className="flex items-center gap-3">
+									<div className="rounded-xl p-2.5 bg-neutral-100 dark:bg-neutral-800">
+										<stat.icon className="h-5 w-5 text-neutral-600 dark:text-neutral-400" />
+									</div>
+									<p className="text-sm text-neutral-500 dark:text-neutral-400">{stat.label}</p>
+								</div>
+								<p className="mt-3 text-3xl font-semibold text-neutral-900 dark:text-white tracking-tight">
+									{stat.value}
+								</p>
+							</motion.div>
+						))
+					}
 				</div>
-			</section>
-			<section id="assessment-section" className="py-12 bg-white dark:bg-neutral-950">
+			</div>
+			<section id="assessment-section" className="py-12">
 				<div className="max-w-7xl mx-auto px-6">
 					<div className="flex items-center justify-between mb-8">
 						<div>
@@ -560,7 +496,7 @@ export default function AssessmentsPage() {
 			</section>
 
 			{/* Public Practice & Exam Sets Section */}
-			<section className="py-12 bg-white dark:bg-neutral-950 border-t border-neutral-200 dark:border-neutral-800">
+			<section className="py-12 border-t border-neutral-200 dark:border-neutral-800">
 				<div className="max-w-7xl mx-auto px-6">
 					{/* Public Practice Sets */}
 					<motion.div
@@ -773,7 +709,7 @@ export default function AssessmentsPage() {
 				</div>
 			</section>
 
-			<section className="py-16 bg-white dark:bg-neutral-950">
+			<section className="py-16">
 				<div className="max-w-4xl mx-auto px-6 text-center">
 					<motion.div
 						initial={{ opacity: 0, y: 20 }}

@@ -109,7 +109,7 @@ export default function AllProjectsPage() {
 
 	return (
 		<SmoothScroll>
-			<div className="min-h-screen bg-white dark:bg-neutral-950">
+			<div>
 				<div className="max-w-7xl mx-auto px-4 py-12">
 					<motion.div
 						className="text-center mb-6"

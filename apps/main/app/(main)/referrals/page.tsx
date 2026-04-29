@@ -113,7 +113,7 @@ export default function ReferralsPage() {
     ]
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950">
+        <div className="">
             <div className="container max-w-7xl mx-auto px-6 py-8">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}

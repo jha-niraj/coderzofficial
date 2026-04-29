@@ -165,7 +165,7 @@ function PracticeContent() {
 	const filteredUserSets = userSets.filter(set => set.language === selectedLanguage)
 
 	return (
-		<main className="min-h-screen bg-white dark:bg-neutral-950">
+		<main className="">
 			<section className="border-b border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 py-8">
 				<div className="max-w-7xl mx-auto px-6">
 					<div className="flex items-center gap-4 mb-4">

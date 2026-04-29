@@ -139,7 +139,7 @@ export default function MyProjectsPage() {
 
 	return (
 		<SmoothScroll>
-			<div className="min-h-screen bg-white dark:bg-neutral-950 py-10">
+			<div className="py-10">
 				<div className="max-w-7xl mx-auto px-6">
 					<motion.div
 						className="mb-6"

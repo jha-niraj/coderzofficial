@@ -40,8 +40,8 @@ export default async function SpaceSettingsPage({ params }: SpaceSettingsPagePro
 
 function SettingsSkeleton() {
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950">
-            <div className="border-b border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-4">
+        <div>
+            <div className="border-b border-neutral-200 dark:border-neutral-800 p-4">
                 <div className="container mx-auto max-w-4xl">
                     <div className="h-8 w-48 bg-neutral-200 dark:bg-neutral-800 rounded animate-pulse" />
                 </div>

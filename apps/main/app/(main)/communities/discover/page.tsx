@@ -153,7 +153,7 @@ export default function DiscoverPage() {
     }
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950">
+        <div className="">
             <section className="relative overflow-hidden border-b border-neutral-200 dark:border-neutral-800 bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-950">
                 <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
                 <div className="max-w-7xl mx-auto px-4 py-16 md:py-24">

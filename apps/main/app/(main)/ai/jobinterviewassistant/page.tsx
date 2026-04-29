@@ -231,7 +231,7 @@ export default function JobInterviewAssistant() {
     }
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-teal-100 dark:selection:bg-teal-900/50">
+        <div className="font-sans selection:bg-teal-100 dark:selection:bg-teal-900/50">
             {/* Background Decor Elements */}
             <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-teal-500/5 rounded-full blur-[120px]" />

@@ -448,6 +448,7 @@ model User {
     portfolioProjects PortfolioProject[] @relation("UserPortfolioProjects")
     socialLinks       SocialLink[]       @relation("UserSocialLinks")
     educations        UserEducation[]    @relation("UserEducations")
+    codebaseProjects  CodebaseProject[]  @relation("UserCodebaseProjects")
 
     ProjectV2                  ProjectV2[]
     UserProjectV2Progress      UserProjectV2Progress[]

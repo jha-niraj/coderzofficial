@@ -129,8 +129,8 @@ export default function ProjectsHomePage() {
 
 	return (
 		<>
-			<div className="min-h-screen bg-white dark:bg-neutral-950">
-				<section className="relative py-20 bg-white dark:bg-neutral-950">
+			<div>
+				<section className="relative py-20">
 					<div className="absolute inset-0 bg-[radial-gradient(circle_at_top_center,_var(--tw-gradient-stops))] from-neutral-100/50 via-white to-white dark:from-neutral-900/50 dark:via-neutral-950 dark:to-neutral-950 -z-10" />
 					<div className="max-w-7xl mx-auto px-6">
 						<motion.div

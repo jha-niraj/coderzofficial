@@ -129,7 +129,7 @@ export default function CreditTransferPage() {
 
     return (
         <SmoothScroll>
-            <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-emerald-100 dark:selection:bg-emerald-900/30">
+            <div className="font-sans selection:bg-emerald-100 dark:selection:bg-emerald-900/30">
                 <section className="relative pt-20 pb-32 overflow-hidden">
                     {/* Background Elements */}
                     <div className="absolute inset-0 pointer-events-none">

@@ -159,121 +159,76 @@ export default function MockInterviewLandingPage() {
 
     return (
         // <SmoothScroll>
-            <main className="min-h-screen bg-white dark:bg-neutral-950">
-                <section className="relative overflow-hidden py-20 bg-white dark:bg-neutral-950">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <motion.div
-                            className="text-center space-y-6"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6 }}
-                        >
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.1 }}
-                            >
-                                <Badge className="bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 px-4 py-1.5">
-                                    <Sparkles className="w-3 h-3 mr-1.5" />
-                                    AI-Powered Interview Practice
-                                </Badge>
-                            </motion.div>
-                            <motion.h1
-                                className="text-5xl md:text-7xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-900 to-neutral-600 dark:from-neutral-50 dark:to-neutral-400"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2 }}
-                            >
-                                Master Your Next
-                                <br />
-                                Interview with AI
-                            </motion.h1>
-                            <motion.p
-                                className="text-lg md:text-xl text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.3 }}
-                            >
+            <main>
+                <div className="max-w-7xl mx-auto px-4 pt-6 pb-4 sm:px-6 lg:px-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className="flex flex-col gap-4 border-b border-neutral-200 dark:border-neutral-800 pb-6 sm:flex-row sm:items-end sm:justify-between"
+                    >
+                        <div>
+                            <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 dark:text-white">
+                                Mock Interviews
+                            </h1>
+                            <p className="mt-1 text-neutral-500 dark:text-neutral-400">
                                 Practice with AI interviewers, get real-time feedback, and land your dream job.
-                                Join {stats.activeUsers.toLocaleString()}+ developers who&apos;ve aced their interviews.
-                            </motion.p>
-                            <motion.div
-                                className="flex flex-col sm:flex-row gap-4 justify-center pt-4"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.4 }}
-                            >
-                                <Button
-                                    size="lg"
-                                    className="bg-black dark:bg-white text-white dark:text-black hover:bg-neutral-800 dark:hover:bg-neutral-200"
-                                    asChild
-                                >
-                                    <Link href="/mock/voice">
-                                        Start Voice Interview
-                                        <ArrowRight className="w-4 h-4 ml-2" />
-                                    </Link>
-                                </Button>
-                                <Button
-                                    size="lg"
-                                    variant="outline"
-                                    className="border-neutral-300 dark:border-neutral-700"
-                                    asChild
-                                >
-                                    <Link href="#interview-types">
-                                        Explore All Options
-                                    </Link>
-                                </Button>
-                            </motion.div>
-                            {
-                                user && (
-                                    <motion.div
-                                        className="flex items-center justify-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 pt-2"
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: 0.5 }}
-                                    >
-                                        <Sparkles className="w-4 h-4" />
-                                        <span>You have <span className="font-semibold text-neutral-900 dark:text-white">{credits || 0} credits</span> available</span>
-                                    </motion.div>
-                                )
-                            }
-                        </motion.div>
-                    </div>
-                </section>
-                <section className="py-12 border-y border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50">
-                    <div className="max-w-7xl mx-auto px-6">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                            {
-                                [
-                                    { value: `${stats.totalVoiceInterviews.toLocaleString()}+`, label: 'Interviews Conducted', icon: Mic },
-                                    { value: `${stats.activeUsers.toLocaleString()}+`, label: 'Active Users', icon: Users },
-                                    { value: `${stats.averageRating}/5`, label: 'Average Rating', icon: Star },
-                                    { value: `${stats.successRate}%`, label: 'Success Rate', icon: Trophy },
-                                ].map((stat, index) => (
-                                    <motion.div
-                                        key={index}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        whileInView={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.1 }}
-                                        viewport={{ once: true }}
-                                        className="text-center"
-                                    >
-                                        <div className="flex justify-center mb-2">
-                                            <stat.icon className="w-5 h-5 text-neutral-600 dark:text-neutral-400" />
-                                        </div>
-                                        <div className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-1">
-                                            {stat.value}
-                                        </div>
-                                        <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                                            {stat.label}
-                                        </div>
-                                    </motion.div>
-                                ))
-                            }
+                                {user && <span className="ml-2">You have <span className="font-semibold text-neutral-900 dark:text-white">{credits || 0} credits</span> available.</span>}
+                            </p>
                         </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Button
+                                size="sm"
+                                className="h-9 rounded-xl bg-orange-500 text-white hover:bg-orange-600 font-medium"
+                                asChild
+                            >
+                                <Link href="/mock/voice">
+                                    Start Voice Interview
+                                    <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                                </Link>
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-9 rounded-xl border-neutral-200 dark:border-neutral-800"
+                                asChild
+                            >
+                                <Link href="#interview-types">
+                                    Explore Types
+                                </Link>
+                            </Button>
+                        </div>
+                    </motion.div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6">
+                        {
+                            [
+                                { value: `${stats.totalVoiceInterviews.toLocaleString()}+`, label: 'Interviews Conducted', icon: Mic, iconColor: "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400" },
+                                { value: `${stats.activeUsers.toLocaleString()}+`, label: 'Active Users', icon: Users, iconColor: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
+                                { value: `${stats.averageRating}/5`, label: 'Average Rating', icon: Star, iconColor: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400" },
+                                { value: `${stats.successRate}%`, label: 'Success Rate', icon: Trophy, iconColor: "bg-purple-50 text-purple-600 dark:bg-purple-950 dark:text-purple-400" },
+                            ].map((stat, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: index * 0.08 }}
+                                    className="rounded-2xl border border-neutral-200 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={`rounded-xl p-2.5 ${stat.iconColor}`}>
+                                            <stat.icon className="h-5 w-5" />
+                                        </div>
+                                        <p className="text-sm text-neutral-500 dark:text-neutral-400">{stat.label}</p>
+                                    </div>
+                                    <p className="mt-3 text-3xl font-semibold text-neutral-900 dark:text-white tracking-tight">
+                                        {stat.value}
+                                    </p>
+                                </motion.div>
+                            ))
+                        }
                     </div>
-                </section>
-                <section id="interview-types" className="py-20 bg-white dark:bg-neutral-950">
+                </div>
+                <section id="interview-types" className="py-20">
                     <div className="max-w-7xl mx-auto px-6">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -451,7 +406,7 @@ export default function MockInterviewLandingPage() {
                         </div>
                     </div>
                 </section>
-                <section className="py-20 bg-white dark:bg-neutral-950">
+                <section className="py-20">
                     <div className="max-w-4xl mx-auto px-6">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}

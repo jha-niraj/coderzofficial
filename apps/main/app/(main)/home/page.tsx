@@ -56,17 +56,15 @@ export default async function HomePage() {
 
     return (
         <KnowmeSheetProvider>
-            <div className="w-full min-h-screen bg-neutral-50/50 dark:bg-neutral-950">
+            <div className="w-full max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 space-y-4 pb-10">
 
                 {/* ── Greeting header ── */}
-                <div className="px-4 sm:px-6 lg:px-8 pt-6 pb-4">
-                    <Suspense fallback={<GreetingHeaderSkeleton />}>
-                        <GreetingHeader user={user} />
-                    </Suspense>
-                </div>
+                <Suspense fallback={<GreetingHeaderSkeleton />}>
+                    <GreetingHeader user={user} />
+                </Suspense>
 
                 {/* ── Bento grid ── */}
-                <div className="px-4 sm:px-6 lg:px-8 pb-10 space-y-4">
+                <div className="space-y-4">
 
                     {/* ── Row: Continue Learning (full width, only when items exist) ── */}
                     {hasContinueLearning && (

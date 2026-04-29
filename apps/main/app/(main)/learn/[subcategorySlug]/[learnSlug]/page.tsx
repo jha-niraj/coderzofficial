@@ -49,7 +49,7 @@ export default async function LearnPage({ params }: LearnPageProps) {
     recordLearnView(result.learn.id, "direct").catch(() => { });
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950">
+        <div>
             <Suspense fallback={<LearnDetailSkeleton />}>
                 <LearnDetailClient
                     learn={result.learn}

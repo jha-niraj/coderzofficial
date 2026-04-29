@@ -1,0 +1,109 @@
+// CodeSage — AI Codebase Intelligence
+// Routes: /ai/codesage, /ai/codesage/c/[slug]/[module]
+
+model CodebaseProject {
+    id            String    @id @default(cuid())
+    userId        String
+    name          String
+    slug          String    @unique
+    description   String?
+    sourceType    String    // "github" | "portfolio_project"
+    sourceUrl     String?   // full GitHub URL
+    repoOwner     String?
+    repoName      String?
+    branch        String?   @default("main")
+    fileCount     Int?
+    totalLines    Int?
+    detectedStack Json?     // { framework, language, packageManager, dependencies }
+    fileTree      Json?     // nested folder/file structure for sidebar display
+    indexStatus   String    @default("pending") // "pending" | "indexing" | "ready" | "failed"
+    errorMessage  String?
+    indexedAt     DateTime?
+    optimizedAt   DateTime? // last optimize scan
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+
+    user       User                       @relation("UserCodebaseProjects", fields: [userId], references: [id], onDelete: Cascade)
+    files      CodebaseFile[]
+    sessions   CodebaseAskSession[]
+    issues     CodebaseOptimizationIssue[]
+    interviews CodebaseInterview[]
+
+    @@index([userId])
+    @@index([slug])
+}
+
+model CodebaseFile {
+    id        String   @id @default(cuid())
+    projectId String
+    filePath  String   // relative path from repo root e.g. "app/page.tsx"
+    fileName  String   // just the filename e.g. "page.tsx"
+    extension String   // "tsx" | "ts" | "py" etc.
+    content   String   @db.Text
+    lineCount Int      @default(0)
+    sizeBytes Int      @default(0)
+    language  String?  // "TypeScript" | "Python" etc.
+    createdAt DateTime @default(now())
+
+    project CodebaseProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    @@index([projectId])
+    @@index([filePath])
+}
+
+model CodebaseAskSession {
+    id        String   @id @default(cuid())
+    projectId String
+    userId    String
+    title     String?  // auto-generated from first message
+    messages  Json     @default("[]") // [{ id, role, content, citations, createdAt }]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    project CodebaseProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    @@index([projectId])
+    @@index([userId])
+}
+
+model CodebaseOptimizationIssue {
+    id          String   @id @default(cuid())
+    projectId   String
+    category    String   // "performance" | "architecture" | "code_quality" | "security" | "dx" | "bundle"
+    severity    String   // "critical" | "high" | "medium" | "low"
+    title       String
+    filePath    String?
+    lineStart   Int?
+    lineEnd     Int?
+    description String   @db.Text
+    currentCode String?  @db.Text
+    fixedCode   String?  @db.Text
+    explanation String?  @db.Text
+    effortLevel String   @default("medium") // "easy" | "medium" | "hard"
+    status      String   @default("open")   // "open" | "done" | "ignored"
+    createdAt   DateTime @default(now())
+
+    project CodebaseProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    @@index([projectId])
+    @@index([status])
+}
+
+model CodebaseInterview {
+    id          String    @id @default(cuid())
+    projectId   String
+    userId      String
+    mode        String    // "explain" | "defend" | "improve" | "mixed"
+    difficulty  String    @default("mid") // "junior" | "mid" | "senior"
+    focusArea   String?   // specific folder to focus on, null = whole codebase
+    score       Int?      // final score 0-100
+    status      String    @default("setup") // "setup" | "in_progress" | "completed"
+    questions   Json      @default("[]") // [{ id, questionText, codeContext, filePath, userAnswer, score, feedback, keyPoints }]
+    completedAt DateTime?
+    createdAt   DateTime  @default(now())
+
+    project CodebaseProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    @@index([projectId])
+    @@index([userId])
+}

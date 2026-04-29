@@ -15,7 +15,6 @@ import {
     User, Camera, MapPin, Globe, Loader2, Check, Sparkles,
     Building, Target, X, Plus
 } from "lucide-react";
-import Link from "next/link";
 import toast from "@repo/ui/components/ui/sonner";
 import { useUserStore } from "@/app/store/useUserStore";
 import { updateProfileSettings } from "@/actions/(main)/user/profile.action";

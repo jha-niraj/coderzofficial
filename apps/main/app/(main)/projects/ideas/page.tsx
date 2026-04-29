@@ -166,7 +166,7 @@ export default function ProjectIdeasPage() {
     }
 
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans">
+        <div className="font-sans">
             <div className="border-b border-neutral-200 dark:border-neutral-800 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl sticky top-0 z-20">
                 <div className="max-w-[1400px] mx-auto px-4 md:px-6">
                     <div className="flex items-center justify-between h-16">
