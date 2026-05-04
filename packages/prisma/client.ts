@@ -116,15 +116,6 @@ export {
     StudioVisibility,
     StudioMediaType,
 
-    // Space Enums and Types
-    SpaceVisibility,
-    SpaceCategory,
-    SpaceMemberRole,
-    SpaceStepContentType,
-    SpaceStepStatus,
-    SpaceBranchVisibility,
-    SpaceActivityType,
-
     // KnowMe Enums and Types
     KnowMeStatus,
     KnowMePrivacy,

@@ -435,12 +435,12 @@ export async function getApplicationDetail(applicationId: string): Promise<{
                 id: true, 
                 name: true, 
                 email: true, 
-                image: true, 
+                image: true,
                 phone: true,
                 bio: true,
                 location: true,
                 website: true,
-                socials: true,
+                socialLinks: true,
                 skills: {
                     select: {
                         name: true
@@ -453,8 +453,10 @@ export async function getApplicationDetail(applicationId: string): Promise<{
             return { success: false, error: "User not found" }
         }
 
-        // Extract social links
-        const socials = user.socials as { linkedinUrl?: string; githubUrl?: string; portfolioUrl?: string } | null
+        // Extract social links from socialLinks array
+        const socialLinkMap = Object.fromEntries(
+            (user.socialLinks ?? []).map((l: { platform: string; url: string }) => [l.platform.toUpperCase(), l.url])
+        )
 
         const detail: ApplicationDetail = {
             id: application.id,
@@ -470,10 +472,10 @@ export async function getApplicationDetail(applicationId: string): Promise<{
                 phone: user.phone,
                 location: user.location || null,
                 bio: user.bio || null,
-                headline: null, // User model doesn't have headline
-                linkedinUrl: socials?.linkedinUrl || null,
-                githubUrl: socials?.githubUrl || null,
-                portfolioUrl: user.website || socials?.portfolioUrl || null,
+                headline: null,
+                linkedinUrl: (socialLinkMap['LINKEDIN'] as string | undefined) || null,
+                githubUrl: (socialLinkMap['GITHUB'] as string | undefined) || null,
+                portfolioUrl: user.website || (socialLinkMap['PORTFOLIO'] as string | undefined) || null,
                 skills: user.skills?.map(s => s.name) || []
             },
             job: {

@@ -1,7 +1,7 @@
 import {
     Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Video, Brain, Cable, LayoutDashboard, Heading,
-    Home, LucideWandSparkles, GraduationCap, Activity,
+    Home, LucideWandSparkles, GraduationCap,
     Target, FileText, BookOpen, StickyNote, Code2,
     Network, Globe, Server
 } from "lucide-react"

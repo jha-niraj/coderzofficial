@@ -66,10 +66,6 @@ model Learn {
     prerequisiteFor LearnPrerequisite[] @relation("PrerequisiteOf")
     prerequisiteOf  LearnPrerequisite[] @relation("PrerequisiteFor")
 
-    // Space relation
-    spaceId String?
-    space   Space?  @relation("SpaceLearns", fields: [spaceId], references: [id], onDelete: SetNull)
-
     // Timestamps
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -81,7 +77,6 @@ model Learn {
     @@index([createdAt])
     @@index([likeCount])
     @@index([viewCount])
-    @@index([spaceId])
     @@index([mainCategoryId])
     @@index([subCategoryId])
     @@index([topicId])

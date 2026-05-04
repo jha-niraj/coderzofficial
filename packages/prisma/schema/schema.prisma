@@ -480,18 +480,8 @@ model User {
     voiceSessions     MockVoiceSession[]   @relation("MockVoiceSessions")
     voiceRatings      MockVoiceRating[]    @relation("MockVoiceRatings")
 
-    // Product Ideas Relations
-    productIdeas   ProductIdea[]   @relation("ProductIdeas")
     backgroundJobs BackgroundJob[] @relation("BackgroundJobs")
 
-    // Launchpad Relations
-    launchpadProducts  LaunchpadProduct[]         @relation("LaunchpadProducts")
-    launchpadViews     LaunchpadProductView[]     @relation("LaunchpadViews")
-    launchpadClicks    LaunchpadProductClick[]    @relation("LaunchpadClicks")
-    launchpadLikes     LaunchpadProductLike[]     @relation("LaunchpadLikes")
-    launchpadDislikes  LaunchpadProductDislike[]  @relation("LaunchpadDislikes")
-    launchpadComments  LaunchpadProductComment[]  @relation("LaunchpadComments")
-    launchpadFeedbacks LaunchpadProductFeedback[] @relation("LaunchpadFeedbacks")
 
     // ===============================================
     // COMMUNITY PLATFORM RELATIONS
@@ -567,20 +557,6 @@ model User {
     learnQuizAnswers            LearnQuizAnswer[]            @relation("LearnQuizAnswers")
     learnChallengeSubmissions   LearnChallengeSubmission[]   @relation("LearnChallengeSubmissions")
 
-    // ===============================================
-    // SPACES MODULE RELATIONS
-    // ===============================================
-    createdSpaces            Space[]                @relation("SpaceCreator")
-    spaceMemberships         SpaceMember[]          @relation("SpaceMembers")
-    spaceStepCompletions     SpaceStepCompletion[]  @relation("SpaceStepCompletions")
-    spaceBranches            SpaceBranch[]          @relation("SpaceBranchCreator")
-    spaceActivities          SpaceActivity[]        @relation("SpaceActivities")
-    spaceComments            SpaceComment[]         @relation("SpaceComments")
-    spaceLikes               SpaceLike[]            @relation("SpaceLikes")
-    spaceAIChats             SpaceAIChat[]          @relation("SpaceAIChats")
-    spaceAccessCodeShares    SpaceAccessCodeShare[] @relation("SpaceAccessCodeSharer")
-    spaceInvitationsSent     SpaceInvitation[]      @relation("SpaceInviter")
-    spaceInvitationsReceived SpaceInvitation[]      @relation("SpaceInvitee")
 
     // ===============================================
     // UNIFIED BOOKMARKS SYSTEM RELATIONS

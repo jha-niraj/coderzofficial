@@ -16,11 +16,12 @@ import {
 } from '@repo/ui/components/ui/sheet'
 import {
     ArrowLeft, Download, Eye, Lock, Wand2,
-    Plus, Trash2, Save, ExternalLink, BarChart3
+    Plus, Trash2, Save, ExternalLink, BarChart3, RefreshCw
 } from 'lucide-react'
 import { DotmSquare11 } from '@repo/ui/components/ui/dotm-square-11'
 import toast from '@repo/ui/components/ui/sonner'
 import { updateResumeDraft, scoreResumeAgainstJD, tailorResumeForJD } from '@/actions/(main)/ai/resume-draft.action'
+import { syncProfileToResumeDraft } from '@/actions/(main)/ai/resume-profile-sync.action'
 import {
     ResumeDraftContent, ResumeHeader, ResumeExperienceEntry,
     ResumeProjectEntry, ResumeEducationEntry, ResumeSkillGroup,
@@ -419,7 +420,25 @@ export function ResumeEditor({ draft, content: initialContent, templates }: Prop
     const [isPublic, setIsPublic] = useState(draft.isPublic)
     const [aiSheetOpen, setAiSheetOpen] = useState(false)
     const [saving, setSaving] = useState(false)
+    const [syncing, setSyncing] = useState(false)
     const [, startTransition] = useTransition()
+
+    const handleSyncProfile = async () => {
+        setSyncing(true)
+        try {
+            const result = await syncProfileToResumeDraft(draft.id)
+            if (result.success) {
+                setContent(result.content)
+                toast.success('Profile synced! Review and edit as needed.')
+            } else {
+                toast.error(result.error ?? 'Sync failed')
+            }
+        } catch {
+            toast.error('Failed to sync profile')
+        } finally {
+            setSyncing(false)
+        }
+    }
 
     const save = useCallback(async (silent = false) => {
         setSaving(true)
@@ -455,6 +474,17 @@ export function ResumeEditor({ draft, content: initialContent, templates }: Prop
                     {draft.atsScore !== null && (
                         <Badge variant="outline" className="text-xs">ATS {draft.atsScore}</Badge>
                     )}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs"
+                        disabled={syncing}
+                        onClick={handleSyncProfile}
+                        title="Auto-fill from your BuildrHQ profile"
+                    >
+                        <RefreshCw className={cn("w-3 h-3 mr-1", syncing && "animate-spin")} />
+                        {syncing ? 'Syncing…' : 'Sync Profile'}
+                    </Button>
                     <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setAiSheetOpen(true)}>
                         <Wand2 className="w-3 h-3 mr-1" /> AI Tools
                     </Button>

@@ -6,17 +6,18 @@ import {
     SheetTitle,
     SheetTrigger
 } from "@repo/ui/components/ui/sheet";
-import { Studio } from "@repo/prisma/client";
 import { Button } from "@repo/ui/components/ui/button";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
 import { useState, FormEvent, ReactNode } from "react";
 import { toast } from "@repo/ui/components/ui/sonner";
-import { createStudio } from "@/actions/(main)/space/content.action";
+import { createStudio } from "@/actions/(main)/studios/studio.actions";
+
+type Studio = Awaited<ReturnType<typeof createStudio>>['studio'];
 import { Loader2 } from "lucide-react";
 
 interface CreateStudioSheetProps {
-    spaceId: string;
+    spaceId?: string; // kept for API compatibility but no longer used
     // Controlled state (optional)
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
@@ -27,7 +28,6 @@ interface CreateStudioSheetProps {
 }
 
 export default function CreateStudioSheet({
-    spaceId,
     open: controlledOpen,
     onOpenChange: setControlledOpen,
     onSuccess,
@@ -56,7 +56,7 @@ export default function CreateStudioSheet({
 
         setIsLoading(true);
         try {
-            const result = await createStudio(spaceId, title);
+            const result = await createStudio({ title, source: "manual" });
             if (result.error) {
                 toast.error(result.error);
             } else if (result.studio) {

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import {
     Plus, Mic, Rocket, ChevronRight,
     Loader2, Share2, ArrowLeft,
-    Palette, Presentation, Sparkles, LucideIcon
+    Palette, Sparkles, LucideIcon
 } from 'lucide-react'
 import { Button } from '@repo/ui/components/ui/button'
 import {
@@ -21,14 +21,13 @@ import ProjectGenerateSheet from '@/components/projects/project-generate-sheet'
 
 // Actions
 import { getUserProjects } from '@/actions/(main)/projects/project.action'
-import { getUserSpaces } from '@/actions/(main)/space/space.action'
 import { getUserStudios } from '@/actions/(main)/studios/studio.actions'
 import { getUserCreatedMocks } from '@/actions/(main)/mockvoice/voice.action'
 
 // ==================== TYPES ====================
 interface ShareableItem {
     id: string
-    type: 'interview' | 'project' | 'space' | 'studio' | 'Learn' | 'challenge'
+    type: 'interview' | 'project' | 'studio' | 'Learn' | 'challenge'
     title: string
     description?: string
     thumbnail?: string
@@ -85,7 +84,7 @@ const PLATFORM_FEATURES: PlatformFeatureCategory[] = [
                 color: 'bg-gradient-to-br from-orange-500 to-pink-600',
                 isFetchable: true,
                 fetchType: 'MOCK_INTERVIEW',
-                createUrl: '/mockinterview'
+                createUrl: '/mock/voice'
             },
         ]
     },
@@ -104,16 +103,6 @@ const PLATFORM_FEATURES: PlatformFeatureCategory[] = [
                 createAction: 'PROJECT_GENERATE'
             },
             {
-                id: 'space',
-                icon: Presentation,
-                label: 'Space',
-                description: 'Collaborative workspace',
-                color: 'bg-gradient-to-br from-indigo-500 to-violet-600',
-                isFetchable: true,
-                fetchType: 'SPACE',
-                createUrl: '/space/create' // Placeholder or direct action
-            },
-            {
                 id: 'studio',
                 icon: Palette,
                 label: 'Studio',
@@ -121,13 +110,11 @@ const PLATFORM_FEATURES: PlatformFeatureCategory[] = [
                 color: 'bg-gradient-to-br from-fuchsia-500 to-purple-600',
                 isFetchable: true,
                 fetchType: 'STUDIO',
-                createUrl: '/studio' // Placeholder
+                createUrl: '/studio'
             },
         ]
     }
 ]
-
-
 
 // ==================== CONFIRM SHARE MODAL ====================
 function ConfirmShareDialog({
@@ -189,7 +176,6 @@ function ConfirmShareDialog({
     )
 }
 
-
 // ==================== MAIN COMPONENT ====================
 export function MagicSheet({ communityId: _communityId, communitySlug: _communitySlug, onShare }: MagicSheetProps) {
     const router = useRouter()
@@ -197,20 +183,15 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
     const [view, setView] = useState<'CATEGORIES' | 'LIST'>('CATEGORIES')
     const [activeCategory, setActiveCategory] = useState<PlatformFeatureItem | null>(null)
 
-    // Data Loading
     const [isLoading, setIsLoading] = useState(false)
     const [items, setItems] = useState<UserItem[]>([])
     const [selectedItem, setSelectedItem] = useState<UserItem | null>(null)
     const [showConfirmShare, setShowConfirmShare] = useState(false)
-
-    // Project Generate Sheet
     const [showProjectGenerate, setShowProjectGenerate] = useState(false)
 
-    // Reserved for future use
     void _communityId
     void _communitySlug
 
-    // Reset when closing
     useEffect(() => {
         if (!isOpen) {
             setTimeout(() => {
@@ -230,58 +211,40 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
             if (type === 'PROJECT') {
                 const res = await getUserProjects(1, 100)
                 if (res.success && res.data?.projects) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    data = res.data.projects.map((p: any) => ({
-                        id: p.id,
-                        title: p.title,
-                        description: p.shortDescription || p.description,
+                    data = (res.data.projects as Array<Record<string, unknown>>).map((p) => ({
+                        id: p['id'] as string,
+                        title: p['title'] as string,
+                        description: (p['shortDescription'] || p['description']) as string | undefined,
                         type: 'project',
-                        createdAt: new Date(p.createdAt),
-                        url: `/projects/${p.slug}`,
-                        metadata: { slug: p.slug, technologies: p.technologies }
-                    }))
-                }
-            } else if (type === 'SPACE') {
-                const res = await getUserSpaces()
-                if (res.success && res.data?.spaces) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    data = res.data.spaces.map((s: any) => ({
-                        id: s.id,
-                        title: s.title,
-                        description: s.description,
-                        imageUrl: s.coverImage,
-                        type: 'space',
-                        createdAt: new Date(s.createdAt),
-                        url: `/space/${s.slug}`,
-                        metadata: { slug: s.slug, emoji: s.emoji }
+                        createdAt: new Date(p['createdAt'] as string),
+                        url: `/projects/${p['slug'] as string}`,
+                        metadata: { slug: p['slug'], technologies: p['technologies'] }
                     }))
                 }
             } else if (type === 'STUDIO') {
                 const res = await getUserStudios()
                 if (res.studios) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    data = res.studios.map((s: any) => ({
-                        id: s.id,
-                        title: s.title,
-                        description: s.description,
+                    data = (res.studios as unknown as Array<Record<string, unknown>>).map((s) => ({
+                        id: s['id'] as string,
+                        title: s['title'] as string,
+                        description: s['description'] as string | undefined,
                         type: 'studio',
-                        createdAt: new Date(s.updatedAt),
-                        url: `/studio/${s.slug || s.id}`,
-                        metadata: { category: s.category }
+                        createdAt: new Date(s['updatedAt'] as string),
+                        url: `/studio/${(s['slug'] || s['id']) as string}`,
+                        metadata: { category: s['category'] }
                     }))
                 }
             } else if (type === 'MOCK_INTERVIEW') {
                 const res = await getUserCreatedMocks()
                 if (res.success && res.mocks) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    data = res.mocks.map((m: any) => ({
-                        id: m.id,
-                        title: m.title,
-                        description: m.description,
+                    data = (res.mocks as Array<Record<string, unknown>>).map((m) => ({
+                        id: m['id'] as string,
+                        title: m['title'] as string,
+                        description: m['description'] as string | undefined,
                         type: 'mock-interview',
-                        createdAt: new Date(m.createdAt),
-                        url: `/mockinterview/${m.id}`,
-                        metadata: { level: m.level, duration: m.duration }
+                        createdAt: new Date(m['createdAt'] as string),
+                        url: `/mock/voice`,
+                        metadata: { level: m['level'], duration: m['duration'] }
                     }))
                 }
             }
@@ -308,7 +271,6 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
 
     const handleCreateNew = () => {
         if (!activeCategory) return
-
         if (activeCategory.createAction === 'PROJECT_GENERATE') {
             setShowProjectGenerate(true)
             setIsOpen(false)
@@ -316,7 +278,6 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
             router.push(activeCategory.createUrl)
             setIsOpen(false)
         } else {
-            // Fallback for types not implemented
             toast.info('Create feature coming soon!')
         }
     }
@@ -328,19 +289,16 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
 
     const confirmShare = async () => {
         if (!selectedItem) return
-
         try {
             const shareableItem: ShareableItem = {
                 id: crypto.randomUUID(),
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                type: selectedItem.type as any,
+                type: selectedItem.type as ShareableItem['type'],
                 title: selectedItem.title,
                 description: selectedItem.description,
                 url: selectedItem.url,
                 metadata: selectedItem.metadata,
                 thumbnail: selectedItem.imageUrl
             }
-
             onShare?.(shareableItem)
             toast.success('Shared to community!')
             setShowConfirmShare(false)
@@ -356,14 +314,12 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
                 isOpen={showProjectGenerate}
                 onOpenChange={setShowProjectGenerate}
             />
-
             <ConfirmShareDialog
                 isOpen={showConfirmShare}
                 onClose={() => setShowConfirmShare(false)}
                 onConfirm={confirmShare}
                 item={selectedItem}
             />
-
             <motion.div
                 className="fixed bottom-6 right-6 z-50"
                 initial={{ scale: 0 }}
@@ -381,233 +337,176 @@ export function MagicSheet({ communityId: _communityId, communitySlug: _communit
                                     : "bg-neutral-800 text-white hover:bg-neutral-700 dark:bg-neutral-200 dark:text-neutral-900 dark:hover:bg-neutral-300"
                             )}
                         >
-                            <span
-                                className={cn(
-                                    "flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-300",
-                                    isOpen
-                                        ? "bg-neutral-700 dark:bg-neutral-300 rotate-45"
-                                        : "bg-neutral-700 dark:bg-neutral-300"
-                                )}
-                            >
-                                {
-                                    isOpen ? (
-                                        <Plus className="h-5 w-5" />
-                                    ) : (
-                                        <Sparkles className="h-5 w-5" />
-                                    )
-                                }
+                            <span className={cn(
+                                "flex h-9 w-9 items-center justify-center rounded-full transition-transform duration-300",
+                                isOpen ? "bg-neutral-700 dark:bg-neutral-300 rotate-45" : "bg-neutral-700 dark:bg-neutral-300"
+                            )}>
+                                {isOpen ? <Plus className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
                             </span>
                             <span className="text-sm font-medium whitespace-nowrap">
                                 {isOpen ? "Close Tools" : "Magic Tools"}
                             </span>
                         </Button>
-
                     </SheetTrigger>
-                    <SheetContent
-                        side="bottom"
-                        className="h-[85vh] rounded-t-3xl p-0 overflow-hidden outline-none border-t-0"
-                    >
+                    <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl p-0 overflow-hidden outline-none border-t-0">
                         <div className="max-w-5xl mx-auto h-full flex flex-col bg-white dark:bg-neutral-950">
                             <div className="flex justify-center pt-4 pb-2">
                                 <div className="w-12 h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800" />
                             </div>
-
-                            {
-                                view === 'CATEGORIES' && (
-                                    <div className="flex-1 flex flex-col overflow-hidden">
-                                        <SheetHeader className="px-6 py-4 flex-shrink-0">
-                                            <SheetTitle className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                                Share with Community
-                                            </SheetTitle>
-                                            <SheetDescription className="text-neutral-600 dark:text-neutral-400">
-                                                Pick a tool to create or share content
-                                            </SheetDescription>
-                                        </SheetHeader>
-                                        <ScrollArea className="flex-1 px-6">
-                                            <div className="pb-10 space-y-8">
-                                                {
-                                                    PLATFORM_FEATURES.map((section) => (
-                                                        <div key={section.category}>
-                                                            <div className="mb-4">
-                                                                <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-                                                                    {section.category}
-                                                                </h3>
-                                                                <p className="text-xs text-neutral-400 dark:text-neutral-500">
-                                                                    {section.description}
-                                                                </p>
-                                                            </div>
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                                {
-                                                                    section.items.map((item) => {
-                                                                        const Icon = item.icon
-                                                                        return (
-                                                                            <motion.button
-                                                                                key={item.id}
-                                                                                onClick={() => handleItemClick(item)}
-                                                                                className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-lg transition-all duration-200 text-left bg-white dark:bg-neutral-900 group"
-                                                                                whileHover={{ scale: 1.02, y: -2 }}
-                                                                                whileTap={{ scale: 0.98 }}
-                                                                            >
-                                                                                <div className={cn(
-                                                                                    "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg",
-                                                                                    item.color
-                                                                                )}>
-                                                                                    <Icon className="w-6 h-6 text-white" />
-                                                                                </div>
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <div className="font-semibold text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                                                                        {item.label}
-                                                                                    </div>
-                                                                                    <div className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
-                                                                                        {item.description}
-                                                                                    </div>
-                                                                                </div>
-                                                                                <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 flex-shrink-0" />
-                                                                            </motion.button>
-                                                                        )
-                                                                    })
-                                                                }
-                                                            </div>
-                                                        </div>
-                                                    ))
-                                                }
-                                            </div>
-                                        </ScrollArea>
-                                    </div>
-                                )
-                            }
-
-                            {
-                                view === 'LIST' && activeCategory && (
-                                    <div className="flex-1 flex flex-col overflow-hidden">
-                                        <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-4 flex-shrink-0">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => setView('CATEGORIES')}
-                                                className="-ml-2"
-                                            >
-                                                <ArrowLeft className="w-5 h-5" />
-                                            </Button>
-                                            <div>
-                                                <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-                                                    My {activeCategory.label}s
-                                                </h3>
-                                                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                                                    Select an item to share or create new
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="flex-1 overflow-hidden relative">
-                                            {
-                                                isLoading ? (
-                                                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                                        <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
-                                                        <p className="text-sm text-neutral-500">Loading your items...</p>
-                                                    </div>
-                                                ) : items.length === 0 ? (
-                                                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-                                                        <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
-                                                            <activeCategory.icon className="w-8 h-8 text-neutral-400" />
-                                                        </div>
-                                                        <h4 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
-                                                            No {activeCategory.label}s found
-                                                        </h4>
-                                                        <p className="text-sm text-neutral-500 mb-6 max-w-xs">
-                                                            You haven&apos;t created any {activeCategory.label.toLowerCase()}s yet.
+                            {view === 'CATEGORIES' && (
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    <SheetHeader className="px-6 py-4 flex-shrink-0">
+                                        <SheetTitle className="text-2xl font-bold text-neutral-900 dark:text-white">
+                                            Share with Community
+                                        </SheetTitle>
+                                        <SheetDescription className="text-neutral-600 dark:text-neutral-400">
+                                            Pick a tool to create or share content
+                                        </SheetDescription>
+                                    </SheetHeader>
+                                    <ScrollArea className="flex-1 px-6">
+                                        <div className="pb-10 space-y-8">
+                                            {PLATFORM_FEATURES.map((section) => (
+                                                <div key={section.category}>
+                                                    <div className="mb-4">
+                                                        <h3 className="text-sm font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                                                            {section.category}
+                                                        </h3>
+                                                        <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                                                            {section.description}
                                                         </p>
-                                                        <Button onClick={handleCreateNew}>
-                                                            Create your first {activeCategory.label}
-                                                        </Button>
                                                     </div>
-                                                ) : (
-                                                    <ScrollArea className="h-full px-6 py-4">
-                                                        <div className="space-y-3 pb-24">
-                                                            {
-                                                                items.map((item) => (
-                                                                    <motion.div
-                                                                        key={item.id}
-                                                                        initial={{ opacity: 0, y: 10 }}
-                                                                        animate={{ opacity: 1, y: 0 }}
-                                                                        className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-blue-300 dark:hover:border-blue-700 transition-all group"
-                                                                    >
-                                                                        <div className={cn(
-                                                                            "w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0",
-                                                                            activeCategory.color
-                                                                        )}>
-                                                                            {
-                                                                                item.imageUrl ? (
-                                                                                    <Image
-                                                                                        src={item.imageUrl}
-                                                                                        alt={item.title}
-                                                                                        width={48}
-                                                                                        height={48}
-                                                                                        className="w-full h-full object-cover rounded-lg"
-                                                                                    />
-                                                                                ) : (
-                                                                                    <activeCategory.icon className="w-6 h-6 text-white" />
-                                                                                )
-                                                                            }
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                        {section.items.map((item) => {
+                                                            const Icon = item.icon
+                                                            return (
+                                                                <motion.button
+                                                                    key={item.id}
+                                                                    onClick={() => handleItemClick(item)}
+                                                                    className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 hover:shadow-lg transition-all duration-200 text-left bg-white dark:bg-neutral-900 group"
+                                                                    whileHover={{ scale: 1.02, y: -2 }}
+                                                                    whileTap={{ scale: 0.98 }}
+                                                                >
+                                                                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg", item.color)}>
+                                                                        <Icon className="w-6 h-6 text-white" />
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="font-semibold text-neutral-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                                            {item.label}
                                                                         </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <h4 className="font-semibold text-neutral-900 dark:text-white truncate">
-                                                                                {item.title}
-                                                                            </h4>
-                                                                            <p className="text-sm text-neutral-500 truncate">
-                                                                                {item.description || "No description"}
-                                                                            </p>
-                                                                            <div className="flex items-center gap-2 mt-1 text-xs text-neutral-400">
-                                                                                <span>{item.type}</span>
-                                                                                <span>•</span>
-                                                                                <span>{new Date(item.createdAt).toLocaleDateString()}</span>
-                                                                            </div>
+                                                                        <div className="text-sm text-neutral-500 dark:text-neutral-400 truncate">
+                                                                            {item.description}
                                                                         </div>
-                                                                        <Button
-                                                                            size="sm"
-                                                                            variant="outline"
-                                                                            className="gap-2 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:border-blue-200 dark:group-hover:border-blue-800"
-                                                                            onClick={() => handleShareItem(item)}
-                                                                        >
-                                                                            <Share2 className="w-4 h-4" />
-                                                                            Share
-                                                                        </Button>
-                                                                    </motion.div>
-                                                                ))
-                                                            }
-                                                        </div>
-                                                    </ScrollArea>
-                                                )
-                                            }
+                                                                    </div>
+                                                                    <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 flex-shrink-0" />
+                                                                </motion.button>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                        <div className="p-4 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex-shrink-0">
-                                            <Button
-                                                size="lg"
-                                                className="w-full gap-2 shadow-lg"
-                                                onClick={handleCreateNew}
-                                            >
-                                                <Plus className="w-5 h-5" />
-                                                Create New {activeCategory.label}
-                                            </Button>
+                                    </ScrollArea>
+                                </div>
+                            )}
+                            {view === 'LIST' && activeCategory && (
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-4 flex-shrink-0">
+                                        <Button variant="ghost" size="icon" onClick={() => setView('CATEGORIES')} className="-ml-2">
+                                            <ArrowLeft className="w-5 h-5" />
+                                        </Button>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-neutral-900 dark:text-white flex items-center gap-2">
+                                                My {activeCategory.label}s
+                                            </h3>
+                                            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                                                Select an item to share or create new
+                                            </p>
                                         </div>
                                     </div>
-                                )
-                            }
+                                    <div className="flex-1 overflow-hidden relative">
+                                        {isLoading ? (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                <Loader2 className="w-8 h-8 animate-spin text-blue-500 mb-2" />
+                                                <p className="text-sm text-neutral-500">Loading your items...</p>
+                                            </div>
+                                        ) : items.length === 0 ? (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                                                <div className="w-16 h-16 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
+                                                    <activeCategory.icon className="w-8 h-8 text-neutral-400" />
+                                                </div>
+                                                <h4 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
+                                                    No {activeCategory.label}s found
+                                                </h4>
+                                                <p className="text-sm text-neutral-500 mb-6 max-w-xs">
+                                                    You haven&apos;t created any {activeCategory.label.toLowerCase()}s yet.
+                                                </p>
+                                                <Button onClick={handleCreateNew}>
+                                                    Create your first {activeCategory.label}
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <ScrollArea className="h-full px-6 py-4">
+                                                <div className="space-y-3 pb-24">
+                                                    {items.map((item) => (
+                                                        <motion.div
+                                                            key={item.id}
+                                                            initial={{ opacity: 0, y: 10 }}
+                                                            animate={{ opacity: 1, y: 0 }}
+                                                            className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 hover:border-blue-300 dark:hover:border-blue-700 transition-all group"
+                                                        >
+                                                            <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0", activeCategory.color)}>
+                                                                {item.imageUrl ? (
+                                                                    <Image src={item.imageUrl} alt={item.title} width={48} height={48} className="w-full h-full object-cover rounded-lg" />
+                                                                ) : (
+                                                                    <activeCategory.icon className="w-6 h-6 text-white" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <h4 className="font-semibold text-neutral-900 dark:text-white truncate">{item.title}</h4>
+                                                                <p className="text-sm text-neutral-500 truncate">{item.description || "No description"}</p>
+                                                                <div className="flex items-center gap-2 mt-1 text-xs text-neutral-400">
+                                                                    <span>{item.type}</span>
+                                                                    <span>•</span>
+                                                                    <span>{new Date(item.createdAt).toLocaleDateString()}</span>
+                                                                </div>
+                                                            </div>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="outline"
+                                                                className="gap-2 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:border-blue-200 dark:group-hover:border-blue-800"
+                                                                onClick={() => handleShareItem(item)}
+                                                            >
+                                                                <Share2 className="w-4 h-4" />
+                                                                Share
+                                                            </Button>
+                                                        </motion.div>
+                                                    ))}
+                                                </div>
+                                            </ScrollArea>
+                                        )}
+                                    </div>
+                                    <div className="p-4 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex-shrink-0">
+                                        <Button size="lg" className="w-full gap-2 shadow-lg" onClick={handleCreateNew}>
+                                            <Plus className="w-5 h-5" />
+                                            Create New {activeCategory.label}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </SheetContent>
                 </Sheet>
             </motion.div>
             <AnimatePresence>
-                {
-                    isOpen && (
-                        <motion.div
-                            className="fixed inset-0 bg-black/40 dark:bg-black/60 z-40"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setIsOpen(false)}
-                        />
-                    )
-                }
+                {isOpen && (
+                    <motion.div
+                        className="fixed inset-0 bg-black/40 dark:bg-black/60 z-40"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsOpen(false)}
+                    />
+                )}
             </AnimatePresence>
         </>
     )

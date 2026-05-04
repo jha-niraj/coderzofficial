@@ -23,6 +23,9 @@ import {
     assessPracticeWork, getMentorResponse,
 } from "@/actions/(main)/practice";
 import { getScribeToken, generateTTSAudio } from "@/actions/(main)/practice";
+import {
+    executeCode, type ExecuteCodeResult, type TestCase,
+} from "@/actions/(main)/practice/execute-code.action";
 import CodeEditor from "@/components/main/code-editor";
 import type {
     PracticeProblemDetail, PracticeSessionData, PracticeMode,
@@ -53,7 +56,7 @@ const ExcalidrawCanvas = dynamic(
 // CONSTANTS
 // ─────────────────────────────────────────────
 
-const DIFFICULTY_COLORS = {
+const DIFFICULTY_COLORS: Record<string, string> = {
     EASY: "text-emerald-500",
     MEDIUM: "text-amber-500",
     HARD: "text-red-500",
@@ -75,6 +78,11 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const problemPanelRef = useRef<HTMLDivElement>(null);
     const sendToChatRef = useRef<((message: string) => void) | null>(null);
+
+    // Code execution state
+    const [execResult, setExecResult] = useState<ExecuteCodeResult | null>(null);
+    const [isRunning, setIsRunning] = useState(false);
+    const [showOutput, setShowOutput] = useState(false);
 
     // Initialize store on mount
     useEffect(() => {
@@ -186,18 +194,46 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-xs h-8 border-neutral-700 hover:bg-neutral-800"
-                                onClick={() => {
+                                disabled={isRunning}
+                                className="text-xs h-8 border-neutral-700 hover:bg-neutral-800 disabled:opacity-50"
+                                onClick={async () => {
                                     if (!store.code.trim()) {
                                         toast.error("Write some code first!");
                                         return;
                                     }
-                                    const runMessage = `🔄 Run my code:\n\`\`\`${store.language}\n${store.code}\n\`\`\`\nPlease analyze this code step by step: check for errors, predict the output, and suggest improvements.`;
-                                    sendToChatRef.current?.(runMessage);
+                                    setIsRunning(true);
+                                    setShowOutput(true);
+                                    setExecResult(null);
+                                    try {
+                                        // DSA/coding problems use code-execution test cases (input/output pairs),
+                                        // not API test cases — pass empty array and let AI evaluate output
+                                        const testCases: TestCase[] = [];
+                                        const result = await executeCode(
+                                            store.code,
+                                            store.language as Parameters<typeof executeCode>[1],
+                                            testCases
+                                        );
+                                        setExecResult(result);
+                                        // Send output to AI chat for Socratic evaluation
+                                        if (mode === "ASSIST") {
+                                            const outputSummary = result.stderr
+                                                ? `stdout: ${result.stdout || "(none)"}\nstderr: ${result.stderr}`
+                                                : result.stdout || "(no output)";
+                                            const passInfo = result.testResults
+                                                ? ` ${result.testResults.filter(t => t.passed).length}/${result.testResults.length} test cases passed.`
+                                                : "";
+                                            const chatMsg = `🔄 I ran my code (${store.language}).\nOutput: \`\`\`\n${outputSummary}\n\`\`\`${passInfo}\nPlease evaluate this output and guide me.`;
+                                            sendToChatRef.current?.(chatMsg);
+                                        }
+                                    } catch (err) {
+                                        setExecResult({ success: false, error: String(err) });
+                                    } finally {
+                                        setIsRunning(false);
+                                    }
                                 }}
                             >
-                                <Play className="h-3.5 w-3.5 mr-1" />
-                                Run
+                                {isRunning ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Play className="h-3.5 w-3.5 mr-1" />}
+                                {isRunning ? "Running..." : "Run"}
                             </Button>
                         )
                     }
@@ -246,7 +282,11 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
                                 </div>
                             ) : (
                                 <>
-                                    <div className={cn("flex-1 overflow-hidden", isWebModule ? "h-[55%]" : "h-full")}>
+                                    <div className={cn(
+                                        "overflow-hidden",
+                                        isWebModule ? "h-[55%]" :
+                                        showOutput && execResult ? "h-[60%]" : "h-full"
+                                    )}>
                                         <CodeEditor
                                             code={store.code}
                                             language={store.language}
@@ -262,6 +302,13 @@ export function PracticeWorkspace({ problem, session, mode }: PracticeWorkspaceP
                                             className="h-full rounded-none border-0"
                                         />
                                     </div>
+                                    {showOutput && !isWebModule && (
+                                        <OutputPanel
+                                            result={execResult}
+                                            isRunning={isRunning}
+                                            onClose={() => setShowOutput(false)}
+                                        />
+                                    )}
                                     {
                                         isWebModule && (
                                             <div className="h-[45%] border-t border-neutral-800">
@@ -423,6 +470,110 @@ function WebPreview({ code, css }: { code: string; css: string }) {
                 <span className="text-[10px] text-neutral-500 font-medium">Live Preview</span>
             </div>
             <iframe srcDoc={srcDoc} className="flex-1 bg-white" sandbox="allow-scripts" title="Live Preview" />
+        </div>
+    );
+}
+
+function OutputPanel({
+    result,
+    isRunning,
+    onClose,
+}: {
+    result: ExecuteCodeResult | null;
+    isRunning: boolean;
+    onClose: () => void;
+}) {
+    return (
+        <div className="h-[40%] border-t border-neutral-800 flex flex-col bg-neutral-950">
+            <div className="h-8 flex items-center justify-between px-3 border-b border-neutral-800 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Output</span>
+                    {result && !isRunning && (
+                        <span className={cn(
+                            "text-[10px] font-medium px-1.5 py-0.5 rounded",
+                            result.exitCode === 0
+                                ? "bg-emerald-900/50 text-emerald-400"
+                                : "bg-red-900/50 text-red-400"
+                        )}>
+                            {result.exitCode === 0 ? "✓ Exited 0" : `✗ Exit ${result.exitCode ?? "err"}`}
+                        </span>
+                    )}
+                    {result?.executionTimeMs != null && (
+                        <span className="text-[10px] text-neutral-600">{result.executionTimeMs}ms</span>
+                    )}
+                </div>
+                <button onClick={onClose} className="cursor-pointer text-neutral-600 hover:text-neutral-400 text-xs">✕</button>
+            </div>
+            <div className="flex-1 overflow-auto p-3 font-mono text-xs">
+                {isRunning ? (
+                    <div className="flex items-center gap-2 text-neutral-400">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Running code...</span>
+                    </div>
+                ) : result ? (
+                    <div className="space-y-3">
+                        {result.error && !result.stdout && !result.stderr && (
+                            <div className="text-red-400">{result.error}</div>
+                        )}
+                        {result.stdout && (
+                            <div>
+                                <div className="text-[10px] text-neutral-500 mb-1">STDOUT</div>
+                                <pre className="text-green-400 whitespace-pre-wrap break-all">{result.stdout}</pre>
+                            </div>
+                        )}
+                        {result.stderr && (
+                            <div>
+                                <div className="text-[10px] text-neutral-500 mb-1">STDERR</div>
+                                <pre className="text-red-400 whitespace-pre-wrap break-all">{result.stderr}</pre>
+                            </div>
+                        )}
+                        {result.testResults && result.testResults.length > 0 && (
+                            <div>
+                                <div className="text-[10px] text-neutral-500 mb-2">
+                                    TEST CASES — {result.testResults.filter(t => t.passed).length}/{result.testResults.length} passed
+                                </div>
+                                <div className="space-y-1.5">
+                                    {result.testResults.map((tc, i) => (
+                                        <div key={i} className={cn(
+                                            "rounded px-2.5 py-1.5 border",
+                                            tc.passed
+                                                ? "border-emerald-800 bg-emerald-950/30"
+                                                : "border-red-800 bg-red-950/30"
+                                        )}>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className={tc.passed ? "text-emerald-400" : "text-red-400"}>
+                                                    {tc.passed ? "✓" : "✗"}
+                                                </span>
+                                                <span className="text-neutral-300 text-[10px]">
+                                                    {tc.description ?? `Test ${i + 1}`}
+                                                </span>
+                                            </div>
+                                            {!tc.passed && (
+                                                <div className="mt-1 grid grid-cols-3 gap-2 text-[10px]">
+                                                    <div>
+                                                        <span className="text-neutral-500">Input: </span>
+                                                        <span className="text-neutral-300">{tc.input || "(none)"}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-neutral-500">Expected: </span>
+                                                        <span className="text-emerald-400">{tc.expectedOutput}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-neutral-500">Got: </span>
+                                                        <span className="text-red-400">{tc.actualOutput || "(none)"}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <span className="text-neutral-600">Run your code to see output here.</span>
+                )}
+            </div>
         </div>
     );
 }

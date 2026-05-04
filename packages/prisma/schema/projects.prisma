@@ -233,9 +233,6 @@ model ProjectV2 {
     // Bookmarks
     bookmarks ProjectV2Bookmark[] @relation("ProjectV2Bookmarks")
 
-    // Space relation
-    spaceId           String?
-    space             Space?                      @relation("SpaceProjects", fields: [spaceId], references: [id], onDelete: SetNull)
     projectV2Tasks    ProjectV2Task[]
     // Team Collaboration
     members           ProjectV2Member[]           @relation("ProjectMembers")
@@ -262,7 +259,6 @@ model ProjectV2 {
     @@index([technologies])
     @@index([createdAt])
     @@index([slug])
-    @@index([spaceId])
     @@index([isPlatformSeeded])
     @@index([projectSource])
     @@index([universityId])
