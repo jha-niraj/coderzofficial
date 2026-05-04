@@ -1,9 +1,9 @@
 import {
-    LayoutDashboard, Users, CreditCard, FolderKanban, Mic, ClipboardCheck, 
-    Trophy, MessageSquare, MessageCircle, Lightbulb, BarChart3, Settings, 
-    Shield, FileText, type LucideIcon, Coins, Receipt, ArrowLeftRight, 
-    UserCheck, BookOpen, Flame, Zap, Vote, Flag, Activity, Database, User, 
-    Lock, Building2, GraduationCap, Briefcase, School, Rocket, Clock
+    LayoutDashboard, Users, CreditCard, FolderKanban, Mic, ClipboardCheck,
+    Trophy, MessageSquare, MessageCircle, Lightbulb, BarChart3, Settings,
+    Shield, FileText, type LucideIcon, Coins, Receipt, ArrowLeftRight,
+    UserCheck, BookOpen, Flame, Zap, Vote, Flag, Activity, Database, User,
+    Lock, Building2, GraduationCap, Briefcase, School
 } from "lucide-react"
 
 export interface NavigationItem {
@@ -155,16 +155,7 @@ export const adminNavigation: NavigationConfig = {
                         { name: "Reports", path: "main/communities/reports", icon: Flag },
                     ]
                 },
-                {
-                    name: "Launchpads",
-                    path: "launchpads",
-                    icon: Rocket,
-                    requiredPermission: "admin_management",
-                    children: [
-                        { name: "All Products", path: "launchpads", icon: Rocket },
-                        { name: "Pending Review", path: "launchpads/pending", icon: Clock },
-                    ]
-                },
+
             ]
         },
         {

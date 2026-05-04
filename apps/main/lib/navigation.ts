@@ -1,8 +1,8 @@
 import {
     Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Video, Brain, Cable, LayoutDashboard, Heading,
-    Home, LucideWandSparkles, GraduationCap, Rocket, Activity,
-    Share2, Target, FileText, BookOpen, StickyNote, Code2,
+    Home, LucideWandSparkles, GraduationCap, Activity,
+    Target, FileText, BookOpen, StickyNote, Code2,
     Network, Globe, Server
 } from "lucide-react"
 
@@ -20,7 +20,7 @@ export interface NavigationItem {
 
 export interface NavigationConfig {
     primary: NavigationItem[]
-    secondary: NavigationItem[] // Main app might not have a distinct secondary section in current layout, but keeping interface consistent
+    secondary: NavigationItem[]
 }
 
 export const mainNavigation: NavigationConfig = {
@@ -37,24 +37,6 @@ export const mainNavigation: NavigationConfig = {
             icon: MessageSquare,
             status: "active"
         },
-        // {
-        //     name: "Spaces",
-        //     path: "space",
-        //     icon: Orbit,
-        //     status: "active",
-        //     children: [
-        //         {
-        //             name: 'My Spaces',
-        //             path: 'space/myspaces',
-        //             icon: User
-        //         },
-        //         {
-        //             name: 'All Spaces',
-        //             path: 'space/allspaces',
-        //             icon: Globe
-        //         },
-        //     ]
-        // },
         {
             name: "My Notes",
             path: "studio",
@@ -180,29 +162,10 @@ export const mainNavigation: NavigationConfig = {
             ]
         },
         {
-            name: "Launchpads",
-            path: "launchpads",
-            icon: Rocket,
-            status: "active",
-            children: [
-                {
-                    name: 'KnowMe AI',
-                    path: 'knowme',
-                    icon: LucideWandSparkles
-                },
-                {
-                    name: 'Activity Tracker',
-                    path: 'activity',
-                    icon: Activity,
-                    comingSoon: true
-                },
-                {
-                    name: 'Social Posting',
-                    path: 'socialpost',
-                    icon: Share2,
-                    comingSoon: true
-                }
-            ]
+            name: "KnowMe AI",
+            path: "knowme",
+            icon: LucideWandSparkles,
+            status: "active"
         },
         {
             name: "Jobs",
