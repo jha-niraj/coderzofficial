@@ -1,4 +1,4 @@
-import type { ExecutionJob } from '../../types/index.js';
+import type { ExecutionJob } from '../../types/index';
 
 const jobStore = new Map<string, ExecutionJob>();
 const CLEANUP_AGE_MS = 10 * 60 * 1000; // 10 minutes

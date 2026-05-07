@@ -1,10 +1,10 @@
 import 'dotenv/config';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
-import { startWorker } from './modules/compiler/queue.js';
-import { closeRedisConnection } from './utils/redis.js';
-import routes from './routes/index.js';
-import logger from './utils/logger.js';
+import { startWorker } from './modules/compiler/queue';
+import { closeRedisConnection } from './utils/redis';
+import routes from './routes/index';
+import logger from './utils/logger';
 
 const PORT = parseInt(process.env.PORT ?? '3004', 10);
 const NODE_ENV = process.env.NODE_ENV ?? 'development';

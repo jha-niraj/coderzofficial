@@ -1,12 +1,12 @@
 import type { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { ZodError } from 'zod';
-import { CodeSubmissionSchema } from '../schemas/index.js';
-import { executeCode, runTestCases } from '../modules/compiler/executor.js';
-import { addExecutionJob, getJobResult } from '../modules/compiler/queue.js';
-import { LANGUAGE_CONFIGS } from '../config/languages.js';
-import type { CodeExecutionResponse } from '../types/index.js';
-import logger from '../utils/logger.js';
+import { CodeSubmissionSchema } from '../schemas/index';
+import { executeCode, runTestCases } from '../modules/compiler/executor';
+import { addExecutionJob, getJobResult } from '../modules/compiler/queue';
+import { LANGUAGE_CONFIGS } from '../config/languages';
+import type { CodeExecutionResponse } from '../types/index';
+import logger from '../utils/logger';
 
 const SYNC_EXECUTION_TIMEOUT_MS = 15000;
 

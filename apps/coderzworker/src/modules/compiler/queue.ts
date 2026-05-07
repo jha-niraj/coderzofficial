@@ -1,10 +1,10 @@
 import { Queue, Worker, type Job } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
-import type { CodeSubmission, ExecutionJob } from '../../types/index.js';
-import { executeCode, runTestCases } from './executor.js';
-import { storeResult, getResult } from './storage.js';
-import getRedisClient from '../../utils/redis.js';
-import logger from '../../utils/logger.js';
+import type { CodeSubmission, ExecutionJob } from '../../types/index';
+import { executeCode, runTestCases } from './executor';
+import { storeResult, getResult } from './storage';
+import getRedisClient from '../../utils/redis';
+import logger from '../../utils/logger';
 
 const QUEUE_NAME = 'code-execution';
 

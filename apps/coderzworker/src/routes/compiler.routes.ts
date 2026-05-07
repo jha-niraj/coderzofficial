@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware } from '../middleware/auth';
 import {
   executeSync,
   executeAsync,
   getExecution,
   getLanguages,
-} from '../controllers/compiler.controller.js';
+} from '../controllers/compiler.controller';
 
 const router = Router();
 

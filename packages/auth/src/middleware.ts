@@ -1,4 +1,4 @@
-import { auth } from "./auth.js";
+import { auth } from "./auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export type AuthSession = typeof auth.$Infer.Session;

@@ -12,7 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
-import { users, creditTypeEnum, creditRequestStatusEnum, paymentStatusEnum, currencyEnum } from "./schema.js";
+import { users, creditTypeEnum, creditRequestStatusEnum, paymentStatusEnum, currencyEnum } from "./schema";
 
 // ===========================
 // Enums

@@ -13,7 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
-import { users } from "./schema.js";
+import { users } from "./schema";
 
 // ===========================
 // Enums

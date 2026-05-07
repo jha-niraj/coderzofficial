@@ -1,4 +1,4 @@
-import { auth } from "./auth.js";
+import { auth } from "./auth";
 import type { ReadonlyHeaders } from "next/dist/server/web/spec-extension/adapters/headers";
 
 export type SessionUser = {

@@ -20,7 +20,7 @@ import {
     quizDifficultyEnum,
     interviewCardDifficultyEnum,
     learnRequestStatusEnum,
-} from "./schema.js";
+} from "./schema";
 
 // ===========================
 // Tables

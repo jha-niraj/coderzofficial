@@ -15,7 +15,7 @@ import {
     users,
     mockCategoryEnum,
     mockLevelEnum,
-} from "./schema.js";
+} from "./schema";
 
 // ===========================
 // Tables

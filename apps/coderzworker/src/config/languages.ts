@@ -1,4 +1,4 @@
-import type { SupportedLanguage } from '../types/index.js';
+import type { SupportedLanguage } from '../types/index';
 
 export interface LanguageConfig {
   image: string;

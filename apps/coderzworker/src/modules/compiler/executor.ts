@@ -5,9 +5,9 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { v4 as uuidv4 } from 'uuid';
 import Docker from 'dockerode';
-import type { CodeSubmission, ExecutionResult, TestCase, TestCaseResult, SupportedLanguage } from '../../types/index.js';
-import { LANGUAGE_CONFIGS } from '../../config/languages.js';
-import logger from '../../utils/logger.js';
+import type { CodeSubmission, ExecutionResult, TestCase, TestCaseResult, SupportedLanguage } from '../../types/index';
+import { LANGUAGE_CONFIGS } from '../../config/languages';
+import logger from '../../utils/logger';
 
 const execAsync = promisify(exec);
 

@@ -4,7 +4,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createId } from "@paralleldrive/cuid2";
-import { users, skillCategoryEnum } from "./schema.js";
+import { users, skillCategoryEnum } from "./schema";
 
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
