@@ -7,6 +7,7 @@ node_modules
 
 # Cloudflare / OpenNext
 .open-next/
+.wrangler/
 .dev.vars
 secrets.json
 
