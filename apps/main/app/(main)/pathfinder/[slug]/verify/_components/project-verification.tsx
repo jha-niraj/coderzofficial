@@ -15,7 +15,7 @@ import {
     CheckCircle2, Lock, Wrench, Rocket, ExternalLink, Github, 
     FolderPlus
 } from 'lucide-react'
-import { VerificationSectionStatus } from '@repo/prisma/client'
+import { VerificationSectionStatus } from '@repo/db'
 import { submitProject } from '@/actions/(main)/pathfinder'
 import toast from '@repo/ui/components/ui/sonner'
 import Link from 'next/link'

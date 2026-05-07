@@ -9,7 +9,7 @@ import {
     QuestionDifficulty,
     AssessmentQuestionType,
     UserContentStatus,
-} from '@repo/prisma/client'
+} from '@repo/db'
 
 // ==================== INPUT TYPES ====================
 

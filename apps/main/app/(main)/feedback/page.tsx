@@ -17,7 +17,7 @@ import {
     SheetFooter, SheetHeader, SheetTitle, SheetDescription
 } from "@repo/ui/components/ui/sheet"
 import toast from "@repo/ui/components/ui/sonner"
-import { FeedbackCategory, FeedbackStatus } from "@repo/prisma/client"
+import { FeedbackCategory, FeedbackStatus } from "@repo/db"
 import { useFeedbackStore } from "@/app/store/feedbackStore"
 import { motion } from "framer-motion"
 import { uploadImageToCloudinary } from "@/actions/(common)/shared/upload.action"

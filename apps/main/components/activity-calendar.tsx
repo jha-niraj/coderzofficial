@@ -11,7 +11,7 @@ import {
     Coins, Trophy, Zap, Target, Code, Brain, Award, Activity as ActivityIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ActivityType } from '@repo/prisma/client';
+import { ActivityType } from '@repo/db';
 import toast from '@repo/ui/components/ui/sonner';
 import {
     DailyActivitySummary, getActivityCalendar, getDailyActivitySummary, getUserStreak,

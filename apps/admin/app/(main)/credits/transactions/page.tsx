@@ -9,7 +9,7 @@ import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
 import { Input } from "@repo/ui/components/ui/input"
 import { Select, SelectItem } from "@repo/ui/components/ui/select"
-import { CreditType, PaymentStatus } from "@repo/prisma/client"
+import { CreditType, PaymentStatus } from "@repo/db"
 
 interface Transactions {
     id: string,

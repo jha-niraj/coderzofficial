@@ -17,7 +17,7 @@ import { usePathfinderStore } from '@/app/store/pathfinderStore'
 import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 import {
     PathfinderCategory, PathfinderLevel, VerificationSectionStatus
-} from '@repo/prisma/client'
+} from '@repo/db'
 import type { VerificationAIPlan } from '@/types/pathfinder'
 import toast from '@repo/ui/components/ui/sonner'
 

@@ -1,5 +1,5 @@
 // Pathfinder Types - Centralized type definitions for the Pathfinder (AI Learning Goals) feature
-import { PathfinderStatus, PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
+import { PathfinderStatus, PathfinderCategory, PathfinderLevel } from '@repo/db'
 
 // Goal duration presets (matches PathfinderGoalDuration enum)
 export const GOAL_DURATION_OPTIONS = [

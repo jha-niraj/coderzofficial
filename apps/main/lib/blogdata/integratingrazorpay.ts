@@ -21,7 +21,7 @@ import Razorpay from 'razorpay';
 import { auth } from '@repo/auth';
 import prisma from '@repo/prisma';
 import { creditPackages, convertToPaise, calculatePrice, paymentConfig } from '@/lib/payment-config';
-import { Currency } from '@repo/prisma/client';
+import { Currency } from '@repo/db';
 
 export async function POST(req: NextRequest) {
     try {
@@ -249,7 +249,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { auth } from '@repo/auth';
 import prisma from '@repo/prisma';
-import { CreditType } from '@repo/prisma/client';
+import { CreditType } from '@repo/db';
 
 export async function POST(req: NextRequest) {
     const session = await auth();

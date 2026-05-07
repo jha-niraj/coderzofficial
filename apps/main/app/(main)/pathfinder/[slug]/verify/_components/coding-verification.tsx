@@ -11,7 +11,7 @@ import {
 import {
     CheckCircle2, Code, Play, Lightbulb, ChevronRight, Lock
 } from 'lucide-react'
-import { VerificationSectionStatus } from '@repo/prisma/client'
+import { VerificationSectionStatus } from '@repo/db'
 import { submitVerificationCoding } from '@/actions/(main)/pathfinder'
 import toast from '@repo/ui/components/ui/sonner'
 import { cn } from '@repo/ui/lib/utils'

@@ -18,7 +18,7 @@ import {
 import {
     type QuizClientProps, type Quiz as ProjectQuiz, type QuizResult as ProjectQuizResult, type QuizAttempt
 } from '@/types/project';
-import { type QuestionDifficulty } from "@repo/prisma/client";
+import { type QuestionDifficulty } from "@repo/db";
 import Quiz, { type QuizQuestion, type QuizResult } from '@/components/main/quiz';
 import QuizResults from '@/components/main/quiz-results';
 

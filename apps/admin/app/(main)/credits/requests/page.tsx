@@ -10,7 +10,7 @@ import {
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
 import { Input } from "@repo/ui/components/ui/input"
-import { CreditRequestStatus } from "@repo/prisma/client"
+import { CreditRequestStatus } from "@repo/db"
 
 interface CreditRequests {
     id: string,

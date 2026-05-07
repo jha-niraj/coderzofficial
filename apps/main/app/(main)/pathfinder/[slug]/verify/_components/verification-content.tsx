@@ -13,7 +13,7 @@ import {
 import Link from 'next/link'
 import {
     PathfinderCategory, PathfinderLevel, VerificationSectionStatus
-} from '@repo/prisma/client'
+} from '@repo/db'
 import { QuizVerification } from './quiz-verification'
 import { CodingVerification } from './coding-verification'
 import { MockVerification } from './mock-verification'

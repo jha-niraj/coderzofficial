@@ -8,7 +8,7 @@ import type {
     PracticeUserSession,
     PracticeModuleProgress,
     PracticeLeaderboard,
-} from "@repo/prisma/client";
+} from "@repo/db";
 
 // ── Re-export Prisma enums for convenience ──
 export type {

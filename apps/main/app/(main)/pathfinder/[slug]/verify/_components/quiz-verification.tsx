@@ -7,7 +7,7 @@ import {
     submitVerificationQuiz, retryVerificationSection
 } from '@/actions/(main)/pathfinder'
 import toast from '@repo/ui/components/ui/sonner'
-import { VerificationSectionStatus } from '@repo/prisma/client'
+import { VerificationSectionStatus } from '@repo/db'
 import { Button } from '@repo/ui/components/ui/button'
 import { RotateCcw } from 'lucide-react'
 

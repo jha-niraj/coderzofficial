@@ -14,7 +14,7 @@ import {
 import Link from 'next/link'
 import {
     PathfinderStatus, PathfinderCategory
-} from '@repo/prisma/client'
+} from '@repo/db'
 import { CreateGoalSheet } from './create-goal-sheet'
 import { CreateGroupSheet } from './create-group-sheet'
 import { AssignGoalSheet } from './assign-goal-sheet'

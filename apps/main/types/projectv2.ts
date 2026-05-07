@@ -8,7 +8,7 @@ import {
     FeatureSuggestionType,
     FeatureSuggestionStatus,
     SuggestionSource
-} from '@repo/prisma/client';
+} from '@repo/db';
 
 // Database return types
 export interface UserFromDB {

@@ -11,7 +11,7 @@ import {
     NotebookPen, Mic
 } from 'lucide-react'
 import Link from 'next/link'
-import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
+import { PathfinderCategory, PathfinderLevel } from '@repo/db'
 import { cn } from '@repo/ui/lib/utils'
 import {
     Accordion, AccordionContent, AccordionItem, AccordionTrigger

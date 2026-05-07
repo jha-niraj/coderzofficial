@@ -13,7 +13,7 @@ import {
     getCreditStats
 } from "@/actions/main/credit.action"
 
-import type { CreditType, Currency } from "@repo/prisma/client"
+import type { CreditType, Currency } from "@repo/db"
 
 interface Transaction {
     id: string

@@ -1,4 +1,4 @@
-import { SkillCategory } from "@repo/prisma/client"
+import { SkillCategory } from "@repo/db"
 
 export type UserProfile = {
     id: string

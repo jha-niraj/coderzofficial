@@ -21,7 +21,7 @@ import {
 } from '@/actions/(main)/pathfinder'
 import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 import { useUserStore } from '@/app/store/useUserStore'
-import { PathfinderCategory, PathfinderLevel } from '@repo/prisma/client'
+import { PathfinderCategory, PathfinderLevel } from '@repo/db'
 import { cn } from '@repo/ui/lib/utils'
 import type { PathfinderGoal, PathfinderGroup } from '@/types/pathfinder'
 import { GOAL_DURATION_OPTIONS } from '@/types/pathfinder'

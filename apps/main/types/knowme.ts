@@ -12,7 +12,7 @@ import type {
 	KnowMeJobType,
 	KnowMeQuestionCategory,
 	KnowMeViewerType,
-} from "@repo/prisma/client";
+} from "@repo/db";
 
 // ============================================
 // PROFILE TYPES

@@ -9,7 +9,7 @@
  * 4. LLM generates informed response
  */
 
-import type { KnowMeViewerType } from "@repo/prisma/client";
+import type { KnowMeViewerType } from "@repo/db";
 import type {
 	VectorSearchResult, ChatMessageSource
 } from "@/types/knowme";

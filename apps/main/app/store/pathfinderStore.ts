@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { 
     PathfinderStatus, PathfinderCategory, PathfinderLevel 
-    } from '@repo/prisma/client';
+    } from '@repo/db';
 import type { VerificationAIPlan } from '@/types/pathfinder';
 
 // ==========================================

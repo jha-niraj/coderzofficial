@@ -13,7 +13,7 @@ import {
 import Link from "next/link"
 import toast from "@repo/ui/components/ui/sonner"
 import type { UserSkill } from "@/types/user"
-import { SkillCategory } from "@repo/prisma/client"
+import { SkillCategory } from "@repo/db"
 
 type Skill = { id: string; name: string; category?: string; order?: number }
 

@@ -8,7 +8,7 @@ import {
     OSContributionStatus,
     OSLearnModuleType,
     OSCertificationStatus
-} from '@repo/prisma/client'
+} from '@repo/db'
 
 // ============================================
 // PROJECT TYPES

@@ -17,7 +17,7 @@ import { useRouter } from "next/navigation"
 import toast from "@repo/ui/components/ui/sonner"
 import { saveFeatureNotifyInterest } from "@/actions/(main)/feature-notify.action"
 import { purchaseResumeTemplate } from "@/actions/(main)/ai/resume-template.action"
-import { FeatureNotifySection } from "@repo/prisma/client"
+import { FeatureNotifySection } from "@repo/db"
 
 // Icon map for serialized icon names from server
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -19,7 +19,7 @@ import {
     ChevronUp, Award, Gift, LightbulbIcon
 } from "lucide-react"
 import { useSession } from '@repo/auth/client';
-import { FeedbackStatus, FeedbackCategory, Role } from "@repo/prisma/client"
+import { FeedbackStatus, FeedbackCategory, Role } from "@repo/db"
 import Image from "next/image"
 import { useFeedbackStore } from "@/app/store/feedbackStore"
 

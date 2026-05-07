@@ -5,7 +5,7 @@
  */
 
 import { createHash, randomBytes } from "crypto";
-import type { KnowMeQuestionCategory } from "@repo/prisma/client";
+import type { KnowMeQuestionCategory } from "@repo/db";
 
 /**
  * Generate a unique API key for external integrations

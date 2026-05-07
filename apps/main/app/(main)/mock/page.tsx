@@ -20,7 +20,7 @@ import toast from '@repo/ui/components/ui/sonner'
 import { useUserStore } from '@/app/store/useUserStore'
 import { getMockInterviewStats } from '@/actions/(main)/mockvoice/stats.action'
 import { saveFeatureNotifyInterest } from '@/actions/(main)/feature-notify.action'
-import type { FeatureNotifySection } from '@repo/prisma/client'
+import type { FeatureNotifySection } from '@repo/db'
 
 const mockInterviewTypes = [
     {

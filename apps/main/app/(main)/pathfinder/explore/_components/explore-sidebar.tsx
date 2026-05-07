@@ -10,7 +10,7 @@ import {
 import {
     PATHFINDER_CATEGORIES, type CategoryConfig
 } from '@/types/pathfinder'
-import type { PathfinderCategory } from '@repo/prisma/client'
+import type { PathfinderCategory } from '@repo/db'
 import { cn } from '@repo/ui/lib/utils'
 import { EmptyState } from '../../_components/pathfinder-dashboard'
 import { usePathfinderStore, type PathfinderGoal, type PathfinderGroup } from '@/app/store/pathfinderStore'

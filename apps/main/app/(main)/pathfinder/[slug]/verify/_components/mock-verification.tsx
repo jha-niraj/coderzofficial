@@ -6,7 +6,7 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import {
     CheckCircle2, Lock, Mic, Play
 } from 'lucide-react'
-import { VerificationSectionStatus } from '@repo/prisma/client'
+import { VerificationSectionStatus } from '@repo/db'
 import Link from 'next/link'
 import { CreateMockSheet } from '@/app/(main)/mock/_components/create-mock-sheet'
 

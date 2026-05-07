@@ -7,7 +7,7 @@ import {
 import { getPayments } from "@/actions/main/credit.action"
 import { toast } from "@repo/ui/components/ui/sonner"
 import { format } from "date-fns"
-import { PaymentStatus } from "@repo/prisma/client"
+import { PaymentStatus } from "@repo/db"
 
 interface Payments {
     id: string,

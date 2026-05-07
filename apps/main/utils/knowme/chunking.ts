@@ -11,7 +11,7 @@
  * 3. Good chunking preserves semantic meaning
  */
 
-import type { KnowMeDataType } from "@repo/prisma/client";
+import type { KnowMeDataType } from "@repo/db";
 import type {
 	EmbeddingChunk, EmbeddingMetadata
 } from "@/types/knowme";

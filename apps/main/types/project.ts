@@ -6,7 +6,7 @@ import {
     ProjectV2Difficulty,
     UserProjectV2Status,
     QuizV2Difficulty,
-} from "@repo/prisma/client";
+} from "@repo/db";
 
 // ============================================================================
 // Core Project Types

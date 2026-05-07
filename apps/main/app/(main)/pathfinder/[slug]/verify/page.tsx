@@ -3,7 +3,7 @@ import {
 } from '@/actions/(main)/pathfinder'
 import { VerificationPageClient } from './_components/verification-page-client'
 import { notFound } from 'next/navigation'
-import type { PathfinderVerification } from '@repo/prisma/client'
+import type { PathfinderVerification } from '@repo/db'
 
 export const dynamic = 'force-dynamic'
 
