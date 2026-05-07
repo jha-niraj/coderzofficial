@@ -1,8 +1,13 @@
 "use client";
 
 import { useRef, useCallback } from "react";
-import { Excalidraw } from "@excalidraw/excalidraw";
+import dynamic from "next/dynamic";
 import "@excalidraw/excalidraw/index.css";
+
+const Excalidraw = dynamic(
+    () => import("@excalidraw/excalidraw").then(m => ({ default: m.Excalidraw })),
+    { ssr: false }
+);
 
 interface ExcalidrawCanvasProps {
     initialData?: unknown;

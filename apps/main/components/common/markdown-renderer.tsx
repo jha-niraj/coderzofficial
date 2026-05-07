@@ -4,31 +4,7 @@ import { useEffect, useRef, useId } from "react";
 import dynamic from "next/dynamic";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import mermaid from "mermaid";
-
 const CodeEditor = dynamic(() => import("@/components/main/code-editor"), { ssr: false });
-
-// Initialize mermaid once
-mermaid.initialize({
-    startOnLoad: false,
-    theme: "dark",
-    securityLevel: "loose",
-    fontFamily: "inherit",
-    themeVariables: {
-        primaryColor: "#3b82f6",
-        primaryTextColor: "#f5f5f5",
-        primaryBorderColor: "#525252",
-        lineColor: "#737373",
-        secondaryColor: "#1e3a5f",
-        tertiaryColor: "#171717",
-        background: "#0a0a0a",
-        mainBkg: "#171717",
-        nodeBorder: "#525252",
-        clusterBkg: "#171717",
-        titleColor: "#f5f5f5",
-        edgeLabelBackground: "#171717",
-    },
-});
 
 // ─── Mermaid diagram block ──────────────────
 function MermaidBlock({ code }: { code: string }) {
@@ -41,6 +17,27 @@ function MermaidBlock({ code }: { code: string }) {
         (async () => {
             if (!containerRef.current) return;
             try {
+                const mermaid = (await import("mermaid")).default;
+                mermaid.initialize({
+                    startOnLoad: false,
+                    theme: "dark",
+                    securityLevel: "loose",
+                    fontFamily: "inherit",
+                    themeVariables: {
+                        primaryColor: "#3b82f6",
+                        primaryTextColor: "#f5f5f5",
+                        primaryBorderColor: "#525252",
+                        lineColor: "#737373",
+                        secondaryColor: "#1e3a5f",
+                        tertiaryColor: "#171717",
+                        background: "#0a0a0a",
+                        mainBkg: "#171717",
+                        nodeBorder: "#525252",
+                        clusterBkg: "#171717",
+                        titleColor: "#f5f5f5",
+                        edgeLabelBackground: "#171717",
+                    },
+                });
                 const { svg } = await mermaid.render(mermaidId, code.trim());
                 if (!cancelled && containerRef.current) {
                     containerRef.current.innerHTML = svg;

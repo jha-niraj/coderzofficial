@@ -8,10 +8,11 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint --max-warnings 0",
-        "check-types": "next typegen && tsc --noEmit"
+        "check-types": "next typegen && tsc --noEmit",
+        "deploy:build": "opennextjs-cloudflare build",
+        "deploy": "opennextjs-cloudflare build && wrangler deploy"
     },
     "dependencies": {
-        "@prisma/client": "6.14.0",
         "@repo/auth": "workspace:*",
 		"better-auth": "^1.2.7",
 		"@repo/db": "workspace:*",
@@ -35,6 +36,7 @@
         "tailwindcss": "^4.1.18"
     },
     "devDependencies": {
+        "@opennextjs/cloudflare": "^1.19.8",
         "@repo/eslint-config": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/bcryptjs": "^2.4.6",
@@ -42,6 +44,7 @@
         "@types/react": "19.2.2",
         "@types/react-dom": "19.2.2",
         "eslint": "^9.39.1",
-        "typescript": "5.9.2"
+        "typescript": "5.9.2",
+        "wrangler": "^4.88.0"
     }
 }

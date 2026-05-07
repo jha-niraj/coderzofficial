@@ -1,5 +1,29 @@
-import { getSessionFromRequest } from "@repo/auth/middleware"
 import { NextRequest, NextResponse } from "next/server"
+
+type SessionUser = {
+    id: string
+    email: string
+    name: string
+    image?: string
+    onboardingCompleted?: boolean
+}
+
+type SessionData = {
+    user: SessionUser
+    session: { id: string; expiresAt: string }
+}
+
+async function getSessionFromRequest(request: NextRequest): Promise<SessionData | null> {
+    try {
+        const res = await fetch(new URL("/api/auth/get-session", request.nextUrl.origin), {
+            headers: { cookie: request.headers.get("cookie") ?? "" },
+        })
+        if (!res.ok) return null
+        return (await res.json()) as SessionData
+    } catch {
+        return null
+    }
+}
 
 // Protected routes that require authentication
 const protectedRoutes = [
@@ -47,7 +71,7 @@ export default async function middleware(req: NextRequest) {
 
     const session = await getSessionFromRequest(req)
     const isLoggedIn = !!session?.user
-    const onboardingCompleted = (session?.user as { onboardingCompleted?: boolean } | undefined)?.onboardingCompleted || false
+    const onboardingCompleted = session?.user?.onboardingCompleted ?? false
 
     console.log(`[Hiring] Middleware: ${nextUrl.pathname}, isLoggedIn: ${isLoggedIn}, onboarding: ${onboardingCompleted}`)
 

@@ -5,6 +5,11 @@ node_modules
 .pnp
 .pnp.js
 
+# Cloudflare / OpenNext
+.open-next/
+.dev.vars
+secrets.json
+
 # Local env files
 .env
 .env.local

@@ -4,7 +4,10 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useConversation } from '@/lib/elevenlabs/use-conversation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@repo/ui/components/ui/button'
-import { Orb, AgentState } from '@/components/main/orb'
+import dynamic from 'next/dynamic'
+import type { AgentState } from '@/components/main/orb'
+
+const Orb = dynamic(() => import('@/components/main/orb').then(m => ({ default: m.Orb })), { ssr: false })
 import {
     Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff,
     Loader2, CheckCircle2, AlertCircle

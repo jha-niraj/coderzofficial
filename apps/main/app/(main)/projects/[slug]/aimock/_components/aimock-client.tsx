@@ -19,7 +19,10 @@ import { Separator } from '@repo/ui/components/ui/separator'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
 } from '@repo/ui/components/ui/dialog'
-import { Orb, AgentState } from '@/components/main/orb'
+import dynamic from 'next/dynamic'
+import type { AgentState } from '@/components/main/orb'
+
+const Orb = dynamic(() => import('@/components/main/orb').then(m => ({ default: m.Orb })), { ssr: false })
 import toast from '@repo/ui/components/ui/sonner'
 import {
     generateProjectMockKnowledgeBase, createProjectMockSession,

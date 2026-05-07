@@ -1,3 +1,5 @@
+'use client';
+
 import 'pdfjs-dist/build/pdf';
 import * as pdfjsLib from 'pdfjs-dist';
 

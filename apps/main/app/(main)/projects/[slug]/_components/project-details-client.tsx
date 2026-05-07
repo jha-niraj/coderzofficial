@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import dynamic from 'next/dynamic'
 import { Button } from '@repo/ui/components/ui/button'
 import { Badge } from '@repo/ui/components/ui/badge'
 import {
@@ -41,7 +42,7 @@ import {
 import { EnrollmentDialog } from './enrollment-dialog'
 import DailyStandupSheet from './daily-standup-sheet'
 import { cn } from '@repo/ui/lib/utils'
-import BlueprintFlowchart from '@/components/projects/blueprintflowchart'
+const BlueprintFlowchart = dynamic(() => import('@/components/projects/blueprintflowchart'), { ssr: false })
 
 // New extracted components
 import { ProjectAssistantButtons } from './project-assistant-buttons'

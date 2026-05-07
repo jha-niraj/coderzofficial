@@ -9,7 +9,10 @@ import { Badge } from '@repo/ui/components/ui/badge'
 import {
     Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle
 } from '@repo/ui/components/ui/dialog'
-import { Orb, AgentState } from '@/components/main/orb'
+import dynamic from 'next/dynamic'
+import type { AgentState } from '@/components/main/orb'
+
+const Orb = dynamic(() => import('@/components/main/orb').then(m => ({ default: m.Orb })), { ssr: false })
 import {
     Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff,
     Loader2, CheckCircle2, AlertCircle

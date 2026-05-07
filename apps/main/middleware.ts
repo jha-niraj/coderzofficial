@@ -1,5 +1,35 @@
-import { getSessionFromRequest, redirectToSignIn } from "@repo/auth/middleware"
 import { NextRequest, NextResponse } from "next/server"
+
+type SessionUser = {
+	id: string
+	email: string
+	name: string
+	image?: string
+	onboardingDone?: boolean
+}
+
+type SessionData = {
+	user: SessionUser
+	session: { id: string; expiresAt: string }
+}
+
+async function getSessionFromRequest(request: NextRequest): Promise<SessionData | null> {
+	try {
+		const res = await fetch(new URL("/api/auth/get-session", request.nextUrl.origin), {
+			headers: { cookie: request.headers.get("cookie") ?? "" },
+		})
+		if (!res.ok) return null
+		return (await res.json()) as SessionData
+	} catch {
+		return null
+	}
+}
+
+function redirectToSignIn(req: NextRequest): NextResponse {
+	const url = new URL("/signin", req.nextUrl.origin)
+	url.searchParams.set("callbackUrl", req.nextUrl.pathname)
+	return NextResponse.redirect(url)
+}
 
 // Protected routes that require authentication (only core user-specific functionality)
 const protectedRoutes = [
@@ -73,7 +103,7 @@ export default async function middleware(req: NextRequest) {
 
 	const session = await getSessionFromRequest(req)
 	const isLoggedIn = !!session?.user
-	const onboardingCompleted = (session?.user as { onboardingDone?: boolean })?.onboardingDone ?? false
+	const onboardingCompleted = session?.user?.onboardingDone ?? false
 
 	const isProtected = protectedRoutes.some(r => pathname.startsWith(r))
 

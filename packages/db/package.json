@@ -22,9 +22,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@paralleldrive/cuid2": "^2.2.2",
-    "drizzle-orm": "^0.45.2",
-    "postgres": "^3.4.7"
+    "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
     "@types/node": "^22.15.3",

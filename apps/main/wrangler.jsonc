@@ -1,0 +1,47 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+
+  // Worker name — shows in the Cloudflare dashboard
+  "name": "buildrhq-main",
+
+  // Entry point produced by OpenNext
+  "main": ".open-next/worker.js",
+
+  "compatibility_date": "2025-05-07",
+
+  // nodejs_compat: enables Node.js built-in polyfills (crypto, buffer, stream, etc.)
+  // global_fetch_strictly_public: makes fetch() behave like the browser
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  // Static assets (CSS, JS chunks, images) served from Cloudflare CDN
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  }
+
+  // ── Enable R2 + Durable Objects when you activate R2 on Cloudflare dashboard ──
+  // Run first: wrangler r2 bucket create buildrhq-main-cache
+  //
+  // "r2_buckets": [
+  //   {
+  //     "binding": "NEXT_INC_CACHE_R2_BUCKET",
+  //     "bucket_name": "buildrhq-main-cache"
+  //   }
+  // ],
+  //
+  // "durable_objects": {
+  //   "bindings": [
+  //     {
+  //       "name": "NEXT_TAG_CACHE_DO_SHARDED",
+  //       "class_name": "DOShardedTagCache"
+  //     }
+  //   ]
+  // },
+  //
+  // "migrations": [
+  //   {
+  //     "tag": "v1",
+  //     "new_sqlite_classes": ["DOShardedTagCache"]
+  //   }
+  // ]
+}
