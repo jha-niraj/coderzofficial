@@ -11,9 +11,6 @@ importers:
       prettier:
         specifier: ^3.7.4
         version: 3.7.4
-      prisma:
-        specifier: 6.14.0
-        version: 6.14.0(typescript@5.9.2)
       turbo:
         specifier: ^2.6.3
         version: 2.7.2
@@ -29,9 +26,6 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@repo/prisma':
-        specifier: workspace:*
-        version: link:../../packages/prisma
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -41,9 +35,6 @@ importers:
       better-auth:
         specifier: ^1.2.7
         version: 1.6.9(@prisma/client@6.14.0(prisma@6.14.0(typescript@5.9.2))(typescript@5.9.2))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@neondatabase/serverless@1.1.0)(@prisma/client@6.14.0(prisma@6.14.0(typescript@5.9.2))(typescript@5.9.2))(kysely@0.28.17)(postgres@3.4.9)(prisma@6.14.0(typescript@5.9.2)))(next@15.4.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(sass@1.51.0))(prisma@6.14.0(typescript@5.9.2))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      cloudinary:
-        specifier: ^2.8.0
-        version: 2.8.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -169,9 +160,6 @@ importers:
 
   apps/hiring:
     dependencies:
-      '@elevenlabs/elevenlabs-js':
-        specifier: ^2.28.0
-        version: 2.28.0
       '@hookform/resolvers':
         specifier: ^3.10.0
         version: 3.10.0(react-hook-form@7.69.0(react@19.2.3))
@@ -181,9 +169,6 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@repo/prisma':
-        specifier: workspace:*
-        version: link:../../packages/prisma
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -202,9 +187,6 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
-      dodopayments:
-        specifier: ^2.19.0
-        version: 2.19.0
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@neondatabase/serverless@1.1.0)(@prisma/client@6.14.0(prisma@6.14.0(typescript@5.9.2))(typescript@5.9.2))(kysely@0.28.17)(postgres@3.4.9)(prisma@6.14.0(typescript@5.9.2))
@@ -220,9 +202,6 @@ importers:
       next:
         specifier: 15.4.10
         version: 15.4.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(sass@1.51.0)
-      openai:
-        specifier: ^6.18.0
-        version: 6.18.0(ws@8.18.3)(zod@3.25.76)
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
@@ -290,9 +269,6 @@ importers:
       '@elevenlabs/client':
         specifier: ^0.12.2
         version: 0.12.2(@types/dom-mediacapture-record@1.0.22)
-      '@elevenlabs/elevenlabs-js':
-        specifier: ^2.28.0
-        version: 2.28.0
       '@elevenlabs/react':
         specifier: ^0.12.3
         version: 0.12.3(@types/dom-mediacapture-record@1.0.22)(react@19.2.3)
@@ -326,9 +302,6 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@repo/prisma':
-        specifier: workspace:*
-        version: link:../../packages/prisma
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -383,9 +356,6 @@ importers:
       canvas-confetti:
         specifier: ^1.9.4
         version: 1.9.4
-      cloudinary:
-        specifier: ^2.8.0
-        version: 2.8.0
       cuid:
         specifier: ^3.0.0
         version: 3.0.0
@@ -431,18 +401,12 @@ importers:
       next:
         specifier: 15.4.10
         version: 15.4.10(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(sass@1.51.0)
-      openai:
-        specifier: ^6.15.0
-        version: 6.15.0(ws@8.18.3)(zod@4.2.1)
       pdfjs-dist:
         specifier: ^5.4.449
         version: 5.4.449
       postcss:
         specifier: ^8.5.6
         version: 8.5.6
-      razorpay:
-        specifier: ^2.9.6
-        version: 2.9.6
       react:
         specifier: ^19.2.0
         version: 19.2.3
@@ -546,9 +510,6 @@ importers:
       '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@repo/prisma':
-        specifier: workspace:*
-        version: link:../../packages/prisma
       '@repo/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -567,9 +528,6 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
-      dodopayments:
-        specifier: ^2.19.0
-        version: 2.19.0
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@neondatabase/serverless@1.1.0)(@prisma/client@6.14.0(prisma@6.14.0(typescript@5.9.2))(typescript@5.9.2))(kysely@0.28.17)(postgres@3.4.9)(prisma@6.14.0(typescript@5.9.2))
@@ -732,34 +690,6 @@ importers:
       typescript-eslint:
         specifier: ^8.49.0
         version: 8.50.1(eslint@9.39.2(jiti@2.6.1))(typescript@5.9.2)
-
-  packages/prisma:
-    dependencies:
-      '@prisma/client':
-        specifier: 6.14.0
-        version: 6.14.0(prisma@6.14.0(typescript@5.9.2))(typescript@5.9.2)
-      bcryptjs:
-        specifier: ^2.4.3
-        version: 2.4.3
-    devDependencies:
-      '@types/bcryptjs':
-        specifier: ^2.4.6
-        version: 2.4.6
-      '@types/node':
-        specifier: ^22.15.3
-        version: 22.19.3
-      dotenv-cli:
-        specifier: ^11.0.0
-        version: 11.0.0
-      prisma:
-        specifier: 6.14.0
-        version: 6.14.0(typescript@5.9.2)
-      tsx:
-        specifier: ^4.19.2
-        version: 4.21.0
-      typescript:
-        specifier: 5.9.2
-        version: 5.9.2
 
   packages/typescript-config: {}
 
@@ -1516,10 +1446,6 @@ packages:
 
   '@elevenlabs/client@0.12.2':
     resolution: {integrity: sha512-QWllhDndFfKmftlktNoa35+AF3gOCbSHowYhR42ZHb5u32lFbMPbh2BALCrpFa3edqCHSXtzG6zzLSAGjkhvHQ==}
-
-  '@elevenlabs/elevenlabs-js@2.28.0':
-    resolution: {integrity: sha512-58Qt61zZYa1jBDdkAFqEYBAIDQUVlj1OLkha27yr7RIxg+cwS6+gOsKNhBMy7U5nQ4Ue9H4Kpgz6trdg94xumw==}
-    engines: {node: '>=18.0.0'}
 
   '@elevenlabs/react@0.12.3':
     resolution: {integrity: sha512-fQJlabwuvQziBCCNcxlXZt5GVxcPHjwb46NtSEbLJY0zaOUtWJynRX4kPfbz7ChqnMe7FAHYnrq2XsaSzpQXLQ==}
@@ -5291,9 +5217,6 @@ packages:
   bcrypt-pbkdf@1.0.2:
     resolution: {integrity: sha512-qeFIXtP4MSoi6NLqO12WfqARWWuCKi2Rn/9hJLEmtB5yTNr9DqFWkJRCf2qShWzPeAMRnOgCrq0sg/KLv5ES9w==}
 
-  bcryptjs@2.4.3:
-    resolution: {integrity: sha512-V/Hy/X9Vt7f3BbPJEi8BdVFMByHi+jNXrYkW3huaybV/kQ0KJg0Y6PkEMbn+zeT+i+SiKZ/HMqJGIIt4LZDqNQ==}
-
   bcryptjs@3.0.3:
     resolution: {integrity: sha512-GlF5wPWnSa/X5LKM1o0wz0suXIINz1iHRLvTS+sLyi7XPbe5ycmYI3DlZqVGZZtDgl4DmasFg7gOB3JYbphV5g==}
     hasBin: true
@@ -5557,10 +5480,6 @@ packages:
   cloudflare@4.5.0:
     resolution: {integrity: sha512-fPcbPKx4zF45jBvQ0z7PCdgejVAPBBCZxwqk1k7krQNfpM07Cfj97/Q6wBzvYqlWXx/zt1S9+m8vnfCe06umbQ==}
 
-  cloudinary@2.8.0:
-    resolution: {integrity: sha512-s7frvR0HnQXeJsQSIsbLa/I09IMb1lOnVLEDH5b5E53WTiCYgrNNOBGV/i/nLHwrcEOUkqjfSwP1+enXWNYmdw==}
-    engines: {node: '>=9'}
-
   clsx@1.1.1:
     resolution: {integrity: sha512-6/bPho624p3S2pMyvP5kKBPXnI3ufHLObBFCfgx+LkeR5lg2XYy2hqZqUf45ypD8COn2bhgGJSUE+l5dhNBieA==}
     engines: {node: '>=6'}
@@ -5608,9 +5527,6 @@ packages:
 
   comma-separated-tokens@2.0.3:
     resolution: {integrity: sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==}
-
-  command-exists@1.2.9:
-    resolution: {integrity: sha512-LTQ/SGc+s0Xc0Fu5WaKnR0YiygZkm9eKFvyS+fRsU7/ZWFF8ykFM6Pc9aCVf1+xasOOZpO3BAVgVrKvsqKHV7w==}
 
   commander@11.1.0:
     resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
@@ -5990,10 +5906,6 @@ packages:
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
     engines: {node: '>=0.10.0'}
-
-  dodopayments@2.19.0:
-    resolution: {integrity: sha512-qEc7aFmRbneQZF8+084eHqc0qpd577kUtMdaJLb/fsTmhfqdJeHBQ/1hVYS/fYeP9hJQ/MkuDnXSyO+JEEF4dA==}
-    hasBin: true
 
   dom-serializer@2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
@@ -7299,9 +7211,6 @@ packages:
   lodash.throttle@4.1.1:
     resolution: {integrity: sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==}
 
-  lodash@4.17.21:
-    resolution: {integrity: sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==}
-
   logform@2.7.0:
     resolution: {integrity: sha512-TFYA4jnP7PVbmlBIfhlSe+WKxs9dklXMTEGcBCIvLhE/Tn3H6Gk1norupVW7m5Cnd4bLcr08AytbyV/xj7f/kQ==}
     engines: {node: '>= 12.0.0'}
@@ -7884,30 +7793,6 @@ packages:
       zod:
         optional: true
 
-  openai@6.15.0:
-    resolution: {integrity: sha512-F1Lvs5BoVvmZtzkUEVyh8mDQPPFolq4F+xdsx/DO8Hee8YF3IGAlZqUIsF+DVGhqf4aU0a3bTghsxB6OIsRy1g==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.25 || ^4.0
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-
-  openai@6.18.0:
-    resolution: {integrity: sha512-odLRYyz9rlzz6g8gKn61RM2oP5UUm428sE2zOxZqS9MzVfD5/XW8UoEjpnRkzTuScXP7ZbP/m7fC+bl8jCOZZw==}
-    hasBin: true
-    peerDependencies:
-      ws: ^8.18.0
-      zod: ^3.25 || ^4.0
-    peerDependenciesMeta:
-      ws:
-        optional: true
-      zod:
-        optional: true
-
   option@0.2.4:
     resolution: {integrity: sha512-pkEqbDyl8ou5cpq+VsnQbe/WlEy5qS7xPzMS1U55OCG9KPvwFD46zDbxQIj3egJSFc3D+XhYOPUzz49zQAVy7A==}
 
@@ -8204,14 +8089,6 @@ packages:
   pwacompat@2.0.17:
     resolution: {integrity: sha512-6Du7IZdIy7cHiv7AhtDy4X2QRM8IAD5DII69mt5qWibC2d15ZU8DmBG1WdZKekG11cChSu4zkSUGPF9sweOl6w==}
 
-  q@1.5.1:
-    resolution: {integrity: sha512-kV/CThkXo6xyFEZUugw/+pIOywXcDbFYgSct5cT3gqlbkBE1SJdwy6UQoZvodiWF/ckQLZyDE/Bu1M6gVu5lVw==}
-    engines: {node: '>=0.6.0', teleport: '>=0.2.0'}
-    deprecated: |-
-      You or someone you depend on is using Q, the JavaScript Promise library that gave JavaScript developers strong feelings about promises. They can almost certainly migrate to the native JavaScript promise now. Thank you literally everyone for joining me in this bet against the odds. Be excellent to each other.
-
-      (For a CapTP with native promises, see @endo/eventual-send and @endo/captp)
-
   qs@6.15.1:
     resolution: {integrity: sha512-6YHEFRL9mfgcAvql/XhwTvf5jKcOiiupt2FiJxHkiX1z4j7WL8J/jRHYLluORvc1XxB5rV20KoeK00gVJamspg==}
     engines: {node: '>=0.6'}
@@ -8235,9 +8112,6 @@ packages:
   raw-body@3.0.2:
     resolution: {integrity: sha512-K5zQjDllxWkf7Z5xJdV0/B0WTNqx6vxG70zJE4N0kBs4LovmEYWJzQGxC9bS9RAKu3bgM40lrd5zoLJ12MQ5BA==}
     engines: {node: '>= 0.10'}
-
-  razorpay@2.9.6:
-    resolution: {integrity: sha512-zsHAQzd6e1Cc6BNoCNZQaf65ElL6O6yw0wulxmoG5VQDr363fZC90Mp1V5EktVzG45yPyNomNXWlf4cQ3622gQ==}
 
   rc9@2.1.2:
     resolution: {integrity: sha512-btXCnMmRIBINM2LDZoEmOogIZU7Qe7zn4BpomSKZ/ykbLObuBdvG+mFq11DL6fjH1DRwHhrlgtYWG96bJiC7Cg==}
@@ -8702,9 +8576,6 @@ packages:
 
   standard-as-callback@2.1.0:
     resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
-
-  standardwebhooks@1.0.0:
-    resolution: {integrity: sha512-BbHGOQK9olHPMvQNHWul6MYlrRTAOKn03rOe4A8O3CLWhNf4YHBqq2HJKKC+sfqpxiBY52pNeesD6jIiLDz8jg==}
 
   state-local@1.0.7:
     resolution: {integrity: sha512-HTEHMNieakEnoe33shBYcZ7NX83ACUjCu8c40iOGEZsngj9zRnkqS9j1pqQPXwobB0ZcVTk27REb7COQ0UR59w==}
@@ -10749,16 +10620,6 @@ snapshots:
     transitivePeerDependencies:
       - '@types/dom-mediacapture-record'
 
-  '@elevenlabs/elevenlabs-js@2.28.0':
-    dependencies:
-      command-exists: 1.2.9
-      node-fetch: 2.7.0
-      ws: 8.18.3
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - utf-8-validate
-
   '@elevenlabs/react@0.12.3(@types/dom-mediacapture-record@1.0.22)(react@19.2.3)':
     dependencies:
       '@elevenlabs/client': 0.12.2(@types/dom-mediacapture-record@1.0.22)
@@ -11756,6 +11617,7 @@ snapshots:
     optionalDependencies:
       prisma: 6.14.0(typescript@5.9.2)
       typescript: 5.9.2
+    optional: true
 
   '@prisma/config@6.14.0':
     dependencies:
@@ -11765,10 +11627,13 @@ snapshots:
       empathic: 2.0.0
     transitivePeerDependencies:
       - magicast
+    optional: true
 
-  '@prisma/debug@6.14.0': {}
+  '@prisma/debug@6.14.0':
+    optional: true
 
-  '@prisma/engines-version@6.14.0-25.717184b7b35ea05dfa71a3236b7af656013e1e49': {}
+  '@prisma/engines-version@6.14.0-25.717184b7b35ea05dfa71a3236b7af656013e1e49':
+    optional: true
 
   '@prisma/engines@6.14.0':
     dependencies:
@@ -11776,16 +11641,19 @@ snapshots:
       '@prisma/engines-version': 6.14.0-25.717184b7b35ea05dfa71a3236b7af656013e1e49
       '@prisma/fetch-engine': 6.14.0
       '@prisma/get-platform': 6.14.0
+    optional: true
 
   '@prisma/fetch-engine@6.14.0':
     dependencies:
       '@prisma/debug': 6.14.0
       '@prisma/engines-version': 6.14.0-25.717184b7b35ea05dfa71a3236b7af656013e1e49
       '@prisma/get-platform': 6.14.0
+    optional: true
 
   '@prisma/get-platform@6.14.0':
     dependencies:
       '@prisma/debug': 6.14.0
+    optional: true
 
   '@protobufjs/aspromise@1.1.2': {}
 
@@ -14526,8 +14394,6 @@ snapshots:
     dependencies:
       tweetnacl: 0.14.5
 
-  bcryptjs@2.4.3: {}
-
   bcryptjs@3.0.3: {}
 
   before-after-hook@4.0.0: {}
@@ -14675,6 +14541,7 @@ snapshots:
       perfect-debounce: 1.0.0
       pkg-types: 2.3.0
       rc9: 2.1.2
+    optional: true
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
@@ -14763,6 +14630,7 @@ snapshots:
   chokidar@4.0.3:
     dependencies:
       readdirp: 4.1.2
+    optional: true
 
   chownr@1.1.4: {}
 
@@ -14771,6 +14639,7 @@ snapshots:
   citty@0.1.6:
     dependencies:
       consola: 3.4.2
+    optional: true
 
   class-variance-authority@0.7.1:
     dependencies:
@@ -14805,11 +14674,6 @@ snapshots:
       node-fetch: 2.7.0
     transitivePeerDependencies:
       - encoding
-
-  cloudinary@2.8.0:
-    dependencies:
-      lodash: 4.17.21
-      q: 1.5.1
 
   clsx@1.1.1: {}
 
@@ -14856,8 +14720,6 @@ snapshots:
 
   comma-separated-tokens@2.0.3: {}
 
-  command-exists@1.2.9: {}
-
   commander@11.1.0: {}
 
   commander@2.20.3: {}
@@ -14875,9 +14737,11 @@ snapshots:
 
   confbox@0.1.8: {}
 
-  confbox@0.2.2: {}
+  confbox@0.2.2:
+    optional: true
 
-  consola@3.4.2: {}
+  consola@3.4.2:
+    optional: true
 
   content-disposition@1.1.0: {}
 
@@ -15170,7 +15034,8 @@ snapshots:
 
   deep-is@0.1.4: {}
 
-  deepmerge-ts@7.1.5: {}
+  deepmerge-ts@7.1.5:
+    optional: true
 
   deepmerge@4.3.1: {}
 
@@ -15200,7 +15065,8 @@ snapshots:
 
   dequal@2.0.3: {}
 
-  destr@2.0.5: {}
+  destr@2.0.5:
+    optional: true
 
   detect-gpu@5.0.70:
     dependencies:
@@ -15244,10 +15110,6 @@ snapshots:
   doctrine@2.1.0:
     dependencies:
       esutils: 2.0.3
-
-  dodopayments@2.19.0:
-    dependencies:
-      standardwebhooks: 1.0.0
 
   dom-serializer@2.0.0:
     dependencies:
@@ -15342,6 +15204,7 @@ snapshots:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
+    optional: true
 
   elkjs@0.9.3: {}
 
@@ -15363,7 +15226,8 @@ snapshots:
 
   emoji-regex@8.0.0: {}
 
-  empathic@2.0.0: {}
+  empathic@2.0.0:
+    optional: true
 
   enabled@2.0.0: {}
 
@@ -15832,7 +15696,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  exsolve@1.0.8: {}
+  exsolve@1.0.8:
+    optional: true
 
   extend-shallow@2.0.1:
     dependencies:
@@ -15843,6 +15708,7 @@ snapshots:
   fast-check@3.23.2:
     dependencies:
       pure-rand: 6.1.0
+    optional: true
 
   fast-content-type-parse@3.0.0: {}
 
@@ -16061,6 +15927,7 @@ snapshots:
       node-fetch-native: 1.6.7
       nypm: 0.6.2
       pathe: 2.0.3
+    optional: true
 
   glob-parent@5.1.2:
     dependencies:
@@ -16727,8 +16594,6 @@ snapshots:
   lodash.once@4.1.1: {}
 
   lodash.throttle@4.1.1: {}
-
-  lodash@4.17.21: {}
 
   logform@2.7.0:
     dependencies:
@@ -17535,7 +17400,8 @@ snapshots:
 
   node-domexception@1.0.0: {}
 
-  node-fetch-native@1.6.7: {}
+  node-fetch-native@1.6.7:
+    optional: true
 
   node-fetch@2.7.0:
     dependencies:
@@ -17565,6 +17431,7 @@ snapshots:
       pathe: 2.0.3
       pkg-types: 2.3.0
       tinyexec: 1.0.2
+    optional: true
 
   object-assign@4.1.1: {}
 
@@ -17606,7 +17473,8 @@ snapshots:
 
   obliterator@1.6.1: {}
 
-  ohash@2.0.11: {}
+  ohash@2.0.11:
+    optional: true
 
   on-finished@2.4.1:
     dependencies:
@@ -17627,16 +17495,6 @@ snapshots:
   open-color@1.9.1: {}
 
   openai@5.23.2(ws@8.18.3)(zod@3.25.76):
-    optionalDependencies:
-      ws: 8.18.3
-      zod: 3.25.76
-
-  openai@6.15.0(ws@8.18.3)(zod@4.2.1):
-    optionalDependencies:
-      ws: 8.18.3
-      zod: 4.2.1
-
-  openai@6.18.0(ws@8.18.3)(zod@3.25.76):
     optionalDependencies:
       ws: 8.18.3
       zod: 3.25.76
@@ -17737,7 +17595,8 @@ snapshots:
 
   peberminta@0.9.0: {}
 
-  perfect-debounce@1.0.0: {}
+  perfect-debounce@1.0.0:
+    optional: true
 
   perfect-freehand@1.2.0: {}
 
@@ -17769,6 +17628,7 @@ snapshots:
       confbox: 0.2.2
       exsolve: 1.0.8
       pathe: 2.0.3
+    optional: true
 
   png-chunk-text@1.0.0: {}
 
@@ -17827,6 +17687,7 @@ snapshots:
       typescript: 5.9.2
     transitivePeerDependencies:
       - magicast
+    optional: true
 
   prismjs@1.30.0: {}
 
@@ -17979,11 +17840,10 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  pure-rand@6.1.0: {}
+  pure-rand@6.1.0:
+    optional: true
 
   pwacompat@2.0.17: {}
-
-  q@1.5.1: {}
 
   qs@6.15.1:
     dependencies:
@@ -18011,16 +17871,11 @@ snapshots:
       iconv-lite: 0.7.2
       unpipe: 1.0.0
 
-  razorpay@2.9.6:
-    dependencies:
-      axios: 1.13.2
-    transitivePeerDependencies:
-      - debug
-
   rc9@2.1.2:
     dependencies:
       defu: 6.1.4
       destr: 2.0.5
+    optional: true
 
   react-day-picker@9.13.0(react@19.2.3):
     dependencies:
@@ -18168,7 +18023,8 @@ snapshots:
     dependencies:
       picomatch: 2.3.1
 
-  readdirp@4.1.2: {}
+  readdirp@4.1.2:
+    optional: true
 
   recharts@3.6.0(@types/react@19.2.2)(react-dom@19.2.3(react@19.2.3))(react-is@16.13.1)(react@19.2.3)(redux@5.0.1):
     dependencies:
@@ -18600,11 +18456,6 @@ snapshots:
     optional: true
 
   standard-as-callback@2.1.0: {}
-
-  standardwebhooks@1.0.0:
-    dependencies:
-      '@stablelib/base64': 1.0.1
-      fast-sha256: 1.3.0
 
   state-local@1.0.7: {}
 

@@ -2,8 +2,8 @@ import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer'
 import { ResumeDraftContent } from '@/types/resume-draft'
 
 const DARK = '#0f172a'
-const ACCENT = '#6366f1'
-const SIDEBAR_BG = '#1e293b'
+const ACCENT = '#111827'
+const SIDEBAR_BG = '#111827'
 
 const styles = StyleSheet.create({
     page: { fontFamily: 'Helvetica', fontSize: 8.5, color: '#1a1a1a', flexDirection: 'row' },

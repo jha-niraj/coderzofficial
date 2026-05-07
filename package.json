@@ -13,6 +13,11 @@
 		"turbo": "^2.6.3",
 		"typescript": "5.9.2"
 	},
+	"pnpm": {
+		"peerDependencyRules": {
+			"ignoreMissing": ["sass"]
+		}
+	},
 	"packageManager": "pnpm@9.0.0",
 	"engines": {
 		"node": ">=18"

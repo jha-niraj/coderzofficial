@@ -3,7 +3,7 @@ import {
 } from '@react-pdf/renderer'
 import { ResumeDraftContent } from '@/types/resume-draft'
 
-const ACCENT = '#6366f1'
+const ACCENT = '#111827'
 
 const styles = StyleSheet.create({
     page: { fontFamily: 'Helvetica', fontSize: 9, color: '#1a1a1a', paddingHorizontal: 40, paddingVertical: 36 },

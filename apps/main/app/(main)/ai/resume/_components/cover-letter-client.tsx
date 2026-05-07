@@ -21,7 +21,8 @@ import {
     FileText, Wand2, CheckCircle2, ChevronRight, Clock, PenLine
 } from "lucide-react"
 import toast from "@repo/ui/components/ui/sonner"
-import { transcribeAndPolishWorkExperience } from "@/actions/(main)/ai/resume-ai.action"
+import { whisperTranscribe } from "@/actions/(main)/ai/whisper.action"
+import { useCoverLetterStore } from "@/app/store/coverLetterStore"
 import { usePDF } from "react-to-pdf"
 import { MarkdownRenderer } from "@/components/common/markdown-renderer"
 import { Card, CardContent } from "@repo/ui/components/ui/card"
@@ -490,6 +491,107 @@ export function CoverLetterClient({
     )
 }
 
+// ── Voice button (shared) ────────────────────────────────────────────────────
+function VoiceButton({
+    onTranscribed,
+    compact = false,
+}: {
+    onTranscribed: (text: string) => void
+    compact?: boolean
+}) {
+    const [recording, setRecording] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [liveText, setLiveText] = useState("")
+    const mediaRef = useRef<MediaRecorder | null>(null)
+    const recognitionRef = useRef<unknown>(null)
+
+    const start = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+            const recorder = new MediaRecorder(stream)
+            const chunks: Blob[] = []
+            recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data)
+            recorder.onstop = async () => {
+                stream.getTracks().forEach((t) => t.stop())
+                setLiveText("")
+                if (!chunks.length) { setLoading(false); return toast.error("No audio recorded") }
+                const blob = new Blob(chunks, { type: "audio/webm" })
+                const reader = new FileReader()
+                reader.onloadend = async () => {
+                    const base64 = (reader.result as string).split(",")[1]
+                    if (!base64) { setLoading(false); return }
+                    const res = await whisperTranscribe(base64, "audio/webm")
+                    setLoading(false)
+                    if (res.success && res.text) {
+                        onTranscribed(res.text)
+                        toast.success("Voice captured")
+                    } else {
+                        toast.error(res.error ?? "Transcription failed")
+                    }
+                }
+                reader.readAsDataURL(blob)
+            }
+            // Live preview using WebSpeech API
+            if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const SR = (window as any).webkitSpeechRecognition
+                const sr = new SR() as {
+                    continuous: boolean; interimResults: boolean; start(): void; stop(): void
+                    onresult: ((e: { resultIndex: number; results: { [k: number]: { [k: number]: { transcript: string } }; length: number } }) => void) | null
+                }
+                sr.continuous = true
+                sr.interimResults = true
+                sr.onresult = (e) => {
+                    let interim = ""
+                    for (let i = e.resultIndex; i < e.results.length; i++) {
+                        interim += e.results[i][0].transcript
+                    }
+                    setLiveText(interim)
+                }
+                sr.start()
+                recognitionRef.current = sr
+            }
+            recorder.start()
+            mediaRef.current = recorder
+            setRecording(true)
+            setLoading(true)
+        } catch {
+            toast.error("Microphone access denied")
+        }
+    }
+
+    const stop = () => {
+        mediaRef.current?.stop()
+        const r = recognitionRef.current as { stop?: () => void } | null
+        r?.stop?.()
+        setRecording(false)
+    }
+
+    return (
+        <div className="flex flex-col gap-1">
+            <Button
+                type="button"
+                variant={recording ? "destructive" : "outline"}
+                size="sm"
+                className={compact ? "h-7 gap-1.5 text-xs" : "h-8 gap-2 text-xs"}
+                disabled={loading && !recording}
+                onClick={recording ? stop : start}
+            >
+                {recording ? (
+                    <><Square className="w-3 h-3" /> Stop</>
+                ) : loading ? (
+                    <><DotmSquare11 size={14} dotSize={2} speed={1.4} /> Processing…</>
+                ) : (
+                    <><Mic className="w-3 h-3" /> Voice</>
+                )}
+            </Button>
+            {liveText && (
+                <p className="text-[10px] text-neutral-400 italic truncate max-w-xs">{liveText}</p>
+            )}
+        </div>
+    )
+}
+
 // ── Question renderer ────────────────────────────────────────────────────────
 function QuestionRenderer({
     question, index, value, onChange
@@ -499,56 +601,24 @@ function QuestionRenderer({
     value: string | string[] | undefined
     onChange: (val: string | string[]) => void
 }) {
-    const [voiceRecording, setVoiceRecording] = useState(false)
-    const [voiceLoading, setVoiceLoading] = useState(false)
-    const mediaRecorderRef = useRef<MediaRecorder | null>(null)
-
-    const handleVoiceToggle = async () => {
-        if (voiceRecording) {
-            mediaRecorderRef.current?.stop()
-            setVoiceRecording(false)
-            return
-        }
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            const recorder = new MediaRecorder(stream)
-            const chunks: Blob[] = []
-            recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data)
-            recorder.onstop = async () => {
-                stream.getTracks().forEach(t => t.stop())
-                if (!chunks.length) { setVoiceLoading(false); return toast.error("No audio recorded") }
-                const blob = new Blob(chunks, { type: "audio/webm" })
-                const reader = new FileReader()
-                reader.onloadend = async () => {
-                    const base64 = (reader.result as string).split(",")[1]
-                    if (!base64) { setVoiceLoading(false); return toast.error("Failed to encode audio") }
-                    const res = await transcribeAndPolishWorkExperience(base64, "audio/webm")
-                    setVoiceLoading(false)
-                    if (res.success && res.bullets) {
-                        onChange((value || "") + "\n" + res.bullets)
-                        toast.success("Added voice response")
-                    } else {
-                        toast.error(res.error || "Voice processing failed")
-                    }
-                }
-                reader.readAsDataURL(blob)
-            }
-            recorder.start()
-            mediaRecorderRef.current = recorder
-            setVoiceRecording(true)
-            setVoiceLoading(true)
-        } catch {
-            toast.error("Microphone access denied")
-            setVoiceLoading(false)
-        }
-    }
-
     if (question.type === "SINGLE") {
         return (
             <div className="space-y-3">
-                <Label className="text-sm font-medium text-neutral-800 dark:text-neutral-200 block">
-                    {index + 1}. {question.text}
-                </Label>
+                <div className="flex items-start justify-between gap-2">
+                    <Label className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                        {index + 1}. {question.text}
+                    </Label>
+                    <VoiceButton
+                        compact
+                        onTranscribed={(text) => {
+                            // match spoken answer to nearest option
+                            const lower = text.toLowerCase()
+                            const match = question.options?.find((o) => lower.includes(o.toLowerCase()))
+                            if (match) onChange(match)
+                            else toast.info(`Heard: "${text}" — please select manually`)
+                        }}
+                    />
+                </div>
                 <RadioGroup value={value as string | undefined} onValueChange={onChange} className="space-y-2">
                     {question.options?.map((opt: string) => (
                         <div key={opt} className="flex items-center gap-2">
@@ -566,20 +636,34 @@ function QuestionRenderer({
     if (question.type === "MULTIPLE") {
         const toggleMulti = (opt: string, checked: boolean) => {
             const current = (value as string[]) || []
-            onChange(checked ? [...current, opt] : current.filter(x => x !== opt))
+            onChange(checked ? [...current, opt] : current.filter((x) => x !== opt))
         }
         return (
             <div className="space-y-3">
-                <Label className="text-sm font-medium text-neutral-800 dark:text-neutral-200 block">
-                    {index + 1}. {question.text}
-                </Label>
+                <div className="flex items-start justify-between gap-2">
+                    <Label className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                        {index + 1}. {question.text}
+                    </Label>
+                    <VoiceButton
+                        compact
+                        onTranscribed={(text) => {
+                            const lower = text.toLowerCase()
+                            const matched = question.options?.filter((o) => lower.includes(o.toLowerCase())) ?? []
+                            if (matched.length) {
+                                onChange([...new Set([...((value as string[]) || []), ...matched])])
+                            } else {
+                                toast.info(`Heard: "${text}" — please select manually`)
+                            }
+                        }}
+                    />
+                </div>
                 <div className="space-y-2">
                     {question.options?.map((opt: string) => (
                         <div key={opt} className="flex items-center gap-2">
                             <Checkbox
                                 id={`${question.id}-${opt}`}
-                                checked={(value as string[] || []).includes(opt)}
-                                onCheckedChange={checked => toggleMulti(opt, checked as boolean)}
+                                checked={((value as string[]) || []).includes(opt)}
+                                onCheckedChange={(checked) => toggleMulti(opt, checked as boolean)}
                             />
                             <Label htmlFor={`${question.id}-${opt}`} className="text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
                                 {opt}
@@ -591,35 +675,23 @@ function QuestionRenderer({
         )
     }
 
+    // TEXTAREA — free-form answer with voice
     return (
         <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-start justify-between gap-2">
                 <Label className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
                     {index + 1}. {question.text}
                 </Label>
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 gap-1.5 text-xs shrink-0"
-                    disabled={voiceLoading}
-                    onClick={handleVoiceToggle}
-                >
-                    {voiceRecording ? (
-                        <Square className="w-3 h-3 text-red-500" />
-                    ) : voiceLoading ? (
-                        <DotmSquare11 size={14} dotSize={2} speed={1.4} />
-                    ) : (
-                        <Mic className="w-3 h-3" />
-                    )}
-                    {voiceRecording ? "Stop" : "Voice"}
-                </Button>
+                <VoiceButton
+                    compact
+                    onTranscribed={(text) => onChange(((value as string) || "") + (value ? "\n" : "") + text)}
+                />
             </div>
             <Textarea
                 value={(value as string) || ""}
-                onChange={e => onChange(e.target.value)}
+                onChange={(e) => onChange(e.target.value)}
                 rows={3}
-                placeholder="Type or record your answer…"
+                placeholder="Type or speak your answer…"
             />
         </div>
     )

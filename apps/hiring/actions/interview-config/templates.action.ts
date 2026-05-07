@@ -305,11 +305,21 @@ export async function generateInterviewTemplate(input: AIGenerationInput) {
         }
     }
 
-    try {
-        // Dynamic import for OpenAI to avoid build errors if not installed
-        const { default: OpenAI } = await import("openai")
-        const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
+    async function callOpenAI(messages: Array<{role: string; content: string}>, model = "gpt-4o") {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${OPENAI_API_KEY}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ model, messages, temperature: 0.7 }),
+        })
+        if (!res.ok) throw new Error(`OpenAI error ${res.status}`)
+        const data = await res.json() as { choices: Array<{ message: { content: string } }> }
+        return data.choices[0]?.message?.content ?? ""
+    }
 
+    try {
         const styleDescriptions = {
             STARTUP: "Fast-paced startup environment with fewer rounds, focus on practical skills, adaptability, and cultural fit. Usually 2-3 rounds completing within 1 week.",
             FAANG: "Rigorous process similar to top tech companies (Google, Meta, Amazon). Heavy focus on algorithms, system design, and behavioral questions. Usually 5-6 rounds over 3-4 weeks.",
@@ -349,17 +359,11 @@ ${input.customPrompt ? `- Additional requirements: ${input.customPrompt}` : ""}
 
 Generate a realistic and comprehensive interview process.`
 
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-            ],
-            temperature: 0.7,
-            response_format: { type: "json_object" }
-        })
+        const content = await callOpenAI([
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt }
+        ], "gpt-4o-mini")
 
-        const content = response.choices[0]?.message?.content
         if (!content) {
             return { success: false, error: "No response from AI" }
         }

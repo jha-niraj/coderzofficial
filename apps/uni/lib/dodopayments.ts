@@ -1,16 +1,5 @@
-import DodoPayments from 'dodopayments';
-
-// Use server-side only API key
-const apiKey = process.env.DODO_PAYMENTS_API_KEY;
-
-if (!apiKey) {
-    console.warn('DODO_PAYMENTS_API_KEY is not set in environment variables');
-}
-
-export const dodoClient = apiKey ? new DodoPayments({
-    bearerToken: apiKey,
-    environment: process.env.NODE_ENV === 'production' ? 'live_mode' : 'test_mode',
-}) : null;
+// Keep dodoClient as null for backward compat check in checkout.action.ts
+export const dodoClient = process.env.DODO_PAYMENTS_API_KEY ? true : null;
 
 // Subscription plan configurations for University Platform
 // Field names match Prisma schema: UniversitySubscription model
@@ -283,7 +272,7 @@ export function comparePlans(
 // https://docs.dodopayments.com/llms.txt
 // ============================================
 
-import type { CountryCode } from 'dodopayments/resources/misc';
+export type CountryCode = string
 
 export interface DodoCustomer {
     email: string;
@@ -324,98 +313,87 @@ export interface CreatePaymentLinkOptions {
     metadata?: Record<string, string>;
 }
 
+function getDodoBaseUrl(): string {
+    return process.env.NODE_ENV === 'production'
+        ? 'https://live.dodopayments.com'
+        : 'https://test.dodopayments.com'
+}
+
+function getDodoHeaders() {
+    const apiKey = process.env.DODO_PAYMENTS_API_KEY
+    if (!apiKey) throw new Error('DODO_PAYMENTS_API_KEY is not set')
+    return {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+    }
+}
+
 /**
  * Create a Checkout Session (RECOMMENDED approach per Dodo docs)
- * 
+ *
  * Use Checkout Sessions to create a secure, hosted checkout experience.
  * Sessions are valid for 24 hours by default.
- * 
+ *
  * For subscriptions, you can include subscription_data with trial_period_days.
- * 
+ *
  * @returns Session with checkout_url to redirect customer
- * 
- * @example
- * // One-time payment
- * const session = await createDodoCheckoutSession({
- *   product_cart: [{ product_id: 'prod_123', quantity: 1 }],
- *   customer: { email: 'customer@example.com', name: 'John Doe' },
- *   return_url: 'https://yourapp.com/checkout/success',
- * });
- * 
- * // Subscription with trial
- * const session = await createDodoCheckoutSession({
- *   product_cart: [{ product_id: 'prod_subscription_monthly', quantity: 1 }],
- *   customer: { email: 'subscriber@example.com', name: 'Jane Doe' },
- *   return_url: 'https://yourapp.com/success',
- *   subscription_data: { trial_period_days: 14 },
- * });
- * 
- * // Redirect to session.checkout_url
  */
 export async function createDodoCheckoutSession(options: CreateCheckoutSessionOptions) {
-    if (!dodoClient) {
-        throw new Error('Dodo Payments client not configured. Set DODO_PAYMENTS_API_KEY.');
+    const res = await fetch(`${getDodoBaseUrl()}/checkouts`, {
+        method: 'POST',
+        headers: getDodoHeaders(),
+        body: JSON.stringify({
+            product_cart: options.product_cart,
+            customer: options.customer,
+            return_url: options.return_url,
+            ...(options.billing && { billing: options.billing }),
+            ...(options.metadata && { metadata: options.metadata }),
+            ...(options.subscription_data && { subscription_data: options.subscription_data }),
+        }),
+    })
+    if (!res.ok) {
+        const err = await res.text()
+        throw new Error(`Dodo Payments checkout error ${res.status}: ${err}`)
     }
-
-    // Use checkoutSessions.create (recommended per docs)
-    // Supports both one-time payments and subscriptions
-    const session = await dodoClient.checkoutSessions.create({
-        product_cart: options.product_cart,
-        customer: options.customer,
-        return_url: options.return_url,
-        ...(options.billing && { billing: options.billing }),
-        ...(options.metadata && { metadata: options.metadata }),
-        // For subscription products - configure trial period
-        ...(options.subscription_data && { subscription_data: options.subscription_data }),
-    });
-
+    const session = await res.json() as { checkout_url?: string; session_id?: string }
     return {
         checkout_url: session.checkout_url,
         session_id: session.session_id,
-        // Include raw response for flexibility
         raw: session,
-    };
+    }
 }
 
 /**
  * Create a Dynamic Payment Link
- * 
+ *
  * Use when you need a shareable payment link.
  * Note: Checkout Sessions are recommended for most use cases.
- * 
+ *
  * IMPORTANT: Must pass payment_link: true to get the payment link URL.
- * 
- * @returns Payment with payment_link URL
- * 
- * @example
- * const payment = await createDodoPaymentLink({
- *   product_cart: [{ product_id: 'prod_123', quantity: 1 }],
- *   customer: { email: 'customer@example.com', name: 'John Doe' },
- *   billing: { city: 'Mumbai', country: 'IN', state: 'MH', street: '123 Main St', zipcode: '400001' },
- * });
- * // Redirect to payment.payment_link
  */
 export async function createDodoPaymentLink(options: CreatePaymentLinkOptions) {
-    if (!dodoClient) {
-        throw new Error('Dodo Payments client not configured. Set DODO_PAYMENTS_API_KEY.');
+    const res = await fetch(`${getDodoBaseUrl()}/payments`, {
+        method: 'POST',
+        headers: getDodoHeaders(),
+        body: JSON.stringify({
+            payment_link: true,
+            product_cart: options.product_cart,
+            customer: options.customer,
+            billing: options.billing,
+            ...(options.return_url && { return_url: options.return_url }),
+            ...(options.metadata && { metadata: options.metadata }),
+        }),
+    })
+    if (!res.ok) {
+        const err = await res.text()
+        throw new Error(`Dodo Payments payment link error ${res.status}: ${err}`)
     }
-
-    // Use payments.create with payment_link: true (per docs)
-    const payment = await dodoClient.payments.create({
-        payment_link: true, // REQUIRED to get payment link
-        product_cart: options.product_cart,
-        customer: options.customer,
-        billing: options.billing,
-        ...(options.return_url && { return_url: options.return_url }),
-        ...(options.metadata && { metadata: options.metadata }),
-    });
-
+    const payment = await res.json() as { payment_id?: string; payment_link?: string }
     return {
         payment_id: payment.payment_id,
         payment_link: payment.payment_link,
-        // Include raw response for flexibility
         raw: payment,
-    };
+    }
 }
 
 /**
@@ -423,9 +401,24 @@ export async function createDodoPaymentLink(options: CreatePaymentLinkOptions) {
  * Used to verify payment status after customer returns from checkout.
  */
 export async function getDodoPayment(paymentId: string) {
-    if (!dodoClient) {
-        throw new Error('Dodo Payments client not configured. Set DODO_PAYMENTS_API_KEY.');
+    const res = await fetch(`${getDodoBaseUrl()}/payments/${paymentId}`, {
+        headers: getDodoHeaders(),
+    })
+    if (!res.ok) {
+        const err = await res.text()
+        throw new Error(`Dodo Payments retrieve error ${res.status}: ${err}`)
     }
-
-    return await dodoClient.payments.retrieve(paymentId);
+    return res.json() as Promise<{ payment_id?: string; status?: string; [key: string]: unknown }>
+}
+export async function getDodoCustomerPortalUrl(customerId: string): Promise<string> {
+    const res = await fetch(`${getDodoBaseUrl()}/customers/${customerId}/customer-portal/sessions`, {
+        method: 'POST',
+        headers: getDodoHeaders(),
+    })
+    if (!res.ok) {
+        const err = await res.text()
+        throw new Error(`Dodo customer portal error ${res.status}: ${err}`)
+    }
+    const data = await res.json() as { url?: string; link?: string }
+    return data.url || data.link || ''
 }

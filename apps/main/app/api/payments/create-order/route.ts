@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
 import { getSession } from '@repo/auth';
+
+function getRazorpayAuth() {
+    const keyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!
+    const keySecret = process.env.RAZORPAY_KEY_SECRET!
+    return `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}`
+}
 import { db, users, payments } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import {
@@ -30,12 +35,6 @@ export async function POST(req: NextRequest) {
         if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
             return NextResponse.json({ message: 'Razorpay credentials not configured' }, { status: 500 });
         }
-
-        // Initialize Razorpay
-        const razorpay = new Razorpay({
-            key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-            key_secret: process.env.RAZORPAY_KEY_SECRET!,
-        });
 
         // Get user details
         const user = await db.query.users.findFirst({
@@ -79,7 +78,19 @@ export async function POST(req: NextRequest) {
         };
 
         console.log('Creating Razorpay order with options:', razorpayOptions);
-        const razorpayOrder = await razorpay.orders.create(razorpayOptions);
+        const razorpayRes = await fetch('https://api.razorpay.com/v1/orders', {
+            method: 'POST',
+            headers: {
+                'Authorization': getRazorpayAuth(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(razorpayOptions),
+        })
+        if (!razorpayRes.ok) {
+            const err = await razorpayRes.text()
+            throw new Error(`Razorpay error ${razorpayRes.status}: ${err}`)
+        }
+        const razorpayOrder = await razorpayRes.json() as { id: string; [key: string]: unknown }
         console.log('Razorpay order created:', razorpayOrder);
 
         // Store payment record in database

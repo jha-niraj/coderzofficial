@@ -5,7 +5,7 @@ import { getResumeDrafts, getResumeTemplates } from '@/actions/(main)/ai/resume-
 import { ResumeHub } from './_components/resume-hub'
 
 export const metadata = {
-    title: 'Resume Builder | TheCoderz',
+    title: 'Resume Builder | BuildrHQ',
     description: 'Create, import, and manage professional resumes powered by AI.',
 }
 
@@ -20,10 +20,12 @@ export default async function ResumeHubPage() {
 
     return (
         <div className="w-full min-h-screen bg-neutral-50 dark:bg-neutral-950">
-            <ResumeHub
-                drafts={draftsRes.drafts ?? []}
-                templates={templatesRes.templates ?? []}
-            />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <ResumeHub
+                    drafts={draftsRes.drafts ?? []}
+                    templates={templatesRes.templates ?? []}
+                />
+            </div>
         </div>
     )
 }

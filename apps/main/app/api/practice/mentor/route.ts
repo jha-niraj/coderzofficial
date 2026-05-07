@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import OpenAI from "openai";
+import { openai } from "@/lib/openai-client";
 import { db, practiceProblem } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { getSession } from "@repo/auth";
@@ -13,8 +13,6 @@ export async function POST(req: NextRequest) {
     if (!process.env.OPENAI_API_KEY) {
         return new Response("OpenAI API key not configured", { status: 500 });
     }
-
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const body = await req.json();
     const {

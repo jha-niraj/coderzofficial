@@ -1,28 +1,15 @@
 "use server"
 
-/**
- * Speech to Text Server Actions using ElevenLabs API
- * These actions provide speech-to-text functionality that can be reused across the platform
- */
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js"
-
-// Initialize ElevenLabs client lazily
-function getElevenLabsClient() {
-    return new ElevenLabsClient({
-        apiKey: process.env.ELEVENLABS_API_KEY
-    })
-}
+const ELEVENLABS_API = "https://api.elevenlabs.io/v1"
 
 export interface TranscriptionResult {
     success: boolean
     text?: string
     error?: string
-    words?: Array<{
-        text: string
-        start: number
-        end: number
-    }>
+    words?: Array<{ text: string; start: number; end: number }>
     language?: string
     confidence?: number
 }
@@ -33,12 +20,6 @@ export interface TranscriptionOptions {
     diarize?: boolean
 }
 
-/**
- * Convert speech audio to text using ElevenLabs Scribe API
- * @param audioBase64 - Base64 encoded audio data
- * @param mimeType - The MIME type of the audio (e.g., "audio/webm", "audio/mp3")
- * @param options - Additional transcription options
- */
 export async function transcribeAudio(
     audioBase64: string,
     mimeType: string = "audio/webm",
@@ -46,82 +27,60 @@ export async function transcribeAudio(
 ): Promise<TranscriptionResult> {
     try {
         if (!process.env.ELEVENLABS_API_KEY) {
-            return {
-                success: false,
-                error: "ElevenLabs API key not configured"
-            }
+            return { success: false, error: "ElevenLabs API key not configured" }
         }
 
-        const elevenlabs = getElevenLabsClient()
-
-        // Convert base64 to Blob
         const audioBuffer = Buffer.from(audioBase64, "base64")
         const audioBlob = new Blob([audioBuffer], { type: mimeType })
 
-        // Call ElevenLabs Speech to Text API
-        const transcription = await elevenlabs.speechToText.convert({
-            file: audioBlob,
-            modelId: "scribe_v1", // Using scribe_v1 for standard transcription
-            languageCode: options.languageCode || "eng",
-            tagAudioEvents: options.tagAudioEvents ?? false,
-            diarize: options.diarize ?? false
+        const formData = new FormData()
+        formData.append("file", audioBlob, "audio.webm")
+        formData.append("model_id", "scribe_v1")
+        formData.append("language_code", options.languageCode || "eng")
+        if (options.tagAudioEvents !== undefined) formData.append("tag_audio_events", String(options.tagAudioEvents))
+        if (options.diarize !== undefined) formData.append("diarize", String(options.diarize))
+
+        const response = await fetch(`${ELEVENLABS_API}/speech-to-text`, {
+            method: "POST",
+            headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
+            body: formData,
         })
 
-        // Extract the transcribed text
-        if (transcription && typeof transcription === 'object' && 'text' in transcription) {
+        if (!response.ok) {
+            const err = await response.text()
+            throw new Error(`ElevenLabs API error ${response.status}: ${err}`)
+        }
+
+        const transcription = await response.json() as { text?: string; language_code?: string }
+
+        if (transcription?.text) {
             return {
                 success: true,
-                text: (transcription as { text: string }).text,
-                language: options.languageCode || "eng"
+                text: transcription.text,
+                language: transcription.language_code || options.languageCode || "eng",
             }
         }
 
-        // Handle different response formats
-        if (typeof transcription === 'string') {
-            return {
-                success: true,
-                text: transcription
-            }
-        }
-
-        return {
-            success: false,
-            error: "Unexpected response format from ElevenLabs"
-        }
-
+        return { success: false, error: "Unexpected response format from ElevenLabs" }
     } catch (error) {
         console.error("Speech to text error:", error)
         return {
             success: false,
-            error: error instanceof Error ? error.message : "Failed to transcribe audio"
+            error: error instanceof Error ? error.message : "Failed to transcribe audio",
         }
     }
 }
 
-/**
- * Batch transcribe multiple audio files
- * @param audioFiles - Array of audio files with base64 data and mime types
- * @param options - Transcription options
- */
 export async function batchTranscribeAudio(
     audioFiles: Array<{ base64: string; mimeType: string }>,
     options: TranscriptionOptions = {}
 ): Promise<TranscriptionResult[]> {
-    const results = await Promise.all(
-        audioFiles.map(file => transcribeAudio(file.base64, file.mimeType, options))
-    )
-    return results
+    return Promise.all(audioFiles.map(f => transcribeAudio(f.base64, f.mimeType, options)))
 }
 
-/**
- * Simple helper to check if ElevenLabs is configured
- */
 export async function checkSpeechToTextAvailability(): Promise<{ available: boolean; message?: string }> {
     if (!process.env.ELEVENLABS_API_KEY) {
-        return {
-            available: false,
-            message: "Speech to text service is not configured"
-        }
+        return { available: false, message: "Speech to text service is not configured" }
     }
     return { available: true }
 }

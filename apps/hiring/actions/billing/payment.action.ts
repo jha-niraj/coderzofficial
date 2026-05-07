@@ -6,7 +6,7 @@ import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import {
-    dodoClient, HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType
+    dodoClient, HIRING_SUBSCRIPTION_PLANS, getDodoPayment, type HiringSubscriptionPlanType
 } from "@/lib/dodopayments"
 import type { PaymentRecord, WebhookPaymentData } from "@/types"
 
@@ -107,7 +107,7 @@ export async function verifyPayment(paymentId: string): Promise<{
             return { success: false, error: "Payment system not configured" }
         }
 
-        const paymentDetails = await dodoClient.payments.retrieve(paymentId)
+        const paymentDetails = await getDodoPayment(paymentId)
 
         if (paymentDetails.status === "succeeded") {
             // Update payment status

@@ -433,7 +433,7 @@ export function ResumeHub({ drafts: initialDrafts, templates }: Props) {
                                 Create, import, tailor — land the job you deserve.
                             </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
                             <Button
                                 variant="outline"
                                 size="sm"
@@ -441,6 +441,16 @@ export function ResumeHub({ drafts: initialDrafts, templates }: Props) {
                             >
                                 <Store className="w-3.5 h-3.5 mr-1.5" />
                                 Blueprint
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push('/ai/resume/import')}
+                                className="border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-50 dark:hover:bg-violet-950"
+                            >
+                                <Linkedin className="w-3.5 h-3.5 mr-1" />
+                                <Github className="w-3.5 h-3.5 mr-1.5" />
+                                AI Import
                             </Button>
                             <Button
                                 size="sm"
@@ -506,6 +516,15 @@ export function ResumeHub({ drafts: initialDrafts, templates }: Props) {
                                 >
                                     <Plus className="w-6 h-6" />
                                     <span className="text-sm font-medium">New Resume</span>
+                                </button>
+                                {/* Import from LinkedIn / GitHub tile */}
+                                <button
+                                    onClick={() => router.push('/ai/resume/import')}
+                                    className="rounded-2xl border-2 border-dashed border-blue-200 dark:border-blue-900 p-5 flex flex-col items-center justify-center gap-2 hover:border-blue-400 dark:hover:border-blue-700 transition-colors min-h-[180px] text-blue-500 dark:text-blue-400"
+                                >
+                                    <Globe className="w-6 h-6" />
+                                    <span className="text-sm font-medium">Import from LinkedIn &amp; GitHub</span>
+                                    <span className="text-[10px] text-neutral-500">Scrape &amp; auto-fill your resume</span>
                                 </button>
                                 {drafts.map(d => (
                                     <ResumeCard

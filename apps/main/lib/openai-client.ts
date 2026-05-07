@@ -1,18 +1,85 @@
-import OpenAI from 'openai'
+const OPENAI_API = "https://api.openai.com/v1"
 
-let _instance: OpenAI | null = null
-
-function getInstance(): OpenAI {
-    if (!_instance) {
-        _instance = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+function getHeaders() {
+    return {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
     }
-    return _instance
 }
 
-// Proxy-based lazy singleton: defers instantiation until first property access.
-// This prevents build failures when OPENAI_API_KEY is not set in the build environment.
-export const openai = new Proxy({} as OpenAI, {
-    get(_, prop) {
-        return Reflect.get(getInstance(), prop)
+async function* streamChatCompletion(body: unknown) {
+    const res = await fetch(`${OPENAI_API}/chat/completions`, {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify(body),
+    })
+    if (!res.ok || !res.body) {
+        const err = await res.text()
+        throw new Error(`OpenAI API error ${res.status}: ${err}`)
     }
-})
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ""
+    while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split("\n")
+        buffer = lines.pop() ?? ""
+        for (const line of lines) {
+            if (!line.startsWith("data: ")) continue
+            const data = line.slice(6).trim()
+            if (data === "[DONE]") return
+            try { yield JSON.parse(data) } catch { /* skip malformed chunks */ }
+        }
+    }
+}
+
+export const openai = {
+    chat: {
+        completions: {
+            async create(params: {
+                model: string
+                messages: Array<{ role: string; content: string | unknown[] }>
+                temperature?: number
+                max_tokens?: number
+                response_format?: unknown
+                stream?: boolean
+            }) {
+                if (params.stream) {
+                    return streamChatCompletion(params)
+                }
+                const res = await fetch(`${OPENAI_API}/chat/completions`, {
+                    method: "POST",
+                    headers: getHeaders(),
+                    body: JSON.stringify(params),
+                })
+                if (!res.ok) {
+                    const err = await res.text()
+                    throw new Error(`OpenAI API error ${res.status}: ${err}`)
+                }
+                return res.json()
+            },
+        },
+    },
+    embeddings: {
+        async create(params: { model: string; input: string | string[]; dimensions?: number }) {
+            const res = await fetch(`${OPENAI_API}/embeddings`, {
+                method: "POST",
+                headers: getHeaders(),
+                body: JSON.stringify(params),
+            })
+            if (!res.ok) {
+                const err = await res.text()
+                throw new Error(`OpenAI API error ${res.status}: ${err}`)
+            }
+            return res.json()
+        },
+    },
+}
+
+// Local zodResponseFormat — replaces import from "openai/helpers/zod"
+// Uses json_object mode; caller parses response.choices[0].message.content with JSON.parse + Zod
+export function zodResponseFormat(_schema: unknown, _name: string) {
+    return { type: "json_object" as const }
+}

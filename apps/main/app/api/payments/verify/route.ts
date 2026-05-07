@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { getSession } from '@repo/auth';
 import { db, users, payments, creditTransactions } from '@repo/db';
@@ -20,12 +19,6 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        // Initialize Razorpay
-        const razorpay = new Razorpay({
-            key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-            key_secret: process.env.RAZORPAY_KEY_SECRET!,
-        });
-
         // Verify the signature
         const generatedSignature = crypto
             .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
@@ -41,7 +34,14 @@ export async function POST(req: NextRequest) {
 
         // Fetch payment details from Razorpay
         console.log('Fetching payment details from Razorpay');
-        const paymentDetails = await razorpay.payments.fetch(razorpay_payment_id);
+        const paymentRes = await fetch(`https://api.razorpay.com/v1/payments/${razorpay_payment_id}`, {
+            headers: { 'Authorization': `Basic ${Buffer.from(`${process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!}:${process.env.RAZORPAY_KEY_SECRET!}`).toString('base64')}` },
+        })
+        if (!paymentRes.ok) {
+            const err = await paymentRes.text()
+            throw new Error(`Razorpay fetch error ${paymentRes.status}: ${err}`)
+        }
+        const paymentDetails = await paymentRes.json() as { id: string; status: string; order_id: string; amount: number; [key: string]: unknown }
         console.log('Payment details received:', {
             id: paymentDetails.id,
             status: paymentDetails.status,

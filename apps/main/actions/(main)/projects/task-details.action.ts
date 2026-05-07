@@ -8,7 +8,7 @@ import {
 } from "@repo/db";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import OpenAI from "openai";
+import { openai } from "@/lib/openai-client";
 
 interface ActionResponse {
     success: boolean;
@@ -189,9 +189,7 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
 
         console.log('🤖 [OPENAI] Generating new task detail');
 
-        const openai = new OpenAI({
-            apiKey: process.env.OPENAI_API_KEY,
-        });
+        // openai imported from @/lib/openai-client
 
         const systemPrompt = `You are an expert coding mentor helping students break down complex development tasks into manageable sub-tasks.
 

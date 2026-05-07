@@ -7,7 +7,7 @@ import { openai } from '@/lib/openai-client'
 import { ResumeDraftContent } from '@/types/resume-draft'
 import { createResumeDraft } from './resume-draft.action'
 import { z } from 'zod'
-import { zodResponseFormat } from 'openai/helpers/zod'
+import { zodResponseFormat } from "@/lib/openai-client"
 
 // ── Exa client (lazy singleton) ──────────────────────────────────────────────
 let _exa: Exa | null = null
@@ -235,5 +235,131 @@ export async function importAndCreateDraft(input: {
         return result
     } catch (e) {
         return { success: false, error: e instanceof Error ? e.message : 'Import failed' }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AI PROFILE IMPORT — uses GitHub REST API + Exa for LinkedIn/portfolio
+// Supports: LinkedIn (required), GitHub username (required),
+//           Twitter handle (optional), Portfolio URL (optional)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ProfileImportInput {
+    linkedinUrl: string
+    githubUsername: string
+    twitterHandle?: string
+    portfolioUrl?: string
+    templateSlug?: string
+}
+
+async function fetchGitHubData(username: string): Promise<string> {
+    const ghHeaders: HeadersInit = {
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+    }
+    if (process.env.GITHUB_NIRAJ_JHA_TOKEN) {
+        (ghHeaders as Record<string, string>)['Authorization'] = `Bearer ${process.env.GITHUB_NIRAJ_JHA_TOKEN}`
+    }
+
+    const [userRes, reposRes] = await Promise.all([
+        fetch(`https://api.github.com/users/${username}`, { headers: ghHeaders }),
+        fetch(`https://api.github.com/users/${username}/repos?sort=stars&per_page=8&type=owner`, { headers: ghHeaders }),
+    ])
+
+    if (!userRes.ok) throw new Error(`GitHub profile not found: ${username}`)
+
+    const user = await userRes.json() as {
+        name?: string; bio?: string; company?: string; location?: string
+        blog?: string; email?: string; public_repos?: number; followers?: number
+    }
+    const repos = reposRes.ok ? (await reposRes.json() as Array<{
+        name: string; description?: string; language?: string; stargazers_count: number
+        html_url: string; topics?: string[]
+    }>) : []
+
+    // Fetch languages for top 3 repos
+    const topRepos = repos.slice(0, 3)
+    const langResults = await Promise.allSettled(
+        topRepos.map(r =>
+            fetch(`https://api.github.com/repos/${username}/${r.name}/languages`, { headers: ghHeaders })
+                .then(res => res.json() as Promise<Record<string, number>>)
+        )
+    )
+
+    const repoDetails = topRepos.map((r, i) => {
+        const result = langResults[i]
+        const langs = result.status === 'fulfilled' ? Object.keys((result as PromiseFulfilledResult<Record<string, number>>).value) : []
+        return `- ${r.name}: ${r.description || 'No description'} | Stars: ${r.stargazers_count} | Languages: ${[r.language, ...langs].filter(Boolean).join(', ')}`
+    })
+
+    const otherRepos = repos.slice(3).map(r => `- ${r.name} (${r.language || 'Unknown'})`)
+
+    return [
+        `=== GitHub Profile: ${user.name || username} ===`,
+        `Bio: ${user.bio || 'N/A'}`,
+        `Company: ${user.company || 'N/A'}`,
+        `Location: ${user.location || 'N/A'}`,
+        `Website: ${user.blog || 'N/A'}`,
+        `Public Repos: ${user.public_repos || 0} | Followers: ${user.followers || 0}`,
+        '',
+        '=== Top Projects ===',
+        ...repoDetails,
+        '',
+        '=== Other Repos ===',
+        ...otherRepos.slice(0, 5),
+    ].join('\n')
+}
+
+export async function importProfileAndCreateDraft(input: ProfileImportInput) {
+    const session = await getSession(headers())
+    if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
+
+    try {
+        const parts: string[] = []
+
+        // 1. LinkedIn via Exa
+        const linkedinRaw = await fetchPageText(input.linkedinUrl).catch(() => '')
+        if (linkedinRaw) parts.push(`=== LinkedIn Profile ===\n${linkedinRaw.slice(0, 5000)}`)
+
+        // 2. GitHub via official REST API
+        const ghUsername = input.githubUsername.replace(/^@/, '').trim()
+        const githubText = await fetchGitHubData(ghUsername).catch(e => {
+            console.warn('[import] GitHub fetch failed:', e)
+            return ''
+        })
+        if (githubText) parts.push(githubText)
+
+        // 3. Twitter (optional) - just add the handle for context
+        if (input.twitterHandle) {
+            const handle = input.twitterHandle.replace(/^@/, '')
+            const twitterRaw = await fetchPageText(`https://twitter.com/${handle}`).catch(() => '')
+            if (twitterRaw) parts.push(`=== Twitter/X Profile ===\n${twitterRaw.slice(0, 2000)}`)
+        }
+
+        // 4. Portfolio (optional)
+        if (input.portfolioUrl) {
+            const portfolioRaw = await fetchPageText(input.portfolioUrl).catch(() => '')
+            if (portfolioRaw) parts.push(`=== Portfolio Website ===\n${portfolioRaw.slice(0, 3000)}`)
+        }
+
+        if (parts.length === 0) return { success: false, error: 'Could not extract data from any source. Make sure profiles are public.' }
+
+        const combined = parts.join('\n\n')
+        const content = await extractStructuredContent(
+            combined,
+            'LinkedIn profile, GitHub repositories, and additional sources'
+        )
+
+        const result = await createResumeDraft({
+            name: `${content.header.name || 'My'} AI-Generated Resume`,
+            templateSlug: input.templateSlug ?? 'clean-minimal',
+            content,
+            importedFrom: 'linkedin_github_ai_import',
+            importedUrl: input.linkedinUrl,
+        })
+
+        return result
+    } catch (e) {
+        return { success: false, error: e instanceof Error ? e.message : 'Profile import failed' }
     }
 }

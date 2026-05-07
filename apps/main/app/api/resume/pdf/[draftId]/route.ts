@@ -4,6 +4,7 @@ import { db, resumeDraft } from '@repo/db'
 import { and, eq, or } from 'drizzle-orm'
 import { generateResumePDF } from '@/lib/resume-pdf'
 import { ResumeDraftContent } from '@/types/resume-draft'
+import { uploadToR2, isR2Configured } from '@/lib/r2-client'
 
 export async function GET(
     req: NextRequest,
@@ -47,6 +48,14 @@ export async function GET(
         const templateSlug = draft.templateSlug ?? 'clean-minimal'
         const buffer = await generateResumePDF(content, templateSlug)
         const safeName = (draft.name ?? 'resume').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+
+        // Save to R2 cloud storage for persistent access (best-effort, don't fail if R2 not configured)
+        if (isR2Configured()) {
+            const r2Key = `resumes/${draft.userId}/${draftId}/${safeName}.pdf`
+            uploadToR2({ key: r2Key, body: buffer, contentType: 'application/pdf' }).catch(err =>
+                console.warn('[PDF] R2 upload failed (non-fatal):', err)
+            )
+        }
 
         return new NextResponse(new Uint8Array(buffer), {
             status: 200,

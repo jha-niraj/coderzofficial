@@ -5,9 +5,7 @@ import { headers } from "next/headers";
 import { db, coverLetter as coverLetters, users, skills, workExperiences, portfolioProjects } from "@repo/db";
 import { eq, and, desc } from "drizzle-orm";
 import Exa from "exa-js";
-import type OpenAI from 'openai'
-import { openai } from '@/lib/openai-client'
-import { zodResponseFormat } from "openai/helpers/zod";
+import { openai, zodResponseFormat } from '@/lib/openai-client'
 import { z } from "zod";
 import { CoverLetterGenerationData } from "@/types/aitools/cover-letter";
 

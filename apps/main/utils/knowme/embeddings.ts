@@ -5,25 +5,10 @@
  * Embeddings are numerical representations (vectors) of text that capture semantic meaning.
  */
 
-import OpenAI from "openai";
+import { openai } from "@/lib/openai-client";
 import type {
 	EmbeddingChunk
 } from "@/types/knowme";
-
-// Lazy initialization of OpenAI client to ensure env vars are available
-let _openai: OpenAI | null = null;
-
-export function getOpenAIClient(): OpenAI {
-	if (!_openai) {
-		if (!process.env.OPENAI_API_KEY) {
-			throw new Error("OPENAI_API_KEY environment variable is not set");
-		}
-		_openai = new OpenAI({
-			apiKey: process.env.OPENAI_API_KEY,
-		});
-	}
-	return _openai;
-}
 
 // Configuration
 export const EMBEDDING_CONFIG = {
@@ -42,7 +27,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 	}
 
 	try {
-		const response = await getOpenAIClient().embeddings.create({
+		const response = await openai.embeddings.create({
 			model: EMBEDDING_CONFIG.model,
 			input: text.trim(),
 			dimensions: EMBEDDING_CONFIG.dimensions,
@@ -85,7 +70,7 @@ export async function generateEmbeddingsBatch(
 		for (let i = 0; i < validTexts.length; i += EMBEDDING_CONFIG.batchSize) {
 			const batch = validTexts.slice(i, i + EMBEDDING_CONFIG.batchSize);
 
-			const response = await getOpenAIClient().embeddings.create({
+			const response = await openai.embeddings.create({
 				model: EMBEDDING_CONFIG.model,
 				input: batch.map((b) => b.text),
 				dimensions: EMBEDDING_CONFIG.dimensions,

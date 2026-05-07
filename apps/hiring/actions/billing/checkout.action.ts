@@ -5,7 +5,7 @@ import { eq, and } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import type { CountryCode } from 'dodopayments/resources/misc'
+import type { CountryCode } from "@/lib/dodopayments"
 import {
     dodoClient, HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType,
     createDodoCheckoutSession, getDodoPayment

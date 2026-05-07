@@ -9,7 +9,7 @@ const nextConfig = {
         NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     },
 
-    serverExternalPackages: ["@prisma/client", "prisma"],
+    serverExternalPackages: ["@prisma/client", "prisma", "sass"],
 
     reactStrictMode: true,
 };

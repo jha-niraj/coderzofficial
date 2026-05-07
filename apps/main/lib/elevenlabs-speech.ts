@@ -1,26 +1,4 @@
-/**
- * ElevenLabs Speech-to-Text Utility
- * 
- * This utility provides speech-to-text functionality using ElevenLabs API.
- * It can handle audio files up to 1GB and supports all major audio/video formats.
-*/
-
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
-
-let _client: ElevenLabsClient | null = null;
-
-function getClient(): ElevenLabsClient {
-    if (!_client) {
-        _client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_AI_KEY });
-    }
-    return _client;
-}
-
-const client = new Proxy({} as ElevenLabsClient, {
-    get(_, prop) {
-        return Reflect.get(getClient(), prop);
-    }
-});
+const ELEVENLABS_API = "https://api.elevenlabs.io/v1"
 
 export interface ElevenLabsTranscriptionResult {
 	success: boolean;
@@ -51,202 +29,123 @@ export interface ElevenLabsTranscriptionOptions {
 	seed?: number | null;
 }
 
-/**
- * Transcribe audio file using ElevenLabs Speech-to-Text API
- * 
- * Features:
- * - Supports files up to 1GB
- * - All major audio and video formats
- * - Speaker diarization
- * - Word-level timestamps
- * - Multiple language support
- * - Audio event tagging (laughter, footsteps, etc.)
- * 
- * @param audioFile - The audio file to transcribe
- * @param options - Transcription options
- * @returns Promise with transcription result
- */
 export async function transcribeWithElevenLabs(
 	audioFile: File,
 	options: ElevenLabsTranscriptionOptions = {}
 ): Promise<ElevenLabsTranscriptionResult> {
 	try {
-		console.log('🎤 Starting ElevenLabs transcription...');
-		console.log('Audio file details:', {
-			name: audioFile.name,
-			size: audioFile.size,
-			type: audioFile.type,
-			sizeInMB: (audioFile.size / (1024 * 1024)).toFixed(2)
-		});
+		const apiKey = process.env.ELEVENLABS_AI_KEY
+		if (!apiKey) {
+			return { success: false, error: "ELEVENLABS_AI_KEY is not configured" }
+		}
 
-		// Check file size (1GB limit)
-		const maxSize = 1024 * 1024 * 1024; // 1GB in bytes
+		const maxSize = 1024 * 1024 * 1024
 		if (audioFile.size > maxSize) {
-			throw new Error(`File size (${(audioFile.size / (1024 * 1024 * 1024)).toFixed(2)}GB) exceeds the 1GB limit`);
+			throw new Error(`File size (${(audioFile.size / (1024 * 1024 * 1024)).toFixed(2)}GB) exceeds the 1GB limit`)
 		}
 
-		// Default options optimized for interview responses
-		const transcriptionOptions = {
-			modelId: 'scribe_v1', // Use the stable model
-			file: audioFile,
-			languageCode: options.language_code || undefined, // Auto-detect if not specified
-			tagAudioEvents: options.tag_audio_events ?? true, // Tag events like (pause), (laughter)
-			numSpeakers: options.num_speakers || undefined, // Auto-detect number of speakers
-			timestampsGranularity: options.timestamps_granularity || 'word', // Word-level timestamps
-			diarize: options.diarize ?? false, // Speaker diarization (who spoke when)
-			diarizationThreshold: options.diarization_threshold || undefined,
-			temperature: options.temperature || undefined, // Use model default
-			seed: options.seed || undefined, // For deterministic results
-			fileFormat: 'other' as const, // Let ElevenLabs handle format detection
-			enableLogging: true, // Enable for debugging
-		};
+		const formData = new FormData()
+		formData.append("file", audioFile)
+		formData.append("model_id", "scribe_v1")
+		if (options.language_code) formData.append("language_code", options.language_code)
+		if (options.tag_audio_events !== undefined) formData.append("tag_audio_events", String(options.tag_audio_events))
+		if (options.num_speakers) formData.append("num_speakers", String(options.num_speakers))
+		if (options.timestamps_granularity) formData.append("timestamps_granularity", options.timestamps_granularity)
+		if (options.diarize !== undefined) formData.append("diarize", String(options.diarize))
+		if (options.diarization_threshold) formData.append("diarization_threshold", String(options.diarization_threshold))
+		if (options.temperature !== null && options.temperature !== undefined) formData.append("temperature", String(options.temperature))
+		if (options.seed !== null && options.seed !== undefined) formData.append("seed", String(options.seed))
 
-		console.log('📤 Sending request to ElevenLabs...');
-		const startTime = Date.now();
+		const startTime = Date.now()
+		const response = await fetch(`${ELEVENLABS_API}/speech-to-text`, {
+			method: "POST",
+			headers: { "xi-api-key": apiKey },
+			body: formData,
+		})
 
-		// Make the API call
-		const response = await client.speechToText.convert(transcriptionOptions);
+		if (!response.ok) {
+			const err = await response.text()
+			throw new Error(`ElevenLabs API error ${response.status}: ${err}`)
+		}
 
-		// Define the expected response shape since SDK types may vary
-		interface ElevenLabsApiResponse {
-			text?: string;
-			languageCode?: string;
-			languageProbability?: number;
+		interface APIResponse {
+			text?: string
+			language_code?: string
+			language_probability?: number
 			words?: Array<{
-				text?: string;
-				start?: number;
-				end?: number;
-				type?: string;
-				speakerId?: string;
-				logprob?: number;
-			}>;
+				text?: string; start?: number; end?: number
+				type?: string; speaker_id?: string; logprob?: number
+			}>
 		}
+		const data = await response.json() as APIResponse
+		const processingTime = ((Date.now() - startTime) / 1000).toFixed(2)
+		console.log(`ElevenLabs transcription completed in ${processingTime}s`)
 
-		// Cast to our expected response type
-		const extendedResponse = response as unknown as ElevenLabsApiResponse;
-
-		const endTime = Date.now();
-		const processingTime = ((endTime - startTime) / 1000).toFixed(2);
-
-		console.log(`✅ ElevenLabs transcription completed in ${processingTime}s`);
-		console.log('Response details:', {
-			languageCode: extendedResponse.languageCode,
-			languageProbability: extendedResponse.languageProbability,
-			text_length: extendedResponse.text?.length || 0,
-			words_count: extendedResponse.words?.length || 0
-		});
-
-		if (!extendedResponse.text || extendedResponse.text.trim().length === 0) {
-			throw new Error('No transcript text received from ElevenLabs');
+		if (!data.text?.trim()) {
+			throw new Error("No transcript text received from ElevenLabs")
 		}
 
 		return {
 			success: true,
 			data: {
-				transcript: extendedResponse.text.trim(),
-				language_code: extendedResponse.languageCode || 'en',
-				language_probability: extendedResponse.languageProbability || 0,
-				words: extendedResponse.words?.map(word => ({
-					text: word.text || '',
-					start: word.start || 0,
-					end: word.end || 0,
-					type: word.type || 'word',
-					speaker_id: word.speakerId,
-					logprob: word.logprob
-				})) || []
-			}
-		};
-
-	} catch (error) {
-		console.error('❌ ElevenLabs transcription error:', error);
-
-		let errorMessage = 'ElevenLabs transcription failed';
-
-		if (error instanceof Error) {
-			errorMessage = error.message;
-
-			// Handle specific error types
-			if (errorMessage.includes('file size') || errorMessage.includes('1GB')) {
-				errorMessage = 'Audio file is too large (max 1GB). Please use a shorter recording.';
-			} else if (errorMessage.includes('format') || errorMessage.includes('unsupported')) {
-				errorMessage = 'Unsupported audio format. Please use a common audio format (MP3, WAV, etc.).';
-			} else if (errorMessage.includes('quota') || errorMessage.includes('limit')) {
-				errorMessage = 'API quota exceeded. Please try again later.';
-			} else if (errorMessage.includes('network') || errorMessage.includes('timeout')) {
-				errorMessage = 'Network error during transcription. Please check your connection and try again.';
-			} else if (errorMessage.includes('api key') || errorMessage.includes('unauthorized')) {
-				errorMessage = 'API authentication failed. Please check the ElevenLabs API key configuration.';
-			}
+				transcript: data.text.trim(),
+				language_code: data.language_code || "en",
+				language_probability: data.language_probability || 0,
+				words: data.words?.map(w => ({
+					text: w.text || "",
+					start: w.start || 0,
+					end: w.end || 0,
+					type: w.type || "word",
+					speaker_id: w.speaker_id,
+					logprob: w.logprob,
+				})) || [],
+			},
 		}
-
-		return {
-			success: false,
-			error: errorMessage
-		};
+	} catch (error) {
+		console.error("ElevenLabs transcription error:", error)
+		let errorMessage = "ElevenLabs transcription failed"
+		if (error instanceof Error) {
+			errorMessage = error.message
+			if (errorMessage.includes("1GB")) errorMessage = "Audio file is too large (max 1GB)."
+			else if (errorMessage.includes("format") || errorMessage.includes("unsupported")) errorMessage = "Unsupported audio format."
+			else if (errorMessage.includes("quota") || errorMessage.includes("limit")) errorMessage = "API quota exceeded. Please try again later."
+		}
+		return { success: false, error: errorMessage }
 	}
 }
 
-/**
- * Quick transcription for short audio files (optimized settings)
- * 
- * @param audioFile - The audio file to transcribe
- * @returns Promise with transcription result
- */
 export async function quickTranscribeWithElevenLabs(audioFile: File): Promise<ElevenLabsTranscriptionResult> {
 	return transcribeWithElevenLabs(audioFile, {
-		timestamps_granularity: 'none', // No timestamps for faster processing
-		tag_audio_events: false, // Skip audio events for speed
-		diarize: false, // Skip speaker diarization for speed
-		temperature: 0, // Most deterministic output
-	});
+		timestamps_granularity: "none",
+		tag_audio_events: false,
+		diarize: false,
+		temperature: 0,
+	})
 }
 
-/**
- * Detailed transcription for longer audio files (full features)
- * 
- * @param audioFile - The audio file to transcribe
- * @param numSpeakers - Expected number of speakers (optional)
- * @returns Promise with transcription result
- */
 export async function detailedTranscribeWithElevenLabs(
 	audioFile: File,
 	numSpeakers?: number
 ): Promise<ElevenLabsTranscriptionResult> {
 	return transcribeWithElevenLabs(audioFile, {
-		timestamps_granularity: 'word', // Word-level timestamps
-		tag_audio_events: true, // Include audio events
-		diarize: numSpeakers ? numSpeakers > 1 : false, // Speaker diarization if multiple speakers
+		timestamps_granularity: "word",
+		tag_audio_events: true,
+		diarize: numSpeakers ? numSpeakers > 1 : false,
 		num_speakers: numSpeakers || null,
-		diarization_threshold: 0.22, // Balanced speaker separation
-	});
+		diarization_threshold: 0.22,
+	})
 }
 
-/**
- * Check if ElevenLabs is properly configured
- * 
- * @returns boolean indicating if ElevenLabs is ready to use
- */
 export function isElevenLabsConfigured(): boolean {
-	return !!process.env.ELEVENLABS_AI_KEY && process.env.ELEVENLABS_AI_KEY.trim().length > 0;
+	return !!process.env.ELEVENLABS_AI_KEY?.trim()
 }
 
-/**
- * Get ElevenLabs service info
- * 
- * @returns Service information
- */
 export function getElevenLabsInfo() {
 	return {
-		name: 'ElevenLabs Speech-to-Text',
-		maxFileSize: '1GB',
-		supportedFormats: 'All major audio and video formats',
-		features: [
-			'Speaker diarization',
-			'Word-level timestamps',
-			'Audio event tagging',
-			'Multi-language support',
-			'High accuracy transcription'
-		],
-		configured: isElevenLabsConfigured()
-	};
+		name: "ElevenLabs Speech-to-Text",
+		maxFileSize: "1GB",
+		supportedFormats: "All major audio and video formats",
+		features: ["Speaker diarization", "Word-level timestamps", "Audio event tagging", "Multi-language support"],
+		configured: isElevenLabsConfigured(),
+	}
 }

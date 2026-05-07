@@ -13,7 +13,7 @@ import type { KnowMeViewerType } from "@repo/db";
 import type {
 	VectorSearchResult, ChatMessageSource
 } from "@/types/knowme";
-import { getOpenAIClient } from "./embeddings";
+import { openai } from "@/lib/openai-client";
 
 // Configuration
 export const AI_CONFIG = {
@@ -199,7 +199,7 @@ QUESTION: ${question}
 Please provide a helpful, accurate response based only on the information provided above.`;
 
 	try {
-		const response = await getOpenAIClient().chat.completions.create({
+		const response = await openai.chat.completions.create({
 			model: AI_CONFIG.model,
 			messages: [
 				{ role: "system", content: systemPrompt },
@@ -244,7 +244,7 @@ Generate a polite, brief response (2-3 sentences) that:
 3. Offers to help with other questions about their profile, projects, or skills`;
 
 	try {
-		const response = await getOpenAIClient().chat.completions.create({
+		const response = await openai.chat.completions.create({
 			model: AI_CONFIG.model,
 			messages: [{ role: "user", content: prompt }],
 			temperature: 0.7,

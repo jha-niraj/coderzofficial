@@ -6,7 +6,6 @@
  */
 
 import {
-    featureNotifySectionEnum,
     skillCategoryEnum,
     feedbackCategoryEnum,
     feedbackStatusEnum,
@@ -19,6 +18,7 @@ import {
     roleEnum,
     mockCategoryEnum,
 } from "./schema/schema";
+import { featureNotifySectionEnum } from "./schema/profile";
 import {
     pathfinderCategoryEnum,
     pathfinderLevelEnum,

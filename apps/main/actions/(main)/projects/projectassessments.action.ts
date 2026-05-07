@@ -14,7 +14,7 @@ import {
 } from "@repo/db";
 import { eq, and, inArray, lte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import OpenAI from "openai";
+
 
 // ========================================
 // TYPES
@@ -52,10 +52,10 @@ async function getCurrentUser() {
     return user[0];
 }
 
+import { openai } from "@/lib/openai-client";
+
 function getOpenAIClient() {
-    return new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
-    });
+    return openai;
 }
 
 // ========================================

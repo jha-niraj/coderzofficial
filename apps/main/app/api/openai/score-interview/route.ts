@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { openai } from '@/lib/openai-client';
 
 export async function POST(request: NextRequest) {
 	try {
@@ -10,9 +10,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const openai = new OpenAI({
-			apiKey: process.env.OPENAI_API_KEY,
-		});
+		// openai imported from @/lib/openai-client
 
 		const body = await request.json();
 		const { transcript, project } = body;

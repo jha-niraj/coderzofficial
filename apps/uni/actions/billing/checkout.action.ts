@@ -5,12 +5,12 @@ import { eq, and } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import type { CountryCode } from 'dodopayments/resources/misc'
+import type { CountryCode } from "@/lib/dodopayments"
 import {
     dodoClient, UNIVERSITY_SUBSCRIPTION_PLANS,
     type UniversitySubscriptionPlanType, getDodoProductId,
     getUniversityPlanPrice, getPlanLimits, getPlanFeatures,
-    createDodoCheckoutSession, getDodoPayment
+    createDodoCheckoutSession, getDodoPayment, getDodoCustomerPortalUrl
 } from "@/lib/dodopayments"
 
 // ============================================
@@ -335,14 +335,8 @@ export async function getBillingPortalUrl(returnUrl: string): Promise<{
 
         if (subscription.dodoCustomerId) {
             try {
-                const portalSession = await dodoClient.customers.customerPortal.create(
-                    subscription.dodoCustomerId
-                )
-
-                return {
-                    success: true,
-                    portalUrl: portalSession.link,
-                }
+                const portalUrl = await getDodoCustomerPortalUrl(subscription.dodoCustomerId)
+                return { success: true, portalUrl }
             } catch (portalError) {
                 console.error("Dodo portal creation error:", portalError)
             }

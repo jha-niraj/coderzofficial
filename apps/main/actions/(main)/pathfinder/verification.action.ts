@@ -14,7 +14,6 @@ import {
 } from '@repo/db'
 import { eq, and, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import OpenAI from 'openai'
 import type { VerificationAIPlan } from '@/types/pathfinder'
 import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 
@@ -215,20 +214,37 @@ export async function generateVerificationContent(goalId: string) {
             instruction: 'Generate verification quiz and coding questions tailored to what this user has actually learned. Focus on the topics they practiced. Return the full pathfinder_learning_plan schema with quizQuestions (20-25), codingQuestions (3-8), mockInterview, minorProject, majorProject.',
         }
 
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-        const thread = await openai.beta.threads.create({
-            messages: [{ role: 'user', content: JSON.stringify(userContext) }],
+        const oaiKey = process.env.OPENAI_API_KEY!
+        const oaiHeaders = {
+            'Authorization': `Bearer ${oaiKey}`,
+            'Content-Type': 'application/json',
+            'OpenAI-Beta': 'assistants=v2',
+        }
+
+        const threadRes = await fetch('https://api.openai.com/v1/threads', {
+            method: 'POST',
+            headers: oaiHeaders,
+            body: JSON.stringify({ messages: [{ role: 'user', content: JSON.stringify(userContext) }] }),
         })
+        const thread = await threadRes.json() as { id: string }
 
-        const run = await openai.beta.threads.runs.create(thread.id, { assistant_id: assistantId })
+        const runRes = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs`, {
+            method: 'POST',
+            headers: oaiHeaders,
+            body: JSON.stringify({ assistant_id: assistantId }),
+        })
+        const run = await runRes.json() as { id: string; status: string }
 
-        let runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id })
+        let runStatus = run
         let attempts = 0
         const maxAttempts = 90
 
         while (runStatus.status !== 'completed' && attempts < maxAttempts) {
             await new Promise((r) => setTimeout(r, 1000))
-            runStatus = await openai.beta.threads.runs.retrieve(run.id, { thread_id: thread.id })
+            const pollRes = await fetch(`https://api.openai.com/v1/threads/${thread.id}/runs/${run.id}`, {
+                headers: oaiHeaders,
+            })
+            runStatus = await pollRes.json() as { id: string; status: string }
             attempts++
             if (runStatus.status === 'failed' || runStatus.status === 'cancelled') {
                 return { success: false, error: 'Generation failed', plan: null }
@@ -239,14 +255,17 @@ export async function generateVerificationContent(goalId: string) {
             return { success: false, error: 'Generation timed out', plan: null }
         }
 
-        const messages = await openai.beta.threads.messages.list(thread.id)
-        const assistantMessage = messages.data.find((m) => m.role === 'assistant')
+        const messagesRes = await fetch(`https://api.openai.com/v1/threads/${thread.id}/messages`, {
+            headers: oaiHeaders,
+        })
+        const messagesData = await messagesRes.json() as { data: Array<{ role: string; content: Array<{ type: string; text?: { value: string } }> }> }
+        const assistantMessage = messagesData.data.find((m) => m.role === 'assistant')
         const content = assistantMessage?.content?.[0]
         if (!content || content.type !== 'text') {
             return { success: false, error: 'No response from assistant', plan: null }
         }
 
-        const aiPlan = JSON.parse(content.text.value) as VerificationAIPlan
+        const aiPlan = JSON.parse(content.text!.value) as VerificationAIPlan
 
         // Create mock interview for verification
         const mockConfig = aiPlan.mockInterview

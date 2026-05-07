@@ -1,0 +1,20 @@
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+import { ImportClient } from "./_components/import-client"
+
+export const metadata = {
+    title: "AI Profile Import | Resume Builder",
+    description: "Let AI build your resume from LinkedIn, GitHub, and more in seconds.",
+}
+
+export default async function ImportPage() {
+    const session = await getSession(headers())
+    if (!session?.user?.id) redirect("/login")
+
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <ImportClient />
+        </div>
+    )
+}
