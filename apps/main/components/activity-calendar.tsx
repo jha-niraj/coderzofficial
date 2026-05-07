@@ -468,7 +468,7 @@ const ActivityCalendar: React.FC<ActivityCalendarProps> = ({ className = "" }) =
                                                                         }
                                                                     };
 
-                                                                    const categoryInfo = getActivityCategory(activity.activityType);
+                                                                    const categoryInfo = getActivityCategory(activity.activityType as ActivityType);
 
                                                                     return (
                                                                         <motion.div
@@ -480,7 +480,7 @@ const ActivityCalendar: React.FC<ActivityCalendarProps> = ({ className = "" }) =
                                                                         >
                                                                             <div className="flex items-center gap-4 flex-1 min-w-0">
                                                                                 <div className={`p-2 rounded-lg ${categoryInfo.color}`}>
-                                                                                    {getActivityTypeIcon(activity.activityType)}
+                                                                                    {getActivityTypeIcon(activity.activityType as ActivityType)}
                                                                                 </div>
                                                                                 <div className="flex-1 min-w-0">
                                                                                     <div className="flex items-center gap-2 mb-1">

@@ -2,7 +2,7 @@
 
 import { getSession } from "@repo/auth";
 import { headers } from "next/headers";
-import { db, coverLetter as coverLetters, users } from "@repo/db";
+import { db, coverLetter as coverLetters, users, skills, workExperiences, portfolioProjects } from "@repo/db";
 import { eq, and, desc } from "drizzle-orm";
 import Exa from "exa-js";
 import type OpenAI from 'openai'
@@ -20,7 +20,7 @@ const exa = new Proxy({} as Exa, {
     }
 })
 
-export async function currentUser() {
+export async function currentUser(): Promise<{ id: string; name?: string | null; email?: string | null; username?: string | null; image?: string | null } | null | undefined> {
     const session = await getSession(headers());
     return session?.user;
 }
@@ -145,47 +145,44 @@ export async function generateAndSaveCoverLetter(data: CoverLetterGenerationData
         // Fetch User profile
         const dbUser = await db.query.users.findFirst({
             where: eq(users.id, user.id!),
-            with: {
-                skills: true,
-                experiences: {
-                    orderBy: (e: any, { desc }: any) => [desc(e.startDate)],
-                },
-                portfolioProjects: {
-                    orderBy: (p: any, { desc }: any) => [desc(p.startDate)],
-                },
-            },
         });
 
         if (!dbUser) {
             return { success: false, error: "User not found" };
         }
 
+        const [userSkills, userExperiences, userProjects] = await Promise.all([
+            db.query.skills.findMany({ where: eq(skills.userId, user.id!) }),
+            db.query.workExperiences.findMany({ where: eq(workExperiences.userId, user.id!), orderBy: [desc(workExperiences.startDate)] }),
+            db.query.portfolioProjects.findMany({ where: eq(portfolioProjects.userId, user.id!), orderBy: [desc(portfolioProjects.startDate)] }),
+        ]);
+
         // Format user info
         let userInfoStr = `Name: ${dbUser.name || ''}\nEmail: ${dbUser.email || ''}\n\n`;
 
-        if (dbUser.skills.length > 0) {
+        if (userSkills.length > 0) {
             userInfoStr += "Skills:\n";
-            dbUser.skills.forEach((s: any) => userInfoStr += `- ${s.name} (${s.level})\n`);
+            userSkills.forEach((s) => userInfoStr += `- ${s.name} (${s.level})\n`);
             userInfoStr += "\n";
         }
 
-        if (dbUser.experiences.length > 0) {
+        if (userExperiences.length > 0) {
             userInfoStr += "Work Experience:\n";
-            dbUser.experiences.forEach((e: any) => {
-                userInfoStr += `- ${e.roleTitle} at ${e.companyName} (${e.startDate.toISOString().split('T')[0]} to ${e.isCurrentlyWorking ? 'Present' : e.endDate?.toISOString().split('T')[0]})\n`;
-                if (e.bulletPoints && e.bulletPoints.length > 0) {
-                    e.bulletPoints.forEach((b: string) => userInfoStr += `  * ${b}\n`);
+            userExperiences.forEach((e) => {
+                userInfoStr += `- ${e.roleTitle} at ${e.companyName} (${e.startDate} to ${e.isCurrentlyWorking ? 'Present' : e.endDate ?? ''})\n`;
+                if (e.bulletPoints && (e.bulletPoints as string[]).length > 0) {
+                    (e.bulletPoints as string[]).forEach((b) => userInfoStr += `  * ${b}\n`);
                 }
             });
             userInfoStr += "\n";
         }
 
-        if (dbUser.portfolioProjects.length > 0) {
+        if (userProjects.length > 0) {
             userInfoStr += "Projects:\n";
-            dbUser.portfolioProjects.forEach((p: any) => {
-                userInfoStr += `- ${p.projectName} (${p.technologies.join(', ')})\n`;
-                if (p.bulletPoints && p.bulletPoints.length > 0) {
-                    p.bulletPoints.forEach((b: string) => userInfoStr += `  * ${b}\n`);
+            userProjects.forEach((p) => {
+                userInfoStr += `- ${p.projectName} (${(p.technologies as string[]).join(', ')})\n`;
+                if (p.bulletPoints && (p.bulletPoints as string[]).length > 0) {
+                    (p.bulletPoints as string[]).forEach((b) => userInfoStr += `  * ${b}\n`);
                 }
             });
             userInfoStr += "\n";
@@ -281,7 +278,7 @@ export async function getCoverLetters() {
         const user = await currentUser();
         if (!user) return { success: false, error: "Unauthorized" };
 
-        const letters = await db.query.coverLetters.findMany({
+        const letters = await db.query.coverLetter.findMany({
             where: eq(coverLetters.userId, user.id!),
             orderBy: [desc(coverLetters.createdAt)],
             columns: {
@@ -313,7 +310,7 @@ export async function getCoverLetter(id: string) {
         const user = await currentUser();
         if (!user) return { success: false, error: "Unauthorized" };
 
-        const letter = await db.query.coverLetters.findFirst({
+        const letter = await db.query.coverLetter.findFirst({
             where: and(eq(coverLetters.id, id), eq(coverLetters.userId, user.id!)),
         });
 

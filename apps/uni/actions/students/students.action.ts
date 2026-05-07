@@ -75,9 +75,9 @@ export async function getStudents(
         const students = await db.query.studentUniversityLinks.findMany({
             where: (tbl, { and, eq }) => {
                 const conditions = [eq(tbl.universityId, member.universityId)]
-                if (filters?.verificationStatus) conditions.push(eq(tbl.verificationStatus, filters.verificationStatus as any))
+                if (filters?.verificationStatus) conditions.push(eq(tbl.verificationStatus, filters.verificationStatus as "PENDING" | "UNDER_REVIEW" | "VERIFIED" | "REJECTED" | "EXPIRED"))
                 if (filters?.departmentId) conditions.push(eq(tbl.departmentId, filters.departmentId))
-                if (filters?.semester) conditions.push(eq(tbl.semester, filters.semester as any))
+                if (filters?.semester) conditions.push(eq(tbl.semester, filters.semester as "SEMESTER_1" | "SEMESTER_2" | "SEMESTER_3" | "SEMESTER_4" | "SEMESTER_5" | "SEMESTER_6" | "SEMESTER_7" | "SEMESTER_8"))
                 if (filters?.batchYear) conditions.push(eq(tbl.batchYear, filters.batchYear))
                 if (filters?.isActive !== undefined) conditions.push(eq(tbl.isActive, filters.isActive))
                 return and(...conditions)
@@ -344,7 +344,7 @@ export async function verifyStudent(
             verificationStatus: payload.status,
             verifiedAt: payload.status === "VERIFIED" ? new Date() : null,
             rollNumber: payload.rollNumber,
-            semester: payload.semester as any,
+            semester: payload.semester as "SEMESTER_1" | "SEMESTER_2" | "SEMESTER_3" | "SEMESTER_4" | "SEMESTER_5" | "SEMESTER_6" | "SEMESTER_7" | "SEMESTER_8" | undefined,
             batchYear: payload.batchYear,
             departmentId: payload.departmentId,
             rejectionReason: payload.status === "REJECTED" ? payload.rejectionReason : null,
@@ -536,7 +536,7 @@ export async function updateStudent(
             return { success: false, error: "Student not found" }
         }
 
-        await db.update(studentUniversityLinks).set(payload as any).where(eq(studentUniversityLinks.id, studentId))
+        await db.update(studentUniversityLinks).set(payload as Record<string, unknown>).where(eq(studentUniversityLinks.id, studentId))
 
         revalidatePath("/dashboard/students")
         revalidatePath(`/dashboard/students/${studentId}`)

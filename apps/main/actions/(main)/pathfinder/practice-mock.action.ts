@@ -50,6 +50,7 @@ export async function createPathfinderPracticeMockAndSession(subGoalId: string) 
                 tags: ['pathfinder', 'practice'],
                 pathfinderSubGoalId: subGoalId,
             }).returning()
+            if (!created) return { success: false, error: 'Failed to create practice mock' }
             mock = created
         }
 

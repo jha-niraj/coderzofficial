@@ -45,6 +45,8 @@ export async function sendMessage(
             status: "SENT"
         }).returning()
 
+        if (!msg) throw new Error("Failed to create message")
+
         const fullMessage = await db.query.chatMessage.findFirst({
             where: eq(chatMessage.id, msg.id),
             with: { sender: true }
@@ -154,7 +156,7 @@ export async function getUnreadCount(conversationId: string) {
             return { success: false, error: "Not authenticated", count: 0 }
         }
 
-        const [{ value }] = await db.select({ value: count() })
+        const [countRow] = await db.select({ value: count() })
             .from(chatMessage)
             .where(and(
                 eq(chatMessage.conversationId, conversationId),
@@ -162,7 +164,7 @@ export async function getUnreadCount(conversationId: string) {
                 inArray(chatMessage.status, ["SENT", "DELIVERED"])
             ))
 
-        return { success: true, count: value }
+        return { success: true, count: countRow?.value ?? 0 }
     } catch (error) {
         console.error("Get unread count error:", error)
         return { success: false, error: "Failed to get unread count", count: 0 }
@@ -228,7 +230,7 @@ export async function getTotalUnreadCount() {
             return { success: true, count: 0 }
         }
 
-        const [{ value }] = await db.select({ value: count() })
+        const [countRow2] = await db.select({ value: count() })
             .from(chatMessage)
             .where(and(
                 inArray(chatMessage.conversationId, conversationIds),
@@ -236,7 +238,7 @@ export async function getTotalUnreadCount() {
                 inArray(chatMessage.status, ["SENT", "DELIVERED"])
             ))
 
-        return { success: true, count: value }
+        return { success: true, count: countRow2?.value ?? 0 }
     } catch (error) {
         console.error("Get total unread count error:", error)
         return { success: false, error: "Failed to get unread count", count: 0 }

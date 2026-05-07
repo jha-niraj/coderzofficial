@@ -4,14 +4,12 @@ import { db, studios, pathfinderSubGoals } from "@repo/db"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { eq } from "drizzle-orm"
-import { createId } from "@paralleldrive/cuid2"
-
 export async function createStudioForGoal(goalId: string, subGoalId: string, title: string) {
     try {
         const session = await getSession(headers())
         if (!session?.user?.id) return { success: false, error: "Unauthorized" }
 
-        const slug = `pathfinder-${subGoalId.slice(0, 8)}-${createId().slice(0, 6)}`
+        const slug = `pathfinder-${subGoalId.slice(0, 8)}-${crypto.randomUUID().slice(0, 6)}`
 
         const [studio] = await db.insert(studios).values({
             userId: session.user.id,
@@ -20,6 +18,8 @@ export async function createStudioForGoal(goalId: string, subGoalId: string, tit
             source: "PATHFINDER",
             sourceId: goalId,
         }).returning()
+
+        if (!studio) throw new Error("Failed to create studio")
 
         await db.update(pathfinderSubGoals)
             .set({ studioId: studio.id })

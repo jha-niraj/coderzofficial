@@ -42,7 +42,7 @@ export function PathfinderNotesTab({
                 context={{
                     title: `Notes: ${subGoalTitle}`,
                     description: `Study notes for ${subGoalTitle}`,
-                    source: 'pathfinder',
+                    source: 'PATHFINDER',
                     sourceId: subGoalId,
                     topicLabel: subGoalTitle,
                 }}

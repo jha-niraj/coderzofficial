@@ -66,7 +66,7 @@ export default function FeedbackList({ status, onStatusChange }: FeedbackListPro
         description: "Feedback reward",
     });
     const [assigningReward, setAssigningReward] = useState(false);
-    const isAdmin = session?.user?.role === Role.Admin;
+    const isAdmin = (session?.user as { role?: string })?.role === Role.Admin;
 
     const getStatusEnum = (statusStr: string) => {
         switch (statusStr) {

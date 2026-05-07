@@ -10,6 +10,8 @@ import {
     users,
     creditTransactions,
     earnings,
+    workExperiences,
+    coverLetter,
 } from '@repo/db'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
@@ -44,7 +46,7 @@ async function deductCredits(userId: string, amount: number, description: string
             userId,
             amount: -amount,
             type: "SPEND",
-            currency: "NA",
+            currency: "INR",
             description,
         });
     })
@@ -179,10 +181,10 @@ export async function getResumeHubStats() {
 
         const [workExpCount, coverLetterCount, templateGenCount, totalTemplateCount] = await Promise.all([
             db.select({ count: sql<number>`count(*)` })
-                .from(await import('@repo/db').then(m => m.workExperiences ?? m.experiences))
+                .from(workExperiences)
                 .where(sql`"userId" = ${user.id}`).catch(() => [{ count: 0 }]),
             db.select({ count: sql<number>`count(*)` })
-                .from(await import('@repo/db').then(m => m.coverLetter ?? m.coverLetters))
+                .from(coverLetter)
                 .where(sql`"userId" = ${user.id}`).catch(() => [{ count: 0 }]),
             db.select({ count: sql<number>`count(*)` })
                 .from(resumeTemplateGeneration)

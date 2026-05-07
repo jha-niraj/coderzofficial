@@ -106,13 +106,12 @@ function VerifyContent() {
 				setIsVerified(true)
 				toast.success("Email verified successfully!")
 
-				const signInResult = await signIn('credentials', {
+				const signInResult = await signIn.email({
 					email: email,
 					password: "verified",
-					redirect: false
 				})
 
-				if (signInResult?.ok) {
+				if (signInResult?.data) {
 					const redirectUri = searchParams.get('redirect_uri');
 					const state = searchParams.get('state');
 					const isLearnPlatformRequest = redirectUri?.includes('learn.');

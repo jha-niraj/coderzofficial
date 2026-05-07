@@ -110,6 +110,7 @@ export async function createStandupSession(projectId: string, projectSlug: strin
                 })
                 .returning()
 
+            if (!created) throw new Error("Failed to create standup config")
             standupConfig = created
         }
 
@@ -168,7 +169,7 @@ export async function createStandupSession(projectId: string, projectSlug: strin
                 amount: -creditsRequired,
                 type: 'SPEND',
                 description: `Daily Standup: ${project.title}`,
-                currency: 'NA'
+                currency: 'INR'
             })
 
             return standupEntry
@@ -177,6 +178,8 @@ export async function createStandupSession(projectId: string, projectSlug: strin
         revalidatePath(`/projects/${projectSlug}`)
 
         const agentId = process.env.NEXT_PUBLIC_STANDUP_AGENT_ID || process.env.NEXT_PUBLIC_ELEVENLABS_MOCKVOICE || ''
+
+        if (!result) throw new Error("Failed to create standup entry")
 
         return {
             success: true,

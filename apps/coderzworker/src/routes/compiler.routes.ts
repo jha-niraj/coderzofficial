@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import {
   executeSync,
@@ -7,7 +7,7 @@ import {
   getLanguages,
 } from '../controllers/compiler.controller';
 
-const router = Router();
+const router: RouterType = Router();
 
 // POST /api/v1/execute — synchronous execution, waits for result
 router.post('/execute', authMiddleware, executeSync);

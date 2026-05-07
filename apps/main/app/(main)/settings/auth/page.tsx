@@ -1,4 +1,5 @@
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui/components/ui/card'
 import { Shield } from 'lucide-react'
@@ -9,7 +10,7 @@ export const metadata = {
 }
 
 export default async function AuthSettingsPage() {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         redirect('/login')

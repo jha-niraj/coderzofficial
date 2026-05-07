@@ -136,7 +136,7 @@ export function IntegrationsContent({ socialConnections }: IntegrationsContentPr
 
     const handleConnectGitHub = async () => {
         try {
-            await signIn('github', { callbackUrl: '/settings/integrations' })
+            await signIn.social({ provider: 'github', callbackURL: '/settings/integrations' })
         } catch {
             toast.error('Failed to connect GitHub')
         }

@@ -8,7 +8,7 @@ import {
 import { Input } from "@repo/ui/components/ui/input";
 import {
     Share2, Copy, Check, Globe, User, Twitter, Linkedin,
-    Facebook, Mail, Link2
+    Facebook, Mail
 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 import toast from "@repo/ui/components/ui/sonner";

@@ -705,7 +705,7 @@ export async function getOwnProfile() {
             userExperiences,
             userCertifications,
             userSocialLinks,
-            userEducations,
+            userEdus,
         ] = await Promise.all([
             db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, user.id) }),
             db.query.portfolioProjects.findMany({
@@ -782,7 +782,7 @@ export async function getOwnProfile() {
                 experiences: userExperiences,
                 certifications: userCertifications,
                 socialLinks: userSocialLinks,
-                educations: userEducations,
+                educations: userEdus,
             }
         };
     } catch (error) {
@@ -860,7 +860,7 @@ export async function getPublicProfile(username: string) {
             userExperiences,
             userCertifications,
             userSocialLinks,
-            userEducations,
+            userEdus,
         ] = await Promise.all([
             db.query.portfolioProjects.findMany({
                 where: eq(portfolioProjects.userId, profileOwner.id),
@@ -934,7 +934,7 @@ export async function getPublicProfile(username: string) {
             experiences: userExperiences,
             certifications: userCertifications,
             socialLinks: userSocialLinks,
-            educations: userEducations,
+            educations: userEdus,
         };
 
         if (!isOwnProfile) {

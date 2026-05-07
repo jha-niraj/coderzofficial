@@ -94,7 +94,7 @@ export async function browseJobs(filters: JobFilters = {}, page = 1, limit = 20)
 
         const whereClause = and(...conditions)
 
-        const [jobRows, [{ total }]] = await Promise.all([
+        const [jobRows, totalRows] = await Promise.all([
             db.query.jobs.findMany({
                 where: whereClause,
                 with: {
@@ -154,6 +154,7 @@ export async function browseJobs(filters: JobFilters = {}, page = 1, limit = 20)
             publishedAt: job.publishedAt,
             interviewProcess: processMap.get((job as any).interviewProcessId ?? '') ?? null,
         }))
+        const total = totalRows[0]?.total ?? 0
 
         return {
             success: true,

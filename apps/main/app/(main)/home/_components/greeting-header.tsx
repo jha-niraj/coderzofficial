@@ -20,7 +20,7 @@ interface GreetingHeaderProps {
         currentLevel: number;
         currentStreak: number;
         longestStreak: number;
-        _count: {
+        _count?: {
             followers: number;
             following: number;
         };

@@ -47,7 +47,7 @@ export function PathfinderStudioTab({
 
   const handleCreateStudio = async () => {
     setCreating(true);
-    const result = await createStudioForGoal(goalId, goalTitle, goalDescription);
+    const result = await createStudioForGoal(goalId, goalTitle, goalDescription ?? goalTitle);
     if (result.success && result.studioId) {
       setStudioId(result.studioId);
     }

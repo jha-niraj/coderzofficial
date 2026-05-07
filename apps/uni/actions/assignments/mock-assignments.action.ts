@@ -120,9 +120,9 @@ export async function createMockAssignment(payload: CreateMockAssignmentPayload)
                 title: mock.title,
             },
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Create mock assignment error:", error);
-        return { success: false, error: error.message || "Failed to create mock assignment" };
+        return { success: false, error: (error as Error).message || "Failed to create mock assignment" };
     }
 }
 
@@ -180,9 +180,9 @@ export async function getMockAssignments(filters?: {
             success: true,
             data: enrichedMocks,
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Get mock assignments error:", error);
-        return { success: false, error: error.message || "Failed to fetch mock assignments" };
+        return { success: false, error: (error as Error).message || "Failed to fetch mock assignments" };
     }
 }
 
@@ -224,9 +224,9 @@ export async function updateMockAssignment(
         await db.update(mockInterviewVoice).set(updateData).where(eq(mockInterviewVoice.id, mockId));
 
         return { success: true, message: "Mock assignment updated" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Update mock assignment error:", error);
-        return { success: false, error: error.message || "Failed to update mock assignment" };
+        return { success: false, error: (error as Error).message || "Failed to update mock assignment" };
     }
 }
 
@@ -259,9 +259,9 @@ export async function removeMockAssignment(mockId: string) {
         }).where(eq(mockInterviewVoice.id, mockId));
 
         return { success: true, message: "Mock assignment removed" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Remove mock assignment error:", error);
-        return { success: false, error: error.message || "Failed to remove mock assignment" };
+        return { success: false, error: (error as Error).message || "Failed to remove mock assignment" };
     }
 }
 
@@ -320,7 +320,7 @@ export async function getMockStudentResults(mockId: string) {
 
         // Group sessions by user (take the latest)
         const sessionMap = new Map<string, (typeof sessions)[0]>();
-        sessions.forEach((s: any) => {
+        sessions.forEach((s) => {
             if (!sessionMap.has(s.userId)) {
                 sessionMap.set(s.userId, s);
             }
@@ -328,11 +328,11 @@ export async function getMockStudentResults(mockId: string) {
 
         const studentResults = studentUserIds.map(userId => {
             const user = userMap.get(userId);
-            const session = sessionMap.get(userId) as any;
+            const session = sessionMap.get(userId);
 
             let score: number | null = null;
             if (session?.aiAnalysis) {
-                const analysis = session.aiAnalysis as any;
+                const analysis = session.aiAnalysis as Record<string, number>;
                 score = analysis.overallScore || analysis.score || null;
             }
 
@@ -354,8 +354,8 @@ export async function getMockStudentResults(mockId: string) {
                 results: studentResults,
             },
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Get mock student results error:", error);
-        return { success: false, error: error.message || "Failed to fetch student results" };
+        return { success: false, error: (error as Error).message || "Failed to fetch student results" };
     }
 }

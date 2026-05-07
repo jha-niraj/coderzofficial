@@ -17,22 +17,6 @@ const protectedRoutes = [
     '/university',
 ]
 
-// Public routes that don't require authentication
-const publicRoutes = [
-    '/',
-    '/signin',
-    '/register',
-    '/verify',
-    '/forgotpassword',
-    '/resetpassword',
-    '/error',
-    '/privacy',
-    '/terms',
-    '/about',
-    '/pricing',
-    '/contactus'
-]
-
 // API routes that should be excluded from auth checks
 const apiRoutes = [
     '/api/auth',
@@ -71,11 +55,6 @@ export default async function middleware(req: NextRequest) {
     // Check if current path is a protected route
     const isProtectedRoute = protectedRoutes.some(route =>
         nextUrl.pathname.startsWith(route)
-    )
-
-    // Check if current path is a public route
-    const isPublicRoute = publicRoutes.some(route =>
-        nextUrl.pathname === route || (route !== '/' && nextUrl.pathname.startsWith(route))
     )
 
     // If user is not logged in and trying to access protected route

@@ -157,7 +157,11 @@ export async function getCompanyMockHub(companySlug: string) {
                     locationType: j.locationType,
                     employmentType: j.employmentType,
                     applicationsCount: j.applicationsCount,
-                    interviewProcess: j.interviewProcessId ? (processMap.get(j.interviewProcessId) ?? null) : null,
+                    interviewProcess: j.interviewProcessId ? (() => {
+                        const p = processMap.get(j.interviewProcessId!)
+                        if (!p) return null
+                        return { ...p, rounds: p.rounds.map(r => ({ ...r, tipsForCandidates: (r.tipsForCandidates ?? null) as string[] | null })) }
+                    })() : null,
                 })),
                 processes: processesWithMock.map(p => ({
                     id: p.id,

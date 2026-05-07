@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import { GlobalLeaderboardClient } from './_components/globalleaderboardclient'
 
 interface GlobalLeaderboardPageProps {
@@ -11,7 +12,7 @@ interface GlobalLeaderboardPageProps {
 export default async function GlobalLeaderboardPage({
     searchParams
 }: GlobalLeaderboardPageProps) {
-    const session = await auth()
+    const session = await getSession(headers())
     const resolvedSearchParams = await searchParams
     const currentPage = parseInt(resolvedSearchParams.page || '1')
 

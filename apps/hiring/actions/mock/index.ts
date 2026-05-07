@@ -1,6 +1,6 @@
 "use server"
 
-import { db, companyMembers, interviewRounds, interviewProcesses, jobMockSessions, users, jobs } from "@repo/db"
+import { db, companyMembers, interviewRounds, jobMockSessions, users, jobs } from "@repo/db"
 import { eq, and, count, avg, gte, inArray, desc } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"

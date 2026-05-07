@@ -55,12 +55,14 @@ export async function addProjectResource(data: {
             })
             .returning()
 
+        if (!resource) return { success: false, error: "Failed to create resource" }
+
         // Fetch with user info
         const resourceWithUser = await db.query.projectV2Resources.findFirst({
             where: eq(projectV2Resources.id, resource.id),
             with: {
                 user: {
-                    columns: { id: true, name: true, image: true }
+                    columns: { id: true, name: true, image: true, username: true }
                 }
             }
         })
@@ -98,7 +100,7 @@ export async function getProjectResources(params: {
             ],
             with: {
                 user: {
-                    columns: { id: true, name: true, image: true }
+                    columns: { id: true, name: true, image: true, username: true }
                 }
             }
         })

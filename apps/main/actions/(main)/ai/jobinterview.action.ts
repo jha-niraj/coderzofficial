@@ -1970,10 +1970,11 @@ export async function getUserInterviewPlans({
 		const skip = (page - 1) * limit;
 
 		// Get total count for pagination
-		const [{ count: totalCount }] = await db
+		const countRows = await db
 			.select({ count: sql<number>`count(*)` })
 			.from(jobInterviewAssistant)
 			.where(whereClause);
+		const totalCount = Number(countRows[0]?.count ?? 0);
 
 		// Get plans with pagination
 		const plans = await db.query.jobInterviewAssistant.findMany({
@@ -2002,7 +2003,7 @@ export async function getUserInterviewPlans({
 			},
 		});
 
-		const total = Number(totalCount);
+		const total = totalCount;
 		const totalPages = Math.ceil(total / limit);
 		const hasNext = page < totalPages;
 		const hasPrev = page > 1;

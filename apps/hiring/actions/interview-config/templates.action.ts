@@ -151,8 +151,6 @@ export async function getInterviewTemplates(filters?: {
         let templates: InterviewTemplate[]
 
         try {
-            const conditions = [eq(interviewProcessTemplates.isPublic, true)]
-
             const dbTemplates = await db.query.interviewProcessTemplates.findMany({
                 where: eq(interviewProcessTemplates.isPublic, true),
                 orderBy: [

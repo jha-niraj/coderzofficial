@@ -197,6 +197,8 @@ export async function reviewSprintSuggestion({
                     })
                     .returning()
 
+                if (!sprint) throw new Error("Failed to create sprint")
+
                 const suggestedTasks = (suggestion.suggestedTasks as unknown as Array<{
                     title: string; description: string; criteria?: string[];
                     hints?: string[]; difficulty?: string; estimatedTime?: string; category?: string;

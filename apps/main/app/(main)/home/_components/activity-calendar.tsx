@@ -9,7 +9,7 @@ import {
 import ActivityDaySheet from "./activity-day-sheet";
 
 interface ActivityData {
-    date: Date;
+    date: Date | string;
     totalXp: number;
     activitiesCount: number;
 }

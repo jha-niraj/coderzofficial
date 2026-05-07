@@ -282,6 +282,8 @@ export async function copyPathfinderGoal(goalId: string) {
                 startedAt: new Date(),
             }).returning()
 
+            if (!newGoal) throw new Error("Failed to create goal")
+
             await tx.insert(pathfinderVerifications).values({
                 goalId: newGoal.id,
                 quizStatus: 'PENDING',
@@ -299,6 +301,8 @@ export async function copyPathfinderGoal(goalId: string) {
                     totalQuizQuestions: ds.totalQuizQuestions,
                     totalCodingProblems: ds.totalCodingProblems,
                 }).returning()
+
+                if (!newSession) throw new Error("Failed to create daily session")
 
                 for (const sg of ds.subGoals) {
                     await tx.insert(pathfinderSubGoals).values({
@@ -327,6 +331,8 @@ export async function copyPathfinderGoal(goalId: string) {
                     currency: 'INR',
                 }).returning()
 
+                if (!buyerTx) throw new Error("Failed to create credit transaction")
+
                 await tx.insert(subTransactions).values({
                     creditTransactionId: buyerTx.id,
                     module: 'PATHFINDER',
@@ -349,6 +355,8 @@ export async function copyPathfinderGoal(goalId: string) {
                     description: `Pathfinder: Sale of goal "${source.title}"`,
                     currency: 'INR',
                 }).returning()
+
+                if (!creatorTx) throw new Error("Failed to create creator transaction")
 
                 await tx.insert(subTransactions).values({
                     creditTransactionId: creatorTx.id,

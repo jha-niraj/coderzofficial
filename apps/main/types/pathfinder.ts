@@ -62,7 +62,7 @@ export interface PathfinderGroup {
     color: string | null
     description: string | null
     order: number
-    _count: { goals: number }
+    _count?: { goals: number }
 }
 
 export interface PathfinderSubGoal {

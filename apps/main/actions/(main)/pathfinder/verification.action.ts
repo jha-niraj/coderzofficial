@@ -268,7 +268,7 @@ export async function generateVerificationContent(goalId: string) {
                 creditsRequired: 0,
                 tags: ['pathfinder', 'verification'],
             }).returning()
-            mockId = mock.id
+            if (mock) mockId = mock.id
         }
 
         await db.update(pathfinderGoals)

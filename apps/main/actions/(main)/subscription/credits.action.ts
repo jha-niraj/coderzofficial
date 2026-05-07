@@ -93,6 +93,7 @@ export async function convertXpToCredits(xpToConvert: number) {
                 description: `Converted ${xpToConvert} XP to ${creditsToAdd} credits`,
             })
 
+            if (!updatedUser) throw new Error("Failed to update user")
             return {
                 newXp: updatedUser.currentXp,
                 newCredits: updatedUser.credits,

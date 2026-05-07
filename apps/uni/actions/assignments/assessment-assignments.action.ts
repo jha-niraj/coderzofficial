@@ -25,13 +25,6 @@ interface CreateAssessmentPayload {
     isLiveSession?: boolean;
 }
 
-interface GenerateQuestionsPayload {
-    assessmentId: string;
-    topic: string;
-    subtopics?: string[];
-    questionTypes?: ("MCQ" | "MULTI_SELECT" | "TRUE_FALSE" | "CODING")[];
-}
-
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -107,9 +100,9 @@ export async function createAssessmentAssignment(payload: CreateAssessmentPayloa
             title: payload.title,
             description: payload.description,
             slug: generateSlug(payload.title),
-            language: payload.language as any,
+            language: payload.language as "JAVASCRIPT" | "PYTHON" | "C" | "CPP" | "REACTJS" | "TYPESCRIPT" | "JAVA" | "GO" | "RUST",
             mode: payload.mode,
-            difficulty: payload.difficulty as any,
+            difficulty: payload.difficulty as "EASY" | "INTERMEDIATE" | "HARD",
             questionCount: payload.questionCount,
             timeLimit: payload.timeLimit || null,
             isPublic: false,
@@ -138,9 +131,9 @@ export async function createAssessmentAssignment(payload: CreateAssessmentPayloa
                 slug: assessment.slug,
             },
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Create assessment assignment error:", error);
-        return { success: false, error: error.message || "Failed to create assessment assignment" };
+        return { success: false, error: (error as Error).message || "Failed to create assessment assignment" };
     }
 }
 
@@ -180,7 +173,7 @@ export async function addAssessmentQuestions(
                 db.insert(userPracticeSetQuestions).values({
                     practiceSetId: assessmentId,
                     question: q.question,
-                    type: q.type as any,
+                    type: q.type as "MCQ" | "MULTIPLE_SELECT" | "CODE_OUTPUT" | "CODE_WRITE" | "CODE_DEBUG" | "CODE_COMPLETE" | "SCENARIO" | "TRUE_FALSE",
                     options: (q.options || []).filter(o => o.trim() !== '').map((opt, i) => ({
                         id: `opt-${i}`,
                         text: opt,
@@ -188,7 +181,7 @@ export async function addAssessmentQuestions(
                     })),
                     correctAnswer: Array.isArray(q.correctAnswer) ? q.correctAnswer.join(',') : q.correctAnswer,
                     answerExplanation: q.explanation || null,
-                    difficulty: (q.difficulty || assessment.difficulty) as any,
+                    difficulty: (q.difficulty || assessment.difficulty) as "EASY" | "INTERMEDIATE" | "HARD",
                     orderIndex: index,
                     codeSnippet: q.codeSnippet || null,
                     testCases: q.testCases || undefined,
@@ -207,9 +200,9 @@ export async function addAssessmentQuestions(
                 questionsAdded: createdQuestions.length,
             },
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Add assessment questions error:", error);
-        return { success: false, error: error.message || "Failed to add questions" };
+        return { success: false, error: (error as Error).message || "Failed to add questions" };
     }
 }
 
@@ -225,7 +218,7 @@ export async function getAssessmentAssignments(filters?: {
         const member = await getCurrentMember();
 
         const assessments = await db.query.userPracticeSets.findMany({
-            where: (tbl, { and, eq, or, isNull, gte, lt }) => {
+            where: (tbl, { and, eq }) => {
                 const conditions = [
                     eq(tbl.isUniversityAssessment, true),
                     eq(tbl.universityId, member.universityId),
@@ -269,9 +262,9 @@ export async function getAssessmentAssignments(filters?: {
             success: true,
             data: enrichedAssessments,
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Get assessment assignments error:", error);
-        return { success: false, error: error.message || "Failed to fetch assessment assignments" };
+        return { success: false, error: (error as Error).message || "Failed to fetch assessment assignments" };
     }
 }
 
@@ -312,9 +305,9 @@ export async function updateAssessmentAssignment(
         await db.update(userPracticeSets).set(updateData).where(eq(userPracticeSets.id, assessmentId));
 
         return { success: true, message: "Assessment assignment updated" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Update assessment assignment error:", error);
-        return { success: false, error: error.message || "Failed to update assessment assignment" };
+        return { success: false, error: (error as Error).message || "Failed to update assessment assignment" };
     }
 }
 
@@ -347,9 +340,9 @@ export async function removeAssessmentAssignment(assessmentId: string) {
         }).where(eq(userPracticeSets.id, assessmentId));
 
         return { success: true, message: "Assessment assignment removed" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Remove assessment assignment error:", error);
-        return { success: false, error: error.message || "Failed to remove assessment assignment" };
+        return { success: false, error: (error as Error).message || "Failed to remove assessment assignment" };
     }
 }
 
@@ -407,7 +400,7 @@ export async function getAssessmentStudentResults(assessmentId: string) {
 
         // Group attempts by user (take the best score)
         const attemptMap = new Map<string, (typeof attempts)[0]>();
-        attempts.forEach((a: any) => {
+        attempts.forEach((a) => {
             const existing = attemptMap.get(a.userId);
             if (!existing || (a.score || 0) > (existing.score || 0)) {
                 attemptMap.set(a.userId, a);
@@ -416,7 +409,7 @@ export async function getAssessmentStudentResults(assessmentId: string) {
 
         const studentResults = studentUserIds.map(userId => {
             const user = userMap.get(userId);
-            const attempt = attemptMap.get(userId) as any;
+            const attempt = attemptMap.get(userId);
 
             return {
                 user: user || { id: userId, name: null, email: null, image: null },
@@ -437,9 +430,9 @@ export async function getAssessmentStudentResults(assessmentId: string) {
                 results: studentResults,
             },
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Get assessment student results error:", error);
-        return { success: false, error: error.message || "Failed to fetch student results" };
+        return { success: false, error: (error as Error).message || "Failed to fetch student results" };
     }
 }
 
@@ -476,9 +469,9 @@ export async function startLiveSession(assessmentId: string) {
         }).where(eq(userPracticeSets.id, assessmentId));
 
         return { success: true, message: "Live session started" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Start live session error:", error);
-        return { success: false, error: error.message || "Failed to start live session" };
+        return { success: false, error: (error as Error).message || "Failed to start live session" };
     }
 }
 
@@ -507,9 +500,9 @@ export async function endLiveSession(assessmentId: string) {
         }).where(eq(userPracticeSets.id, assessmentId));
 
         return { success: true, message: "Live session ended" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("End live session error:", error);
-        return { success: false, error: error.message || "Failed to end live session" };
+        return { success: false, error: (error as Error).message || "Failed to end live session" };
     }
 }
 
@@ -551,8 +544,8 @@ export async function getLiveSessionStatus(assessmentId: string) {
                 completedCount: 0,
             },
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Get live session status error:", error);
-        return { success: false, error: error.message || "Failed to get live session status" };
+        return { success: false, error: (error as Error).message || "Failed to get live session status" };
     }
 }

@@ -67,7 +67,7 @@ export async function getPlatformProjects(options?: {
             conditions.push(sql`${projectsV2.technologies} @> ARRAY[${options.technology}]::text[]`);
         }
         if (options?.difficulty) {
-            conditions.push(eq(projectsV2.difficulty, options.difficulty));
+            conditions.push(eq(projectsV2.difficulty, options.difficulty as "BEGINNER" | "INTERMEDIATE" | "ADVANCED"));
         }
 
         const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];

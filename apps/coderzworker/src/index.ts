@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import express, { type Request, type Response, type NextFunction } from 'express';
+import express, { type Application, type Request, type Response, type NextFunction } from 'express';
 import cors from 'cors';
 import { startWorker } from './modules/compiler/queue';
 import { closeRedisConnection } from './utils/redis';
@@ -10,7 +10,7 @@ const PORT = parseInt(process.env.PORT ?? '3004', 10);
 const NODE_ENV = process.env.NODE_ENV ?? 'development';
 const DOCKER_ENABLED = process.env.DOCKER_ENABLED !== 'false';
 
-const app = express();
+const app: Application = express();
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 const corsOptions: cors.CorsOptions =

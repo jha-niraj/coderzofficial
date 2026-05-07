@@ -52,8 +52,8 @@ export function PublicProfileClient({
         try {
             const result = await toggleFollow(user.id);
             if (result.success) {
-                setIsFollowing(result.following ?? !isFollowing);
-                toast.success(result.following ? "Now following!" : "Unfollowed");
+                setIsFollowing(result.isFollowing ?? !isFollowing);
+                toast.success(result.isFollowing ? "Now following!" : "Unfollowed");
             } else {
                 toast.error(result.error || "Failed to update follow status");
             }

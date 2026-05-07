@@ -1,5 +1,6 @@
 import { getProjectTasks } from '@/actions/(main)/projects/project.action'
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import TasksPageClient from './_components/tasks-page-client'
 import { ProjectDetailsError } from '../_components/project-details-error'
@@ -9,7 +10,7 @@ export default async function TasksPage({
 }: {
     params: Promise<{ slug: string }>
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     const { slug } = await params
 
     if (!session?.user?.id) {

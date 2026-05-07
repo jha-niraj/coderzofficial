@@ -1,4 +1,5 @@
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import { redirect, notFound } from 'next/navigation'
 import { getResumeDraft, getResumeTemplates } from '@/actions/(main)/ai/resume-draft.action'
 import { ResumeEditor } from '../../_components/resume-editor'
@@ -10,7 +11,7 @@ export default async function ResumeEditorPage({
     params: Promise<{ id: string }>
 }) {
     const { id } = await params
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) redirect('/login')
 
     const [draftRes, templatesRes] = await Promise.all([

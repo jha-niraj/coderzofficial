@@ -71,9 +71,7 @@ export function IntegrationsTab({ isOwnProfile }: IntegrationsTabProps) {
 
     const handleConnectGitHub = async () => {
         try {
-            await signIn("github", {
-                callbackUrl: "/profile?tab=integrations&connected=github",
-            });
+            await signIn.social({ provider: "github", callbackURL: "/profile?tab=integrations&connected=github" });
         } catch {
             toast.error("Failed to connect GitHub");
         }

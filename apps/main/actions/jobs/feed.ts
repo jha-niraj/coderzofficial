@@ -309,7 +309,7 @@ export async function getFollowingFeedJobs(page = 1, limit = 10) {
             eq(jobs.visibility, "PUBLIC")
         )
 
-        const [jobRows, [{ total }]] = await Promise.all([
+        const [jobRows, totalRowsFollowing] = await Promise.all([
             db.query.jobs.findMany({
                 where: whereClause,
                 with: {
@@ -323,6 +323,7 @@ export async function getFollowingFeedJobs(page = 1, limit = 10) {
             }),
             db.select({ total: count() }).from(jobs).where(whereClause),
         ])
+        const totalFollowing = totalRowsFollowing[0]?.total ?? 0
 
         const processMap = await loadInterviewProcesses(jobRows)
 
@@ -346,8 +347,8 @@ export async function getFollowingFeedJobs(page = 1, limit = 10) {
                 pagination: {
                     page,
                     limit,
-                    total: Number(total),
-                    totalPages: Math.ceil(Number(total) / limit)
+                    total: Number(totalFollowing),
+                    totalPages: Math.ceil(Number(totalFollowing) / limit)
                 },
                 followedCompaniesCount: followedCompanyIds.length,
                 isEmpty: false
@@ -371,7 +372,7 @@ export async function getForYouFeedJobs(page = 1, limit = 10) {
 
         // For unauthenticated users, return featured jobs
         if (!session?.user?.id) {
-            const [jobRows, [{ total }]] = await Promise.all([
+            const [jobRows, totalRowsAnon] = await Promise.all([
                 db.query.jobs.findMany({
                     where: baseWhere,
                     with: {
@@ -385,6 +386,7 @@ export async function getForYouFeedJobs(page = 1, limit = 10) {
                 }),
                 db.select({ total: count() }).from(jobs).where(baseWhere),
             ])
+            const totalAnon = totalRowsAnon[0]?.total ?? 0
 
             const processMap = await loadInterviewProcesses(jobRows)
             const enriched = jobRows.map(job => ({ ...job, interviewProcess: processMap.get(job.interviewProcessId ?? '') ?? null }))
@@ -397,8 +399,8 @@ export async function getForYouFeedJobs(page = 1, limit = 10) {
                     pagination: {
                         page,
                         limit,
-                        total: Number(total),
-                        totalPages: Math.ceil(Number(total) / limit)
+                        total: Number(totalAnon),
+                        totalPages: Math.ceil(Number(totalAnon) / limit)
                     },
                     isAuthenticated: false
                 }
@@ -414,7 +416,7 @@ export async function getForYouFeedJobs(page = 1, limit = 10) {
             getUserAppliedJobIds(userId)
         ])
 
-        const [jobRows, [{ total }]] = await Promise.all([
+        const [jobRows, totalRowsAuth] = await Promise.all([
             db.query.jobs.findMany({
                 where: baseWhere,
                 with: {
@@ -426,6 +428,7 @@ export async function getForYouFeedJobs(page = 1, limit = 10) {
             }),
             db.select({ total: count() }).from(jobs).where(baseWhere),
         ])
+        const totalAuth = totalRowsAuth[0]?.total ?? 0
 
         const processMap = await loadInterviewProcesses(jobRows)
         const enriched = jobRows.map(job => ({ ...job, interviewProcess: processMap.get(job.interviewProcessId ?? '') ?? null }))
@@ -449,11 +452,11 @@ export async function getForYouFeedJobs(page = 1, limit = 10) {
                 pagination: {
                     page,
                     limit,
-                    total: Number(total),
-                    totalPages: Math.ceil(Number(total) / limit)
+                    total: Number(totalAuth),
+                    totalPages: Math.ceil(Number(totalAuth) / limit)
                 },
                 isAuthenticated: true,
-                userSkillsCount: userSkillsList.length
+                userSkillsCount: userSkillsList.length,
             }
         }
     } catch (error) {
@@ -741,7 +744,7 @@ export async function getSavedFeedJobs(page = 1, limit = 10) {
         }
 
         const jobIds = savedJobEntries.map(s => s.jobId)
-        const [userSkillsList, followedCompanyIds, appliedJobIds, jobRows, [{ total }]] = await Promise.all([
+        const [userSkillsList, followedCompanyIds, appliedJobIds, jobRows, totalRowsSaved] = await Promise.all([
             getUserSkills(userId),
             getUserFollowedCompanyIds(userId),
             getUserAppliedJobIds(userId),
@@ -758,6 +761,7 @@ export async function getSavedFeedJobs(page = 1, limit = 10) {
             }),
             db.select({ total: count() }).from(savedJobs).where(eq(savedJobs.userId, userId)),
         ])
+        const totalSaved = totalRowsSaved[0]?.total ?? 0
 
         const processMap = await loadInterviewProcesses(jobRows)
         const enriched = jobRows.map(job => ({ ...job, interviewProcess: processMap.get(job.interviewProcessId ?? '') ?? null }))
@@ -789,8 +793,8 @@ export async function getSavedFeedJobs(page = 1, limit = 10) {
                 pagination: {
                     page,
                     limit,
-                    total: Number(total),
-                    totalPages: Math.ceil(Number(total) / limit)
+                    total: Number(totalSaved),
+                    totalPages: Math.ceil(Number(totalSaved) / limit)
                 }
             }
         }
@@ -813,20 +817,25 @@ export async function getFeedStats() {
         const userId = session.user.id
 
         const [
-            [{ followedCompaniesCount }],
-            [{ savedJobsCount }],
-            [{ appliedJobsCount }],
-            [{ userSkillsCount }],
+            followedCompaniesRows,
+            savedJobsRows,
+            appliedJobsRows,
+            userSkillsRows,
         ] = await Promise.all([
-            db.select({ followedCompaniesCount: count() }).from(companyFollowers).where(eq(companyFollowers.userId, userId)),
-            db.select({ savedJobsCount: count() }).from(savedJobs).where(eq(savedJobs.userId, userId)),
-            db.select({ appliedJobsCount: count() }).from(jobApplications).where(eq(jobApplications.userId, userId)),
-            db.select({ userSkillsCount: count() }).from(skills).where(eq(skills.userId, userId)),
+            db.select({ cnt: count() }).from(companyFollowers).where(eq(companyFollowers.userId, userId)),
+            db.select({ cnt: count() }).from(savedJobs).where(eq(savedJobs.userId, userId)),
+            db.select({ cnt: count() }).from(jobApplications).where(eq(jobApplications.userId, userId)),
+            db.select({ cnt: count() }).from(skills).where(eq(skills.userId, userId)),
         ])
 
+        const followedCompaniesCount = followedCompaniesRows[0]?.cnt ?? 0
+        const savedJobsCount = savedJobsRows[0]?.cnt ?? 0
+        const appliedJobsCount = appliedJobsRows[0]?.cnt ?? 0
+        const userSkillsCount = userSkillsRows[0]?.cnt ?? 0
+
         const followedCompanyIds = await getUserFollowedCompanyIds(userId)
-        const [{ followingJobsCount }] = await db
-            .select({ followingJobsCount: count() })
+        const followingJobsRows = await db
+            .select({ cnt: count() })
             .from(jobs)
             .where(
                 followedCompanyIds.length > 0
@@ -837,6 +846,7 @@ export async function getFeedStats() {
                     )
                     : and(eq(jobs.status, "ACTIVE"), eq(jobs.visibility, "PUBLIC"))
             )
+        const followingJobsCount = followingJobsRows[0]?.cnt ?? 0
 
         return {
             success: true,

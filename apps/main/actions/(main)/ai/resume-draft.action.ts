@@ -7,6 +7,11 @@ import {
     resumeDraft,
     resumeTemplate,
     users,
+    workExperiences,
+    portfolioProjects,
+    userEducations,
+    socialLinks,
+    skills,
 } from '@repo/db'
 import { eq, and, desc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
@@ -144,18 +149,20 @@ export async function createDraftFromProfile(name: string, templateSlug = 'clean
 
     const user = await db.query.users.findFirst({
         where: eq(users.id, session.user.id),
-        with: {
-            experiences: { orderBy: (e: any, { desc }: any) => [desc(e.startDate)] },
-            portfolioProjects: {
-                orderBy: (p: any, { desc }: any) => [desc(p.startDate)],
-                with: { projectLinks: true },
-            },
-            educations: { orderBy: (e: any, { desc }: any) => [desc(e.startDate)] },
-            skills: true,
-            socialLinks: true,
-        },
     })
     if (!user) return { success: false, error: 'User not found' }
+
+    const [userExperiences, userProjects, userEdus, userSocialLinks, userSkills] = await Promise.all([
+        db.query.workExperiences.findMany({ where: eq(workExperiences.userId, user.id), orderBy: [desc(workExperiences.startDate)] }),
+        db.query.portfolioProjects.findMany({
+            where: eq(portfolioProjects.userId, user.id),
+            orderBy: [desc(portfolioProjects.startDate)],
+            with: { links: true },
+        }),
+        db.query.userEducations.findMany({ where: eq(userEducations.userId, user.id), orderBy: [desc(userEducations.startDate)] }),
+        db.query.socialLinks.findMany({ where: eq(socialLinks.userId, user.id) }),
+        db.query.skills.findMany({ where: eq(skills.userId, user.id) }),
+    ])
 
     const content: ResumeDraftContent = {
         header: {
@@ -164,47 +171,47 @@ export async function createDraftFromProfile(name: string, templateSlug = 'clean
             title: user.occupation ?? '',
             location: user.location ?? '',
             summary: user.bio ?? '',
-            github: user.socialLinks.find((s: any) => s.platform === 'GITHUB')?.url,
-            linkedin: user.socialLinks.find((s: any) => s.platform === 'LINKEDIN')?.url,
-            portfolio: user.socialLinks.find((s: any) => s.platform === 'PORTFOLIO')?.url,
-            website: user.socialLinks.find((s: any) => s.platform === 'WEBSITE')?.url,
+            github: userSocialLinks.find((s) => s.platform === 'GITHUB')?.url,
+            linkedin: userSocialLinks.find((s) => s.platform === 'LINKEDIN')?.url,
+            portfolio: userSocialLinks.find((s) => s.platform === 'PORTFOLIO')?.url,
+            website: userSocialLinks.find((s) => s.platform === 'WEBSITE')?.url,
         },
-        experience: user.experiences.map((e: any) => ({
+        experience: userExperiences.map((e) => ({
             id: e.id,
             company: e.companyName,
             role: e.roleTitle,
             startDate: e.startDate.toISOString(),
             endDate: e.endDate?.toISOString(),
             current: e.isCurrentlyWorking,
-            bullets: e.bulletPoints ?? [],
+            bullets: (e.bulletPoints as string[]) ?? [],
         })),
-        projects: user.portfolioProjects.map((p: any) => ({
+        projects: userProjects.map((p) => ({
             id: p.id,
             name: p.projectName,
             description: p.description ?? '',
-            technologies: p.technologies ?? [],
-            github: p.projectLinks.find((l: any) => l.linkType === 'GITHUB')?.url,
-            liveUrl: p.projectLinks.find((l: any) => l.linkType === 'LIVE_SITE' || l.linkType === 'DEMO')?.url,
-            bullets: p.bulletPoints ?? [],
+            technologies: (p.technologies as string[]) ?? [],
+            github: p.links.find((l) => l.linkType === 'GITHUB')?.url,
+            liveUrl: p.links.find((l) => l.linkType === 'LIVE_SITE' || l.linkType === 'DEMO')?.url,
+            bullets: (p.bulletPoints as string[]) ?? [],
         })),
-        education: user.educations.map((e: any) => ({
+        education: userEdus.map((e) => ({
             id: e.id,
             institution: e.institution,
             degree: e.degree ?? '',
             startDate: e.startDate?.toISOString() ?? '',
             endDate: e.endDate?.toISOString(),
-            bullets: e.bulletPoints ?? [],
+            bullets: (e.bulletPoints as string[]) ?? [],
         })),
-        skills: buildSkillGroups(user.skills),
+        skills: buildSkillGroups(userSkills),
         certifications: [],
     }
 
     // Collect missing fields so the caller can show toasts
     const missingFields: string[] = []
-    if (!user.experiences.length) missingFields.push('Work Experience')
-    if (!user.portfolioProjects.length) missingFields.push('Projects')
-    if (!user.skills.length) missingFields.push('Skills')
-    if (!user.educations.length) missingFields.push('Education')
+    if (!userExperiences.length) missingFields.push('Work Experience')
+    if (!userProjects.length) missingFields.push('Projects')
+    if (!userSkills.length) missingFields.push('Skills')
+    if (!userEdus.length) missingFields.push('Education')
     if (!user.name) missingFields.push('Full Name')
     if (!user.occupation) missingFields.push('Job Title')
 

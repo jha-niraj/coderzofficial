@@ -1,6 +1,6 @@
 "use server";
 
-import { db, universityMembers, universities, universitySubscriptions, studentUniversityLinks, departments, universityClasses } from "@repo/db"
+import { db, universityMembers, universitySubscriptions, studentUniversityLinks, departments, universityClasses } from "@repo/db"
 import { eq, and, inArray, count } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"

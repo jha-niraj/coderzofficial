@@ -56,7 +56,7 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
                         }
                     }
                 },
-                knowledge: true
+                knowledgeBase: true
             }
         });
 
@@ -68,7 +68,7 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
             return { success: false, error: "This project does not include assessments" }
         }
 
-        const knowledgeData = project.knowledge as any
+        const knowledgeData = project.knowledgeBase as any
         if (knowledgeData?.mockKnowledgeBase) {
             return {
                 success: true,
@@ -174,7 +174,7 @@ ${knowledgeBase.practicalScenarios.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 
             await tx.insert(creditTransactions).values({
                 userId: session.user.id,
-                currency: "NA",
+                currency: "INR",
                 amount: MOCK_CREDIT_COST,
                 type: "SPEND",
                 description: `Mock Interview generated for project: ${project.title}`
@@ -226,14 +226,14 @@ export async function createProjectMockSession(projectSlug: string) {
 
         const project = await db.query.projectsV2.findFirst({
             where: eq(projectsV2.slug, projectSlug),
-            with: { knowledge: true }
+            with: { knowledgeBase: true }
         });
 
         if (!project) {
             return { success: false, error: "Project not found" }
         }
 
-        const knowledgeData = project.knowledge as any
+        const knowledgeData = (project.knowledgeBase as any)
         if (!knowledgeData?.mockKnowledgeBase) {
             return { success: false, error: "Mock interview knowledge base not generated yet" }
         }
@@ -423,7 +423,7 @@ Return JSON: {"overallScore": 0-100, "communication": {"score": 0-100, "feedback
                             score: feedback.overallScore,
                             technicalScore: feedback.technical?.score,
                             communicationScore: feedback.communication?.score,
-                            LearnualScore: feedback.problemSolving?.score,
+                            learnualScore: feedback.problemSolving?.score,
                             feedback: feedback.detailedFeedback,
                             strengths: feedback.strengths || [],
                             improvements: feedback.improvements || []
@@ -507,14 +507,14 @@ export async function hasProjectMockKnowledgeBase(projectSlug: string) {
     try {
         const project = await db.query.projectsV2.findFirst({
             where: eq(projectsV2.slug, projectSlug),
-            with: { knowledge: true }
+            with: { knowledgeBase: true }
         });
 
         if (!project) {
             return { success: false, error: "Project not found" }
         }
 
-        const knowledgeData = project.knowledge as any
+        const knowledgeData = (project.knowledgeBase as any)
 
         return {
             success: true,

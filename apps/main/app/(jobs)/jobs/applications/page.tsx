@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from 'next/headers'
 import { getMyApplications } from "@/actions/jobs"
 import { ApplicationsContent } from "./applications-content"
 
@@ -13,7 +14,7 @@ export const metadata = {
 
 export default async function ApplicationsPage() {
     const [session, result] = await Promise.all([
-        auth(),
+        getSession(headers()),
         getMyApplications()
     ])
 

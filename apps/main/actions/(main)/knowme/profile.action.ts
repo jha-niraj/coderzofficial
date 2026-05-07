@@ -156,18 +156,20 @@ export async function getKnowMeProfileByUsername(
 	try {
 		const user = await db.query.users.findFirst({
 			where: eq(users.username, username),
-			with: {
-				knowmeProfile: {
-					with: { privacySettings: true },
-				},
-			},
 		});
 
-		if (!user || !(user as any).knowmeProfile) {
+		if (!user) {
 			return { success: false, error: "Profile not found" };
 		}
 
-		const profile = (user as any).knowmeProfile;
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.userId, user.id),
+			with: { privacySettings: true },
+		});
+
+		if (!profile) {
+			return { success: false, error: "Profile not found" };
+		}
 
 		// Check if profile is accessible
 		if (profile.status !== "ACTIVE" || !profile.isPublic) {

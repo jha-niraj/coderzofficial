@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { auth } from '@repo/auth';
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers';
 import {
     getMyKnowMeProfile, getApiConfig
 } from '@/actions/(main)/knowme';
@@ -18,7 +19,7 @@ interface Props {
 }
 
 export default async function KnowMeSettingsPage({ searchParams }: Props) {
-    const session = await auth();
+    const session = await getSession(headers());
     const params = await searchParams;
 
     if (!session?.user?.id) {

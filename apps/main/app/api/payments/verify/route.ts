@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
             .where(eq(payments.id, payment.id))
             .returning();
 
+        if (!updatedPayment) throw new Error("Failed to update payment")
         console.log('Payment updated successfully');
 
         // Add credits to user account
@@ -113,6 +114,7 @@ export async function POST(req: NextRequest) {
             paymentId: payment.id,
         }).returning();
 
+        if (!creditTransaction) throw new Error("Failed to create credit transaction")
         console.log('Credit transaction created:', creditTransaction.id);
 
         return NextResponse.json({

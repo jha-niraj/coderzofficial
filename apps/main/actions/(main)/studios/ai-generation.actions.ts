@@ -3,7 +3,6 @@
 import { db } from "@repo/db";
 import { studioSteps, studioQuizzes } from "@repo/db";
 import { eq } from "drizzle-orm";
-import { createId } from "@paralleldrive/cuid2";
 import { openai } from "@/lib/openai-client";
 
 // ─── Explanation ──────────────────────────────────────────────────────────────
@@ -157,10 +156,9 @@ export async function generateQuiz(
 
         const [quiz] = await db.insert(studioQuizzes).values({
             studioId,
+            blockId: crypto.randomUUID(),
             title: `Quiz: ${topic}`,
             questions,
-            difficulty: "MEDIUM",
-            passingScore: 70,
         }).returning({ id: studioQuizzes.id });
 
         const count = await db.$count(studioSteps, eq(studioSteps.studioId, studioId));

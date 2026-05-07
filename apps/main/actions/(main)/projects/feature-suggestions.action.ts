@@ -41,8 +41,8 @@ export async function createFeatureSuggestion(formData: FormData) {
         const project = await db.query.projectsV2.findFirst({
             where: eq(projectsV2.id, projectId),
             with: {
-                progress: {
-                    where: (progress, { eq }) => eq(progress.userId, session.user.id),
+                userProgress: {
+                    where: (progress: any, { eq }: any) => eq(progress.userId, session.user.id),
                     columns: { id: true }
                 }
             }
@@ -53,7 +53,7 @@ export async function createFeatureSuggestion(formData: FormData) {
         }
 
         const isCreator = project.createdBy === session.user.id
-        const isEnrolled = project.progress.length > 0
+        const isEnrolled = project.userProgress.length > 0
 
         let suggestedBy: "CREATOR" | "ENROLLED_USER" | "VISITOR"
         if (isCreator) {
@@ -132,6 +132,7 @@ export async function createFeatureSuggestion(formData: FormData) {
                         orderIndex: 0
                     })
                     .returning()
+                if (!newSprint) throw new Error("Failed to create sprint")
                 sprintId = newSprint.id
             }
 
@@ -166,6 +167,8 @@ export async function createFeatureSuggestion(formData: FormData) {
                     orderIndex: Number(taskCount?.count ?? 0)
                 })
                 .returning()
+
+            if (!task) throw new Error("Failed to create task")
 
             await db.insert(userTaskV2Statuses).values({
                 userId: session.user.id,
@@ -473,6 +476,7 @@ export async function adoptVisitorSuggestionToTasks(suggestionId: string, projec
                         orderIndex: 0
                     })
                     .returning()
+                if (!newSprint) throw new Error("Failed to create sprint")
                 sprintId = newSprint.id
             }
 
@@ -510,6 +514,7 @@ export async function adoptVisitorSuggestionToTasks(suggestionId: string, projec
                 })
                 .returning()
 
+            if (!newTask) throw new Error("Failed to create task")
             task = newTask
 
             await db
@@ -596,6 +601,7 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
                     orderIndex: 0
                 })
                 .returning()
+            if (!newSprint) throw new Error("Failed to create sprint")
             sprintId = newSprint.id
         }
 
@@ -633,6 +639,8 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
             })
             .returning()
 
+        if (!task) throw new Error("Failed to create task")
+
         let creatorProgress = await db.query.userProjectV2Progress.findFirst({
             where: and(
                 eq(userProjectV2Progress.userId, session.user.id),
@@ -661,6 +669,7 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
                 })
                 .returning()
 
+            if (!created) throw new Error("Failed to create progress record")
             creatorProgress = created
         }
 

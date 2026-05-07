@@ -1,8 +1,8 @@
-import { Router } from 'express';
+import { Router, type Router as RouterType } from 'express';
 import compilerRoutes from './compiler.routes';
 import healthRoutes from './health.routes';
 
-const router = Router();
+const router: RouterType = Router();
 
 // Health endpoints at root level (no /api/v1 prefix)
 router.use('/', healthRoutes);

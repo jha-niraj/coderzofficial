@@ -74,7 +74,7 @@ interface SubGoal {
 
 interface DailySession {
     id: string
-    date: Date
+    date: Date | string
     totalSubGoals: number
     completedSubGoals: number
     totalQuizQuestions: number
@@ -95,7 +95,7 @@ interface Goal {
 
 interface DailySessionWithSubGoals {
     id: string
-    date: Date
+    date: Date | string
     totalSubGoals: number
     completedSubGoals: number
     totalQuizQuestions: number

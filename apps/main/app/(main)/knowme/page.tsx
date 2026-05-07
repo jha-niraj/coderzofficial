@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { Metadata } from 'next';
-import { auth } from '@repo/auth';
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers';
 import {
     getMyKnowMeProfile, hasKnowMeProfile
 } from '@/actions/(main)/knowme/profile.action';
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function KnowMePage() {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return <KnowMeLandingPage isLoggedIn={false} />;

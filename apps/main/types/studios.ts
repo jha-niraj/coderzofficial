@@ -30,10 +30,10 @@ export interface Studio {
   slug: string | null;
   title: string;
   description: string | null;
-  emoji?: string;
-  coverImage?: string;
+  emoji?: string | null;
+  coverImage?: string | null;
   source: StudioSource;
-  sourceId?: string; // pathfinder_goal_id or space_id
+  sourceId?: string | null; // pathfinder_goal_id or space_id
   stepCount: number;
   userId: string;
   createdAt: Date;
@@ -47,8 +47,8 @@ export interface StudioStep {
   studioId: string;
   orderNumber: number;
   type: StudioStepType;
-  content?: string; // For explanation, note types
-  metadata: Record<string, unknown>;
+  content?: string | null; // For explanation, note types
+  metadata: unknown;
   source: ContentSource;
   status: StudioStepStatus;
   createdAt: Date;

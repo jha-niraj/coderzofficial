@@ -22,6 +22,12 @@ const nextConfig = {
             }
         }
 
+        // Suppress import.meta warning from unpdf (third-party package limitation)
+        config.ignoreWarnings = [
+            ...(config.ignoreWarnings ?? []),
+            { module: /unpdf/ },
+        ];
+
         return config;
     },
     reactStrictMode: true

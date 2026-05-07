@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { getJobsTabCounts } from "@/actions/jobs/tabs"
 import { JobsTabsWrapper } from "./components/jobs-tabs-wrapper"
 
@@ -10,7 +11,7 @@ export default async function JobsLayout({
     children: React.ReactNode
 }) {
     const [session, countsResult] = await Promise.all([
-        auth(),
+        getSession(headers()),
         getJobsTabCounts()
     ])
 

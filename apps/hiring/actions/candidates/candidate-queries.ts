@@ -1,7 +1,7 @@
 "use server"
 
 import { db, companyMembers, jobs, jobApplications, users } from "@repo/db"
-import { eq, and, desc, inArray, asc } from "drizzle-orm"
+import { eq, and, desc, inArray } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import type { CandidateFilters } from "@/types"

@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { getSession } from '@repo/auth'
 import { headers } from 'next/headers'
-import { db, users, userProjectV2Progress, userTaskV2Statuses, projectsV2, projectV2Tasks, projectV2Sprints } from '@repo/db'
+import { db, users, userProjectV2Progress, userTaskV2Statuses } from '@repo/db'
 import { eq, desc } from 'drizzle-orm'
 import { UserProfileLeaderboardClient } from './_components/user-profile-leaderboard-client'
 import {

@@ -1,6 +1,6 @@
 "use server"
 
-import { db, notifications, users } from "@repo/db"
+import { db, notifications } from "@repo/db"
 import { eq, and, inArray, count, desc } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"

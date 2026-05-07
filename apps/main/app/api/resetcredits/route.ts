@@ -3,7 +3,7 @@ import { db, users } from "@repo/db";
 
 export async function GET() {
     try {
-        const result = await db.update(users)
+        await db.update(users)
             .set({ creditsShared: 0 });
 
         // Drizzle update does not return a count by default; use a raw count query if needed

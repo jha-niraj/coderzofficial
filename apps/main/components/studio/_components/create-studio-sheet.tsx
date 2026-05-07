@@ -56,7 +56,7 @@ export default function CreateStudioSheet({
 
         setIsLoading(true);
         try {
-            const result = await createStudio({ title, source: "manual" });
+            const result = await createStudio({ title, source: "MANUAL" });
             if (result.error) {
                 toast.error(result.error);
             } else if (result.studio) {

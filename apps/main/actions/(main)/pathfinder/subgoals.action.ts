@@ -62,11 +62,12 @@ export async function getOrCreateDailySession(goalId: string) {
 
         const today = new Date()
         today.setHours(0, 0, 0, 0)
+        const todayStr = today.toISOString().split('T')[0]!
 
         let dailySession = await db.query.pathfinderDailySessions.findFirst({
             where: and(
                 eq(pathfinderDailySessions.goalId, goalId),
-                eq(pathfinderDailySessions.date, today)
+                eq(pathfinderDailySessions.date, todayStr)
             ),
             with: {
                 subGoals: {
@@ -79,9 +80,10 @@ export async function getOrCreateDailySession(goalId: string) {
             const [created] = await db.insert(pathfinderDailySessions).values({
                 goalId,
                 userId: session.user.id,
-                date: today,
+                date: todayStr,
             }).returning()
 
+            if (!created) throw new Error("Failed to create daily session")
             dailySession = { ...created, subGoals: [] }
         }
 
@@ -105,11 +107,12 @@ export async function getDailySessionByDate(goalId: string, date: Date) {
 
         const normalizedDate = new Date(date)
         normalizedDate.setHours(0, 0, 0, 0)
+        const normalizedDateStr = normalizedDate.toISOString().split('T')[0]!
 
         const dailySession = await db.query.pathfinderDailySessions.findFirst({
             where: and(
                 eq(pathfinderDailySessions.goalId, goalId),
-                eq(pathfinderDailySessions.date, normalizedDate)
+                eq(pathfinderDailySessions.date, normalizedDateStr)
             ),
             with: {
                 subGoals: {
@@ -209,6 +212,8 @@ export async function createSubGoal(input: CreateSubGoalInput) {
             order: (maxResult?.maxOrder || 0) + 1,
         }).returning()
 
+        if (!subGoal) throw new Error("Failed to create sub-goal")
+
         // Update session stats
         await db.update(pathfinderDailySessions)
             .set({ totalSubGoals: sql`${pathfinderDailySessions.totalSubGoals} + 1` })
@@ -234,6 +239,8 @@ export async function createSubGoal(input: CreateSubGoalInput) {
             userId: session.user.id,
             stepCount: 0,
         }).returning()
+
+        if (!studio) throw new Error("Failed to create studio")
 
         await db.update(pathfinderSubGoals)
             .set({ studioId: studio.id })

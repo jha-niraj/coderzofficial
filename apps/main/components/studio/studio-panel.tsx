@@ -25,7 +25,7 @@ interface StudioPanelProps {
     context: {
         title: string;
         description?: string;
-        source: "pathfinder" | "space" | "manual";
+        source: "PATHFINDER" | "SPACE" | "MANUAL";
         sourceId?: string;
         /** Label for the topic (shown in UI) */
         topicLabel?: string;

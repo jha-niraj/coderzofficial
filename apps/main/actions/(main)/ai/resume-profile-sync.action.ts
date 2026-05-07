@@ -2,8 +2,18 @@
 
 import { getSession } from '@repo/auth'
 import { headers } from 'next/headers'
-import { db, resumeDraft, users } from '@repo/db'
-import { eq, and } from 'drizzle-orm'
+import {
+    db,
+    resumeDraft,
+    users,
+    workExperiences,
+    portfolioProjects,
+    userEducations,
+    socialLinks,
+    skills,
+    certifications,
+} from '@repo/db'
+import { eq, asc, desc } from 'drizzle-orm'
 import type {
     ResumeDraftContent,
     ResumeExperienceEntry,
@@ -59,29 +69,40 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
 
         const userId = session.user.id
 
-        // ── 1. Fetch user and all profile data in one go ──────────────────────
-        const user = await db.query.users.findFirst({
-            where: eq(users.id, userId),
-            with: {
-                socialLinks: true,
-                experiences: {
-                    orderBy: (e: any, { desc }: any) => [desc(e.startDate)],
-                },
-                portfolioProjects: {
-                    orderBy: (p: any, { desc }: any) => [desc(p.startDate)],
-                    with: { projectLinks: true },
-                },
-                educations: {
-                    orderBy: (e: any, { desc }: any) => [desc(e.startDate)],
-                },
-                skills: {
-                    orderBy: (s: any, { asc }: any) => [asc(s.category), asc(s.order)],
-                },
-                certifications: {
-                    orderBy: (c: any, { desc }: any) => [desc(c.issuedDate)],
-                },
-            },
-        })
+        // ── 1. Fetch user and all profile data in parallel ────────────────────
+        const [
+            user,
+            userSocialLinks,
+            userExperiences,
+            userProjects,
+            userEdus,
+            userSkills,
+            userCertifications,
+        ] = await Promise.all([
+            db.query.users.findFirst({ where: eq(users.id, userId) }),
+            db.query.socialLinks.findMany({ where: eq(socialLinks.userId, userId) }),
+            db.query.workExperiences.findMany({
+                where: eq(workExperiences.userId, userId),
+                orderBy: [desc(workExperiences.startDate)],
+            }),
+            db.query.portfolioProjects.findMany({
+                where: eq(portfolioProjects.userId, userId),
+                orderBy: [desc(portfolioProjects.startDate)],
+                with: { links: true },
+            }),
+            db.query.userEducations.findMany({
+                where: eq(userEducations.userId, userId),
+                orderBy: [desc(userEducations.startDate)],
+            }),
+            db.query.skills.findMany({
+                where: eq(skills.userId, userId),
+                orderBy: [asc(skills.category), asc(skills.order)],
+            }),
+            db.query.certifications.findMany({
+                where: eq(certifications.userId, userId),
+                orderBy: [desc(certifications.issuedDate)],
+            }),
+        ])
 
         if (!user) {
             return { success: false, error: 'User not found.' }
@@ -113,7 +134,7 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
 
         // ── 3. Resolve social links ───────────────────────────────────────────
         const socialMap = new Map<string, string | null>(
-            (user.socialLinks ?? []).map((s: { platform: string; url: string | null }) => [s.platform.toUpperCase(), s.url])
+            userSocialLinks.map((s) => [s.platform.toUpperCase(), s.url])
         )
         const github = socialMap.get('GITHUB') ?? null
         const linkedin = socialMap.get('LINKEDIN') ?? null
@@ -137,8 +158,8 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
         }
 
         // ── 5. Map experience ─────────────────────────────────────────────────
-        const experience: ResumeExperienceEntry[] = (user.experiences ?? []).map((e: any) => {
-            let bullets: string[] = e.bulletPoints ?? []
+        const experience: ResumeExperienceEntry[] = userExperiences.map((e) => {
+            let bullets: string[] = (e as any).bulletPoints ?? []
             if (!bullets.length && e.description) {
                 bullets = e.description
                     .split('\n')
@@ -162,19 +183,20 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
 
         // ── 6. Map portfolio projects ─────────────────────────────────────────
         type ProjectLink = { linkType: string; url: string }
-        const portfolioProjectsMapped: ResumeProjectEntry[] = (user.portfolioProjects ?? []).map((p: any) => {
-            let bullets: string[] = p.bulletPoints ?? []
+        const portfolioProjectsMapped: ResumeProjectEntry[] = userProjects.map((p) => {
+            let bullets: string[] = (p as any).bulletPoints ?? []
             if (!bullets.length && p.description) {
                 bullets = [p.description]
             }
+            const pLinks = (p as any).links as ProjectLink[] ?? []
             const githubLink =
-                p.projectLinks.find(
+                pLinks.find(
                     (l: ProjectLink) =>
                         l.linkType.toUpperCase() === 'GITHUB' ||
                         l.linkType.toUpperCase() === 'GITHUB_REPO'
                 )?.url ?? undefined
             const liveLink =
-                p.projectLinks.find(
+                pLinks.find(
                     (l: ProjectLink) =>
                         l.linkType.toUpperCase() === 'LIVE_SITE' ||
                         l.linkType.toUpperCase() === 'DEMO' ||
@@ -184,7 +206,7 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
                 id: p.id,
                 name: p.projectName,
                 description: p.description ?? '',
-                technologies: p.technologies ?? [],
+                technologies: (p as any).technologies ?? [],
                 github: githubLink,
                 liveUrl: liveLink,
                 bullets,
@@ -208,21 +230,21 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
         ]
 
         // ── 8. Map education ──────────────────────────────────────────────────
-        const education: ResumeEducationEntry[] = (user.educations ?? []).map((e: any) => ({
+        const education: ResumeEducationEntry[] = userEdus.map((e) => ({
             id: e.id,
             institution: e.institution,
             degree: e.degree ?? undefined,
             field: undefined,
             startDate: e.startDate?.toISOString() ?? '',
             endDate: e.endDate?.toISOString(),
-            bullets: e.bulletPoints ?? [],
+            bullets: (e as any).bulletPoints ?? [],
         }))
 
         // ── 9. Map skills ─────────────────────────────────────────────────────
-        const skills: ResumeSkillGroup[] = buildSkillGroups(user.skills ?? [])
+        const skillGroups: ResumeSkillGroup[] = buildSkillGroups(userSkills)
 
         // ── 10. Map certifications ────────────────────────────────────────────
-        const certifications: ResumeCertificationEntry[] = (user.certifications ?? []).map((c: any) => ({
+        const certs: ResumeCertificationEntry[] = userCertifications.map((c) => ({
             id: c.id,
             name: c.name,
             issuer: c.issuer ?? undefined,
@@ -236,8 +258,8 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
             experience,
             projects,
             education,
-            skills,
-            certifications,
+            skills: skillGroups,
+            certifications: certs,
         }
 
         // ── 12. Optionally persist to an existing draft ───────────────────────

@@ -182,7 +182,7 @@ export async function createProjectAssignment(payload: CreateProjectAssignmentPa
                 universityId: member.universityId,
                 teacherMemberId: member.id,
                 isUniversityProject: true,
-            } as any,
+            } as Record<string, unknown>,
         });
 
         return {
@@ -190,9 +190,9 @@ export async function createProjectAssignment(payload: CreateProjectAssignmentPa
             jobId: result.jobId,
             message: "Project generation started",
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Create project assignment error:", error);
-        return { success: false, error: error.message || "Failed to create project assignment" };
+        return { success: false, error: (error as Error).message || "Failed to create project assignment" };
     }
 }
 
@@ -211,16 +211,16 @@ export async function finalizeProjectAssignment(jobId: string, workerData: { pro
             return { success: false, error: 'Job not found' };
         }
 
-        const inputData = job.input as any;
+        const inputData = job.input as Record<string, unknown>;
 
         await db.update(projectsV2).set({
             isUniversityProject: true,
-            universityId: inputData.universityId || member.universityId,
-            teacherMemberId: inputData.teacherMemberId || member.id,
-            classIds: inputData.classIds || [],
-            assignmentDeadline: inputData.deadline ? new Date(inputData.deadline) : null,
-            assignmentCredits: inputData.credits || null,
-            assignmentInstructions: inputData.instructions || null,
+            universityId: (inputData.universityId as string | null) || member.universityId,
+            teacherMemberId: (inputData.teacherMemberId as string | null) || member.id,
+            classIds: (inputData.classIds as string[] | null) || [],
+            assignmentDeadline: inputData.deadline ? new Date(inputData.deadline as string | number) : null,
+            assignmentCredits: (inputData.credits as number | null) || null,
+            assignmentInstructions: (inputData.instructions as string | null) || null,
         }).where(eq(projectsV2.id, workerData.projectId));
 
         await db.update(backgroundJobs).set({
@@ -236,9 +236,9 @@ export async function finalizeProjectAssignment(jobId: string, workerData: { pro
                 projectId: workerData.projectId,
             },
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Finalize project assignment error:", error);
-        return { success: false, error: error.message || "Failed to finalize project assignment" };
+        return { success: false, error: (error as Error).message || "Failed to finalize project assignment" };
     }
 }
 
@@ -289,9 +289,9 @@ export async function assignExistingProject(payload: AssignExistingProjectPayloa
             success: true,
             message: "Project assigned to classes",
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Assign existing project error:", error);
-        return { success: false, error: error.message || "Failed to assign project" };
+        return { success: false, error: (error as Error).message || "Failed to assign project" };
     }
 }
 
@@ -349,9 +349,9 @@ export async function getProjectAssignments(filters?: {
             success: true,
             data: enrichedProjects,
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Get project assignments error:", error);
-        return { success: false, error: error.message || "Failed to fetch project assignments" };
+        return { success: false, error: (error as Error).message || "Failed to fetch project assignments" };
     }
 }
 
@@ -385,9 +385,9 @@ export async function getTeacherClasses() {
                 department: c.department,
             })),
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Get teacher classes error:", error);
-        return { success: false, error: error.message || "Failed to fetch classes" };
+        return { success: false, error: (error as Error).message || "Failed to fetch classes" };
     }
 }
 
@@ -426,9 +426,9 @@ export async function updateProjectAssignment(
         await db.update(projectsV2).set(updateData).where(eq(projectsV2.id, projectId));
 
         return { success: true, message: "Assignment updated" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Update project assignment error:", error);
-        return { success: false, error: error.message || "Failed to update assignment" };
+        return { success: false, error: (error as Error).message || "Failed to update assignment" };
     }
 }
 
@@ -461,9 +461,9 @@ export async function removeProjectAssignment(projectId: string) {
         }).where(eq(projectsV2.id, projectId));
 
         return { success: true, message: "Assignment removed" };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Remove project assignment error:", error);
-        return { success: false, error: error.message || "Failed to remove assignment" };
+        return { success: false, error: (error as Error).message || "Failed to remove assignment" };
     }
 }
 
@@ -554,9 +554,9 @@ export async function getProjectStudentProgress(projectId: string) {
             success: true,
             data: studentProgress,
         };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Get project student progress error:", error);
-        return { success: false, error: error.message || "Failed to fetch student progress" };
+        return { success: false, error: (error as Error).message || "Failed to fetch student progress" };
     }
 }
 

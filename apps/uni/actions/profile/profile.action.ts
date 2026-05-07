@@ -1,7 +1,7 @@
 "use server"
 
 import { db, users, universities, universityMembers, studentUniversityLinks, departments } from "@repo/db"
-import { eq, and, count } from "drizzle-orm"
+import { eq, count } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import bcrypt from "bcryptjs";

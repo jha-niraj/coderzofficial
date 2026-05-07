@@ -1,4 +1,5 @@
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { SettingsLayoutClient } from './_components/settings-layout-client'
 
@@ -12,7 +13,7 @@ export default async function SettingsLayout({
 }: {
     children: React.ReactNode
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user) {
         redirect('/login')

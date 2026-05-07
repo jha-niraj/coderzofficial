@@ -237,7 +237,7 @@ export function AIInputPanel({ studioId, onContentAdded, externalPrompt, onExter
 					break;
 
 				case "QUIZ":
-					result = await generateQuiz(studioId, prompt, 5, "medium");
+					result = await generateQuiz(studioId, prompt);
 					break;
 
 				case "NOTE": {

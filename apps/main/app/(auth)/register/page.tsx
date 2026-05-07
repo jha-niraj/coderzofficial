@@ -122,9 +122,7 @@ function SignUpForm() {
             setIsGoogleLoading(true);
             const ssoCallback = sessionStorage.getItem("sso_callback");
 
-            await signIn("google", {
-                callbackUrl: ssoCallback || "/home",
-            });
+            await signIn.social({ provider: "google", callbackURL: ssoCallback || "/home" });
         } catch {
             setError("Google sign-up failed. Please try again.");
             setIsGoogleLoading(false);
@@ -136,9 +134,7 @@ function SignUpForm() {
             setIsGitHubLoading(true);
             const ssoCallback = sessionStorage.getItem("sso_callback");
 
-            await signIn("github", {
-                callbackUrl: ssoCallback || "/home",
-            });
+            await signIn.social({ provider: "github", callbackURL: ssoCallback || "/home" });
         } catch {
             setError("GitHub sign-up failed. Please try again.");
             setIsGitHubLoading(false);

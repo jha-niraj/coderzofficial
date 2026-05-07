@@ -5,7 +5,6 @@ import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { eq, and } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-import { createId } from "@paralleldrive/cuid2"
 
 export async function toggleFollow(targetUserId: string) {
     try {
@@ -40,7 +39,6 @@ export async function toggleFollow(targetUserId: string) {
             if (existingReq) return { success: true, isPending: true }
 
             await db.insert(followRequest).values({
-                id: createId(),
                 senderId: currentUserId,
                 receiverId: targetUserId,
             })
@@ -48,7 +46,6 @@ export async function toggleFollow(targetUserId: string) {
         }
 
         await db.insert(follow).values({
-            id: createId(),
             followerId: currentUserId,
             followingId: targetUserId,
         })
@@ -67,7 +64,7 @@ export async function getFollowRequests() {
 
         const requests = await db.query.followRequest.findMany({
             where: eq(followRequest.receiverId, session.user.id),
-            with: { sender: { columns: { id: true, name: true, image: true, username: true, headline: true } } },
+            with: { sender: { columns: { id: true, name: true, image: true, username: true, headline: true, bio: true } } },
         })
         return { success: true, requests }
     } catch {
@@ -82,7 +79,7 @@ export async function getSentFollowRequests() {
 
         const requests = await db.query.followRequest.findMany({
             where: eq(followRequest.senderId, session.user.id),
-            with: { receiver: { columns: { id: true, name: true, image: true, username: true, headline: true } } },
+            with: { receiver: { columns: { id: true, name: true, image: true, username: true, headline: true, bio: true } } },
         })
         return { success: true, requests }
     } catch {
@@ -103,7 +100,6 @@ export async function acceptFollowRequest(requestId: string) {
         await db.transaction(async (tx) => {
             await tx.delete(followRequest).where(eq(followRequest.id, requestId))
             await tx.insert(follow).values({
-                id: createId(),
                 followerId: req.senderId,
                 followingId: req.receiverId,
             })

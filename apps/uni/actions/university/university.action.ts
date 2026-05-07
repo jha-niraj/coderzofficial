@@ -1,7 +1,7 @@
 "use server"
 
 import { db, universities, universityMembers, departments, universityClasses, studentUniversityLinks, universityAssignments, universitySubmissions } from "@repo/db"
-import { eq, and, count, sql } from "drizzle-orm"
+import { eq, and, count } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
@@ -157,7 +157,7 @@ export async function updateUniversityDetails(data: {
             return { success: false, error: "No permission to manage university" }
         }
 
-        await db.update(universities).set(data as any).where(eq(universities.id, member.universityId))
+        await db.update(universities).set(data as Record<string, unknown>).where(eq(universities.id, member.universityId))
 
         revalidatePath("/dashboard/settings")
         return { success: true }

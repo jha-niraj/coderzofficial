@@ -51,7 +51,7 @@ async function deductCredits(userId: string, amount: number, description: string
             userId,
             amount: -amount,
             type: "SPEND",
-            currency: "NA",
+            currency: "INR",
             description,
         });
     });
@@ -69,7 +69,7 @@ export async function checkTaskDetailExists(taskId: string): Promise<ActionRespo
             where: eq(projectV2TaskDetails.taskId, taskId),
             columns: { id: true, accessCount: true },
             with: {
-                userAccess: {
+                accesses: {
                     where: (access, { eq }) => eq(access.userId, user.id),
                     columns: { id: true },
                 }
@@ -87,7 +87,7 @@ export async function checkTaskDetailExists(taskId: string): Promise<ActionRespo
             };
         }
 
-        const userHasAccess = existingDetail.userAccess.length > 0;
+        const userHasAccess = existingDetail.accesses.length > 0;
 
         return {
             success: true,
@@ -152,13 +152,13 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
         const existingDetail = await db.query.projectV2TaskDetails.findFirst({
             where: eq(projectV2TaskDetails.taskId, taskId),
             with: {
-                userAccess: {
+                accesses: {
                     where: (access, { eq }) => eq(access.userId, user.id),
                 }
             }
         });
 
-        if (existingDetail && existingDetail.userAccess.length > 0) {
+        if (existingDetail && existingDetail.accesses.length > 0) {
             return {
                 success: true,
                 data: existingDetail,
@@ -303,6 +303,8 @@ Remember: Guide their learning journey, don't give them the solution!`;
             })
             .returning();
 
+        if (!taskDetail) throw new Error("Failed to create task detail")
+
         await db.insert(userTaskV2DetailAccesses).values({
             userId: user.id,
             taskDetailId: taskDetail.id,
@@ -337,7 +339,7 @@ export async function getTaskDetail(taskId: string): Promise<ActionResponse> {
         const taskDetail = await db.query.projectV2TaskDetails.findFirst({
             where: eq(projectV2TaskDetails.taskId, taskId),
             with: {
-                userAccess: {
+                accesses: {
                     where: (access, { eq }) => eq(access.userId, user.id),
                     columns: { id: true, accessedAt: true },
                 }
@@ -348,7 +350,7 @@ export async function getTaskDetail(taskId: string): Promise<ActionResponse> {
             return { success: false, error: "Task detail not found" };
         }
 
-        if (taskDetail.userAccess.length === 0) {
+        if (taskDetail.accesses.length === 0) {
             return {
                 success: false,
                 error: "You don't have access to this task detail. Please purchase access first.",

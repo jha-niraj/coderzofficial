@@ -5,8 +5,8 @@ import { eq, and } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import type {
-    UniversityMemberRole, UniversityMemberJobTitle,
-    UniversityPermission, DEFAULT_HEAD_PERMISSIONS
+    UniversityMemberJobTitle,
+    UniversityPermission
 } from "@/types";
 
 // ============================================
@@ -93,7 +93,7 @@ export async function completeUniversityOnboarding(data: UniversityOnboardingDat
             slug,
             website: data.website || null,
             description: data.description || null,
-            universityType: data.universityType as any || null,
+            universityType: data.universityType as "PUBLIC" | "PRIVATE" | "DEEMED" | "AUTONOMOUS" | "STATE" | "CENTRAL" | "AFFILIATED" | "COMMUNITY_COLLEGE" | "TECHNICAL_INSTITUTE" | "OTHER" | undefined || null,
             affiliatedTo: data.affiliatedTo || null,
             accreditation: data.accreditation || null,
             establishedYear: data.establishedYear || null,

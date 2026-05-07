@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
             onboardingCompleted: false,
         }).returning();
 
+        if (!user) throw new Error("Failed to create user")
+
         console.log('User created successfully:', user.id);
 
         if (referralCode) {

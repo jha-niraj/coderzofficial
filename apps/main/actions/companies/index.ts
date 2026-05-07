@@ -60,7 +60,7 @@ export async function browseCompanies(filters: CompanyFilters = {}, page = 1, li
 
         const whereClause = conditions.length > 0 ? and(...conditions) : undefined
 
-        const [companyRows, [{ total }]] = await Promise.all([
+        const [companyRows, totalRows] = await Promise.all([
             db.query.companies.findMany({
                 where: whereClause,
                 orderBy: [asc(companies.verificationStatus), asc(companies.name)],
@@ -69,6 +69,7 @@ export async function browseCompanies(filters: CompanyFilters = {}, page = 1, li
             }),
             db.select({ total: count() }).from(companies).where(whereClause),
         ])
+        const total = totalRows[0]?.total ?? 0
 
         const companyIds = companyRows.map(c => c.id)
 

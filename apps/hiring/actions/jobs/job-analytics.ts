@@ -1,7 +1,7 @@
 "use server"
 
 import { db, companyMembers, jobs, jobApplications } from "@repo/db"
-import { eq, and, count, sum, gte, inArray } from "drizzle-orm"
+import { eq, and, count, gte, inArray } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 

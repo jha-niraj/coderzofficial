@@ -98,6 +98,7 @@ export async function POST(req: NextRequest) {
             }
         }).returning();
 
+        if (!paymentRecord) throw new Error("Failed to create payment record")
         console.log('Payment record created:', paymentRecord.id);
 
         // Return order details to frontend

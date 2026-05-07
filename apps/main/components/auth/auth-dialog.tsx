@@ -72,12 +72,10 @@ export function AuthDialog() {
 		setSubmitting(true)
 		setError(null)
 		try {
-			// NextAuth will handle redirect to callbackUrl if provided
-			await signIn("credentials", {
+			await signIn.email({
 				email,
 				password,
-				callbackUrl: resolvedCallback || "/",
-				redirect: true,
+				callbackURL: resolvedCallback || "/",
 			})
 		} catch (err) {
 			console.log("Error while signin in:" + err);
@@ -120,7 +118,7 @@ export function AuthDialog() {
 									variant="outline"
 									className="w-full h-12 bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 border border-gray-200/50 dark:border-gray-700/50 text-gray-900 dark:text-gray-100 font-medium rounded-xl transition-all duration-200 backdrop-blur-sm"
 									onClick={() =>
-										signIn("google", { callbackUrl: resolvedCallback || `${pathname}${window.location.search}` })
+										signIn.social({ provider: "google", callbackURL: resolvedCallback || `${pathname}${window.location.search}` })
 									}
 								>
 									<svg viewBox="0 0 48 48" className="w-5 h-5 mr-3" aria-hidden="true">

@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { getSparkJobs } from "@/actions/jobs/tabs"
 import { SparkContent } from "./spark-content"
 
@@ -13,7 +14,7 @@ export const metadata = {
 
 export default async function SparkPage() {
     const [session, jobsResult] = await Promise.all([
-        auth(),
+        getSession(headers()),
         getSparkJobs(1, 20)
     ])
 

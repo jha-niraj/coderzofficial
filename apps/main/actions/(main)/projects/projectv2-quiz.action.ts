@@ -177,7 +177,7 @@ Return ONLY a valid JSON array with 20 questions following this exact structure:
 
             await tx.insert(creditTransactions).values({
                 userId: session.user.id,
-                currency: "NA",
+                currency: "INR",
                 amount: QUIZ_CREDIT_COST,
                 type: "SPEND",
                 description: `Quiz assessment generated for project: ${project.title}`

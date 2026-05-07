@@ -32,10 +32,11 @@ export async function getNotifications(page = 1, limit = 20) {
             offset,
         })
 
-        const [{ totalUnread }] = await db
+        const [unreadRow] = await db
             .select({ totalUnread: count() })
             .from(notifications)
             .where(and(eq(notifications.userId, user.id), eq(notifications.read, false)))
+        const totalUnread = unreadRow?.totalUnread ?? 0
 
         return {
             success: true,

@@ -1,7 +1,7 @@
 "use server"
 
-import { db, universityClasses, universityMembers, classEnrollments, studentUniversityLinks, departments } from "@repo/db"
-import { eq, and, desc, ilike, count, inArray, sql } from "drizzle-orm"
+import { db, universityClasses, universityMembers, classEnrollments, studentUniversityLinks } from "@repo/db"
+import { eq, and, desc, count, inArray } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
@@ -75,10 +75,10 @@ export async function getClasses(
 
         // Fetch classes with relations
         const classes = await db.query.universityClasses.findMany({
-            where: (tbl, { and, eq, ilike, or }) => {
+            where: (tbl, { and, eq }) => {
                 const conditions = [eq(tbl.universityId, member.universityId)]
                 if (filters?.departmentId) conditions.push(eq(tbl.departmentId, filters.departmentId))
-                if (filters?.semester) conditions.push(eq(tbl.semester, filters.semester as any))
+                if (filters?.semester) conditions.push(eq(tbl.semester, filters.semester as "SEMESTER_1" | "SEMESTER_2" | "SEMESTER_3" | "SEMESTER_4" | "SEMESTER_5" | "SEMESTER_6" | "SEMESTER_7" | "SEMESTER_8"))
                 if (filters?.section) conditions.push(eq(tbl.section, filters.section))
                 if (filters?.academicYear) conditions.push(eq(tbl.academicYear, filters.academicYear))
                 if (filters?.isActive !== undefined) conditions.push(eq(tbl.isActive, filters.isActive))
@@ -357,7 +357,7 @@ export async function createClass(payload: {
             name: payload.name,
             code: payload.code ?? null,
             description: payload.description ?? null,
-            semester: payload.semester as any,
+            semester: payload.semester as "SEMESTER_1" | "SEMESTER_2" | "SEMESTER_3" | "SEMESTER_4" | "SEMESTER_5" | "SEMESTER_6" | "SEMESTER_7" | "SEMESTER_8",
             academicYear: payload.academicYear,
             section: payload.section ?? null,
             facultyId: payload.facultyId ?? null,
@@ -421,7 +421,7 @@ export async function updateClass(
             return { success: false, error: "Class not found" }
         }
 
-        await db.update(universityClasses).set(payload as any).where(eq(universityClasses.id, classId))
+        await db.update(universityClasses).set(payload as Record<string, unknown>).where(eq(universityClasses.id, classId))
 
         revalidatePath("/dashboard/classes")
         revalidatePath(`/dashboard/classes/${classId}`)

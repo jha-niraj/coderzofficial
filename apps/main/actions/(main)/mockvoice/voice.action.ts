@@ -2,7 +2,7 @@
 
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
-import { db, users, mockInterviewVoice, mockVoiceSession, learnStep, creditTransactions } from "@repo/db"
+import { db, users, mockInterviewVoice, mockVoiceSession, creditTransactions } from "@repo/db"
 import { eq, and, or, ilike, desc, count, avg } from "drizzle-orm"
 import { revalidatePath } from 'next/cache'
 import { openai } from '@/lib/openai-client'
@@ -349,12 +349,7 @@ export async function createCustomMockVoice(input: CreateCustomMockInput) {
             })
             .returning({ id: mockInterviewVoice.id })
 
-        if (input.learnStepId) {
-            await db
-                .update(learnStep)
-                .set({ mockInterviewId: mock.id })
-                .where(eq(learnStep.id, input.learnStepId))
-        }
+        if (!mock) throw new Error("Failed to create mock")
 
         await db
             .update(users)
@@ -483,7 +478,7 @@ export async function getPublicVoiceMocks(params?: {
 
         const whereClause = and(...conditions)
 
-        const [mocks, [{ total }]] = await Promise.all([
+        const [mocks, totalRows] = await Promise.all([
             db.query.mockInterviewVoice.findMany({
                 where: whereClause,
                 offset,
@@ -500,6 +495,7 @@ export async function getPublicVoiceMocks(params?: {
                 .from(mockInterviewVoice)
                 .where(whereClause),
         ])
+        const total = totalRows[0]?.total ?? 0
 
         return {
             success: true,
@@ -545,7 +541,7 @@ export async function getAllPublicMocks(params?: {
 
         const whereClause = and(...conditions)
 
-        const [mocks, [{ total }]] = await Promise.all([
+        const [mocks, totalRows2] = await Promise.all([
             db.query.mockInterviewVoice.findMany({
                 where: whereClause,
                 offset,
@@ -563,12 +559,13 @@ export async function getAllPublicMocks(params?: {
                 .from(mockInterviewVoice)
                 .where(whereClause),
         ])
+        const total2 = totalRows2[0]?.total ?? 0
 
         return {
             success: true,
             mocks,
-            total: Number(total),
-            totalPages: Math.ceil(Number(total) / limit),
+            total: Number(total2),
+            totalPages: Math.ceil(Number(total2) / limit),
             currentPage: page,
         }
     } catch (error) {

@@ -64,6 +64,8 @@ export async function getOrCreateConversation(participantId: string) {
                 participant2Id: participantId
             }).returning()
 
+            if (!newConv) throw new Error("Failed to create conversation")
+
             conv = await db.query.conversation.findFirst({
                 where: eq(conversation.id, newConv.id),
                 with: { participant1: true, participant2: true }

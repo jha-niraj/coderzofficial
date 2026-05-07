@@ -140,7 +140,7 @@ export async function getHomeData() {
             db.query.dailyActivities.findMany({
                 where: and(
                     eq(dailyActivities.userId, userId),
-                    gte(dailyActivities.date, new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+                    gte(dailyActivities.date, new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!)
                 ),
                 columns: {
                     date: true,
@@ -376,7 +376,7 @@ export async function getActivitiesByDate(dateStr: string) {
 
         const date = new Date(dateStr);
         date.setHours(0, 0, 0, 0);
-        const dateOnly = date.toISOString().split('T')[0];
+        const dateOnly = date.toISOString().split('T')[0]!;
 
         const dailyActivity = await db.query.dailyActivities.findFirst({
             where: and(

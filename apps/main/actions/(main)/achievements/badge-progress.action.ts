@@ -102,6 +102,7 @@ export async function updateBadgeProgress({ userId, target, increment = 1, value
                     unlockedAt: new Date(),
                 }).returning()
                 userBadge = created
+                if (!userBadge) continue
             }
 
             // Skip if already claimed

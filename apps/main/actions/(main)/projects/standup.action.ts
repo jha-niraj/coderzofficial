@@ -39,7 +39,7 @@ async function deductCredits(userId: string, amount: number, description: string
             userId,
             amount: -amount,
             type: "SPEND",
-            currency: "NA",
+            currency: "INR",
             description,
         });
     });
@@ -135,7 +135,7 @@ export async function createStandupConfig(input: StandupConfigInput): Promise<Ac
         await deductCredits(
             user.id,
             weeklyCredits,
-            `Daily Standup - Week ${weekStart.toISOString().split('T')[0]}`
+            `Daily Standup - Week ${weekStart.toISOString().split('T')[0]!}`
         );
 
         const [config] = await db.insert(projectV2StandupConfigs).values({
@@ -228,7 +228,7 @@ export async function renewStandupConfig(projectId: string, projectSlug: string)
         await deductCredits(
             user.id,
             config.weeklyCredits,
-            `Daily Standup - Week ${nextWeekStart.toISOString().split('T')[0]}`
+            `Daily Standup - Week ${nextWeekStart.toISOString().split('T')[0]!}`
         );
 
         const nextWeekEnd = new Date(nextWeekStart);
@@ -294,7 +294,7 @@ export async function getUpcomingStandups(projectId: string): Promise<ActionResp
                 eq(projectV2StandupConfigs.projectId, projectId)
             ),
             with: {
-                standupEntries: {
+                entries: {
                     where: and(
                         gte(projectV2StandupEntries.scheduledFor, new Date()),
                         inArray(projectV2StandupEntries.status, ["SCHEDULED", "SUBMITTED"])
@@ -313,7 +313,7 @@ export async function getUpcomingStandups(projectId: string): Promise<ActionResp
             success: true,
             data: {
                 config,
-                upcomingStandups: config.standupEntries,
+                upcomingStandups: config.entries,
             },
         };
 

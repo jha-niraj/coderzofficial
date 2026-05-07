@@ -16,22 +16,6 @@ const protectedRoutes = [
     '/assignments',
 ]
 
-// Public routes that don't require authentication
-const publicRoutes = [
-    '/',
-    '/signin',
-    '/register',
-    '/verify',
-    '/forgotpassword',
-    '/resetpassword',
-    '/error',
-    '/privacy',
-    '/terms',
-    '/about',
-    '/pricing',
-    '/contactus'
-]
-
 // API routes that should be excluded from auth checks
 const apiRoutes = [
     '/api/auth',

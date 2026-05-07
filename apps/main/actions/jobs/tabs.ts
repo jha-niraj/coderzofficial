@@ -34,10 +34,11 @@ export async function getJobsTabCounts(): Promise<{
         const userId = session?.user?.id
 
         // Total active jobs (for browse and spark)
-        const [{ totalJobs }] = await db
+        const [totalJobsRow] = await db
             .select({ totalJobs: count() })
             .from(jobs)
             .where(and(eq(jobs.status, "ACTIVE"), eq(jobs.visibility, "PUBLIC")))
+        const totalJobs = totalJobsRow?.totalJobs ?? 0
 
         const total = Number(totalJobs)
 
@@ -79,14 +80,14 @@ export async function getJobsTabCounts(): Promise<{
                         eq(jobs.status, "ACTIVE"),
                         eq(jobs.visibility, "PUBLIC")
                     ))
-                    .then(rows => Number(rows[0].val))
+                    .then(rows => Number(rows[0]?.val ?? 0))
                 : Promise.resolve(0),
 
             // Saved: User's saved jobs
             db.select({ val: count() })
                 .from(savedJobs)
                 .where(eq(savedJobs.userId, userId))
-                .then(rows => Number(rows[0].val)),
+                .then(rows => Number(rows[0]?.val ?? 0)),
 
             // Applied: Active applications
             db.select({ val: count() })
@@ -95,7 +96,7 @@ export async function getJobsTabCounts(): Promise<{
                     eq(jobApplications.userId, userId),
                     notInArray(jobApplications.status, ["WITHDRAWN", "REJECTED", "HIRED"])
                 ))
-                .then(rows => Number(rows[0].val)),
+                .then(rows => Number(rows[0]?.val ?? 0)),
         ])
 
         const sparkCount = total - appliedJobIds.length
@@ -135,7 +136,7 @@ export async function getSparkJobs(page = 1, limit = 10) {
 
         // For unauthenticated users, return all jobs
         if (!session?.user?.id) {
-            const [jobRows, [{ total }]] = await Promise.all([
+            const [jobRows, totalRowsAnon] = await Promise.all([
                 db.query.jobs.findMany({
                     where: baseWhere,
                     with: {
@@ -149,6 +150,7 @@ export async function getSparkJobs(page = 1, limit = 10) {
                 }),
                 db.select({ total: count() }).from(jobs).where(baseWhere),
             ])
+            const total = totalRowsAnon[0]?.total ?? 0
 
             const formattedJobs = jobRows.map(job => {
                 const skillsReq = (job.skillsRequired as string[]) || []
@@ -172,7 +174,8 @@ export async function getSparkJobs(page = 1, limit = 10) {
                     missingSkills: skillsReq,
                     isSaved: false,
                     hasApplied: false,
-                    isFollowingCompany: false
+                    isFollowingCompany: false,
+                    interviewProcess: null,
                 }
             })
 
@@ -224,7 +227,7 @@ export async function getSparkJobs(page = 1, limit = 10) {
             ? and(baseWhere, notInArray(jobs.id, appliedJobIds))
             : baseWhere
 
-        const [jobRows, [{ total }]] = await Promise.all([
+        const [jobRows, totalRowsAuth] = await Promise.all([
             db.query.jobs.findMany({
                 where: whereClause,
                 with: {
@@ -238,6 +241,7 @@ export async function getSparkJobs(page = 1, limit = 10) {
             }),
             db.select({ total: count() }).from(jobs).where(whereClause),
         ])
+        const total = totalRowsAuth[0]?.total ?? 0
 
         const formattedJobs = jobRows.map(job => {
             const skillsRequired = (job.skillsRequired as string[]) || []
@@ -273,7 +277,8 @@ export async function getSparkJobs(page = 1, limit = 10) {
                 missingSkills,
                 isSaved: savedIds.includes(job.id),
                 hasApplied: false,
-                isFollowingCompany: followedIds.includes(job.companyId)
+                isFollowingCompany: followedIds.includes(job.companyId),
+                interviewProcess: null,
             }
         })
 

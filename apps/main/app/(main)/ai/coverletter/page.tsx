@@ -1,4 +1,5 @@
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { getCoverLetters } from "@/actions/(main)/ai/cover-letter.action"
 import { CoverLetterClient } from "@/app/(main)/ai/resume/_components/cover-letter-client"
@@ -11,7 +12,7 @@ export const metadata = {
 export default async function CoverLetterPage(props: {
     searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     const user = session?.user
 
     if (!user) {

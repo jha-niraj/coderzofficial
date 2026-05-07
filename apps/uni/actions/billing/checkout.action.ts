@@ -263,7 +263,7 @@ export async function processSuccessfulPayment(
         })
 
         const subscriptionData = {
-            plan: plan as any,
+            plan: plan as "FREE" | "STARTER" | "GROWTH" | "ENTERPRISE",
             status: "ACTIVE" as const,
             maxStudents: limits.maxStudents,
             maxFaculty: limits.maxFaculty,

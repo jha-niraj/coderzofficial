@@ -682,10 +682,13 @@ export async function startSprintMockSession(
             })
             .returning({ id: projectV2MockSessions.id });
 
+        const newSession = newSessionRows[0]
+        if (!newSession) throw new Error("Failed to create mock session")
+
         return {
             success: true,
             data: {
-                sessionId: newSessionRows[0].id,
+                sessionId: newSession.id,
                 knowledgeBase: knowledge.data!.knowledgeBase,
             },
         };

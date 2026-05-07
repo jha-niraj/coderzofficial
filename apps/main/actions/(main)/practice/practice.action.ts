@@ -66,7 +66,7 @@ export async function getProblemsForModule(
             difficulty: p.difficulty,
             tags: p.tags,
             sortOrder: p.sortOrder,
-            userStatus: (userSession?.status as PracticeSessionStatus) ?? undefined,
+            userStatus: userSession?.status ?? undefined,
             userBestScore: userSession?.bestScore ?? undefined,
         };
     });
@@ -341,7 +341,7 @@ async function updateModuleProgress(userId: string, module: PracticeModule, comp
                 completed: sql`${practiceModuleProgress.completed} + 1`,
                 totalXP: sql`${practiceModuleProgress.totalXP} + ${xp}`,
                 lastPracticedAt: new Date(),
-                [diffKey]: sql`${practiceModuleProgress[diffKey]} + 1`,
+                [diffKey]: sql`${(practiceModuleProgress as any)[diffKey]} + 1`,
             })
             .where(eq(practiceModuleProgress.id, existing.id));
     } else {

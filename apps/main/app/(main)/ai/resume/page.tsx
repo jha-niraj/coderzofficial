@@ -1,4 +1,5 @@
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getResumeDrafts, getResumeTemplates } from '@/actions/(main)/ai/resume-draft.action'
 import { ResumeHub } from './_components/resume-hub'
@@ -9,7 +10,7 @@ export const metadata = {
 }
 
 export default async function ResumeHubPage() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) redirect('/login')
 
     const [draftsRes, templatesRes] = await Promise.all([

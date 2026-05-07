@@ -2,7 +2,7 @@
 
 import { getSession } from '@repo/auth'
 import { headers } from 'next/headers'
-import { db, pathfinderGoals, pathfinderSubGoals, studios, studioSteps } from '@repo/db'
+import { db, pathfinderGoals, pathfinderSubGoals, studios } from '@repo/db'
 import { eq, and, desc } from 'drizzle-orm'
 import { revalidatePath } from "next/cache";
 
@@ -71,6 +71,8 @@ export async function createOrGetStudioForGoal(goalId: string) {
             sourceId: goalId,
         }).returning();
 
+        if (!studio) throw new Error("Failed to create studio")
+
         revalidatePath(`/pathfinder/${goal.slug}`);
 
         return {
@@ -119,6 +121,8 @@ export async function createOrGetStudioForSubGoal(subGoalId: string, subGoalTitl
             userId: session.user.id,
             stepCount: 0,
         }).returning();
+
+        if (!studio) throw new Error("Failed to create studio")
 
         await db.update(pathfinderSubGoals)
             .set({ studioId: studio.id })

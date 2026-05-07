@@ -50,7 +50,7 @@ async function deductCredits(userId: string, amount: number, description: string
             userId,
             amount: -amount,
             type: "SPEND",
-            currency: "NA",
+            currency: "INR",
             description,
         });
     });
@@ -63,7 +63,7 @@ async function refundCredits(userId: string, amount: number, description: string
             userId,
             amount,
             type: "REWARD",
-            currency: "NA",
+            currency: "INR",
             description,
         });
     });
@@ -117,8 +117,8 @@ export async function getProjectBySlug(slug: string): Promise<ActionResponse> {
                         },
                     },
                 },
-                knowledge: true,
-                progress: {
+                knowledgeBase: true,
+                userProgress: {
                     where: eq(userProjectV2Progress.userId, user.id),
                     with: {
                         taskStatuses: {
@@ -229,7 +229,7 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
                         tasks: {
                             orderBy: (tasks: any, { asc }: any) => [asc(tasks.orderIndex)],
                             with: {
-                                userTaskStatuses: {
+                                userStatuses: {
                                     where: eq(userTaskV2Statuses.userId, user.id),
                                 },
                                 taskDetail: true,
@@ -274,9 +274,9 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
                 sprintName: sprint.name,
                 sprintNumber: sprint.sprintNumber,
                 taskDetail: task.taskDetail,
-                status: task.userTaskStatuses[0]?.status || "TO_DO",
-                completedAt: task.userTaskStatuses[0]?.completedAt,
-                notes: task.userTaskStatuses[0]?.notes,
+                status: task.userStatuses[0]?.status || "TO_DO",
+                completedAt: task.userStatuses[0]?.completedAt,
+                notes: task.userStatuses[0]?.notes,
             }))
         );
 
@@ -310,10 +310,10 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
                 relatedPages: task.relatedPages,
                 dependencies: task.dependencies,
                 taskDetail: task.taskDetail,
-                status: task.userTaskStatuses[0]?.status || "TO_DO",
-                completedAt: task.userTaskStatuses[0]?.completedAt,
+                status: task.userStatuses[0]?.status || "TO_DO",
+                completedAt: task.userStatuses[0]?.completedAt,
             })),
-            completedTasks: sprint.tasks.filter((t: any) => t.userTaskStatuses[0]?.status === "COMPLETED").length,
+            completedTasks: sprint.tasks.filter((t: any) => t.userStatuses[0]?.status === "COMPLETED").length,
             totalTasks: sprint.tasks.length,
         }));
 
@@ -674,7 +674,7 @@ export async function getUserProjects(page: number = 1, limit: number = 20): Pro
             db.query.projectsV2.findMany({
                 where: eq(projectsV2.createdBy, user.id),
                 with: {
-                    progress: {
+                    userProgress: {
                         where: eq(userProjectV2Progress.userId, user.id),
                         columns: {
                             status: true,
@@ -803,7 +803,7 @@ export async function getAllPublicProjects(options?: {
         const conditions: any[] = [eq(projectsV2.visibility, 'PUBLIC')];
 
         if (difficulty && difficulty !== 'ALL') {
-            conditions.push(eq(projectsV2.difficulty, difficulty));
+            conditions.push(eq(projectsV2.difficulty, difficulty as "BEGINNER" | "INTERMEDIATE" | "ADVANCED"));
         }
 
         if (technologies && technologies.length > 0) {
@@ -1085,7 +1085,7 @@ export async function enrollInProject(projectId: string): Promise<ActionResponse
                 userId: user.id,
                 amount: -enrollmentCost,
                 type: "SPEND",
-                currency: "NA",
+                currency: "INR",
                 description: `Enrolled in: ${project.title}`,
             });
 

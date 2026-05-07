@@ -192,6 +192,8 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
             startedAt: new Date(),
         }).returning()
 
+        if (!goal) throw new Error("Failed to create goal")
+
         if (!isPublic) {
             const required = PATHFINDER_CREDITS.privateGoalCreation
             await db.update(users)
@@ -460,17 +462,19 @@ Return ONLY valid JSON, no markdown.`
         // Create a daily session for the AI-generated plan
         const today = new Date()
         today.setHours(0, 0, 0, 0)
+        const todayStr = today.toISOString().split('T')[0]!
 
         let dailySession = await db.query.pathfinderDailySessions.findFirst({
-            where: and(eq(pathfinderDailySessions.goalId, goalId), eq(pathfinderDailySessions.date, today)),
+            where: and(eq(pathfinderDailySessions.goalId, goalId), eq(pathfinderDailySessions.date, todayStr)),
         })
 
         if (!dailySession) {
             const [created] = await db.insert(pathfinderDailySessions).values({
                 goalId,
                 userId,
-                date: today,
+                date: todayStr,
             }).returning()
+            if (!created) throw new Error("Failed to create daily session")
             dailySession = created
         }
 
@@ -555,6 +559,8 @@ export async function generateContentForAISubGoal(subGoalId: string) {
             userId: session.user.id,
             stepCount: 0,
         }).returning()
+
+        if (!studio) throw new Error("Failed to create studio")
 
         await db.update(pathfinderSubGoals)
             .set({ studioId: studio.id })

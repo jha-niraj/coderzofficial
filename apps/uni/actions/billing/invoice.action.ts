@@ -247,7 +247,7 @@ export async function createInvoiceFromPayment(
             totalAmount: payment.amount,
             currency: payment.currency,
 
-            lineItems: lineItems as any,
+            lineItems: lineItems as unknown,
 
             billingName: billingInfo?.billingName || member.university.name,
             billingEmail: billingInfo?.billingEmail || member.university.email || member.email,

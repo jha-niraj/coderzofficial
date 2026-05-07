@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { auth } from '@repo/auth';
+import { getSession } from '@repo/auth';
+import { headers } from 'next/headers';
 import { redirect } from "next/navigation";
 import { getHomeData, getCommunityHighlights } from "@/actions/(main)/home/home.action";
 
@@ -29,7 +30,7 @@ export const metadata = {
 };
 
 export default async function HomePage() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) redirect("/login");
 
     const [homeDataResult, communityResult] = await Promise.all([

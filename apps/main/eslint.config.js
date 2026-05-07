@@ -1,4 +1,8 @@
 import { nextJsConfig } from "@repo/eslint-config/next-js";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** @type {import("eslint").Linter.Config[]} */
 export default [
@@ -17,11 +21,11 @@ export default [
         rules: {
             // Temporarily allow these warnings for existing code
             "@typescript-eslint/no-explicit-any": "warn",
-            "@typescript-eslint/no-unused-vars": ["warn", { 
+            "@typescript-eslint/no-unused-vars": ["warn", {
                 argsIgnorePattern: "^_",
-                varsIgnorePattern: "^_" 
+                varsIgnorePattern: "^_"
             }],
-            "turbo/no-undeclared-env-vars": "warn",
+            "turbo/no-undeclared-env-vars": ["warn", { cwd: path.join(__dirname, "../..") }],
         },
     },
 ];

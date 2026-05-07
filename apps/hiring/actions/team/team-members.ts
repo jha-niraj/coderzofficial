@@ -1,7 +1,7 @@
 "use server"
 
 import { db, companyMembers, jobs, jobApplications, memberInvitations } from "@repo/db"
-import { eq, and, count, isNotNull, asc, desc } from "drizzle-orm"
+import { eq, and, count, isNotNull, asc } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"

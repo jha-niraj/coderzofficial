@@ -87,7 +87,7 @@ export function AccountSettingsContent({ user, linkedProviders }: AccountSetting
     const handleConnectGoogle = async () => {
         setIsConnectingGoogle(true)
         try {
-            await signIn('google', { callbackUrl: '/settings/account' })
+            await signIn.social({ provider: 'google', callbackURL: '/settings/account' })
         } catch {
             toast.error('Failed to connect Google')
         } finally {

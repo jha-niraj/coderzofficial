@@ -112,6 +112,8 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
             })
             .returning({ id: mockVoiceSession.id, variables: mockVoiceSession.variables, agentId: mockVoiceSession.agentId })
 
+        if (!newSession) throw new Error("Failed to create session")
+
         // Deduct credits
         await db
             .update(users)

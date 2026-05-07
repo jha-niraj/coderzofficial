@@ -9,6 +9,7 @@ import {
     knowMeEmbeddingJobs,
     users,
     knowMeCreditTransactions,
+    skills,
 } from "@repo/db";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -47,24 +48,25 @@ export async function generateProfileEmbeddings(): Promise<
 			return { success: false, error: "Not authenticated" };
 		}
 
-		// Get profile with all related data
-		const profile = await db.query.knowMeProfiles.findFirst({
-			where: eq(knowMeProfiles.userId, session.user.id),
-			with: {
-				user: {
-					with: { skills: true },
+		// Get profile with all related data, and skills separately
+		const [profile, userSkills] = await Promise.all([
+			db.query.knowMeProfiles.findFirst({
+				where: eq(knowMeProfiles.userId, session.user.id),
+				with: {
+					user: true,
+					personalData: {
+						where: (pd: any, { eq }: any) => eq(pd.isActive, true),
+					},
+					platformConnections: {
+						where: (pc: any, { eq }: any) => eq(pc.isConnected, true),
+					},
+					externalData: {
+						where: (ed: any, { eq }: any) => eq(ed.isActive, true),
+					},
 				},
-				personalData: {
-					where: (pd: any, { eq }: any) => eq(pd.isActive, true),
-				},
-				platformConnections: {
-					where: (pc: any, { eq }: any) => eq(pc.isConnected, true),
-				},
-				externalData: {
-					where: (ed: any, { eq }: any) => eq(ed.isActive, true),
-				},
-			},
-		});
+			}),
+			db.query.skills.findMany({ where: eq(skills.userId, session.user.id) }),
+		]);
 
 		if (!profile) {
 			return { success: false, error: "Profile not found" };
@@ -76,7 +78,7 @@ export async function generateProfileEmbeddings(): Promise<
 			const { portfolioProjects: ppTable } = await import('@repo/db');
 			portfolioProjects = await db.query.portfolioProjects.findMany({
 				where: eq((ppTable as any).userId, session.user.id),
-				with: { projectLinks: true },
+				with: { links: true },
 				limit: 50,
 			});
 		} catch {
@@ -135,6 +137,7 @@ export async function generateProfileEmbeddings(): Promise<
 			// Process embeddings with fetched data
 			const result = await processEmbeddings({
 				...profile,
+				user: { ...profile.user, skills: userSkills },
 				portfolioProjects,
 				platformProjects,
 				examAttempts,
@@ -307,8 +310,8 @@ async function processEmbeddings(profile: {
 	if (profile.includeProjects && profile.portfolioProjects.length > 0) {
 		for (const project of profile.portfolioProjects) {
 			try {
-				const githubLink = project.projectLinks?.find((l: any) => l.linkType.toLowerCase() === 'github')?.url;
-				const liveLink = project.projectLinks?.find((l: any) => l.linkType.toLowerCase() === 'live demo')?.url;
+				const githubLink = project.links?.find((l: any) => l.linkType.toLowerCase() === 'github')?.url;
+				const liveLink = project.links?.find((l: any) => l.linkType.toLowerCase() === 'live demo')?.url;
 
 				const chunks = createProjectChunks(profile.id, project.id, {
 					title: project.projectName,

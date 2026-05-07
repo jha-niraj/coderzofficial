@@ -1,6 +1,7 @@
 'use server'
 
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 
 export type SupportedLanguage = 'javascript' | 'typescript' | 'python' | 'java' | 'cpp' | 'c'
 
@@ -34,7 +35,7 @@ export async function executeCode(
     language: SupportedLanguage,
     testCases?: TestCase[]
 ): Promise<ExecuteCodeResult> {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return { success: false, error: 'Unauthorized. Please sign in to run code.' }
     }

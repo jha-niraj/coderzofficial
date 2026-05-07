@@ -169,7 +169,7 @@ export function HiringSidebar() {
                 router.push(`/${cleanPath}`);
                 // Expand dropdown if not already expanded
                 if (!expandedItems.includes(cleanPath)) {
-                    setExpandedItems(prev => [cleanPath]);
+                    setExpandedItems(() => [cleanPath]);
                 }
             };
 

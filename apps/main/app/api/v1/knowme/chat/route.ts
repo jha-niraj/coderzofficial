@@ -175,6 +175,13 @@ export async function POST(request: NextRequest) {
             session = newSession;
         }
 
+        if (!session) {
+            return NextResponse.json(
+                { success: false, error: "Failed to create session", poweredBy: "Coderz KnowMe" },
+                { status: 500, headers: corsHeaders }
+            );
+        }
+
         // Check session rate limit
         if (session.rateLimitRemaining <= 0) {
             return NextResponse.json(

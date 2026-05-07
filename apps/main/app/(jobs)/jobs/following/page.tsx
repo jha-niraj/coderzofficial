@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { Loader2 } from "lucide-react"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { getFollowingFeedJobs } from "@/actions/jobs"
 import { FollowingContent } from "./following-content"
 
@@ -13,7 +14,7 @@ export const metadata = {
 
 export default async function FollowingPage() {
     const [session, jobsResult] = await Promise.all([
-        auth(),
+        getSession(headers()),
         getFollowingFeedJobs(1, 20)
     ])
 
