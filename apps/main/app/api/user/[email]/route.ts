@@ -1,20 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@repo/auth';
-import { prisma } from '@repo/prisma';
+import { getSession } from '@repo/auth';
+import { db, users } from '@repo/db';
+import { eq } from 'drizzle-orm';
 
-export async function GET(_req: NextRequest) {
-    const session = await auth();
+export async function GET(req: NextRequest) {
+    const session = await getSession(req.headers);
 
     if (!session) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: {
-                email: session?.user?.email as string
-            }
-        })
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, session.user.email as string),
+        });
 
         if (!user) {
             return NextResponse.json({ message: 'User not found' }, { status: 404 });

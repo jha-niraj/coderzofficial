@@ -1,7 +1,18 @@
 "use server";
 
-import { auth } from "@repo/auth";
-import prisma from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    users,
+    projectV2Tasks,
+    projectV2Sprints,
+    projectsV2,
+    userTaskV2Assessments,
+    projectV2MockSessions,
+    userProjectV2Progress,
+} from "@repo/db";
+import { eq, and, inArray, lte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import OpenAI from "openai";
 
@@ -34,11 +45,11 @@ interface CodeValidationResult {
 // ========================================
 
 async function getCurrentUser() {
-    const session = await auth();
-    if (!session?.user?.email) throw new Error("Not authenticated");
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-    if (!user) throw new Error("User not found");
-    return user;
+    const session = await getSession(headers());
+    if (!session?.user?.id) throw new Error("Not authenticated");
+    const user = await db.select().from(users).where(eq(users.id, session.user.id)).limit(1);
+    if (!user[0]) throw new Error("User not found");
+    return user[0];
 }
 
 function getOpenAIClient() {
@@ -61,45 +72,46 @@ export async function generateTaskQuizQuestions(
     try {
         const user = await getCurrentUser();
 
-        // Get task with its Learns
-        const task = await prisma.projectV2Task.findUnique({
-            where: { id: taskId },
-            include: {
-                sprint: {
-                    include: {
-                        project: {
-                            select: {
-                                id: true,
-                                title: true,
-                                technologies: true,
-                            },
-                        },
-                    },
-                },
-            },
-        });
+        // Get task with its sprint and project
+        const taskRows = await db
+            .select({
+                task: projectV2Tasks,
+                sprint: projectV2Sprints,
+                project: projectsV2,
+            })
+            .from(projectV2Tasks)
+            .innerJoin(projectV2Sprints, eq(projectV2Tasks.sprintId, projectV2Sprints.id))
+            .innerJoin(projectsV2, eq(projectV2Sprints.projectId, projectsV2.id))
+            .where(eq(projectV2Tasks.id, taskId))
+            .limit(1);
 
-        if (!task) {
+        if (!taskRows[0]) {
             return { success: false, error: "Task not found" };
         }
 
-        // Check if user already has an assessment for this task
-        const existingAssessment = await prisma.userTaskV2Assessment.findUnique({
-            where: { userId_taskId: { userId: user.id, taskId } },
-        });
+        const { task, sprint, project } = taskRows[0];
 
-        if (existingAssessment?.quizQuestions) {
-            // Return existing questions
+        // Check if user already has an assessment for this task
+        const existingAssessment = await db
+            .select()
+            .from(userTaskV2Assessments)
+            .where(and(
+                eq(userTaskV2Assessments.userId, user.id),
+                eq(userTaskV2Assessments.taskId, taskId)
+            ))
+            .limit(1);
+
+        if (existingAssessment[0]?.quizQuestions) {
             return {
                 success: true,
-                data: existingAssessment.quizQuestions as unknown as QuizQuestion[],
+                data: existingAssessment[0].quizQuestions as unknown as QuizQuestion[],
             };
         }
 
         // Generate new questions using AI
         const openai = getOpenAIClient();
 
-        const Learns = task.Learns as Array<{ title: string; description: string }> | null;
+        const Learns = task.learns as Array<{ title: string; description: string }> | null;
         const LearnsText = Learns
             ? Learns.map(c => `- ${c.title}: ${c.description}`).join("\n")
             : "No specific Learns defined";
@@ -109,7 +121,7 @@ export async function generateTaskQuizQuestions(
 Task Title: ${task.title}
 Task Description: ${task.description.join("\n")}
 Success Criteria: ${task.criteria.join("\n")}
-Technologies: ${task.sprint.project.technologies.join(", ")}
+Technologies: ${project.technologies.join(", ")}
 
 Key Learns to Test:
 ${LearnsText}
@@ -147,23 +159,25 @@ Respond in JSON format:
         const parsed = JSON.parse(content);
         const questions: QuizQuestion[] = parsed.questions || [];
 
-        // Create or update assessment record
-        // Cast questions to JSON-compatible format for Prisma
         const questionsJson = JSON.parse(JSON.stringify(questions));
-        await prisma.userTaskV2Assessment.upsert({
-            where: { userId_taskId: { userId: user.id, taskId } },
-            create: {
+
+        if (existingAssessment[0]) {
+            await db
+                .update(userTaskV2Assessments)
+                .set({
+                    quizQuestions: questionsJson,
+                    totalQuestions: questions.length,
+                })
+                .where(eq(userTaskV2Assessments.id, existingAssessment[0].id));
+        } else {
+            await db.insert(userTaskV2Assessments).values({
                 userId: user.id,
                 taskId,
                 assessmentType: "QUIZ",
                 quizQuestions: questionsJson,
                 totalQuestions: questions.length,
-            },
-            update: {
-                quizQuestions: questionsJson,
-                totalQuestions: questions.length,
-            },
-        });
+            });
+        }
 
         return { success: true, data: questions };
     } catch (error) {
@@ -192,9 +206,16 @@ export async function submitTaskQuizAnswers(
     try {
         const user = await getCurrentUser();
 
-        const assessment = await prisma.userTaskV2Assessment.findUnique({
-            where: { userId_taskId: { userId: user.id, taskId } },
-        });
+        const assessmentRows = await db
+            .select()
+            .from(userTaskV2Assessments)
+            .where(and(
+                eq(userTaskV2Assessments.userId, user.id),
+                eq(userTaskV2Assessments.taskId, taskId)
+            ))
+            .limit(1);
+
+        const assessment = assessmentRows[0];
 
         if (!assessment || !assessment.quizQuestions) {
             return { success: false, error: "No quiz found for this task" };
@@ -202,7 +223,6 @@ export async function submitTaskQuizAnswers(
 
         const questions = assessment.quizQuestions as unknown as QuizQuestion[];
 
-        // Grade the answers
         const gradedAnswers = answers.map(answer => {
             const question = questions[answer.questionIndex];
             const isCorrect = question?.correctAnswer === answer.selectedAnswer;
@@ -215,41 +235,33 @@ export async function submitTaskQuizAnswers(
 
         const correctCount = gradedAnswers.filter(a => a.isCorrect).length;
         const score = Math.round((correctCount / questions.length) * 100);
-        const passed = score >= 70; // 70% passing threshold
+        const passed = score >= 70;
 
-        // Update assessment
-        await prisma.userTaskV2Assessment.update({
-            where: { id: assessment.id },
-            data: {
+        await db
+            .update(userTaskV2Assessments)
+            .set({
                 quizAnswers: gradedAnswers,
                 quizScore: score,
                 correctAnswers: correctCount,
                 passed,
                 completedAt: passed ? new Date() : null,
-                attempts: { increment: 1 },
-            },
-        });
+                attempts: sql`${userTaskV2Assessments.attempts} + 1`,
+            })
+            .where(eq(userTaskV2Assessments.id, assessment.id));
 
         // Get task for path revalidation
-        const task = await prisma.projectV2Task.findUnique({
-            where: {
-                id: taskId
-            },
-            include: {
-                sprint: {
-                    include: {
-                        project: {
-                            select: {
-                                slug: true
-                            }
-                        }
-                    }
-                }
-            },
-        });
+        const taskRows = await db
+            .select({
+                slug: projectsV2.slug,
+            })
+            .from(projectV2Tasks)
+            .innerJoin(projectV2Sprints, eq(projectV2Tasks.sprintId, projectV2Sprints.id))
+            .innerJoin(projectsV2, eq(projectV2Sprints.projectId, projectsV2.id))
+            .where(eq(projectV2Tasks.id, taskId))
+            .limit(1);
 
-        if (task) {
-            revalidatePath(`/projects/${task.sprint.project.slug}/sprints`);
+        if (taskRows[0]) {
+            revalidatePath(`/projects/${taskRows[0].slug}/sprints`);
         }
 
         return {
@@ -282,30 +294,33 @@ export async function getCodeChallengeInstructions(
     try {
         const user = await getCurrentUser();
 
-        const task = await prisma.projectV2Task.findUnique({
-            where: { id: taskId },
-            include: {
-                sprint: {
-                    include: {
-                        project: {
-                            select: {
-                                technologies: true,
-                                primaryLanguageOrFramework: true,
-                            },
-                        },
-                    },
-                },
-            },
-        });
+        const taskRows = await db
+            .select({
+                task: projectV2Tasks,
+                project: projectsV2,
+            })
+            .from(projectV2Tasks)
+            .innerJoin(projectV2Sprints, eq(projectV2Tasks.sprintId, projectV2Sprints.id))
+            .innerJoin(projectsV2, eq(projectV2Sprints.projectId, projectsV2.id))
+            .where(eq(projectV2Tasks.id, taskId))
+            .limit(1);
 
-        if (!task) {
+        if (!taskRows[0]) {
             return { success: false, error: "Task not found" };
         }
 
-        // Check for existing assessment
-        const existingAssessment = await prisma.userTaskV2Assessment.findUnique({
-            where: { userId_taskId: { userId: user.id, taskId } },
-        });
+        const { task, project } = taskRows[0];
+
+        const existingAssessmentRows = await db
+            .select()
+            .from(userTaskV2Assessments)
+            .where(and(
+                eq(userTaskV2Assessments.userId, user.id),
+                eq(userTaskV2Assessments.taskId, taskId)
+            ))
+            .limit(1);
+
+        const existingAssessment = existingAssessmentRows[0];
 
         if (existingAssessment?.codeValidation) {
             const validation = existingAssessment.codeValidation as { instructions?: string; starterCode?: string };
@@ -323,7 +338,7 @@ export async function getCodeChallengeInstructions(
 
         // Generate instructions using AI
         const openai = getOpenAIClient();
-        const primaryLang = task.sprint.project.primaryLanguageOrFramework || "JavaScript";
+        const primaryLang = project.primaryLanguageOrFramework || "JavaScript";
 
         const prompt = `You are an expert coding instructor. Create a code challenge to verify a developer completed this task correctly.
 
@@ -358,28 +373,26 @@ Respond in JSON format:
 
         const parsed = JSON.parse(content);
 
-        // Create or update assessment record
-        await prisma.userTaskV2Assessment.upsert({
-            where: { userId_taskId: { userId: user.id, taskId } },
-            create: {
+        const codeValidationData = {
+            instructions: parsed.instructions,
+            starterCode: parsed.starterCode,
+            expectedPatterns: parsed.expectedPatterns,
+        };
+
+        if (existingAssessment) {
+            await db
+                .update(userTaskV2Assessments)
+                .set({ codeValidation: codeValidationData })
+                .where(eq(userTaskV2Assessments.id, existingAssessment.id));
+        } else {
+            await db.insert(userTaskV2Assessments).values({
                 userId: user.id,
                 taskId,
                 assessmentType: "CODE",
                 codeLanguage: primaryLang.toLowerCase(),
-                codeValidation: {
-                    instructions: parsed.instructions,
-                    starterCode: parsed.starterCode,
-                    expectedPatterns: parsed.expectedPatterns,
-                },
-            },
-            update: {
-                codeValidation: {
-                    instructions: parsed.instructions,
-                    starterCode: parsed.starterCode,
-                    expectedPatterns: parsed.expectedPatterns,
-                },
-            },
-        });
+                codeValidation: codeValidationData,
+            });
+        }
 
         return {
             success: true,
@@ -409,26 +422,34 @@ export async function submitCodeForValidation(
     try {
         const user = await getCurrentUser();
 
-        const task = await prisma.projectV2Task.findUnique({
-            where: { id: taskId },
-            include: {
-                sprint: {
-                    include: {
-                        project: { select: { slug: true, technologies: true } },
-                    },
-                },
-            },
-        });
+        const taskRows = await db
+            .select({
+                task: projectV2Tasks,
+                slug: projectsV2.slug,
+            })
+            .from(projectV2Tasks)
+            .innerJoin(projectV2Sprints, eq(projectV2Tasks.sprintId, projectV2Sprints.id))
+            .innerJoin(projectsV2, eq(projectV2Sprints.projectId, projectsV2.id))
+            .where(eq(projectV2Tasks.id, taskId))
+            .limit(1);
 
-        if (!task) {
+        if (!taskRows[0]) {
             return { success: false, error: "Task not found" };
         }
 
-        const assessment = await prisma.userTaskV2Assessment.findUnique({
-            where: { userId_taskId: { userId: user.id, taskId } },
-        });
+        const { task, slug } = taskRows[0];
 
-        // Validate code using AI
+        const assessmentRows = await db
+            .select()
+            .from(userTaskV2Assessments)
+            .where(and(
+                eq(userTaskV2Assessments.userId, user.id),
+                eq(userTaskV2Assessments.taskId, taskId)
+            ))
+            .limit(1);
+
+        const assessment = assessmentRows[0];
+
         const openai = getOpenAIClient();
 
         const prompt = `You are a code reviewer. Evaluate if this code submission correctly implements the task requirements.
@@ -464,24 +485,24 @@ Be encouraging but honest. Pass if core requirements are met (score >= 70).`;
         }
 
         const result: CodeValidationResult = JSON.parse(content);
-
-        // Update assessment
-        // Cast result to JSON-compatible format for Prisma
         const resultJson = JSON.parse(JSON.stringify(result));
-        await prisma.userTaskV2Assessment.update({
-            where: { id: assessment?.id },
-            data: {
-                codeSubmission: code,
-                codeLanguage: language,
-                codeValidation: resultJson,
-                codeScore: result.score,
-                passed: result.passed,
-                completedAt: result.passed ? new Date() : null,
-                attempts: { increment: 1 },
-            },
-        });
 
-        revalidatePath(`/projects/${task.sprint.project.slug}/sprints`);
+        if (assessment) {
+            await db
+                .update(userTaskV2Assessments)
+                .set({
+                    codeSubmission: code,
+                    codeLanguage: language,
+                    codeValidation: resultJson,
+                    codeScore: result.score,
+                    passed: result.passed,
+                    completedAt: result.passed ? new Date() : null,
+                    attempts: sql`${userTaskV2Assessments.attempts} + 1`,
+                })
+                .where(eq(userTaskV2Assessments.id, assessment.id));
+        }
+
+        revalidatePath(`/projects/${slug}/sprints`);
 
         return { success: true, data: result };
     } catch (error) {
@@ -499,58 +520,62 @@ Be encouraging but honest. Pass if core requirements are met (score >= 70).`;
 
 /**
  * Prepare knowledge base for sprint mock interview
- * Aggregates data from all tasks in previous sprints up to and including the target sprint
  */
 export async function prepareSprintMockKnowledge(
     projectId: string,
     sprintId: string
 ): Promise<ActionResponse<{ knowledgeBase: string; topics: string[] }>> {
     try {
-        // Get the sprint and all previous sprints
-        const targetSprint = await prisma.projectV2Sprint.findUnique({
-            where: { id: sprintId },
-            select: { sprintNumber: true, name: true },
-        });
+        const targetSprintRows = await db
+            .select({ sprintNumber: projectV2Sprints.sprintNumber, name: projectV2Sprints.name })
+            .from(projectV2Sprints)
+            .where(eq(projectV2Sprints.id, sprintId))
+            .limit(1);
 
-        if (!targetSprint) {
+        if (!targetSprintRows[0]) {
             return { success: false, error: "Sprint not found" };
         }
 
-        // Get all sprints up to and including this one
-        const sprints = await prisma.projectV2Sprint.findMany({
-            where: {
-                projectId,
-                sprintNumber: { lte: targetSprint.sprintNumber },
-            },
-            orderBy: { sprintNumber: "asc" },
-            include: {
-                tasks: {
-                    orderBy: { orderIndex: "asc" },
-                    select: {
-                        title: true,
-                        description: true,
-                        criteria: true,
-                        hints: true,
-                        Learns: true,
-                        category: true,
-                        tags: true,
-                    },
-                },
-            },
-        });
+        const targetSprint = targetSprintRows[0];
 
-        // Get project info
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            select: {
-                title: true,
-                technologies: true,
-                targetAudience: true,
-                vision: true,
-            },
-        });
+        const sprints = await db
+            .select()
+            .from(projectV2Sprints)
+            .where(and(
+                eq(projectV2Sprints.projectId, projectId),
+                lte(projectV2Sprints.sprintNumber, targetSprint.sprintNumber)
+            ))
+            .orderBy(projectV2Sprints.sprintNumber);
 
-        // Build knowledge base for the mock interview
+        const projectRows = await db
+            .select({
+                title: projectsV2.title,
+                technologies: projectsV2.technologies,
+                targetAudience: projectsV2.targetAudience,
+                vision: projectsV2.vision,
+            })
+            .from(projectsV2)
+            .where(eq(projectsV2.id, projectId))
+            .limit(1);
+
+        const project = projectRows[0];
+
+        const sprintIds = sprints.map(s => s.id);
+        const allTasks = sprintIds.length > 0
+            ? await db
+                .select()
+                .from(projectV2Tasks)
+                .where(inArray(projectV2Tasks.sprintId, sprintIds))
+                .orderBy(projectV2Tasks.orderIndex)
+            : [];
+
+        const tasksBySprintId = new Map<string, typeof allTasks>();
+        for (const task of allTasks) {
+            const existing = tasksBySprintId.get(task.sprintId) || [];
+            existing.push(task);
+            tasksBySprintId.set(task.sprintId, existing);
+        }
+
         const topics: string[] = [];
         let knowledgeBase = `# Project: ${project?.title}\n`;
         knowledgeBase += `Technologies: ${project?.technologies.join(", ")}\n\n`;
@@ -558,16 +583,17 @@ export async function prepareSprintMockKnowledge(
         knowledgeBase += `This mock interview covers the following sprints:\n\n`;
 
         for (const sprint of sprints) {
+            const sprintTasks = tasksBySprintId.get(sprint.id) || [];
             knowledgeBase += `### ${sprint.name}\n`;
             knowledgeBase += `Goal: ${sprint.goal}\n\n`;
 
-            for (const task of sprint.tasks) {
+            for (const task of sprintTasks) {
                 knowledgeBase += `**${task.title}**\n`;
                 knowledgeBase += `- Description: ${task.description.join(" ")}\n`;
                 knowledgeBase += `- Success Criteria: ${task.criteria.join("; ")}\n`;
 
-                if (task.Learns) {
-                    const Learns = task.Learns as Array<{ title: string; description: string }>;
+                if (task.learns) {
+                    const Learns = task.learns as Array<{ title: string; description: string }>;
                     Learns.forEach(c => {
                         knowledgeBase += `- learn: ${c.title} - ${c.description}\n`;
                         if (!topics.includes(c.title)) {
@@ -618,49 +644,48 @@ export async function startSprintMockSession(
     try {
         const user = await getCurrentUser();
 
-        // Check if there's an incomplete session
-        const existingSession = await prisma.projectV2MockSession.findFirst({
-            where: {
-                userId: user.id,
-                projectId,
-                sprintId,
-                status: { in: ["SCHEDULED", "IN_PROGRESS"] },
-            },
-        });
+        const existingSessionRows = await db
+            .select()
+            .from(projectV2MockSessions)
+            .where(and(
+                eq(projectV2MockSessions.userId, user.id),
+                eq(projectV2MockSessions.projectId, projectId),
+                eq(projectV2MockSessions.sprintId, sprintId),
+                inArray(projectV2MockSessions.status, ["SCHEDULED", "IN_PROGRESS"])
+            ))
+            .limit(1);
 
-        if (existingSession) {
-            // Return existing session
+        if (existingSessionRows[0]) {
             const knowledge = await prepareSprintMockKnowledge(projectId, sprintId);
             return {
                 success: true,
                 data: {
-                    sessionId: existingSession.id,
+                    sessionId: existingSessionRows[0].id,
                     knowledgeBase: knowledge.data?.knowledgeBase || "",
                 },
             };
         }
 
-        // Prepare knowledge base
         const knowledge = await prepareSprintMockKnowledge(projectId, sprintId);
         if (!knowledge.success) {
             return { success: false, error: knowledge.error };
         }
 
-        // Create new session
-        const session = await prisma.projectV2MockSession.create({
-            data: {
+        const newSessionRows = await db
+            .insert(projectV2MockSessions)
+            .values({
                 userId: user.id,
                 projectId,
                 sprintId,
                 sessionType: "SPRINT_REVIEW",
                 status: "SCHEDULED",
-            },
-        });
+            })
+            .returning({ id: projectV2MockSessions.id });
 
         return {
             success: true,
             data: {
-                sessionId: session.id,
+                sessionId: newSessionRows[0].id,
                 knowledgeBase: knowledge.data!.knowledgeBase,
             },
         };
@@ -691,22 +716,25 @@ export async function completeSprintMockSession(
     try {
         const user = await getCurrentUser();
 
-        const session = await prisma.projectV2MockSession.findUnique({
-            where: { id: sessionId },
-            include: {
-                sprint: { select: { projectId: true } },
-                project: { select: { id: true, slug: true } },
-            },
-        });
+        const sessionRows = await db
+            .select({
+                session: projectV2MockSessions,
+                slug: projectsV2.slug,
+            })
+            .from(projectV2MockSessions)
+            .innerJoin(projectsV2, eq(projectV2MockSessions.projectId, projectsV2.id))
+            .where(eq(projectV2MockSessions.id, sessionId))
+            .limit(1);
 
-        if (!session || session.userId !== user.id) {
+        if (!sessionRows[0] || sessionRows[0].session.userId !== user.id) {
             return { success: false, error: "Session not found" };
         }
 
-        // Update session with completion data
-        await prisma.projectV2MockSession.update({
-            where: { id: sessionId },
-            data: {
+        const { session, slug } = sessionRows[0];
+
+        await db
+            .update(projectV2MockSessions)
+            .set({
                 conversationId: data.conversationId,
                 duration: data.duration,
                 transcript: data.transcript,
@@ -716,23 +744,20 @@ export async function completeSprintMockSession(
                 improvements: data.improvements || [],
                 status: "COMPLETED",
                 completedAt: new Date(),
-            },
-        });
+            })
+            .where(eq(projectV2MockSessions.id, sessionId));
 
-        // Update user's project progress mock score
         if (data.score !== undefined && session.sprintId) {
-            await prisma.userProjectV2Progress.updateMany({
-                where: {
-                    userId: user.id,
-                    projectId: session.project.id,
-                },
-                data: {
-                    mockScore: data.score,
-                },
-            });
+            await db
+                .update(userProjectV2Progress)
+                .set({ mockScore: data.score })
+                .where(and(
+                    eq(userProjectV2Progress.userId, user.id),
+                    eq(userProjectV2Progress.projectId, session.projectId)
+                ));
         }
 
-        revalidatePath(`/projects/${session.project.slug}/sprints`);
+        revalidatePath(`/projects/${slug}/sprints`);
 
         return {
             success: true,
@@ -766,24 +791,32 @@ export async function getTaskAssessmentStatus(
     try {
         const user = await getCurrentUser();
 
-        const task = await prisma.projectV2Task.findUnique({
-            where: { id: taskId },
-            select: { assessmentType: true },
-        });
+        const taskRows = await db
+            .select({ assessmentType: projectV2Tasks.assessmentType })
+            .from(projectV2Tasks)
+            .where(eq(projectV2Tasks.id, taskId))
+            .limit(1);
 
-        if (!task) {
+        if (!taskRows[0]) {
             return { success: false, error: "Task not found" };
         }
 
-        const assessment = await prisma.userTaskV2Assessment.findUnique({
-            where: { userId_taskId: { userId: user.id, taskId } },
-        });
+        const assessmentRows = await db
+            .select()
+            .from(userTaskV2Assessments)
+            .where(and(
+                eq(userTaskV2Assessments.userId, user.id),
+                eq(userTaskV2Assessments.taskId, taskId)
+            ))
+            .limit(1);
+
+        const assessment = assessmentRows[0];
 
         return {
             success: true,
             data: {
-                hasAssessment: task.assessmentType !== "NONE",
-                assessmentType: task.assessmentType,
+                hasAssessment: taskRows[0].assessmentType !== "NONE",
+                assessmentType: taskRows[0].assessmentType,
                 passed: assessment?.passed || false,
                 attempts: assessment?.attempts || 0,
                 score: assessment?.quizScore || assessment?.codeScore || null,
@@ -812,15 +845,22 @@ export async function getSprintMockStatus(
     try {
         const user = await getCurrentUser();
 
-        const session = await prisma.projectV2MockSession.findFirst({
-            where: {
-                userId: user.id,
-                projectId,
-                sprintId,
-                status: "COMPLETED",
-            },
-            orderBy: { completedAt: "desc" },
-        });
+        const sessionRows = await db
+            .select({
+                score: projectV2MockSessions.score,
+                completedAt: projectV2MockSessions.completedAt,
+            })
+            .from(projectV2MockSessions)
+            .where(and(
+                eq(projectV2MockSessions.userId, user.id),
+                eq(projectV2MockSessions.projectId, projectId),
+                eq(projectV2MockSessions.sprintId, sprintId),
+                eq(projectV2MockSessions.status, "COMPLETED")
+            ))
+            .orderBy(projectV2MockSessions.completedAt)
+            .limit(1);
+
+        const session = sessionRows[0];
 
         return {
             success: true,
@@ -841,7 +881,6 @@ export async function getSprintMockStatus(
 
 /**
  * Save sprint mock interview result after Voice session ends
- * Called when the ElevenLabs conversation ends
  */
 export async function saveSprintMockResult(
     projectId: string,
@@ -851,23 +890,25 @@ export async function saveSprintMockResult(
     try {
         const user = await getCurrentUser();
 
-        // Find the existing session
-        const session = await prisma.projectV2MockSession.findFirst({
-            where: {
-                userId: user.id,
-                projectId,
-                sprintId,
-                status: { in: ["SCHEDULED", "IN_PROGRESS"] },
-            },
-            include: {
-                project: { select: { slug: true } },
-            },
-        });
+        const existingSessionRows = await db
+            .select({
+                session: projectV2MockSessions,
+                slug: projectsV2.slug,
+            })
+            .from(projectV2MockSessions)
+            .innerJoin(projectsV2, eq(projectV2MockSessions.projectId, projectsV2.id))
+            .where(and(
+                eq(projectV2MockSessions.userId, user.id),
+                eq(projectV2MockSessions.projectId, projectId),
+                eq(projectV2MockSessions.sprintId, sprintId),
+                inArray(projectV2MockSessions.status, ["SCHEDULED", "IN_PROGRESS"])
+            ))
+            .limit(1);
 
-        if (!session) {
-            // Create a new session if none exists
-            const newSession = await prisma.projectV2MockSession.create({
-                data: {
+        if (!existingSessionRows[0]) {
+            const newSessionRows = await db
+                .insert(projectV2MockSessions)
+                .values({
                     userId: user.id,
                     projectId,
                     sprintId,
@@ -875,15 +916,19 @@ export async function saveSprintMockResult(
                     sessionType: "SPRINT_REVIEW",
                     status: "COMPLETED",
                     completedAt: new Date(),
-                    // Default score - will be updated by AI analysis webhook
                     score: 75,
-                },
-                include: {
-                    project: { select: { slug: true } },
-                },
-            });
+                })
+                .returning({ id: projectV2MockSessions.id });
 
-            revalidatePath(`/projects/${newSession.project.slug}/sprints`);
+            const projectRows = await db
+                .select({ slug: projectsV2.slug })
+                .from(projectsV2)
+                .where(eq(projectsV2.id, projectId))
+                .limit(1);
+
+            if (projectRows[0]) {
+                revalidatePath(`/projects/${projectRows[0].slug}/sprints`);
+            }
 
             return {
                 success: true,
@@ -891,34 +936,29 @@ export async function saveSprintMockResult(
             };
         }
 
-        // Update the existing session
-        const updatedSession = await prisma.projectV2MockSession.update({
-            where: { id: session.id },
-            data: {
+        await db
+            .update(projectV2MockSessions)
+            .set({
                 conversationId,
                 status: "COMPLETED",
                 completedAt: new Date(),
-                // Default score - will be updated by AI analysis webhook
                 score: 80,
-            },
-        });
+            })
+            .where(eq(projectV2MockSessions.id, existingSessionRows[0].session.id));
 
-        // Update user's project progress
-        await prisma.userProjectV2Progress.updateMany({
-            where: {
-                userId: user.id,
-                projectId,
-            },
-            data: {
-                mockScore: 80,
-            },
-        });
+        await db
+            .update(userProjectV2Progress)
+            .set({ mockScore: 80 })
+            .where(and(
+                eq(userProjectV2Progress.userId, user.id),
+                eq(userProjectV2Progress.projectId, projectId)
+            ));
 
-        revalidatePath(`/projects/${session.project.slug}/sprints`);
+        revalidatePath(`/projects/${existingSessionRows[0].slug}/sprints`);
 
         return {
             success: true,
-            data: { score: updatedSession.score || 80 },
+            data: { score: 80 },
         };
     } catch (error) {
         console.error("[SAVE MOCK RESULT ERROR]:", error);
@@ -955,10 +995,6 @@ interface SprintCompletionStatus {
 
 /**
  * Get comprehensive sprint completion status for determining if next sprint should be unlocked.
- * A sprint is fully completed when:
- * 1. All tasks are marked as COMPLETED
- * 2. All task assessments (QUIZ/CODE) are passed
- * 3. Sprint mock interview is completed (if not the last sprint)
  */
 export async function getSprintCompletionStatus(
     projectId: string,
@@ -968,84 +1004,83 @@ export async function getSprintCompletionStatus(
     try {
         const user = await getCurrentUser();
 
-        // Get sprint with all its tasks
-        const sprint = await prisma.projectV2Sprint.findUnique({
-            where: { id: sprintId },
-            include: {
-                tasks: {
-                    select: {
-                        id: true,
-                        assessmentType: true,
-                    },
-                },
-            },
-        });
+        const sprintTasks = await db
+            .select({
+                id: projectV2Tasks.id,
+                assessmentType: projectV2Tasks.assessmentType,
+            })
+            .from(projectV2Tasks)
+            .where(eq(projectV2Tasks.sprintId, sprintId));
 
-        if (!sprint) {
-            return { success: false, error: "Sprint not found" };
-        }
+        const userProgressRows = await db
+            .select({ taskStatuses: userProjectV2Progress.tasksCompleted })
+            .from(userProjectV2Progress)
+            .where(and(
+                eq(userProjectV2Progress.userId, user.id),
+                eq(userProjectV2Progress.projectId, projectId)
+            ))
+            .limit(1);
 
-        // Get user's progress for this project
-        const userProgress = await prisma.userProjectV2Progress.findFirst({
-            where: {
-                userId: user.id,
-                projectId,
-            },
-            select: {
-                taskStatuses: true,
-            },
-        });
+        // For task completion, check userTaskV2Statuses
+        const { userTaskV2Statuses } = await import("@repo/db");
+        const taskIds = sprintTasks.map(t => t.id);
+        const completedTaskStatuses = taskIds.length > 0
+            ? await db
+                .select({ taskId: userTaskV2Statuses.taskId })
+                .from(userTaskV2Statuses)
+                .where(and(
+                    eq(userTaskV2Statuses.userId, user.id),
+                    inArray(userTaskV2Statuses.taskId, taskIds),
+                    eq(userTaskV2Statuses.status, "COMPLETED")
+                ))
+            : [];
 
-        // Parse task statuses
-        const taskStatuses = (userProgress?.taskStatuses as Array<{ taskId: string; status: string }>) || [];
-        const taskStatusMap = new Map(taskStatuses.map(ts => [ts.taskId, ts.status]));
+        const completedTaskIds = new Set(completedTaskStatuses.map(s => s.taskId));
 
-        // Check task completion
-        const totalTasks = sprint.tasks.length;
-        const completedTasks = sprint.tasks.filter(t => taskStatusMap.get(t.id) === 'COMPLETED').length;
+        const totalTasks = sprintTasks.length;
+        const completedTasks = sprintTasks.filter(t => completedTaskIds.has(t.id)).length;
         const tasksCompleted = totalTasks === 0 || completedTasks === totalTasks;
 
-        // Get task assessments that require completion (QUIZ or CODE type)
-        const tasksWithAssessments = sprint.tasks.filter(t => t.assessmentType !== 'NONE');
+        const tasksWithAssessments = sprintTasks.filter(t => t.assessmentType !== "NONE");
+        const assessmentTaskIds = tasksWithAssessments.map(t => t.id);
 
-        // Get user's assessment results for these tasks
-        const userAssessments = await prisma.userTaskV2Assessment.findMany({
-            where: {
-                userId: user.id,
-                taskId: { in: tasksWithAssessments.map(t => t.id) },
-            },
-            select: {
-                taskId: true,
-                passed: true,
-            },
-        });
+        const userAssessments = assessmentTaskIds.length > 0
+            ? await db
+                .select({
+                    taskId: userTaskV2Assessments.taskId,
+                    passed: userTaskV2Assessments.passed,
+                })
+                .from(userTaskV2Assessments)
+                .where(and(
+                    eq(userTaskV2Assessments.userId, user.id),
+                    inArray(userTaskV2Assessments.taskId, assessmentTaskIds)
+                ))
+            : [];
 
         const assessmentMap = new Map(userAssessments.map(a => [a.taskId, a.passed]));
         const totalAssessments = tasksWithAssessments.length;
         const passedAssessments = tasksWithAssessments.filter(t => assessmentMap.get(t.id) === true).length;
         const allAssessmentsPassed = totalAssessments === 0 || passedAssessments === totalAssessments;
 
-        // Check mock interview completion (not required for last sprint)
         let mockInterviewCompleted = true;
         let mockScore: number | null = null;
         const mockRequired = !isLastSprint;
 
         if (mockRequired) {
-            const mockSession = await prisma.projectV2MockSession.findFirst({
-                where: {
-                    userId: user.id,
-                    projectId,
-                    sprintId,
-                    status: "COMPLETED",
-                },
-                orderBy: { completedAt: "desc" },
-                select: {
-                    score: true,
-                },
-            });
+            const mockSessionRows = await db
+                .select({ score: projectV2MockSessions.score })
+                .from(projectV2MockSessions)
+                .where(and(
+                    eq(projectV2MockSessions.userId, user.id),
+                    eq(projectV2MockSessions.projectId, projectId),
+                    eq(projectV2MockSessions.sprintId, sprintId),
+                    eq(projectV2MockSessions.status, "COMPLETED")
+                ))
+                .orderBy(projectV2MockSessions.completedAt)
+                .limit(1);
 
-            mockInterviewCompleted = !!mockSession;
-            mockScore = mockSession?.score || null;
+            mockInterviewCompleted = mockSessionRows.length > 0;
+            mockScore = mockSessionRows[0]?.score || null;
         }
 
         const isFullyCompleted = tasksCompleted && allAssessmentsPassed && mockInterviewCompleted;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@repo/auth';
+import { getSession } from '@repo/auth';
 import { generateJobInterviewQuestions } from '@/actions/(main)/ai/jobinterview.action';
 
 // Configure maximum duration for this function (60 seconds)
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 	console.log('🚀 [API] /api/ai/job-interview/generate - Starting direct generation');
 
 	try {
-		const session = await auth();
+		const session = await getSession(req.headers);
 		console.log('🔐 [API] Authentication check:', { userId: session?.user?.id });
 
 		if (!session?.user?.id) {

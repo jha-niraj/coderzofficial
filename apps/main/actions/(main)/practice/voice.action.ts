@@ -1,7 +1,8 @@
 "use server";
 
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
-import { auth } from "@repo/auth";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
 
 // ─────────────────────────────────────────────
 // VOICE TOKEN GENERATION
@@ -27,7 +28,7 @@ function getElevenLabsClient(): ElevenLabsClient {
 export async function getScribeToken(): Promise<
     { success: true; token: string } | { success: false; error: string }
 > {
-    const session = await auth();
+    const session = await getSession(await headers());
     if (!session?.user?.id) {
         return { success: false, error: "Not authenticated" };
     }
@@ -55,7 +56,7 @@ export async function generateTTSAudio(
     text: string,
     voiceId: string = "JBFqnCBsd6RMkjVDRZzb" // George — professional male voice
 ): Promise<{ success: true; audioBase64: string } | { success: false; error: string }> {
-    const session = await auth();
+    const session = await getSession(await headers());
     if (!session?.user?.id) {
         return { success: false, error: "Not authenticated" };
     }

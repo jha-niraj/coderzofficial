@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, departments, universityMembers, studentUniversityLinks, universityClasses } from "@repo/db"
+import { eq, and, desc, asc, inArray, count } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 
 // ============================================
@@ -9,11 +11,11 @@ import { revalidatePath } from "next/cache"
 // ============================================
 
 async function getUserUniversity() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.universityMember.findFirst({
-        where: { userId: session.user.id },
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
     })
 
     return member
@@ -48,45 +50,45 @@ export async function getDepartments(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const departments = await prisma.department.findMany({
-            where: { universityId: member.universityId },
-            include: {
-                _count: {
-                    select: {
-                        members: true,
-                        studentLinks: true,
-                        classes: true,
-                    }
-                }
-            },
-            orderBy: { name: "asc" }
+        const deptRows = await db.query.departments.findMany({
+            where: eq(departments.universityId, member.universityId),
+            orderBy: asc(departments.name),
         })
 
         // Get head user info for departments with headUserId
-        const headUserIds = departments
+        const headUserIds = deptRows
             .filter(d => d.headUserId)
             .map(d => d.headUserId as string)
 
         const headMembers = headUserIds.length > 0
-            ? await prisma.universityMember.findMany({
-                where: { id: { in: headUserIds } },
-                select: { id: true, displayName: true }
+            ? await db.query.universityMembers.findMany({
+                where: inArray(universityMembers.id, headUserIds),
+                columns: { id: true, displayName: true },
             })
             : []
 
         const headMap = new Map(headMembers.map(m => [m.id, m.displayName]))
 
-        const deptList = departments.map(dept => ({
-            id: dept.id,
-            name: dept.name,
-            code: dept.code,
-            description: dept.description,
-            headUserId: dept.headUserId,
-            headName: dept.headUserId ? (headMap.get(dept.headUserId) ?? null) : null,
-            memberCount: dept._count.members,
-            studentCount: dept._count.studentLinks,
-            classCount: dept._count.classes,
-            createdAt: dept.createdAt,
+        // Get counts per department
+        const deptList = await Promise.all(deptRows.map(async dept => {
+            const [memberCountResult, studentCountResult, classCountResult] = await Promise.all([
+                db.select({ count: count() }).from(universityMembers).where(eq(universityMembers.departmentId, dept.id)),
+                db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.departmentId, dept.id)),
+                db.select({ count: count() }).from(universityClasses).where(eq(universityClasses.departmentId, dept.id)),
+            ])
+
+            return {
+                id: dept.id,
+                name: dept.name,
+                code: dept.code,
+                description: dept.description,
+                headUserId: dept.headUserId,
+                headName: dept.headUserId ? (headMap.get(dept.headUserId) ?? null) : null,
+                memberCount: memberCountResult[0]?.count ?? 0,
+                studentCount: studentCountResult[0]?.count ?? 0,
+                classCount: classCountResult[0]?.count ?? 0,
+                createdAt: dept.createdAt,
+            }
         }))
 
         return { success: true, departments: deptList }
@@ -123,20 +125,11 @@ export async function getDepartment(departmentId: string): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const department = await prisma.department.findFirst({
-            where: {
-                id: departmentId,
-                universityId: member.universityId,
-            },
-            include: {
-                _count: {
-                    select: {
-                        members: true,
-                        studentLinks: true,
-                        classes: true,
-                    }
-                }
-            }
+        const department = await db.query.departments.findFirst({
+            where: and(
+                eq(departments.id, departmentId),
+                eq(departments.universityId, member.universityId),
+            ),
         })
 
         if (!department) {
@@ -147,13 +140,19 @@ export async function getDepartment(departmentId: string): Promise<{
         let headName: string | null = null
         let headEmail: string | null = null
         if (department.headUserId) {
-            const headMember = await prisma.universityMember.findUnique({
-                where: { id: department.headUserId },
-                select: { displayName: true, email: true }
+            const headMember = await db.query.universityMembers.findFirst({
+                where: eq(universityMembers.id, department.headUserId),
+                columns: { displayName: true, email: true },
             })
             headName = headMember?.displayName ?? null
             headEmail = headMember?.email ?? null
         }
+
+        const [memberCountResult, studentCountResult, classCountResult] = await Promise.all([
+            db.select({ count: count() }).from(universityMembers).where(eq(universityMembers.departmentId, departmentId)),
+            db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.departmentId, departmentId)),
+            db.select({ count: count() }).from(universityClasses).where(eq(universityClasses.departmentId, departmentId)),
+        ])
 
         return {
             success: true,
@@ -165,9 +164,9 @@ export async function getDepartment(departmentId: string): Promise<{
                 headUserId: department.headUserId,
                 headName,
                 headEmail,
-                memberCount: department._count.members,
-                studentCount: department._count.studentLinks,
-                classCount: department._count.classes,
+                memberCount: memberCountResult[0]?.count ?? 0,
+                studentCount: studentCountResult[0]?.count ?? 0,
+                classCount: classCountResult[0]?.count ?? 0,
                 createdAt: department.createdAt,
                 updatedAt: department.updatedAt,
             }
@@ -198,19 +197,19 @@ export async function getDepartmentStats(): Promise<{
         }
 
         const [totalDepartments, totalMembers, totalStudents, totalClasses] = await Promise.all([
-            prisma.department.count({ where: { universityId: member.universityId } }),
-            prisma.universityMember.count({ where: { universityId: member.universityId } }),
-            prisma.studentUniversityLink.count({ where: { universityId: member.universityId } }),
-            prisma.universityClass.count({ where: { universityId: member.universityId } }),
+            db.select({ count: count() }).from(departments).where(eq(departments.universityId, member.universityId)),
+            db.select({ count: count() }).from(universityMembers).where(eq(universityMembers.universityId, member.universityId)),
+            db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.universityId, member.universityId)),
+            db.select({ count: count() }).from(universityClasses).where(eq(universityClasses.universityId, member.universityId)),
         ])
 
         return {
             success: true,
             stats: {
-                totalDepartments,
-                totalMembers,
-                totalStudents,
-                totalClasses,
+                totalDepartments: totalDepartments[0]?.count ?? 0,
+                totalMembers: totalMembers[0]?.count ?? 0,
+                totalStudents: totalStudents[0]?.count ?? 0,
+                totalClasses: totalClasses[0]?.count ?? 0,
             }
         }
     } catch (error) {
@@ -248,15 +247,18 @@ export async function createDepartment(payload: {
             return { success: false, error: "No permission to create departments" }
         }
 
-        const department = await prisma.department.create({
-            data: {
-                universityId: member.universityId,
-                name: payload.name,
-                code: payload.code ?? null,
-                description: payload.description ?? null,
-                headUserId: payload.headUserId ?? null,
-            }
-        })
+        const departmentRows = await db.insert(departments).values({
+            universityId: member.universityId,
+            name: payload.name,
+            code: payload.code ?? null,
+            description: payload.description ?? null,
+            headUserId: payload.headUserId ?? null,
+        }).returning()
+
+        const department = departmentRows[0];
+        if (!department) {
+            return { success: false, error: "Failed to create department" }
+        }
 
         revalidatePath("/dashboard/departments")
         return { success: true, departmentId: department.id }
@@ -294,21 +296,18 @@ export async function updateDepartment(
         }
 
         // Verify department exists
-        const existingDept = await prisma.department.findFirst({
-            where: {
-                id: departmentId,
-                universityId: member.universityId,
-            }
+        const existingDept = await db.query.departments.findFirst({
+            where: and(
+                eq(departments.id, departmentId),
+                eq(departments.universityId, member.universityId),
+            ),
         })
 
         if (!existingDept) {
             return { success: false, error: "Department not found" }
         }
 
-        await prisma.department.update({
-            where: { id: departmentId },
-            data: payload,
-        })
+        await db.update(departments).set(payload).where(eq(departments.id, departmentId))
 
         revalidatePath("/dashboard/departments")
         revalidatePath(`/dashboard/departments/${departmentId}`)
@@ -339,20 +338,18 @@ export async function deleteDepartment(departmentId: string): Promise<{
         }
 
         // Verify department exists
-        const existingDept = await prisma.department.findFirst({
-            where: {
-                id: departmentId,
-                universityId: member.universityId,
-            }
+        const existingDept = await db.query.departments.findFirst({
+            where: and(
+                eq(departments.id, departmentId),
+                eq(departments.universityId, member.universityId),
+            ),
         })
 
         if (!existingDept) {
             return { success: false, error: "Department not found" }
         }
 
-        await prisma.department.delete({
-            where: { id: departmentId },
-        })
+        await db.delete(departments).where(eq(departments.id, departmentId))
 
         revalidatePath("/dashboard/departments")
         return { success: true }
@@ -385,11 +382,11 @@ export async function assignDepartmentHead(
         }
 
         // Verify department exists
-        const existingDept = await prisma.department.findFirst({
-            where: {
-                id: departmentId,
-                universityId: member.universityId,
-            }
+        const existingDept = await db.query.departments.findFirst({
+            where: and(
+                eq(departments.id, departmentId),
+                eq(departments.universityId, member.universityId),
+            ),
         })
 
         if (!existingDept) {
@@ -397,30 +394,21 @@ export async function assignDepartmentHead(
         }
 
         // Verify head member exists
-        const headMember = await prisma.universityMember.findFirst({
-            where: {
-                id: headUserId,
-                universityId: member.universityId,
-            }
+        const headMember = await db.query.universityMembers.findFirst({
+            where: and(
+                eq(universityMembers.id, headUserId),
+                eq(universityMembers.universityId, member.universityId),
+            ),
         })
 
         if (!headMember) {
             return { success: false, error: "Member not found" }
         }
 
-        await prisma.department.update({
-            where: { id: departmentId },
-            data: { headUserId },
-        })
+        await db.update(departments).set({ headUserId }).where(eq(departments.id, departmentId))
 
         // Update the member's role to DEPARTMENT_HEAD
-        await prisma.universityMember.update({
-            where: { id: headUserId },
-            data: { 
-                role: "DEPARTMENT_HEAD",
-                departmentId,
-            },
-        })
+        await db.update(universityMembers).set({ role: "DEPARTMENT_HEAD", departmentId }).where(eq(universityMembers.id, headUserId))
 
         revalidatePath("/dashboard/departments")
         revalidatePath(`/dashboard/departments/${departmentId}`)
@@ -451,11 +439,11 @@ export async function removeDepartmentHead(departmentId: string): Promise<{
         }
 
         // Verify department exists
-        const existingDept = await prisma.department.findFirst({
-            where: {
-                id: departmentId,
-                universityId: member.universityId,
-            }
+        const existingDept = await db.query.departments.findFirst({
+            where: and(
+                eq(departments.id, departmentId),
+                eq(departments.universityId, member.universityId),
+            ),
         })
 
         if (!existingDept) {
@@ -464,16 +452,10 @@ export async function removeDepartmentHead(departmentId: string): Promise<{
 
         // If there was a head, update their role back to FACULTY
         if (existingDept.headUserId) {
-            await prisma.universityMember.update({
-                where: { id: existingDept.headUserId },
-                data: { role: "FACULTY" },
-            })
+            await db.update(universityMembers).set({ role: "FACULTY" }).where(eq(universityMembers.id, existingDept.headUserId))
         }
 
-        await prisma.department.update({
-            where: { id: departmentId },
-            data: { headUserId: null },
-        })
+        await db.update(departments).set({ headUserId: null }).where(eq(departments.id, departmentId))
 
         revalidatePath("/dashboard/departments")
         revalidatePath(`/dashboard/departments/${departmentId}`)
@@ -507,20 +489,20 @@ export async function getDepartmentMembers(departmentId: string): Promise<{
         }
 
         // Verify department exists
-        const dept = await prisma.department.findFirst({
-            where: {
-                id: departmentId,
-                universityId: member.universityId,
-            }
+        const dept = await db.query.departments.findFirst({
+            where: and(
+                eq(departments.id, departmentId),
+                eq(departments.universityId, member.universityId),
+            ),
         })
 
         if (!dept) {
             return { success: false, error: "Department not found" }
         }
 
-        const members = await prisma.universityMember.findMany({
-            where: { departmentId },
-            orderBy: { createdAt: "desc" },
+        const members = await db.query.universityMembers.findMany({
+            where: eq(universityMembers.departmentId, departmentId),
+            orderBy: desc(universityMembers.createdAt),
         })
 
         return {
@@ -564,20 +546,20 @@ export async function getDepartmentClasses(departmentId: string): Promise<{
         }
 
         // Verify department exists
-        const dept = await prisma.department.findFirst({
-            where: {
-                id: departmentId,
-                universityId: member.universityId,
-            }
+        const dept = await db.query.departments.findFirst({
+            where: and(
+                eq(departments.id, departmentId),
+                eq(departments.universityId, member.universityId),
+            ),
         })
 
         if (!dept) {
             return { success: false, error: "Department not found" }
         }
 
-        const classes = await prisma.universityClass.findMany({
-            where: { departmentId },
-            orderBy: { createdAt: "desc" },
+        const classes = await db.query.universityClasses.findMany({
+            where: eq(universityClasses.departmentId, departmentId),
+            orderBy: desc(universityClasses.createdAt),
         })
 
         return {
@@ -622,20 +604,20 @@ export async function getDepartmentStudents(departmentId: string): Promise<{
         }
 
         // Verify department exists
-        const dept = await prisma.department.findFirst({
-            where: {
-                id: departmentId,
-                universityId: member.universityId,
-            }
+        const dept = await db.query.departments.findFirst({
+            where: and(
+                eq(departments.id, departmentId),
+                eq(departments.universityId, member.universityId),
+            ),
         })
 
         if (!dept) {
             return { success: false, error: "Department not found" }
         }
 
-        const students = await prisma.studentUniversityLink.findMany({
-            where: { departmentId },
-            orderBy: { createdAt: "desc" },
+        const students = await db.query.studentUniversityLinks.findMany({
+            where: eq(studentUniversityLinks.departmentId, departmentId),
+            orderBy: desc(studentUniversityLinks.createdAt),
         })
 
         return {

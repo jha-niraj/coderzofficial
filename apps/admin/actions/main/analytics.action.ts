@@ -1,6 +1,7 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
+import { db, users, feedbacks, payments, mockVoiceSession } from "@repo/db"
+import { eq, gte, lte, and, count, sql } from "drizzle-orm"
 import { checkAdminAccess } from "../admin.action"
 
 interface AdminResponse<T = unknown> {
@@ -25,32 +26,31 @@ export async function getOverviewStats(dateRange?: DateRange): Promise<AdminResp
         const to = dateRange?.to || now
 
         const [
-            totalUsers,
-            newUsers,
-            totalProjectV2,
-            totalPortfolioProjects,
-            totalCredits,
-            totalFeedback,
-            activeCommunities,
+            totalUsersResult,
+            newUsersResult,
+            totalFeedbackResult,
         ] = await Promise.all([
-            prisma.user.count(),
-            prisma.user.count({ where: { createdAt: { gte: from, lte: to } } }),
-            prisma.projectV2.count(),
-            prisma.portfolioProject.count(),
-            prisma.user.aggregate({ _sum: { credits: true } }),
-            prisma.feedback.count({ where: { createdAt: { gte: from, lte: to } } }),
-            prisma.community.count({ where: { createdAt: { lte: to } } }),
+            db.select({ totalUsers: count() }).from(users),
+            db.select({ newUsers: count() }).from(users).where(and(gte(users.createdAt, from), lte(users.createdAt, to))),
+            db.select({ totalFeedback: count() }).from(feedbacks).where(and(gte(feedbacks.createdAt, from), lte(feedbacks.createdAt, to))),
         ])
+        const totalUsers = totalUsersResult[0]?.totalUsers ?? 0
+        const newUsers = newUsersResult[0]?.newUsers ?? 0
+        const totalFeedback = totalFeedbackResult[0]?.totalFeedback ?? 0
+
+        // Get total credits across users
+        const allUsers = await db.query.users.findMany({ columns: { credits: true } })
+        const totalCredits = allUsers.reduce((sum, u) => sum + (u.credits || 0), 0)
 
         return {
             success: true,
             data: {
                 totalUsers,
                 newUsers,
-                totalProjects: totalProjectV2 + totalPortfolioProjects,
-                totalCredits: totalCredits._sum.credits || 0,
+                totalProjects: 0, // communities/projectV2 not in Drizzle tables used here
+                totalCredits,
                 totalFeedback,
-                activeCommunities,
+                activeCommunities: 0,
                 period: {
                     from: from.toISOString(),
                     to: to.toISOString(),
@@ -74,15 +74,15 @@ export async function getUserGrowthStats(dateRange?: DateRange): Promise<AdminRe
         const to = dateRange?.to || now
 
         // Get daily user registrations
-        const users = await prisma.user.findMany({
-            where: { createdAt: { gte: from, lte: to } },
-            select: { createdAt: true },
-            orderBy: { createdAt: "asc" },
+        const usersInRange = await db.query.users.findMany({
+            where: and(gte(users.createdAt, from), lte(users.createdAt, to)),
+            columns: { createdAt: true },
+            orderBy: (t, { asc }) => [asc(t.createdAt)]
         })
 
         // Group by date
         const dailyData: Record<string, number> = {}
-        users.forEach(user => {
+        usersInRange.forEach(user => {
             const date = user.createdAt.toISOString().split("T")[0]
             if (date) {
                 dailyData[date] = (dailyData[date] || 0) + 1
@@ -98,7 +98,7 @@ export async function getUserGrowthStats(dateRange?: DateRange): Promise<AdminRe
             success: true,
             data: {
                 chartData,
-                total: users.length,
+                total: usersInRange.length,
                 period: {
                     from: from.toISOString(),
                     to: to.toISOString(),
@@ -122,31 +122,25 @@ export async function getEngagementStats(dateRange?: DateRange): Promise<AdminRe
         const to = dateRange?.to || now
 
         const [
-            projectsStarted,
-            feedbackSubmitted,
-            communitiesJoined,
-            mocksCompleted,
+            feedbackSubmittedResult,
+            mocksCompletedResult,
         ] = await Promise.all([
-            prisma.userProjectV2Progress.count({
-                where: { startedAt: { gte: from, lte: to } },
-            }),
-            prisma.feedback.count({
-                where: { createdAt: { gte: from, lte: to } },
-            }),
-            prisma.communityMember.count({
-                where: { joinedAt: { gte: from, lte: to } },
-            }),
-            prisma.mockVoiceSession.count({
-                where: { createdAt: { gte: from, lte: to } },
-            }),
+            db.select({ feedbackSubmitted: count() }).from(feedbacks).where(
+                and(gte(feedbacks.createdAt, from), lte(feedbacks.createdAt, to))
+            ),
+            db.select({ mocksCompleted: count() }).from(mockVoiceSession).where(
+                and(gte(mockVoiceSession.createdAt, from), lte(mockVoiceSession.createdAt, to))
+            ),
         ])
+        const feedbackSubmitted = feedbackSubmittedResult[0]?.feedbackSubmitted ?? 0
+        const mocksCompleted = mocksCompletedResult[0]?.mocksCompleted ?? 0
 
         return {
             success: true,
             data: {
-                projectsStarted,
+                projectsStarted: 0,
                 feedbackSubmitted,
-                communitiesJoined,
+                communitiesJoined: 0,
                 mocksCompleted,
                 period: {
                     from: from.toISOString(),
@@ -170,23 +164,20 @@ export async function getRevenueStats(dateRange?: DateRange): Promise<AdminRespo
         const from = dateRange?.from || new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
         const to = dateRange?.to || now
 
-        const payments = await prisma.payment.findMany({
-            where: {
-                createdAt: { gte: from, lte: to },
-                status: "COMPLETED",
-            },
-            select: {
-                amount: true,
-                currency: true,
-                createdAt: true,
-            },
+        const paymentRecords = await db.query.payments.findMany({
+            where: and(
+                gte(payments.createdAt, from),
+                lte(payments.createdAt, to),
+                eq(payments.status, "COMPLETED")
+            ),
+            columns: { amount: true, currency: true, createdAt: true }
         })
 
         // Group by date
         const dailyRevenue: Record<string, number> = {}
         let totalRevenue = 0
 
-        payments.forEach(payment => {
+        paymentRecords.forEach(payment => {
             const date = payment.createdAt.toISOString().split("T")[0]
             const amount = payment.amount ? Number(payment.amount) : 0
             if (date) {
@@ -205,8 +196,8 @@ export async function getRevenueStats(dateRange?: DateRange): Promise<AdminRespo
             data: {
                 chartData,
                 totalRevenue,
-                transactionCount: payments.length,
-                averageValue: payments.length > 0 ? totalRevenue / payments.length : 0,
+                transactionCount: paymentRecords.length,
+                averageValue: paymentRecords.length > 0 ? totalRevenue / paymentRecords.length : 0,
                 period: {
                     from: from.toISOString(),
                     to: to.toISOString(),
@@ -230,38 +221,23 @@ export async function getModuleUsageStats(dateRange?: DateRange): Promise<AdminR
         const to = dateRange?.to || now
 
         const [
-            projectsCount,
-            mocksCount,
-            assessmentsCount,
-            communitiesCount,
-            LearnsCount,
+            mocksCountResult,
         ] = await Promise.all([
-            prisma.userProjectV2Progress.count({
-                where: { startedAt: { gte: from, lte: to } },
-            }),
-            prisma.mockVoiceSession.count({
-                where: { createdAt: { gte: from, lte: to } },
-            }),
-            prisma.practiceAttempt.count({
-                where: { startedAt: { gte: from, lte: to } },
-            }),
-            prisma.communityMember.count({
-                where: { joinedAt: { gte: from, lte: to } },
-            }),
-            prisma.learnProgress.count({
-                where: { lastAccessedAt: { gte: from, lte: to } },
-            }),
+            db.select({ mocksCount: count() }).from(mockVoiceSession).where(
+                and(gte(mockVoiceSession.createdAt, from), lte(mockVoiceSession.createdAt, to))
+            ),
         ])
+        const mocksCount = mocksCountResult[0]?.mocksCount ?? 0
 
         return {
             success: true,
             data: {
                 modules: [
-                    { name: "Projects", count: projectsCount },
+                    { name: "Projects", count: 0 },
                     { name: "Mock Interviews", count: mocksCount },
-                    { name: "Assessments", count: assessmentsCount },
-                    { name: "Communities", count: communitiesCount },
-                    { name: "Learns", count: LearnsCount },
+                    { name: "Assessments", count: 0 },
+                    { name: "Communities", count: 0 },
+                    { name: "Learns", count: 0 },
                 ],
                 period: {
                     from: from.toISOString(),

@@ -2,10 +2,12 @@
 
 import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
-import { prisma } from "@repo/prisma";
-import { auth } from "@repo/auth";
-import type { 
-    PracticeAssessPayload, PracticeAssessResult, PracticeProblemDetail 
+import { db, practiceProblem } from "@repo/db";
+import { eq } from "drizzle-orm";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import type {
+    PracticeAssessPayload, PracticeAssessResult, PracticeProblemDetail
 } from "@/types/practice";
 
 
@@ -260,7 +262,7 @@ For ${payload.mode === "EXAM" ? "EXAM mode, be fair but rigorous since no help w
 export async function assessPracticeWork(
     payload: PracticeAssessPayload
 ): Promise<{ success: true; result: PracticeAssessResult } | { success: false; error: string }> {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         return { success: false, error: "Not authenticated" };
     }
@@ -270,9 +272,8 @@ export async function assessPracticeWork(
     }
 
     try {
-        // Fetch the problem details
-        const problem = await prisma.practiceProblem.findUnique({
-            where: { slug: payload.problemSlug },
+        const problem = await db.query.practiceProblem.findFirst({
+            where: eq(practiceProblem.slug, payload.problemSlug),
         });
         if (!problem) {
             return { success: false, error: "Problem not found" };
@@ -312,7 +313,6 @@ export async function assessPracticeWork(
             return { success: false, error: "No response from AI" };
         }
 
-        // Parse JSON response, handling potential markdown wrapping
         const cleaned = responseContent.replace(/```json\s*|```\s*/g, "").trim();
         let parsed: {
             score: number;
@@ -324,7 +324,6 @@ export async function assessPracticeWork(
         try {
             parsed = JSON.parse(cleaned);
         } catch {
-            // Fallback: try to extract score from text
             const scoreMatch = responseContent.match(/score['"]\s*:\s*(\d+)/i);
             const score = scoreMatch ? parseInt(scoreMatch[1] ?? "50", 10) : 50;
             parsed = {
@@ -334,13 +333,11 @@ export async function assessPracticeWork(
             };
         }
 
-        // Calculate XP based on score and difficulty
-        const difficultyMultiplier = { EASY: 1, MEDIUM: 2, HARD: 3 };
+        const difficultyMultiplier: Record<string, number> = { EASY: 1, MEDIUM: 2, HARD: 3 };
         const mult = difficultyMultiplier[problem.difficulty] ?? 1;
         const baseXP = Math.round((parsed.score / 100) * 25);
         const xpAwarded = baseXP * mult;
 
-        // Adjust XP for attempt number (diminishing returns after first attempt)
         const attemptPenalty = payload.attemptNumber > 1 ? Math.max(0.5, 1 - (payload.attemptNumber - 1) * 0.1) : 1;
         const finalXP = Math.round(xpAwarded * attemptPenalty);
 
@@ -370,7 +367,7 @@ export async function getMentorResponse(
     module: string,
     attemptNumber: number = 1
 ): Promise<{ success: true; message: string } | { success: false; error: string }> {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         return { success: false, error: "Not authenticated" };
     }
@@ -380,9 +377,9 @@ export async function getMentorResponse(
     }
 
     try {
-        const problem = await prisma.practiceProblem.findUnique({
-            where: { slug: problemSlug },
-            select: { title: true, description: true, requirements: true, hints: true, difficulty: true },
+        const problem = await db.query.practiceProblem.findFirst({
+            where: eq(practiceProblem.slug, problemSlug),
+            columns: { title: true, description: true, requirements: true, hints: true, difficulty: true },
         });
         if (!problem) {
             return { success: false, error: "Problem not found" };

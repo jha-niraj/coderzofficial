@@ -68,7 +68,7 @@ const ROLE_OPTIONS = [
 ]
 
 export default function OnboardingPage() {
-    const { update, data: session } = useSession()
+    const { refetch, data: session } = useSession()
     const [currentStep, setCurrentStep] = useState(0)
     const [loading, setLoading] = useState(false)
     const [loggingOut, setLoggingOut] = useState(false)
@@ -124,7 +124,7 @@ export default function OnboardingPage() {
             }
 
             toast.success('University portal initialized successfully! 🎓')
-            await update()
+            await refetch()
             window.location.href = '/home'
         } catch (error) {
             console.error('Onboarding error:', error)
@@ -137,7 +137,8 @@ export default function OnboardingPage() {
     const handleLogout = async () => {
         setLoggingOut(true)
         try {
-            await signOut({ callbackUrl: '/signin' })
+            await signOut()
+            window.location.href = '/signin'
         } catch (error) {
             console.error('Logout error:', error)
             toast.error('Failed to logout')

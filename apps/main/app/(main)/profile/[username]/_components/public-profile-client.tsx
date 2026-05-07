@@ -8,7 +8,7 @@ import {
     type ProfileTab
 } from "@/components/profile";
 import { trackProfileView } from "@/actions/(main)/user/profile.action";
-import { toggleFollow } from "@/actions/(main)/community/follow.action";
+import { toggleFollow } from "@/actions/(main)/social/follow.action";
 import { useRouter } from "next/navigation";
 import toast from "@repo/ui/components/ui/sonner";
 

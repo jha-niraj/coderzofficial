@@ -1,7 +1,9 @@
 "use server";
 
-import { auth } from "@repo/auth";
-import { prisma } from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import { db, coverLetter as coverLetters, users } from "@repo/db";
+import { eq, and, desc } from "drizzle-orm";
 import Exa from "exa-js";
 import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
@@ -19,7 +21,7 @@ const exa = new Proxy({} as Exa, {
 })
 
 export async function currentUser() {
-    const session = await auth();
+    const session = await getSession(headers());
     return session?.user;
 }
 
@@ -116,20 +118,18 @@ export async function saveCoverLetterDraft(data: {
         const user = await currentUser();
         if (!user) return { success: false, error: "Unauthorized" };
 
-        const draft = await prisma.coverLetter.create({
-            data: {
-                userId: user.id,
-                jobUrl: data.jobUrl,
-                companyName: data.companyName || null,
-                jobTitle: data.jobTitle || null,
-                jobDescription: data.jobDescription,
-                tone: data.tone,
-                questions: data.questions as never,
-                answers: {} as never,
-            }
-        });
+        const [draft] = await db.insert(coverLetters).values({
+            userId: user.id!,
+            jobUrl: data.jobUrl,
+            companyName: data.companyName || null,
+            jobTitle: data.jobTitle || null,
+            jobDescription: data.jobDescription,
+            tone: data.tone,
+            questions: data.questions as any,
+            answers: {} as any,
+        }).returning();
 
-        return { success: true, draftId: draft.id };
+        return { success: true, draftId: draft!.id };
     } catch (e: unknown) {
         return { success: false, error: e instanceof Error ? e.message : "Failed to save draft" };
     }
@@ -143,17 +143,17 @@ export async function generateAndSaveCoverLetter(data: CoverLetterGenerationData
         }
 
         // Fetch User profile
-        const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
-            include: {
+        const dbUser = await db.query.users.findFirst({
+            where: eq(users.id, user.id!),
+            with: {
                 skills: true,
                 experiences: {
-                    orderBy: { startDate: "desc" }
+                    orderBy: (e: any, { desc }: any) => [desc(e.startDate)],
                 },
                 portfolioProjects: {
-                    orderBy: { startDate: "desc" }
+                    orderBy: (p: any, { desc }: any) => [desc(p.startDate)],
                 },
-            }
+            },
         });
 
         if (!dbUser) {
@@ -165,16 +165,16 @@ export async function generateAndSaveCoverLetter(data: CoverLetterGenerationData
 
         if (dbUser.skills.length > 0) {
             userInfoStr += "Skills:\n";
-            dbUser.skills.forEach(s => userInfoStr += `- ${s.name} (${s.level})\n`);
+            dbUser.skills.forEach((s: any) => userInfoStr += `- ${s.name} (${s.level})\n`);
             userInfoStr += "\n";
         }
 
         if (dbUser.experiences.length > 0) {
             userInfoStr += "Work Experience:\n";
-            dbUser.experiences.forEach(e => {
+            dbUser.experiences.forEach((e: any) => {
                 userInfoStr += `- ${e.roleTitle} at ${e.companyName} (${e.startDate.toISOString().split('T')[0]} to ${e.isCurrentlyWorking ? 'Present' : e.endDate?.toISOString().split('T')[0]})\n`;
                 if (e.bulletPoints && e.bulletPoints.length > 0) {
-                    e.bulletPoints.forEach(b => userInfoStr += `  * ${b}\n`);
+                    e.bulletPoints.forEach((b: string) => userInfoStr += `  * ${b}\n`);
                 }
             });
             userInfoStr += "\n";
@@ -182,10 +182,10 @@ export async function generateAndSaveCoverLetter(data: CoverLetterGenerationData
 
         if (dbUser.portfolioProjects.length > 0) {
             userInfoStr += "Projects:\n";
-            dbUser.portfolioProjects.forEach(p => {
+            dbUser.portfolioProjects.forEach((p: any) => {
                 userInfoStr += `- ${p.projectName} (${p.technologies.join(', ')})\n`;
                 if (p.bulletPoints && p.bulletPoints.length > 0) {
-                    p.bulletPoints.forEach(b => userInfoStr += `  * ${b}\n`);
+                    p.bulletPoints.forEach((b: string) => userInfoStr += `  * ${b}\n`);
                 }
             });
             userInfoStr += "\n";
@@ -193,7 +193,7 @@ export async function generateAndSaveCoverLetter(data: CoverLetterGenerationData
 
         // Format Q&A
         let qaStr = "Applicant Responses to Targeted Questions:\n";
-        data.questions.forEach(q => {
+        data.questions.forEach((q: any) => {
             let answer = data.answers[q.id] || "No answer provided.";
             if (Array.isArray(answer)) {
                 answer = answer.join(", ");
@@ -224,8 +224,7 @@ export async function generateAndSaveCoverLetter(data: CoverLetterGenerationData
             3. Be concise (max 3-4 paragraphs) and directly map the applicant's experience to the specific needs found in the job description.
             4. Include relevant links (e.g. to projects) if they are in the profile or answers.
             5. Return ONLY markdown content. No preamble.
-            `
-            ;
+            `;
 
         const completion = await openai.chat.completions.create({
             model: "gpt-4o",
@@ -247,27 +246,27 @@ export async function generateAndSaveCoverLetter(data: CoverLetterGenerationData
         // Save to DB — update draft if draftId provided, otherwise create new
         let letter;
         if (data.draftId) {
-            letter = await prisma.coverLetter.update({
-                where: { id: data.draftId, userId: user.id },
-                data: {
-                    answers: data.answers as never,
+            const [updated] = await db.update(coverLetters)
+                .set({
+                    answers: data.answers as any,
                     generatedContent,
-                }
-            });
+                })
+                .where(and(eq(coverLetters.id, data.draftId), eq(coverLetters.userId, user.id!)))
+                .returning();
+            letter = updated!;
         } else {
-            letter = await prisma.coverLetter.create({
-                data: {
-                    userId: user.id,
-                    jobUrl: data.jobUrl,
-                    companyName: data.companyName,
-                    jobTitle: data.jobTitle,
-                    jobDescription: data.jobDescription,
-                    tone: data.tone,
-                    questions: data.questions as never,
-                    answers: data.answers as never,
-                    generatedContent,
-                }
-            });
+            const [created] = await db.insert(coverLetters).values({
+                userId: user.id!,
+                jobUrl: data.jobUrl,
+                companyName: data.companyName,
+                jobTitle: data.jobTitle,
+                jobDescription: data.jobDescription,
+                tone: data.tone,
+                questions: data.questions as any,
+                answers: data.answers as any,
+                generatedContent,
+            }).returning();
+            letter = created!;
         }
 
         return { success: true, coverLetterId: letter.id, content: generatedContent };
@@ -282,16 +281,16 @@ export async function getCoverLetters() {
         const user = await currentUser();
         if (!user) return { success: false, error: "Unauthorized" };
 
-        const letters = await prisma.coverLetter.findMany({
-            where: { userId: user.id },
-            orderBy: { createdAt: "desc" },
-            select: {
+        const letters = await db.query.coverLetters.findMany({
+            where: eq(coverLetters.userId, user.id!),
+            orderBy: [desc(coverLetters.createdAt)],
+            columns: {
                 id: true,
                 companyName: true,
                 jobTitle: true,
                 createdAt: true,
                 generatedContent: true,
-            }
+            },
         });
 
         return {
@@ -314,8 +313,8 @@ export async function getCoverLetter(id: string) {
         const user = await currentUser();
         if (!user) return { success: false, error: "Unauthorized" };
 
-        const letter = await prisma.coverLetter.findUnique({
-            where: { id, userId: user.id }
+        const letter = await db.query.coverLetters.findFirst({
+            where: and(eq(coverLetters.id, id), eq(coverLetters.userId, user.id!)),
         });
 
         if (!letter) return { success: false, error: "Not found" };
@@ -331,9 +330,8 @@ export async function deleteCoverLetter(id: string) {
         const user = await currentUser();
         if (!user) return { success: false, error: "Unauthorized" };
 
-        await prisma.coverLetter.delete({
-            where: { id, userId: user.id }
-        });
+        await db.delete(coverLetters)
+            .where(and(eq(coverLetters.id, id), eq(coverLetters.userId, user.id!)));
 
         return { success: true };
     } catch (e: unknown) {

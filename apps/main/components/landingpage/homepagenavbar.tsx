@@ -14,7 +14,7 @@ import { useSession } from '@repo/auth/client';
 import { ThemeToggle } from "@repo/ui/components/themetoggle";
 
 export default function Navbar() {
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
     const [scrolled, setScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const pathname = usePathname();
@@ -71,7 +71,7 @@ export default function Navbar() {
                 <div className="flex items-center justify-center space-x-3">
                     <ThemeToggle />
                     {
-                        status === "authenticated" ? (
+                        session ? (
                             <button className="rounded-full relative group" onClick={() => setIsMobileMenuOpen(true)}>
                                 {
                                     session?.user?.image ? (

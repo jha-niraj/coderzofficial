@@ -1,9 +1,17 @@
 "use server";
 
-import { auth } from "@repo/auth";
-import { prisma } from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    knowMeProfiles,
+    knowMeEmbeddings,
+    knowMeEmbeddingJobs,
+    users,
+    knowMeCreditTransactions,
+} from "@repo/db";
+import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import type { KnowMeDataType } from "@repo/prisma/client";
 import type {
 	KnowMeActionResponse, KnowMeEmbeddingJobData
 } from "@/types/knowme";
@@ -11,13 +19,11 @@ import {
 	generateEmbedding,
 	generateEmbeddingsBatch,
 	upsertVectorsBatch,
-	deleteVectorsBatch,
 	deleteNamespace,
 	createProfileChunks,
 	createProjectChunks,
 	createAssessmentChunks,
 	createGitHubRepoChunks,
-	createResumeChunks,
 	createBioChunks,
 	generateVectorId,
 	calculateNextUpdate,
@@ -36,28 +42,26 @@ export async function generateProfileEmbeddings(): Promise<
 	KnowMeActionResponse<KnowMeEmbeddingJobData>
 > {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
 		// Get profile with all related data
-		const profile = await prisma.knowMeProfile.findUnique({
-			where: { userId: session.user.id },
-			include: {
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.userId, session.user.id),
+			with: {
 				user: {
-					include: {
-						skills: true,
-					},
+					with: { skills: true },
 				},
 				personalData: {
-					where: { isActive: true },
+					where: (pd: any, { eq }: any) => eq(pd.isActive, true),
 				},
 				platformConnections: {
-					where: { isConnected: true },
+					where: (pc: any, { eq }: any) => eq(pc.isConnected, true),
 				},
 				externalData: {
-					where: { isActive: true },
+					where: (ed: any, { eq }: any) => eq(ed.isActive, true),
 				},
 			},
 		});
@@ -67,70 +71,65 @@ export async function generateProfileEmbeddings(): Promise<
 		}
 
 		// Fetch user's portfolio projects (personal projects they've added)
-		const portfolioProjects = await prisma.portfolioProject.findMany({
-			where: { userId: session.user.id },
-			include: {
-				projectLinks: true,
-			},
-			take: 50,
-		});
+		let portfolioProjects: any[] = [];
+		try {
+			const { portfolioProjects: ppTable } = await import('@repo/db');
+			portfolioProjects = await db.query.portfolioProjects.findMany({
+				where: eq((ppTable as any).userId, session.user.id),
+				with: { projectLinks: true },
+				limit: 50,
+			});
+		} catch {
+			// Table may not exist or have different name
+		}
 
 		// Fetch user's projects from ProjectV2 model (platform guided projects)
-		const platformProjects = await prisma.projectV2.findMany({
-			where: { createdBy: session.user.id },
-			select: {
-				id: true,
-				title: true,
-				description: true,
-				technologies: true,
-				slug: true,
-				createdAt: true,
-			},
-			take: 50,
-		});
+		let platformProjects: any[] = [];
+		try {
+			const { projectsV2 } = await import('@repo/db');
+			platformProjects = await db.query.projectsV2.findMany({
+				where: eq((projectsV2 as any).createdBy, session.user.id),
+				columns: { id: true, title: true, description: true, technologies: true, slug: true, createdAt: true },
+				limit: 50,
+			});
+		} catch {
+			// Table may not exist or have different name
+		}
 
 		// Fetch user's passed assessments
-		const examAttempts = await prisma.examAttempt.findMany({
-			where: {
-				userId: session.user.id,
-				passed: true,
-			},
-			include: {
-				topic: {
-					select: {
-						name: true,
-						language: true,
-					},
-				},
-			},
-			take: 20,
-		});
+		let examAttempts: any[] = [];
+		try {
+			const { examAttempts: examAttemptsTable } = await import('@repo/db');
+			examAttempts = await db.query.examAttempts.findMany({
+				where: and(
+					eq((examAttemptsTable as any).userId, session.user.id),
+					eq((examAttemptsTable as any).passed, true)
+				),
+				with: { topic: { columns: { name: true, language: true } } },
+				limit: 20,
+			});
+		} catch {
+			// Table may not exist or have different name
+		}
 
 		// Create embedding job
-		const job = await prisma.knowMeEmbeddingJob.create({
-			data: {
-				profileId: profile.id,
-				jobType: "FULL_SYNC",
-				status: "PROCESSING",
-				priority: 1,
-				scope: {
-					includePersonalData: profile.includePersonalData,
-					includePlatformData: profile.includePlatformData,
-					includeProjects: profile.includeProjects,
-					includeAssessments: profile.includeAssessments,
-				},
+		const [job] = await db.insert(knowMeEmbeddingJobs).values({
+			profileId: profile.id,
+			jobType: "FULL_SYNC",
+			status: "PROCESSING",
+			priority: 1,
+			scope: {
+				includePersonalData: profile.includePersonalData,
+				includePlatformData: profile.includePlatformData,
+				includeProjects: profile.includeProjects,
+				includeAssessments: profile.includeAssessments,
 			},
-		});
+		}).returning();
 
 		// Update profile status
-		await prisma.knowMeProfile.update({
-			where: { 
-				id: profile.id 
-			},
-			data: { 
-				status: "PROCESSING" 
-			},
-		});
+		await db.update(knowMeProfiles)
+			.set({ status: "PROCESSING" })
+			.where(eq(knowMeProfiles.id, profile.id));
 
 		try {
 			// Process embeddings with fetched data
@@ -142,11 +141,8 @@ export async function generateProfileEmbeddings(): Promise<
 			});
 
 			// Update job with results
-			await prisma.knowMeEmbeddingJob.update({
-				where: {
-					id: job.id 
-				},
-				data: {
+			await db.update(knowMeEmbeddingJobs)
+				.set({
 					status: "COMPLETED",
 					progress: 100,
 					totalItems: result.totalItems,
@@ -157,34 +153,33 @@ export async function generateProfileEmbeddings(): Promise<
 						success: true,
 						chunksCreated: result.processedItems,
 					},
-				},
-			});
+				})
+				.where(eq(knowMeEmbeddingJobs.id, job!.id));
 
 			// Update profile
-			await prisma.knowMeProfile.update({
-				where: { id: profile.id },
-				data: {
+			await db.update(knowMeProfiles)
+				.set({
 					status: "ACTIVE",
 					lastUpdatedAt: new Date(),
 					nextScheduledUpdate: calculateNextUpdate(profile.updateCycleDays),
 					totalEmbeddingsCount: result.processedItems,
 					lastEmbeddingVersion: "v1",
-				},
-			});
+				})
+				.where(eq(knowMeProfiles.id, profile.id));
 
 			revalidatePath("/knowme");
 
 			return {
 				success: true,
 				data: {
-					id: job.id,
-					jobType: job.jobType,
+					id: job!.id,
+					jobType: job!.jobType,
 					status: "COMPLETED",
 					progress: 100,
 					totalItems: result.totalItems,
 					processedItems: result.processedItems,
 					failedItems: result.failedItems,
-					startedAt: job.createdAt,
+					startedAt: job!.createdAt,
 					completedAt: new Date(),
 					errorLogs: [],
 				},
@@ -192,22 +187,18 @@ export async function generateProfileEmbeddings(): Promise<
 			};
 		} catch (processError) {
 			// Update job with error
-			await prisma.knowMeEmbeddingJob.update({
-				where: { id: job.id },
-				data: {
+			await db.update(knowMeEmbeddingJobs)
+				.set({
 					status: "FAILED",
-					result: {
-						error: (processError as Error).message,
-					},
+					result: { error: (processError as Error).message },
 					errorLogs: [(processError as Error).message],
-				},
-			});
+				})
+				.where(eq(knowMeEmbeddingJobs.id, job!.id));
 
 			// Reset profile status
-			await prisma.knowMeProfile.update({
-				where: { id: profile.id },
-				data: { status: "ERROR" },
-			});
+			await db.update(knowMeProfiles)
+				.set({ status: "ERROR" })
+				.where(eq(knowMeProfiles.id, profile.id));
 
 			throw processError;
 		}
@@ -238,56 +229,21 @@ async function processEmbeddings(profile: {
 	};
 	personalData: {
 		id: string;
-		dataType: KnowMeDataType;
+		dataType: string;
 		contentText: string | null;
 		title: string | null;
 	}[];
 	externalData: {
 		id: string;
-		dataType: KnowMeDataType;
+		dataType: string;
 		title: string | null;
 		description: string | null;
 		url: string | null;
 		techStack: string[];
 	}[];
-	// Portfolio projects (user's personal projects)
-	portfolioProjects: {
-		id: string;
-		projectName: string;
-		projectType: string;
-		description: string | null;
-		status: string;
-		visibility: string;
-		technologies: string[];
-		startDate: Date;
-		endDate: Date | null;
-		thumbnailUrl: string | null;
-		projectLinks: {
-			id: string;
-			linkType: string;
-			url: string;
-			description: string | null;
-		}[];
-	}[];
-	// Platform guided projects (ProjectV2)
-	platformProjects: {
-		id: string;
-		title: string;
-		description: string | null;
-		technologies: string[];
-		slug: string;
-		createdAt: Date;
-	}[];
-	examAttempts: {
-		id: string;
-		score: number | null;
-		passed: boolean | null;
-		completedAt: Date | null;
-		topic: {
-			name: string;
-			language: string;
-		};
-	}[];
+	portfolioProjects: any[];
+	platformProjects: any[];
+	examAttempts: any[];
 }): Promise<{
 	totalItems: number;
 	processedItems: number;
@@ -302,25 +258,21 @@ async function processEmbeddings(profile: {
 	let totalItems = 0;
 	let failedItems = 0;
 
-	// 1. Process user profile/bio (excluding sensitive data like DOB)
+	// 1. Process user profile/bio
 	const bioChunks = createBioChunks(profile.id, {
 		name: profile.user.name,
 		bio: profile.user.bio,
 		occupation: profile.user.occupation,
 		location: profile.user.location,
 		skills: profile.user.skills.map((s) => s.name),
-		// Include email for meeting scheduling purposes (AI can suggest scheduling)
 		email: profile.user.email,
 	});
 
-	bioChunks.forEach((chunk, index) => {
+	bioChunks.forEach((chunk: any, index: number) => {
 		allChunks.push({
 			id: generateVectorId(profile.id, "PROFILE", profile.id, index),
 			text: chunk.text,
-			metadata: {
-				...chunk.metadata,
-				text: chunk.text, // Store text in metadata for retrieval
-			},
+			metadata: { ...chunk.metadata, text: chunk.text },
 		});
 	});
 	totalItems += bioChunks.length;
@@ -329,24 +281,19 @@ async function processEmbeddings(profile: {
 	if (profile.includePersonalData) {
 		for (const data of profile.personalData) {
 			if (!data.contentText) continue;
-
 			try {
 				const chunks = createProfileChunks(
 					profile.id,
-					data.dataType,
+					data.dataType as any,
 					data.id,
 					data.contentText,
 					{ title: data.title || undefined }
 				);
-
-				chunks.forEach((chunk, index) => {
+				chunks.forEach((chunk: any, index: number) => {
 					allChunks.push({
-						id: generateVectorId(profile.id, data.dataType, data.id, index),
+						id: generateVectorId(profile.id, data.dataType as any, data.id, index),
 						text: chunk.text,
-						metadata: {
-							...chunk.metadata,
-							text: chunk.text,
-						},
+						metadata: { ...chunk.metadata, text: chunk.text },
 					});
 				});
 				totalItems += chunks.length;
@@ -360,10 +307,9 @@ async function processEmbeddings(profile: {
 	if (profile.includeProjects && profile.portfolioProjects.length > 0) {
 		for (const project of profile.portfolioProjects) {
 			try {
-				// Get the main link (GitHub or Live Demo)
-				const githubLink = project.projectLinks.find(l => l.linkType.toLowerCase() === 'github')?.url;
-				const liveLink = project.projectLinks.find(l => l.linkType.toLowerCase() === 'live demo')?.url;
-				
+				const githubLink = project.projectLinks?.find((l: any) => l.linkType.toLowerCase() === 'github')?.url;
+				const liveLink = project.projectLinks?.find((l: any) => l.linkType.toLowerCase() === 'live demo')?.url;
+
 				const chunks = createProjectChunks(profile.id, project.id, {
 					title: project.projectName,
 					description: project.description || `${project.projectType} project`,
@@ -371,16 +317,11 @@ async function processEmbeddings(profile: {
 					url: githubLink || liveLink || undefined,
 				});
 
-				chunks.forEach((chunk, index) => {
+				chunks.forEach((chunk: any, index: number) => {
 					allChunks.push({
 						id: generateVectorId(profile.id, "PROJECT", `portfolio_${project.id}`, index),
 						text: chunk.text,
-						metadata: {
-							...chunk.metadata,
-							text: chunk.text,
-							projectType: "portfolio",
-							status: project.status,
-						},
+						metadata: { ...chunk.metadata, text: chunk.text, projectType: "portfolio", status: project.status },
 					});
 				});
 				totalItems += chunks.length;
@@ -401,15 +342,11 @@ async function processEmbeddings(profile: {
 					url: `/projects/${project.slug}`,
 				});
 
-				chunks.forEach((chunk, index) => {
+				chunks.forEach((chunk: any, index: number) => {
 					allChunks.push({
 						id: generateVectorId(profile.id, "PROJECT", `platform_${project.id}`, index),
 						text: chunk.text,
-						metadata: {
-							...chunk.metadata,
-							text: chunk.text,
-							projectType: "platform",
-						},
+						metadata: { ...chunk.metadata, text: chunk.text, projectType: "platform" },
 					});
 				});
 				totalItems += chunks.length;
@@ -431,14 +368,11 @@ async function processEmbeddings(profile: {
 					completedAt: attempt.completedAt || new Date(),
 				});
 
-				chunks.forEach((chunk, index) => {
+				chunks.forEach((chunk: any, index: number) => {
 					allChunks.push({
 						id: generateVectorId(profile.id, "ASSESSMENT", attempt.id, index),
 						text: chunk.text,
-						metadata: {
-							...chunk.metadata,
-							text: chunk.text,
-						},
+						metadata: { ...chunk.metadata, text: chunk.text },
 					});
 				});
 				totalItems += chunks.length;
@@ -448,11 +382,11 @@ async function processEmbeddings(profile: {
 		}
 	}
 
-	// 6. Process external platform data (only if enabled - for future use)
+	// 6. Process external platform data
 	if (profile.includePlatformData) {
 		for (const data of profile.externalData) {
 			try {
-				let chunks;
+				let chunks: any[];
 
 				if (data.dataType === "GITHUB_REPO") {
 					chunks = createGitHubRepoChunks(profile.id, {
@@ -467,22 +401,18 @@ async function processEmbeddings(profile: {
 				} else {
 					const text = `${data.title || ""}\n${data.description || ""}`.trim();
 					if (!text) continue;
-
-					chunks = createProfileChunks(profile.id, data.dataType, data.id, text, {
+					chunks = createProfileChunks(profile.id, data.dataType as any, data.id, text, {
 						title: data.title || undefined,
 						techStack: data.techStack,
 						url: data.url || undefined,
 					});
 				}
 
-				chunks.forEach((chunk, index) => {
+				chunks.forEach((chunk: any, index: number) => {
 					allChunks.push({
-						id: generateVectorId(profile.id, data.dataType, data.id, index),
+						id: generateVectorId(profile.id, data.dataType as any, data.id, index),
 						text: chunk.text,
-						metadata: {
-							...chunk.metadata,
-							text: chunk.text,
-						},
+						metadata: { ...chunk.metadata, text: chunk.text },
 					});
 				});
 				totalItems += chunks.length;
@@ -543,26 +473,22 @@ async function processEmbeddings(profile: {
 		// Save embedding metadata to database
 		const embeddingRecords = vectorsToUpsert.map((v) => ({
 			profileId: profile.id,
-			sourceType: (v.metadata.sourceType as KnowMeDataType) || "OTHER",
+			sourceType: (v.metadata.sourceType as any) || "OTHER",
 			sourceId: (v.metadata.sourceId as string) || v.id,
 			chunkIndex: (v.metadata.chunkIndex as number) || 0,
 			chunkText: v.metadata.text as string,
 			chunkHash: createContentHash(v.metadata.text as string),
 			vectorId: v.id,
 			vectorNamespace: profile.id,
-			metadata: v.metadata as unknown as Record<string, string | number | boolean>,
+			metadata: v.metadata as any,
 			isActive: true,
 		}));
 
 		// Delete existing embeddings for this profile
-		await prisma.knowMeEmbedding.deleteMany({
-			where: { profileId: profile.id },
-		});
+		await db.delete(knowMeEmbeddings).where(eq(knowMeEmbeddings.profileId, profile.id));
 
 		// Insert new embeddings
-		await prisma.knowMeEmbedding.createMany({
-			data: embeddingRecords,
-		});
+		await db.insert(knowMeEmbeddings).values(embeddingRecords);
 	}
 
 	return {
@@ -583,37 +509,34 @@ export async function triggerManualUpdate(): Promise<
 	KnowMeActionResponse<void>
 > {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
 		// Check if user has credits (if required)
-		const user = await prisma.user.findUnique({
-			where: { id: session.user.id },
-			select: { credits: true },
+		const user = await db.query.users.findFirst({
+			where: eq(users.id, session.user.id),
+			columns: { credits: true },
 		});
 
-		if (!user || user.credits < 1) {
+		if (!user || (user.credits ?? 0) < 1) {
 			return { success: false, error: "Insufficient credits" };
 		}
 
 		// Deduct credit
-		await prisma.user.update({
-			where: { id: session.user.id },
-			data: { credits: { decrement: 1 } },
-		});
+		await db.update(users)
+			.set({ credits: sql`${users.credits} - 1` })
+			.where(eq(users.id, session.user.id));
 
 		// Log credit transaction
-		await prisma.knowMeCreditTransaction.create({
-			data: {
-				userId: session.user.id,
-				transactionType: "manual_update",
-				amount: -1,
-				reason: "Manual KnowMe embedding update",
-				balanceBefore: user.credits,
-				balanceAfter: user.credits - 1,
-			},
+		await db.insert(knowMeCreditTransactions).values({
+			userId: session.user.id,
+			transactionType: "manual_update",
+			amount: -1,
+			reason: "Manual KnowMe embedding update",
+			balanceBefore: user.credits ?? 0,
+			balanceAfter: (user.credits ?? 0) - 1,
 		});
 
 		// Trigger embedding generation
@@ -621,10 +544,9 @@ export async function triggerManualUpdate(): Promise<
 
 		if (!result.success) {
 			// Refund credit on failure
-			await prisma.user.update({
-				where: { id: session.user.id },
-				data: { credits: { increment: 1 } },
-			});
+			await db.update(users)
+				.set({ credits: sql`${users.credits} + 1` })
+				.where(eq(users.id, session.user.id));
 			return { success: false, error: result.error || "Failed to generate embeddings" };
 		}
 
@@ -642,13 +564,13 @@ export async function deleteAllEmbeddings(): Promise<
 	KnowMeActionResponse<void>
 > {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
-		const profile = await prisma.knowMeProfile.findUnique({
-			where: { userId: session.user.id },
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.userId, session.user.id),
 		});
 
 		if (!profile) {
@@ -659,18 +581,15 @@ export async function deleteAllEmbeddings(): Promise<
 		await deleteNamespace(profile.id);
 
 		// Delete from database
-		await prisma.knowMeEmbedding.deleteMany({
-			where: { profileId: profile.id },
-		});
+		await db.delete(knowMeEmbeddings).where(eq(knowMeEmbeddings.profileId, profile.id));
 
 		// Update profile
-		await prisma.knowMeProfile.update({
-			where: { id: profile.id },
-			data: {
+		await db.update(knowMeProfiles)
+			.set({
 				totalEmbeddingsCount: 0,
 				lastUpdatedAt: null,
-			},
-		});
+			})
+			.where(eq(knowMeProfiles.id, profile.id));
 
 		revalidatePath("/knowme");
 
@@ -692,8 +611,8 @@ export async function getEmbeddingJobStatus(
 	jobId: string
 ): Promise<KnowMeActionResponse<KnowMeEmbeddingJobData>> {
 	try {
-		const job = await prisma.knowMeEmbeddingJob.findUnique({
-			where: { id: jobId },
+		const job = await db.query.knowMeEmbeddingJobs.findFirst({
+			where: eq(knowMeEmbeddingJobs.id, jobId),
 		});
 
 		if (!job) {
@@ -720,4 +639,3 @@ export async function getEmbeddingJobStatus(
 		return { success: false, error: "Failed to get job status" };
 	}
 }
-

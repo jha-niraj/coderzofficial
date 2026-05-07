@@ -1,14 +1,9 @@
-// Export auth configuration and helpers
-export { authOptions, auth, getServerSession } from './auth';
+export { auth, type Auth, type Session, type User } from "./auth.js";
+export * from "./utils/referral.js";
 
-// Export types from next-auth.d.ts
-export type { AuthOptions, Account, Profile } from './next-auth';
-
-// Re-export next-auth for convenience
-export { default as NextAuth } from 'next-auth';
-
-// Server-side helpers - re-export from next-auth
-export { getServerSession as getSession } from 'next-auth/next';
-
-// Export utility functions
-export * from './utils/referral';
+// Convenience server-side helper — mirrors the old `auth()` / `getServerSession()` call shape.
+// Usage in server actions/routes:
+//   import { getSession } from "@repo/auth"
+//   import { headers } from "next/headers"
+//   const session = await getSession(headers())
+export { getSession } from "./session.js";

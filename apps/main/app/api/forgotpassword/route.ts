@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/utils/mail";
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
     const { email, emailType } = await request.json();
     try {
-        const user = await prisma.user.findUnique({
-            where: { email },
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email),
         });
 
         if (!user) {
@@ -19,19 +20,18 @@ export async function POST(request: NextRequest) {
             const expiration = new Date();
             expiration.setMinutes(expiration.getMinutes() + 10); // 10 minutes expiry
 
-            await prisma.user.update({
-                where: { email },
-                data: {
+            await db.update(users)
+                .set({
                     resetOTP: otp,
                     resetOTPExpiry: expiration,
-                },
-            });
+                })
+                .where(eq(users.email, email));
 
-            await sendEmail({ 
+            await sendEmail({
                 name: user.name || "",
-                email, 
-                emailType: "RESET_PASSWORD_OTP", 
-                otp: otp 
+                email,
+                emailType: "RESET_PASSWORD_OTP",
+                otp: otp
             });
         } else {
             // Legacy token-based reset (keep for backward compatibility)
@@ -39,19 +39,18 @@ export async function POST(request: NextRequest) {
             const expiration = new Date();
             expiration.setHours(expiration.getHours() + 72);
 
-            await prisma.user.update({
-                where: { email },
-                data: {
+            await db.update(users)
+                .set({
                     resetToken: token,
                     restTokenExpiry: expiration,
-                },
-            });
+                })
+                .where(eq(users.email, email));
 
-            await sendEmail({ 
+            await sendEmail({
                 name: user.name || "",
-                email, 
-                emailType, 
-                token 
+                email,
+                emailType,
+                token
             });
         }
 

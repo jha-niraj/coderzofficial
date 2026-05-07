@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
+import { eq, and, gt } from "drizzle-orm";
 import { sendEmail } from "@/utils/mail";
 
 export async function POST(request: NextRequest) {
@@ -7,29 +8,25 @@ export async function POST(request: NextRequest) {
         const reqBody = await request.json();
         const { token } = reqBody;
 
-        const user = await prisma.user.findFirst({
-            where: {
-                verifyToken: token,
-                verifyTokenExpiry: {
-                    gt: new Date()
-                }
-            }
-        })
+        const user = await db.query.users.findFirst({
+            where: and(
+                eq(users.verifyToken, token),
+                gt(users.verifyTokenExpiry, new Date()),
+            ),
+        });
 
         if (!user) {
             return NextResponse.json({ message: "Invalid token" }, { status: 501 });
         }
 
-        const verifyResponse = await prisma.user.update({
-            where: {
-                id: user?.id
-            },
-            data: {
+        const [verifyResponse] = await db.update(users)
+            .set({
                 emailVerified: true,
                 verifyToken: null,
-                verifyTokenExpiry: null
-            }
-        })
+                verifyTokenExpiry: null,
+            })
+            .where(eq(users.id, user.id))
+            .returning();
 
         if (!verifyResponse) {
             return NextResponse.json({ message: "Email verification failed" }, { status: 501 });

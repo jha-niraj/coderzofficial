@@ -1,7 +1,20 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db,
+    jobs,
+    jobApplications,
+    savedJobs,
+    jobRecommendations,
+    companies,
+    companyFollowers,
+    interviewProcesses,
+    skills,
+    projectsV2,
+} from "@repo/db"
+import { eq, and, inArray, desc, count, ilike, or } from "drizzle-orm"
 
 // Types for the feed
 export interface FeedJobResult {
@@ -98,36 +111,36 @@ export interface SkillGapAnalysis {
 
 // Helper: Get user's skills
 async function getUserSkills(userId: string): Promise<string[]> {
-    const skills = await prisma.skills.findMany({
-        where: { userId },
-        select: { name: true }
+    const skillRows = await db.query.skills.findMany({
+        where: eq(skills.userId, userId),
+        columns: { name: true },
     })
-    return skills.map(s => s.name.toLowerCase())
+    return skillRows.map(s => s.name.toLowerCase())
 }
 
 // Helper: Get user's followed company IDs
 async function getUserFollowedCompanyIds(userId: string): Promise<string[]> {
-    const follows = await prisma.companyFollower.findMany({
-        where: { userId },
-        select: { companyId: true }
+    const follows = await db.query.companyFollowers.findMany({
+        where: eq(companyFollowers.userId, userId),
+        columns: { companyId: true },
     })
     return follows.map(f => f.companyId)
 }
 
 // Helper: Get user's saved job IDs
 async function getUserSavedJobIds(userId: string): Promise<string[]> {
-    const saved = await prisma.savedJob.findMany({
-        where: { userId },
-        select: { jobId: true }
+    const saved = await db.query.savedJobs.findMany({
+        where: eq(savedJobs.userId, userId),
+        columns: { jobId: true },
     })
     return saved.map(s => s.jobId)
 }
 
 // Helper: Get user's applied job IDs
 async function getUserAppliedJobIds(userId: string): Promise<string[]> {
-    const applications = await prisma.jobApplication.findMany({
-        where: { userId },
-        select: { jobId: true }
+    const applications = await db.query.jobApplications.findMany({
+        where: eq(jobApplications.userId, userId),
+        columns: { jobId: true },
     })
     return applications.map(a => a.jobId)
 }
@@ -142,23 +155,22 @@ function calculateSkillMatch(userSkills: string[], requiredSkills: string[], pre
     const normalizedRequired = requiredSkills.map(s => s.toLowerCase().trim())
     const normalizedPreferred = preferredSkills.map(s => s.toLowerCase().trim())
 
-    const matchedRequired = normalizedRequired.filter(skill => 
+    const matchedRequired = normalizedRequired.filter(skill =>
         normalizedUserSkills.some(us => us.includes(skill) || skill.includes(us))
     )
-    const matchedPreferred = normalizedPreferred.filter(skill => 
+    const matchedPreferred = normalizedPreferred.filter(skill =>
         normalizedUserSkills.some(us => us.includes(skill) || skill.includes(us))
     )
 
-    const missingRequired = normalizedRequired.filter(skill => 
+    const missingRequired = normalizedRequired.filter(skill =>
         !normalizedUserSkills.some(us => us.includes(skill) || skill.includes(us))
     )
 
-    // Required skills are worth 80%, preferred skills are worth 20%
-    const requiredScore = normalizedRequired.length > 0 
-        ? (matchedRequired.length / normalizedRequired.length) * 80 
+    const requiredScore = normalizedRequired.length > 0
+        ? (matchedRequired.length / normalizedRequired.length) * 80
         : 80
-    const preferredScore = normalizedPreferred.length > 0 
-        ? (matchedPreferred.length / normalizedPreferred.length) * 20 
+    const preferredScore = normalizedPreferred.length > 0
+        ? (matchedPreferred.length / normalizedPreferred.length) * 20
         : 20
 
     return {
@@ -178,7 +190,7 @@ function formatJobWithMatch(
 ): FeedJobResult {
     const skillsRequired = (job.skillsRequired as string[]) || []
     const skillsPreferred = (job.skillsPreferred as string[]) || []
-    
+
     const skillMatch = calculateSkillMatch(userSkills, skillsRequired, skillsPreferred)
 
     return {
@@ -207,13 +219,13 @@ function formatJobWithMatch(
         hasAssignment: job.hasAssignment,
         applicationsCount: job.applicationsCount,
         publishedAt: job.publishedAt,
-        interviewProcess: job.interviewProcess,
+        interviewProcess: job.interviewProcess ?? null,
         matchScore: skillMatch.score,
         matchReasons: {
             skillMatch: skillMatch.score,
-            experienceMatch: 80, // Default, can be enhanced
-            locationMatch: 90, // Default, can be enhanced
-            industryMatch: 85 // Default, can be enhanced
+            experienceMatch: 80,
+            locationMatch: 90,
+            industryMatch: 85
         },
         matchedSkills: skillMatch.matchedSkills,
         missingSkills: skillMatch.missingSkills,
@@ -221,6 +233,33 @@ function formatJobWithMatch(
         hasApplied: appliedJobIds.includes(job.id),
         isFollowingCompany: followedCompanyIds.includes(job.companyId)
     }
+}
+
+// Helper: load interview processes for a list of jobs
+async function loadInterviewProcesses(jobRows: any[]) {
+    const processIds = jobRows
+        .map(j => j.interviewProcessId)
+        .filter(Boolean) as string[]
+
+    if (processIds.length === 0) return new Map<string, any>()
+
+    const processes = await db.query.interviewProcesses.findMany({
+        where: inArray(interviewProcesses.id, processIds),
+        with: {
+            rounds: {
+                columns: {
+                    id: true,
+                    roundNumber: true,
+                    title: true,
+                    roundType: true,
+                    hasMockInterview: true,
+                },
+                orderBy: (r: any, { asc }: any) => [asc(r.roundNumber)],
+            },
+        },
+    })
+
+    return new Map(processes.map(p => [p.id, p]))
 }
 
 // ============================================
@@ -233,20 +272,19 @@ function formatJobWithMatch(
  */
 export async function getFollowingFeedJobs(page = 1, limit = 10) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
-            return { 
-                success: false, 
+            return {
+                success: false,
                 error: "Please sign in to see jobs from companies you follow",
-                requiresAuth: true 
+                requiresAuth: true
             }
         }
 
         const userId = session.user.id
         const skip = (page - 1) * limit
 
-        // Get user data in parallel
-        const [userSkills, followedCompanyIds, savedJobIds, appliedJobIds] = await Promise.all([
+        const [userSkillsList, followedCompanyIds, savedJobIds, appliedJobIds] = await Promise.all([
             getUserSkills(userId),
             getUserFollowedCompanyIds(userId),
             getUserSavedJobIds(userId),
@@ -265,64 +303,37 @@ export async function getFollowingFeedJobs(page = 1, limit = 10) {
             }
         }
 
-        // Get jobs from followed companies
-        const [jobs, total] = await Promise.all([
-            prisma.job.findMany({
-                where: {
-                    companyId: { in: followedCompanyIds },
-                    status: "ACTIVE",
-                    visibility: "PUBLIC"
-                },
-                include: {
-                    company: {
-                        select: {
-                            id: true,
-                            name: true,
-                            logoUrl: true,
-                            industry: true,
-                            hasInterviewProcess: true
-                        }
-                    },
-                    interviewProcess: {
-                        select: {
-                            id: true,
-                            name: true,
-                            estimatedDurationWeeks: true,
-                            rounds: {
-                                select: {
-                                    id: true,
-                                    roundNumber: true,
-                                    title: true,
-                                    roundType: true,
-                                    hasMockInterview: true
-                                },
-                                orderBy: { roundNumber: "asc" }
-                            }
-                        }
-                    }
-                },
-                orderBy: { publishedAt: "desc" },
-                skip,
-                take: limit
-            }),
-            prisma.job.count({
-                where: {
-                    companyId: { in: followedCompanyIds },
-                    status: "ACTIVE",
-                    visibility: "PUBLIC"
-                }
-            })
-        ])
-
-        // Format jobs with match scores
-        const formattedJobs = jobs.map(job => 
-            formatJobWithMatch(job, userSkills, savedJobIds, appliedJobIds, followedCompanyIds)
+        const whereClause = and(
+            inArray(jobs.companyId, followedCompanyIds),
+            eq(jobs.status, "ACTIVE"),
+            eq(jobs.visibility, "PUBLIC")
         )
 
-        // Sort by match score (highest first)
+        const [jobRows, [{ total }]] = await Promise.all([
+            db.query.jobs.findMany({
+                where: whereClause,
+                with: {
+                    company: {
+                        columns: { id: true, name: true, logoUrl: true, industry: true, hasInterviewProcess: true },
+                    },
+                },
+                orderBy: desc(jobs.publishedAt),
+                offset: skip,
+                limit,
+            }),
+            db.select({ total: count() }).from(jobs).where(whereClause),
+        ])
+
+        const processMap = await loadInterviewProcesses(jobRows)
+
+        const enriched = jobRows.map(job => ({ ...job, interviewProcess: processMap.get(job.interviewProcessId ?? '') ?? null }))
+
+        const formattedJobs = enriched.map(job =>
+            formatJobWithMatch(job, userSkillsList, savedJobIds, appliedJobIds, followedCompanyIds)
+        )
+
         formattedJobs.sort((a, b) => b.matchScore - a.matchScore)
 
-        // Group by match quality
         const perfectMatch = formattedJobs.filter(j => j.matchScore >= 90)
         const goodMatch = formattedJobs.filter(j => j.matchScore >= 70 && j.matchScore < 90)
         const explore = formattedJobs.filter(j => j.matchScore < 70)
@@ -331,16 +342,12 @@ export async function getFollowingFeedJobs(page = 1, limit = 10) {
             success: true,
             data: {
                 jobs: formattedJobs,
-                grouped: {
-                    perfectMatch,
-                    goodMatch,
-                    explore
-                },
+                grouped: { perfectMatch, goodMatch, explore },
                 pagination: {
                     page,
                     limit,
-                    total,
-                    totalPages: Math.ceil(total / limit)
+                    total: Number(total),
+                    totalPages: Math.ceil(Number(total) / limit)
                 },
                 followedCompaniesCount: followedCompanyIds.length,
                 isEmpty: false
@@ -354,65 +361,34 @@ export async function getFollowingFeedJobs(page = 1, limit = 10) {
 
 /**
  * Get AI-curated "For You" job feed
- * Uses skills, experience, saved jobs, and more to recommend
  */
 export async function getForYouFeedJobs(page = 1, limit = 10) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         const skip = (page - 1) * limit
+
+        const baseWhere = and(eq(jobs.status, "ACTIVE"), eq(jobs.visibility, "PUBLIC"))
 
         // For unauthenticated users, return featured jobs
         if (!session?.user?.id) {
-            const [jobs, total] = await Promise.all([
-                prisma.job.findMany({
-                    where: {
-                        status: "ACTIVE",
-                        visibility: "PUBLIC"
-                    },
-                    include: {
+            const [jobRows, [{ total }]] = await Promise.all([
+                db.query.jobs.findMany({
+                    where: baseWhere,
+                    with: {
                         company: {
-                            select: {
-                                id: true,
-                                name: true,
-                                logoUrl: true,
-                                industry: true,
-                                hasInterviewProcess: true
-                            }
+                            columns: { id: true, name: true, logoUrl: true, industry: true, hasInterviewProcess: true },
                         },
-                        interviewProcess: {
-                            select: {
-                                id: true,
-                                name: true,
-                                estimatedDurationWeeks: true,
-                                rounds: {
-                                    select: {
-                                        id: true,
-                                        roundNumber: true,
-                                        title: true,
-                                        roundType: true,
-                                        hasMockInterview: true
-                                    },
-                                    orderBy: { roundNumber: "asc" }
-                                }
-                            }
-                        }
                     },
-                    orderBy: [
-                        { featured: "desc" },
-                        { publishedAt: "desc" }
-                    ],
-                    skip,
-                    take: limit
+                    orderBy: [desc(jobs.featured), desc(jobs.publishedAt)],
+                    offset: skip,
+                    limit,
                 }),
-                prisma.job.count({
-                    where: {
-                        status: "ACTIVE",
-                        visibility: "PUBLIC"
-                    }
-                })
+                db.select({ total: count() }).from(jobs).where(baseWhere),
             ])
 
-            const formattedJobs = jobs.map(job => formatJobWithMatch(job, [], [], [], []))
+            const processMap = await loadInterviewProcesses(jobRows)
+            const enriched = jobRows.map(job => ({ ...job, interviewProcess: processMap.get(job.interviewProcessId ?? '') ?? null }))
+            const formattedJobs = enriched.map(job => formatJobWithMatch(job, [], [], [], []))
 
             return {
                 success: true,
@@ -421,8 +397,8 @@ export async function getForYouFeedJobs(page = 1, limit = 10) {
                     pagination: {
                         page,
                         limit,
-                        total,
-                        totalPages: Math.ceil(total / limit)
+                        total: Number(total),
+                        totalPages: Math.ceil(Number(total) / limit)
                     },
                     isAuthenticated: false
                 }
@@ -431,73 +407,39 @@ export async function getForYouFeedJobs(page = 1, limit = 10) {
 
         const userId = session.user.id
 
-        // Get user data in parallel
-        const [userSkills, followedCompanyIds, savedJobIds, appliedJobIds] = await Promise.all([
+        const [userSkillsList, followedCompanyIds, savedJobIds, appliedJobIds] = await Promise.all([
             getUserSkills(userId),
             getUserFollowedCompanyIds(userId),
             getUserSavedJobIds(userId),
             getUserAppliedJobIds(userId)
         ])
 
-        // Get all active jobs
-        const [jobs, total] = await Promise.all([
-            prisma.job.findMany({
-                where: {
-                    status: "ACTIVE",
-                    visibility: "PUBLIC"
-                },
-                include: {
+        const [jobRows, [{ total }]] = await Promise.all([
+            db.query.jobs.findMany({
+                where: baseWhere,
+                with: {
                     company: {
-                        select: {
-                            id: true,
-                            name: true,
-                            logoUrl: true,
-                            industry: true,
-                            hasInterviewProcess: true
-                        }
+                        columns: { id: true, name: true, logoUrl: true, industry: true, hasInterviewProcess: true },
                     },
-                    interviewProcess: {
-                        select: {
-                            id: true,
-                            name: true,
-                            estimatedDurationWeeks: true,
-                            rounds: {
-                                select: {
-                                    id: true,
-                                    roundNumber: true,
-                                    title: true,
-                                    roundType: true,
-                                    hasMockInterview: true
-                                },
-                                orderBy: { roundNumber: "asc" }
-                            }
-                        }
-                    }
                 },
-                orderBy: { publishedAt: "desc" }
+                orderBy: desc(jobs.publishedAt),
             }),
-            prisma.job.count({
-                where: {
-                    status: "ACTIVE",
-                    visibility: "PUBLIC"
-                }
-            })
+            db.select({ total: count() }).from(jobs).where(baseWhere),
         ])
 
-        // Format and score all jobs
-        const formattedJobs = jobs.map(job => 
-            formatJobWithMatch(job, userSkills, savedJobIds, appliedJobIds, followedCompanyIds)
+        const processMap = await loadInterviewProcesses(jobRows)
+        const enriched = jobRows.map(job => ({ ...job, interviewProcess: processMap.get(job.interviewProcessId ?? '') ?? null }))
+
+        const formattedJobs = enriched.map(job =>
+            formatJobWithMatch(job, userSkillsList, savedJobIds, appliedJobIds, followedCompanyIds)
         )
 
-        // Sort by match score (For You feed prioritizes match)
         formattedJobs.sort((a, b) => {
-            // Prioritize jobs from followed companies slightly
             const aBoost = a.isFollowingCompany ? 5 : 0
             const bBoost = b.isFollowingCompany ? 5 : 0
             return (b.matchScore + bBoost) - (a.matchScore + aBoost)
         })
 
-        // Paginate the sorted results
         const paginatedJobs = formattedJobs.slice(skip, skip + limit)
 
         return {
@@ -507,11 +449,11 @@ export async function getForYouFeedJobs(page = 1, limit = 10) {
                 pagination: {
                     page,
                     limit,
-                    total,
-                    totalPages: Math.ceil(total / limit)
+                    total: Number(total),
+                    totalPages: Math.ceil(Number(total) / limit)
                 },
                 isAuthenticated: true,
-                userSkillsCount: userSkills.length
+                userSkillsCount: userSkillsList.length
             }
         }
     } catch (error) {
@@ -529,29 +471,23 @@ export async function getShouldApplyScore(jobId: string): Promise<{
     error?: string
 }> {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Please sign in to get recommendations" }
         }
 
         const userId = session.user.id
 
-        // Get job and user data
-        const [job, userSkills, applications] = await Promise.all([
-            prisma.job.findUnique({
-                where: { id: jobId },
-                include: {
-                    company: true,
-                    _count: {
-                        select: { applications: true }
-                    }
-                }
+        const [job, userSkillsList, applicationRows] = await Promise.all([
+            db.query.jobs.findFirst({
+                where: eq(jobs.id, jobId),
+                with: { company: true },
             }),
             getUserSkills(userId),
-            prisma.jobApplication.findMany({
-                where: { jobId },
-                select: { status: true, createdAt: true, updatedAt: true }
-            })
+            db.query.jobApplications.findMany({
+                where: eq(jobApplications.jobId, jobId),
+                columns: { status: true, createdAt: true, updatedAt: true },
+            }),
         ])
 
         if (!job) {
@@ -559,25 +495,22 @@ export async function getShouldApplyScore(jobId: string): Promise<{
         }
 
         const skillsRequired = (job.skillsRequired as string[]) || []
-        const skillMatch = calculateSkillMatch(userSkills, skillsRequired)
+        const skillMatch = calculateSkillMatch(userSkillsList, skillsRequired)
 
-        // Calculate competition level
-        const applicantsCount = job._count.applications
+        const applicantsCount = applicationRows.length
         let competitionLevel: "LOW" | "MEDIUM" | "HIGH" = "LOW"
         if (applicantsCount > 100) competitionLevel = "HIGH"
         else if (applicantsCount > 30) competitionLevel = "MEDIUM"
 
-        // Calculate response rate - applications that got past initial stages
-        const reviewedApps = applications.filter(a => 
+        const reviewedApps = applicationRows.filter(a =>
             a.status !== "INTERESTED" && a.status !== "PREPARING" && a.status !== "APPLIED"
         )
-        const responseRate = applications.length > 0 
-            ? Math.round((reviewedApps.length / applications.length) * 100)
+        const responseRate = applicationRows.length > 0
+            ? Math.round((reviewedApps.length / applicationRows.length) * 100)
             : null
 
-        // Build reasons
         const reasons: string[] = []
-        
+
         if (skillMatch.score >= 90) {
             reasons.push(`Excellent match! You have ${skillMatch.matchedSkills.length} of ${skillsRequired.length} required skills`)
         } else if (skillMatch.score >= 70) {
@@ -596,14 +529,12 @@ export async function getShouldApplyScore(jobId: string): Promise<{
             reasons.push("Company has a transparent interview process")
         }
 
-        // Calculate overall score
         let score = skillMatch.score
         if (competitionLevel === "LOW") score += 10
         else if (competitionLevel === "HIGH") score -= 10
         if (job.company.hasInterviewProcess) score += 5
         score = Math.min(100, Math.max(0, score))
 
-        // Determine recommendation
         let recommendation: ShouldApplyScore["recommendation"] = "CONSIDER"
         if (score >= 85) recommendation = "HIGHLY_RECOMMENDED"
         else if (score >= 70) recommendation = "RECOMMENDED"
@@ -615,12 +546,9 @@ export async function getShouldApplyScore(jobId: string): Promise<{
                 score,
                 recommendation,
                 reasons,
-                competition: {
-                    applicantsCount,
-                    level: competitionLevel
-                },
+                competition: { applicantsCount, level: competitionLevel },
                 responseRate,
-                averageResponseDays: 5 // Placeholder
+                averageResponseDays: 5
             }
         }
     } catch (error) {
@@ -638,48 +566,47 @@ export async function getCompanyHiringStats(companyId: string): Promise<{
     error?: string
 }> {
     try {
-        const company = await prisma.company.findUnique({
-            where: { id: companyId },
-            include: {
-                jobs: {
-                    where: { status: "ACTIVE" },
-                    select: { id: true }
-                },
-                _count: {
-                    select: { followers: true }
-                }
-            }
+        const company = await db.query.companies.findFirst({
+            where: eq(companies.id, companyId),
         })
 
         if (!company) {
             return { success: false, error: "Company not found" }
         }
 
-        // Get application stats for this company's jobs
-        const jobIds = company.jobs.map(j => j.id)
-        const applications = await prisma.jobApplication.findMany({
-            where: { jobId: { in: jobIds } },
-            select: { status: true, createdAt: true, updatedAt: true }
+        // Get active jobs for this company
+        const companyJobs = await db.query.jobs.findMany({
+            where: and(eq(jobs.companyId, companyId), eq(jobs.status, "ACTIVE")),
+            columns: { id: true },
         })
 
-        const reviewedApps = applications.filter(a => 
+        const jobIds = companyJobs.map(j => j.id)
+
+        const applicationRows = jobIds.length > 0
+            ? await db.query.jobApplications.findMany({
+                where: inArray(jobApplications.jobId, jobIds),
+                columns: { status: true, createdAt: true, updatedAt: true },
+            })
+            : []
+
+        const reviewedApps = applicationRows.filter(a =>
             a.status !== "INTERESTED" && a.status !== "PREPARING" && a.status !== "APPLIED"
         )
-        const responseRate = applications.length > 0 
-            ? Math.round((reviewedApps.length / applications.length) * 100)
-            : 85 // Default
+        const responseRate = applicationRows.length > 0
+            ? Math.round((reviewedApps.length / applicationRows.length) * 100)
+            : 85
 
-        const hiredApps = applications.filter(a => a.status === "HIRED")
+        const hiredApps = applicationRows.filter(a => a.status === "HIRED")
 
         return {
             success: true,
             data: {
                 responseRate,
-                averageResponseDays: 5, // Placeholder
+                averageResponseDays: 5,
                 totalHires: hiredApps.length,
-                openRoles: company.jobs.length,
+                openRoles: companyJobs.length,
                 hasTransparentProcess: company.hasInterviewProcess || false,
-                recentActivity: [] // Would need activity tracking
+                recentActivity: []
             }
         }
     } catch (error) {
@@ -697,19 +624,16 @@ export async function getSkillGapForJob(jobId: string): Promise<{
     error?: string
 }> {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Please sign in to see skill analysis" }
         }
 
         const userId = session.user.id
 
-        // Get job and user skills
-        const [job, userSkills] = await Promise.all([
-            prisma.job.findUnique({
-                where: { id: jobId }
-            }),
-            getUserSkills(userId)
+        const [job, userSkillsList] = await Promise.all([
+            db.query.jobs.findFirst({ where: eq(jobs.id, jobId) }),
+            getUserSkills(userId),
         ])
 
         if (!job) {
@@ -719,38 +643,35 @@ export async function getSkillGapForJob(jobId: string): Promise<{
         const skillsRequired = (job.skillsRequired as string[]) || []
         const skillsPreferred = (job.skillsPreferred as string[]) || []
 
-        const normalizedUserSkills = userSkills.map(s => s.toLowerCase())
-        
-        const matchedSkills = skillsRequired.filter(skill => 
+        const normalizedUserSkills = userSkillsList.map(s => s.toLowerCase())
+
+        const matchedSkills = skillsRequired.filter(skill =>
             normalizedUserSkills.some(us => us.includes(skill.toLowerCase()) || skill.toLowerCase().includes(us))
         )
-        
-        const missingRequired = skillsRequired.filter(skill => 
+
+        const missingRequired = skillsRequired.filter(skill =>
             !normalizedUserSkills.some(us => us.includes(skill.toLowerCase()) || skill.toLowerCase().includes(us))
         )
-        
-        const missingPreferred = skillsPreferred.filter(skill => 
+
+        const missingPreferred = skillsPreferred.filter(skill =>
             !normalizedUserSkills.some(us => us.includes(skill.toLowerCase()) || skill.toLowerCase().includes(us))
         )
 
         // Find learning projects for missing skills
         const learningRecommendations: SkillGapAnalysis["learningRecommendations"] = []
-        
+
         for (const skill of missingRequired.slice(0, 3)) {
-            const project = await prisma.projectV2.findFirst({
-                where: {
-                    visibility: "PUBLIC",
-                    OR: [
-                        { title: { contains: skill, mode: "insensitive" } },
-                        { technologies: { has: skill } }
-                    ]
-                },
-                select: {
+            const project = await db.query.projectsV2.findFirst({
+                where: and(
+                    eq(projectsV2.visibility, "PUBLIC"),
+                    ilike(projectsV2.title, `%${skill}%`)
+                ),
+                columns: {
                     id: true,
                     title: true,
                     slug: true,
-                    estimatedHours: true
-                }
+                    estimatedHours: true,
+                },
             })
 
             if (project) {
@@ -764,9 +685,8 @@ export async function getSkillGapForJob(jobId: string): Promise<{
             }
         }
 
-        // Calculate potential match after learning
-        const currentScore = skillsRequired.length > 0 
-            ? (matchedSkills.length / skillsRequired.length) * 100 
+        const currentScore = skillsRequired.length > 0
+            ? (matchedSkills.length / skillsRequired.length) * 100
             : 100
         const potentialMatch = Math.min(100, currentScore + (learningRecommendations.length * 15))
 
@@ -791,24 +711,23 @@ export async function getSkillGapForJob(jobId: string): Promise<{
  */
 export async function getSavedFeedJobs(page = 1, limit = 10) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
-            return { 
-                success: false, 
+            return {
+                success: false,
                 error: "Please sign in to see saved jobs",
-                requiresAuth: true 
+                requiresAuth: true
             }
         }
 
         const userId = session.user.id
         const skip = (page - 1) * limit
 
-        // Get saved job entries
-        const savedJobEntries = await prisma.savedJob.findMany({
-            where: { userId },
-            orderBy: { createdAt: "desc" },
-            skip,
-            take: limit
+        const savedJobEntries = await db.query.savedJobs.findMany({
+            where: eq(savedJobs.userId, userId),
+            orderBy: desc(savedJobs.createdAt),
+            offset: skip,
+            limit,
         })
 
         if (savedJobEntries.length === 0) {
@@ -816,72 +735,45 @@ export async function getSavedFeedJobs(page = 1, limit = 10) {
                 success: true,
                 data: {
                     jobs: [],
-                    pagination: {
-                        page,
-                        limit,
-                        total: 0,
-                        totalPages: 0
-                    }
+                    pagination: { page, limit, total: 0, totalPages: 0 }
                 }
             }
         }
 
-        // Get user data and jobs in parallel
         const jobIds = savedJobEntries.map(s => s.jobId)
-        const [userSkills, followedCompanyIds, appliedJobIds, jobs, total] = await Promise.all([
+        const [userSkillsList, followedCompanyIds, appliedJobIds, jobRows, [{ total }]] = await Promise.all([
             getUserSkills(userId),
             getUserFollowedCompanyIds(userId),
             getUserAppliedJobIds(userId),
-            prisma.job.findMany({
-                where: { 
-                    id: { in: jobIds },
-                    status: "ACTIVE"
-                },
-                include: {
+            db.query.jobs.findMany({
+                where: and(
+                    inArray(jobs.id, jobIds),
+                    eq(jobs.status, "ACTIVE")
+                ),
+                with: {
                     company: {
-                        select: {
-                            id: true,
-                            name: true,
-                            logoUrl: true,
-                            industry: true,
-                            hasInterviewProcess: true
-                        }
+                        columns: { id: true, name: true, logoUrl: true, industry: true, hasInterviewProcess: true },
                     },
-                    interviewProcess: {
-                        select: {
-                            id: true,
-                            name: true,
-                            estimatedDurationWeeks: true,
-                            rounds: {
-                                select: {
-                                    id: true,
-                                    roundNumber: true,
-                                    title: true,
-                                    roundType: true,
-                                    hasMockInterview: true
-                                },
-                                orderBy: { roundNumber: "asc" }
-                            }
-                        }
-                    }
-                }
+                },
             }),
-            prisma.savedJob.count({ where: { userId } })
+            db.select({ total: count() }).from(savedJobs).where(eq(savedJobs.userId, userId)),
         ])
 
-        const savedJobIds = savedJobEntries.map(s => s.jobId)
+        const processMap = await loadInterviewProcesses(jobRows)
+        const enriched = jobRows.map(job => ({ ...job, interviewProcess: processMap.get(job.interviewProcessId ?? '') ?? null }))
 
-        // Map jobs with saved entry data
+        const savedJobIdSet = new Set(savedJobEntries.map(s => s.jobId))
+
         const formattedJobs = savedJobEntries
             .map(savedEntry => {
-                const job = jobs.find(j => j.id === savedEntry.jobId)
+                const job = enriched.find(j => j.id === savedEntry.jobId)
                 if (!job) return null
                 return {
                     ...formatJobWithMatch(
-                        job, 
-                        userSkills, 
-                        savedJobIds, 
-                        appliedJobIds, 
+                        job,
+                        userSkillsList,
+                        Array.from(savedJobIdSet),
+                        appliedJobIds,
                         followedCompanyIds
                     ),
                     savedAt: savedEntry.createdAt,
@@ -897,8 +789,8 @@ export async function getSavedFeedJobs(page = 1, limit = 10) {
                 pagination: {
                     page,
                     limit,
-                    total,
-                    totalPages: Math.ceil(total / limit)
+                    total: Number(total),
+                    totalPages: Math.ceil(Number(total) / limit)
                 }
             }
         }
@@ -913,7 +805,7 @@ export async function getSavedFeedJobs(page = 1, limit = 10) {
  */
 export async function getFeedStats() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: true, data: null }
         }
@@ -921,35 +813,39 @@ export async function getFeedStats() {
         const userId = session.user.id
 
         const [
-            followedCompaniesCount,
-            savedJobsCount,
-            appliedJobsCount,
-            userSkillsCount
+            [{ followedCompaniesCount }],
+            [{ savedJobsCount }],
+            [{ appliedJobsCount }],
+            [{ userSkillsCount }],
         ] = await Promise.all([
-            prisma.companyFollower.count({ where: { userId } }),
-            prisma.savedJob.count({ where: { userId } }),
-            prisma.jobApplication.count({ where: { userId } }),
-            prisma.skills.count({ where: { userId } })
+            db.select({ followedCompaniesCount: count() }).from(companyFollowers).where(eq(companyFollowers.userId, userId)),
+            db.select({ savedJobsCount: count() }).from(savedJobs).where(eq(savedJobs.userId, userId)),
+            db.select({ appliedJobsCount: count() }).from(jobApplications).where(eq(jobApplications.userId, userId)),
+            db.select({ userSkillsCount: count() }).from(skills).where(eq(skills.userId, userId)),
         ])
 
-        // Get jobs from followed companies count
         const followedCompanyIds = await getUserFollowedCompanyIds(userId)
-        const followingJobsCount = await prisma.job.count({
-            where: {
-                companyId: { in: followedCompanyIds },
-                status: "ACTIVE",
-                visibility: "PUBLIC"
-            }
-        })
+        const [{ followingJobsCount }] = await db
+            .select({ followingJobsCount: count() })
+            .from(jobs)
+            .where(
+                followedCompanyIds.length > 0
+                    ? and(
+                        inArray(jobs.companyId, followedCompanyIds),
+                        eq(jobs.status, "ACTIVE"),
+                        eq(jobs.visibility, "PUBLIC")
+                    )
+                    : and(eq(jobs.status, "ACTIVE"), eq(jobs.visibility, "PUBLIC"))
+            )
 
         return {
             success: true,
             data: {
-                followedCompaniesCount,
-                followingJobsCount,
-                savedJobsCount,
-                appliedJobsCount,
-                userSkillsCount
+                followedCompaniesCount: Number(followedCompaniesCount),
+                followingJobsCount: followedCompanyIds.length > 0 ? Number(followingJobsCount) : 0,
+                savedJobsCount: Number(savedJobsCount),
+                appliedJobsCount: Number(appliedJobsCount),
+                userSkillsCount: Number(userSkillsCount)
             }
         }
     } catch (error) {

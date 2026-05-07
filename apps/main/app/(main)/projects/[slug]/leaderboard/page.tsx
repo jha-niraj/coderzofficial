@@ -1,9 +1,11 @@
 import { Suspense } from 'react'
-import { auth } from '@repo/auth'
-import prisma from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, projectsV2, users } from '@repo/db'
+import { eq } from 'drizzle-orm'
 import { ProjectLeaderboardClient } from './_components/project-leaderboard-client'
-import { 
-    Card, CardContent, CardDescription, CardHeader, CardTitle 
+import {
+    Card, CardContent, CardDescription, CardHeader, CardTitle
 } from '@repo/ui/components/ui/card'
 import { Button } from '@repo/ui/components/ui/button'
 import { AlertCircle, Lock, ArrowLeft } from 'lucide-react'
@@ -21,37 +23,55 @@ interface ProjectLeaderboardPageProps {
 }
 
 async function getProjectData(slug: string) {
-    const project = await prisma.projectV2.findUnique({
-        where: { slug },
-        select: {
-            id: true,
-            slug: true,
-            title: true,
-            shortDescription: true,
-            visibility: true,
-            difficulty: true,
-            technologies: true,
-            totalStarted: true,
-            totalCompleted: true,
-            creator: {
-                select: {
-                    id: true,
-                    name: true,
-                    username: true,
-                    image: true
-                }
-            }
-        }
-    })
+    const rows = await db
+        .select({
+            id: projectsV2.id,
+            slug: projectsV2.slug,
+            title: projectsV2.title,
+            shortDescription: projectsV2.shortDescription,
+            visibility: projectsV2.visibility,
+            difficulty: projectsV2.difficulty,
+            technologies: projectsV2.technologies,
+            totalStarted: projectsV2.totalStarted,
+            totalCompleted: projectsV2.totalCompleted,
+            createdBy: projectsV2.createdBy,
+            creatorId: users.id,
+            creatorName: users.name,
+            creatorUsername: users.username,
+            creatorImage: users.image,
+        })
+        .from(projectsV2)
+        .innerJoin(users, eq(projectsV2.createdBy, users.id))
+        .where(eq(projectsV2.slug, slug))
+        .limit(1)
 
-    return project
+    if (!rows[0]) return null
+
+    const row = rows[0]
+    return {
+        id: row.id,
+        slug: row.slug,
+        title: row.title,
+        shortDescription: row.shortDescription,
+        visibility: row.visibility,
+        difficulty: row.difficulty,
+        technologies: row.technologies,
+        totalStarted: row.totalStarted,
+        totalCompleted: row.totalCompleted,
+        creator: {
+            id: row.creatorId,
+            name: row.creatorName,
+            username: row.creatorUsername,
+            image: row.creatorImage,
+        },
+    }
 }
 
 export default async function ProjectLeaderboardPage({
     params,
     searchParams
 }: ProjectLeaderboardPageProps) {
-    const session = await auth()
+    const session = await getSession(headers())
     const { slug } = await params
     const project = await getProjectData(slug)
 
@@ -116,7 +136,7 @@ export default async function ProjectLeaderboardPage({
                         </p>
                         <div className="bg-neutral-100 dark:bg-neutral-900 rounded-lg p-3 text-sm">
                             <p className="text-muted-foreground">
-                                💡 <strong>Tip:</strong> You can still work on this project if you have access. Check the project details page.
+                                Tip: You can still work on this project if you have access. Check the project details page.
                             </p>
                         </div>
                         <div className="flex gap-2 pt-4">

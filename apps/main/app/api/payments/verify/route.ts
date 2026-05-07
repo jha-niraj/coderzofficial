@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
-import { auth } from '@repo/auth';
-import prisma from '@repo/prisma';
-import { CreditType } from '@repo/prisma/client';
+import { getSession } from '@repo/auth';
+import { db, users, payments, creditTransactions } from '@repo/db';
+import { eq, sql } from 'drizzle-orm';
 
 export async function POST(req: NextRequest) {
-    const session = await auth();
+    const session = await getSession(req.headers);
     if (!session) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
@@ -54,10 +54,9 @@ export async function POST(req: NextRequest) {
             console.log('Payment not captured, status:', paymentDetails.status);
 
             // Update payment status to failed
-            await prisma.payment.updateMany({
-                where: { orderId: razorpay_order_id },
-                data: { status: 'FAILED' }
-            });
+            await db.update(payments)
+                .set({ status: 'FAILED' })
+                .where(eq(payments.orderId, razorpay_order_id));
 
             return NextResponse.json({
                 message: `Payment not captured. Status: ${paymentDetails.status}`
@@ -65,9 +64,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Find the payment in database
-        const payment = await prisma.payment.findFirst({
-            where: { orderId: razorpay_order_id },
-            include: { user: true },
+        const payment = await db.query.payments.findFirst({
+            where: eq(payments.orderId, razorpay_order_id),
         });
 
         if (!payment) {
@@ -86,41 +84,34 @@ export async function POST(req: NextRequest) {
         }
 
         // Update payment status
-        const updatedPayment = await prisma.payment.update({
-            where: { id: payment.id },
-            data: {
+        const [updatedPayment] = await db.update(payments)
+            .set({
                 status: 'COMPLETED',
                 paymentId: razorpay_payment_id,
                 signature: razorpay_signature,
                 completedAt: new Date(),
-            },
-        });
+            })
+            .where(eq(payments.id, payment.id))
+            .returning();
 
         console.log('Payment updated successfully');
 
         // Add credits to user account
-        await prisma.user.update({
-            where: { id: payment.userId },
-            data: {
-                credits: {
-                    increment: payment.credits
-                }
-            }
-        });
+        await db.update(users)
+            .set({ credits: sql`${users.credits} + ${payment.credits}` })
+            .where(eq(users.id, payment.userId));
 
         console.log(`Credits added: ${payment.credits} to user ${payment.userId}`);
 
         // Create credit transaction record
-        const creditTransaction = await prisma.creditTransaction.create({
-            data: {
-                userId: payment.userId,
-                currency: payment.currency,
-                amount: payment.credits,
-                type: CreditType.PURCHASE,
-                description: `Purchased ${payment.credits} credits via Razorpay`,
-                paymentId: payment.id!
-            }
-        });
+        const [creditTransaction] = await db.insert(creditTransactions).values({
+            userId: payment.userId,
+            currency: payment.currency,
+            amount: payment.credits,
+            type: 'PURCHASE',
+            description: `Purchased ${payment.credits} credits via Razorpay`,
+            paymentId: payment.id,
+        }).returning();
 
         console.log('Credit transaction created:', creditTransaction.id);
 
@@ -149,4 +140,3 @@ export async function POST(req: NextRequest) {
         );
     }
 }
-

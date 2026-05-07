@@ -1,15 +1,22 @@
 "use server"
 
-import prisma from '@repo/prisma';
-import { 
-	CreditType, Currency, Prisma, PrismaValue
-} from '@repo/prisma/client';
-import { auth } from '@repo/auth';
+import {
+	db,
+	jobInterviewAssistant,
+	codeEvaluation,
+	questionAnswer,
+	userQuestionResponse,
+	interviewPlanPurchase,
+	users,
+	creditTransactions,
+} from '@repo/db'
+import { eq, and, desc, sql } from 'drizzle-orm'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import Exa from "exa-js";
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
 import { trackActivity } from '@/actions/(main)/user/activity.action';
-import { ActivityType } from '@repo/prisma/client';
 // Import ElevenLabs speech utility
 import {
 	quickTranscribeWithElevenLabs,
@@ -265,7 +272,7 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 					// Fix common JSON issues - more aggressive cleaning
 					const fixedJson = extractedJson
 						.replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
-						.replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Quote unquoted keys  
+						.replace(/([{,]\s*)(\w+):/g, '$1"$2":') // Quote unquoted keys
 						.replace(/:\s*'([^']*)'/g, ':"$1"') // Replace single quotes with double quotes
 						.replace(/\\n/g, '\\\\n') // Properly escape newlines
 						.replace(/\\r/g, '\\\\r') // Properly escape carriage returns
@@ -521,18 +528,16 @@ export async function generateJobInterviewQuestions(
 ): Promise<GenerateJobInterviewResponse> {
 	try {
 		console.log('Starting interview question generation:', { position, jobDescription, companyUrl, includeAnswers, includePractice, makePublic, counts });
-		const session = await auth();
+		const session = await getSession(headers())
 
 		if (!session) {
 			throw new Error('User not found');
 		}
 
 		// Get user's resume text and check credits
-		const user = await prisma.user.findUnique({
-			where: {
-				id: session?.user?.id
-			},
-			select: { resumeText: true, credits: true },
+		const user = await db.query.users.findFirst({
+			where: eq(users.id, session.user.id),
+			columns: { resumeText: true, credits: true },
 		});
 
 		if (!user) {
@@ -550,7 +555,7 @@ export async function generateJobInterviewQuestions(
 		// Halve the cost for public generations (similar to study plan)
 		const requiredCredits = makePublic ? Math.ceil(subtotalCredits / 2) : subtotalCredits;
 
-		if (user.credits < requiredCredits) {
+		if ((user.credits ?? 0) < requiredCredits) {
 			throw new Error('Insufficient credits');
 		}
 
@@ -562,7 +567,7 @@ export async function generateJobInterviewQuestions(
 		const questions = await generateInterviewQuestions(
 			position,
 			jobDescription,
-			user.resumeText,
+			user.resumeText ?? null,
 			companyInfo,
 			includeAnswers,
 			counts
@@ -578,66 +583,45 @@ export async function generateJobInterviewQuestions(
 		const slug = generateSlug(position);
 
 		// Save to database and handle credits in a transaction
-		const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+		const result = await db.transaction(async (tx) => {
 			// Deduct credits
-			await tx.user.update({
-				where: {
-					id: session?.user?.id
-				},
-				data: {
-					credits: {
-						decrement: requiredCredits
-					}
-				},
-			});
+			await tx.update(users)
+				.set({ credits: sql`${users.credits} - ${requiredCredits}` })
+				.where(eq(users.id, session.user.id));
 
 			console.log('Credits deducted:', requiredCredits);
 
 			// Create credit transaction
-			await tx.creditTransaction.create({
-				data: {
-					userId: session?.user?.id,
-					amount: -requiredCredits,
-					type: CreditType.SPEND,
-					currency: Currency.INR,
-					description: `Generated interview questions for ${position}${includeAnswers ? ' with answers' : ''}${includePractice ? ' with practice mode' : ''} (${totalQuestions} questions)`,
-				},
-			});
-
-			// Create recent activity entry
-			await tx.recentActivity.create({
-				data: {
-					userId: session?.user?.id,
-					description: `Generated interview questions for ${position} position${includeAnswers ? ' with answers' : ''}${includePractice ? ' with practice mode' : ''} (${totalQuestions} questions)`
-				}
+			await tx.insert(creditTransactions).values({
+				userId: session.user.id,
+				amount: -requiredCredits,
+				type: 'SPEND',
+				currency: 'INR',
+				description: `Generated interview questions for ${position}${includeAnswers ? ' with answers' : ''}${includePractice ? ' with practice mode' : ''} (${totalQuestions} questions)`,
 			});
 
 			// Save interview data with question counts, practice option, and public/private settings
-			const savedInterview = await tx.jobInterviewAssistant.create({
-				data: {
-					userId: session?.user?.id,
-					position,
-					jobDescription,
-					companyUrl,
-					includeAnswers,
-					includePractice,
-					technicalCount: counts.technical,
-					behavioralCount: counts.behavioral,
-					codingCount: counts.coding,
-					searchHash: generateSearchHash(position, jobDescription, companyUrl),
-					companyInfo: !companyInfo ?
-						PrismaValue.JsonNull :
-						companyInfo,
-					generatedContent: questions,
-					slug,
-					// Public/Private fields
-					isPublic: makePublic,
-					publicCost: makePublic ? Math.ceil(subtotalCredits * 0.5) : null,
-					creditsCost: subtotalCredits, // Store the original (private) cost
-					description: `A comprehensive interview preparation for ${position} position with ${totalQuestions} questions${includeAnswers ? ' (with answers)' : ''}${includePractice ? ' (with practice mode)' : ''}`,
-					tags: [position.toLowerCase(), companyUrl ? new URL(companyUrl).hostname.replace('www.', '') : ''].filter(Boolean),
-				},
-			});
+			const [savedInterview] = await tx.insert(jobInterviewAssistant).values({
+				userId: session.user.id,
+				position,
+				jobDescription,
+				companyUrl,
+				includeAnswers,
+				includePractice,
+				technicalCount: counts.technical,
+				behavioralCount: counts.behavioral,
+				codingCount: counts.coding,
+				searchHash: generateSearchHash(position, jobDescription, companyUrl),
+				companyInfo: companyInfo ?? undefined,
+				generatedContent: questions,
+				slug,
+				// Public/Private fields
+				isPublic: makePublic,
+				publicCost: makePublic ? Math.ceil(subtotalCredits * 0.5) : undefined,
+				creditsCost: subtotalCredits, // Store the original (private) cost
+				description: `A comprehensive interview preparation for ${position} position with ${totalQuestions} questions${includeAnswers ? ' (with answers)' : ''}${includePractice ? ' (with practice mode)' : ''}`,
+				tags: [position.toLowerCase(), companyUrl ? new URL(companyUrl).hostname.replace('www.', '') : ''].filter(Boolean),
+			}).returning();
 
 			console.log('Saved interview data');
 			return savedInterview;
@@ -647,7 +631,7 @@ export async function generateJobInterviewQuestions(
 
 		// Track activity for job interview generation
 		await trackActivity({
-			type: ActivityType.AI_TOOL_USED,
+			type: 'AI_TOOL_USED' as any,
 			title: "Job Interview Assistant",
 			description: `Generated interview questions for ${position} position (${totalQuestions} questions)`,
 			xpEarned: 15,
@@ -665,13 +649,13 @@ export async function generateJobInterviewQuestions(
 		return {
 			success: true,
 			data: {
-				...(result.generatedContent as InterviewQuestions),
-				slug: result.slug,
-				id: result.id,
-				position: result.position,
-				createdAt: result.createdAt,
-				includeAnswers: result.includeAnswers,
-				includePractice: result.includePractice
+				...(result!.generatedContent as InterviewQuestions),
+				slug: result!.slug,
+				id: result!.id,
+				position: result!.position,
+				createdAt: result!.createdAt,
+				includeAnswers: result!.includeAnswers,
+				includePractice: result!.includePractice
 			},
 		};
 	} catch (error) {
@@ -685,18 +669,14 @@ export async function generateJobInterviewQuestions(
 
 export async function getAllGenerations() {
 	try {
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not found');
 		}
 
-		const generations = await prisma.jobInterviewAssistant.findMany({
-			where: {
-				userId: session.user.id
-			},
-			orderBy: {
-				createdAt: 'desc'
-			}
+		const generations = await db.query.jobInterviewAssistant.findMany({
+			where: eq(jobInterviewAssistant.userId, session.user.id),
+			orderBy: [desc(jobInterviewAssistant.createdAt)],
 		});
 
 		return {
@@ -714,19 +694,15 @@ export async function getAllGenerations() {
 
 export async function getRecentGenerations(limit: number = 3) {
 	try {
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not found');
 		}
 
-		const generations = await prisma.jobInterviewAssistant.findMany({
-			where: {
-				userId: session.user.id
-			},
-			orderBy: {
-				createdAt: 'desc'
-			},
-			take: limit
+		const generations = await db.query.jobInterviewAssistant.findMany({
+			where: eq(jobInterviewAssistant.userId, session.user.id),
+			orderBy: [desc(jobInterviewAssistant.createdAt)],
+			limit,
 		});
 
 		return {
@@ -744,16 +720,16 @@ export async function getRecentGenerations(limit: number = 3) {
 
 export async function getGenerationBySlug(slug: string) {
 	try {
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not found');
 		}
 
-		const generation = await prisma.jobInterviewAssistant.findFirst({
-			where: {
-				slug,
-				userId: session.user.id
-			}
+		const generation = await db.query.jobInterviewAssistant.findFirst({
+			where: and(
+				eq(jobInterviewAssistant.slug, slug),
+				eq(jobInterviewAssistant.userId, session.user.id)
+			),
 		});
 
 		if (!generation) {
@@ -786,15 +762,15 @@ export async function evaluateCode(
 		console.log('Interview ID:', interviewId);
 		console.log('User Code Length:', userCode.length);
 
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
-			console.log('❌ Authentication failed - no session');
+			console.log('Authentication failed - no session');
 			throw new Error('User not authenticated');
 		}
-		console.log('✅ User authenticated:', session.user.id);
+		console.log('User authenticated:', session.user.id);
 
 		// Remove credit checking - credits are charged upfront
-		console.log('✅ Using prepaid credits from interview generation');
+		console.log('Using prepaid credits from interview generation');
 
 		// Use organized prompt
 		const promptParams: CodeEvaluationParams = {
@@ -805,7 +781,7 @@ export async function evaluateCode(
 
 		const evaluationPrompt = getCodeEvaluationPrompt(promptParams);
 
-		console.log('🤖 Calling Sarvam AI for evaluation...');
+		console.log('Calling Sarvam AI for evaluation...');
 
 		// Call Sarvam AI for evaluation
 		const response = await fetch('https://api.sarvam.ai/v1/chat/completions', {
@@ -827,41 +803,41 @@ export async function evaluateCode(
 			})
 		});
 
-		console.log('📡 Sarvam AI response status:', response.status);
+		console.log('Sarvam AI response status:', response.status);
 
 		if (!response.ok) {
-			console.log('❌ Sarvam AI API error:', response.status);
+			console.log('Sarvam AI API error:', response.status);
 			throw new Error(`Sarvam AI API error: ${response.status}`);
 		}
 
 		const data = await response.json();
-		console.log('📄 Sarvam AI response keys:', Object.keys(data));
+		console.log('Sarvam AI response keys:', Object.keys(data));
 
 		const evaluationText = data.choices?.[0]?.message?.content;
 
 		if (!evaluationText) {
-			console.log('❌ No evaluation content received from AI');
+			console.log('No evaluation content received from AI');
 			throw new Error('No evaluation received from AI');
 		}
 
-		console.log('📝 Evaluation text length:', evaluationText.length);
-		console.log('📝 Evaluation preview:', evaluationText.substring(0, 200) + '...');
+		console.log('Evaluation text length:', evaluationText.length);
+		console.log('Evaluation preview:', evaluationText.substring(0, 200) + '...');
 
 		// Parse the evaluation JSON
 		let evaluation;
 		try {
 			evaluation = cleanAndParseJSON(evaluationText);
-			console.log('✅ Successfully parsed evaluation JSON');
-			console.log('📊 Evaluation score:', evaluation.score);
+			console.log('Successfully parsed evaluation JSON');
+			console.log('Evaluation score:', evaluation.score);
 		} catch (error) {
-			console.error('❌ Failed to parse evaluation JSON:', error);
+			console.error('Failed to parse evaluation JSON:', error);
 			console.error('Raw evaluation text:', evaluationText);
 			throw new Error('Invalid evaluation format received');
 		}
 
 		// Validate evaluation structure
 		if (typeof evaluation.score !== 'number' || evaluation.score < 0 || evaluation.score > 100 || !evaluation.feedback || typeof evaluation.feedback !== 'string' || evaluation.feedback.trim().length === 0) {
-			console.log('❌ Incomplete evaluation structure:', {
+			console.log('Incomplete evaluation structure:', {
 				hasValidScore: typeof evaluation.score === 'number' && evaluation.score >= 0 && evaluation.score <= 100,
 				hasValidFeedback: !!evaluation.feedback && typeof evaluation.feedback === 'string' && evaluation.feedback.trim().length > 0,
 				actualScore: evaluation.score,
@@ -870,35 +846,33 @@ export async function evaluateCode(
 			throw new Error('Incomplete evaluation received');
 		}
 
-		console.log('💾 Saving evaluation to database...');
+		console.log('Saving evaluation to database...');
 
 		// Save evaluation to database without credit deduction
-		const result = await prisma.codeEvaluation.create({
-			data: {
-				interviewId,
-				questionText,
-				userCode,
-				language,
-				evaluation,
-				score: evaluation.score,
-				feedback: evaluation.feedback,
-				strengths: evaluation.strengths || [],
-				improvements: evaluation.improvements || []
-			}
-		});
-		console.log('✅ Code evaluation saved with ID:', result.id);
+		const [result] = await db.insert(codeEvaluation).values({
+			interviewId,
+			questionText,
+			userCode,
+			language,
+			evaluation,
+			score: evaluation.score,
+			feedback: evaluation.feedback,
+			strengths: evaluation.strengths || [],
+			improvements: evaluation.improvements || [],
+		}).returning();
+		console.log('Code evaluation saved with ID:', result!.id);
 
 		console.log('=== Code Evaluation Completed Successfully ===');
 
 		return {
 			success: true,
 			data: {
-				id: result.id,
-				score: result.score,
-				feedback: result.feedback,
-				strengths: result.strengths,
-				improvements: result.improvements,
-				evaluation: result.evaluation
+				id: result!.id,
+				score: result!.score,
+				feedback: result!.feedback,
+				strengths: result!.strengths,
+				improvements: result!.improvements,
+				evaluation: result!.evaluation
 			}
 		};
 
@@ -924,13 +898,13 @@ export async function generateQuestionAnswer(
 		console.log('Question type:', questionType);
 		console.log('Interview ID:', interviewId);
 
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
 
 		// Remove credit checking - credits are charged upfront
-		console.log('✅ Using prepaid credits from interview generation');
+		console.log('Using prepaid credits from interview generation');
 
 		const promptParams: AnswerGenerationParams = {
 			questionText,
@@ -987,21 +961,19 @@ export async function generateQuestionAnswer(
 		}
 
 		// Save to database without credit deduction
-		const result = await prisma.questionAnswer.create({
-			data: {
-				interviewId,
-				questionText,
-				questionType,
-				answer: parsedAnswer,
-			}
-		});
+		const [result] = await db.insert(questionAnswer).values({
+			interviewId,
+			questionText,
+			questionType,
+			answer: parsedAnswer,
+		}).returning();
 
 		return {
 			success: true,
 			data: {
-				id: result.id,
-				answer: result.answer,
-				questionType: result.questionType
+				id: result!.id,
+				answer: result!.answer,
+				questionType: result!.questionType
 			}
 		};
 
@@ -1019,25 +991,16 @@ export async function getQuestionAnswer(
 	interviewId: string
 ): Promise<{ success: boolean; data?: any; error?: string }> {
 	try {
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
 
-		// Add null check for prisma
-		if (!prisma) {
-			console.error('Prisma client not available');
-			return {
-				success: false,
-				error: 'Database connection not available'
-			};
-		}
-
-		const existingAnswer = await prisma.questionAnswer.findFirst({
-			where: {
-				questionText,
-				interviewId
-			}
+		const existingAnswer = await db.query.questionAnswer.findFirst({
+			where: and(
+				eq(questionAnswer.questionText, questionText),
+				eq(questionAnswer.interviewId, interviewId)
+			),
 		});
 
 		return {
@@ -1055,7 +1018,7 @@ export async function getQuestionAnswer(
 }
 
 // New function to transcribe voice to text with intelligent routing
-// Uses Sarvam AI for short audio (<30s estimated) and ElevenLabs for longer audio (≥30s)
+// Uses Sarvam AI for short audio (<30s estimated) and ElevenLabs for longer audio (>=30s)
 export async function transcribeVoiceToText(
 	audioFile: File
 ): Promise<{ success: boolean; data?: { transcript: string; language?: string }; error?: string }> {
@@ -1068,14 +1031,12 @@ export async function transcribeVoiceToText(
 			sizeInMB: (audioFile.size / (1024 * 1024)).toFixed(2)
 		});
 
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
 
 		// Estimate audio duration based on file size
-		// Typical bitrates: WAV ~1.4MB/min, MP3 ~1MB/min, WebM ~0.5MB/min
-		// For 30 seconds threshold, we use different size thresholds based on format
 		const fileSizeKB = audioFile.size / 1024;
 		let durationThresholdKB = 500; // Default threshold for 30 seconds
 
@@ -1093,7 +1054,7 @@ export async function transcribeVoiceToText(
 		const estimatedDuration = (fileSizeKB / durationThresholdKB) * 30; // Rough estimation in seconds
 		const shouldUseSarvam = fileSizeKB < durationThresholdKB;
 
-		console.log('📊 Audio Analysis:', {
+		console.log('Audio Analysis:', {
 			fileSizeKB: fileSizeKB.toFixed(1),
 			durationThresholdKB,
 			estimatedDurationSeconds: estimatedDuration.toFixed(1),
@@ -1102,7 +1063,7 @@ export async function transcribeVoiceToText(
 
 		// Route based on estimated duration
 		if (shouldUseSarvam) {
-			console.log('🎤 Using Sarvam AI for short audio (cost-effective)...');
+			console.log('Using Sarvam AI for short audio (cost-effective)...');
 
 			// Use Sarvam API for shorter audio files
 			const formData = new FormData();
@@ -1119,12 +1080,12 @@ export async function transcribeVoiceToText(
 					body: formData
 				});
 
-				console.log('📡 Sarvam Speech-to-Text response status:', response.status);
+				console.log('Sarvam Speech-to-Text response status:', response.status);
 
 				if (response.ok) {
 					const data = await response.json();
-					console.log('✅ Sarvam transcription successful');
-					console.log('📝 Transcript length:', data.transcript?.length || 0);
+					console.log('Sarvam transcription successful');
+					console.log('Transcript length:', data.transcript?.length || 0);
 
 					if (data.transcript && data.transcript.trim().length > 0) {
 						return {
@@ -1136,17 +1097,17 @@ export async function transcribeVoiceToText(
 						};
 					}
 				} else {
-					console.log('⚠️ Sarvam failed, falling back to ElevenLabs...');
+					console.log('Sarvam failed, falling back to ElevenLabs...');
 				}
 			} catch (sarvamError) {
-				console.log('⚠️ Sarvam exception, falling back to ElevenLabs...');
+				console.log('Sarvam exception, falling back to ElevenLabs...');
 				console.log('Sarvam error:', sarvamError);
 			}
 		}
 
 		// Use ElevenLabs for longer audio or if Sarvam fails
 		if (isElevenLabsConfigured()) {
-			console.log('🎤 Using ElevenLabs for longer/complex audio (advanced features)...');
+			console.log('Using ElevenLabs for longer/complex audio (advanced features)...');
 
 			try {
 				// Use different ElevenLabs settings based on estimated duration
@@ -1154,18 +1115,18 @@ export async function transcribeVoiceToText(
 
 				if (estimatedDuration > 60) {
 					// For very long audio, use detailed transcription with full features
-					console.log('📝 Using detailed transcription for long audio...');
+					console.log('Using detailed transcription for long audio...');
 					elevenLabsResult = await detailedTranscribeWithElevenLabs(audioFile);
 				} else {
 					// For medium-length audio, use quick transcription
-					console.log('📝 Using quick transcription for medium audio...');
+					console.log('Using quick transcription for medium audio...');
 					elevenLabsResult = await quickTranscribeWithElevenLabs(audioFile);
 				}
 
 				if (elevenLabsResult.success && elevenLabsResult.data) {
-					console.log('✅ ElevenLabs transcription successful');
-					console.log('📝 Transcript length:', elevenLabsResult.data.transcript.length);
-					console.log('🌐 Language detected:', elevenLabsResult.data.language_code);
+					console.log('ElevenLabs transcription successful');
+					console.log('Transcript length:', elevenLabsResult.data.transcript.length);
+					console.log('Language detected:', elevenLabsResult.data.language_code);
 
 					return {
 						success: true,
@@ -1175,13 +1136,13 @@ export async function transcribeVoiceToText(
 						}
 					};
 				} else {
-					console.log('❌ ElevenLabs failed:', elevenLabsResult.error);
+					console.log('ElevenLabs failed:', elevenLabsResult.error);
 				}
 			} catch (elevenLabsError) {
-				console.log('❌ ElevenLabs exception:', elevenLabsError);
+				console.log('ElevenLabs exception:', elevenLabsError);
 			}
 		} else {
-			console.log('⚠️ ElevenLabs not configured');
+			console.log('ElevenLabs not configured');
 		}
 
 		// If both fail, return appropriate error
@@ -1189,7 +1150,7 @@ export async function transcribeVoiceToText(
 			? 'Audio transcription failed. Please try recording a clear, shorter response (under 30 seconds).'
 			: 'Audio transcription failed. Please try recording a clear response or check your internet connection.';
 
-		console.log('❌ All transcription methods failed');
+		console.log('All transcription methods failed');
 		return {
 			success: false,
 			error: errorMessage
@@ -1205,273 +1166,6 @@ export async function transcribeVoiceToText(
 	}
 }
 
-// Helper function to handle batch API for longer audio files using Python SDK
-async function transcribeWithBatchAPI(audioFile: File): Promise<{ success: boolean; data?: { transcript: string; language?: string }; error?: string }> {
-	try {
-		console.log('🔄 Using Python SDK for longer audio file...');
-
-		// Create temporary directory for processing
-		const fs = require('fs').promises;
-		const path = require('path');
-		const { exec } = require('child_process');
-		const { promisify } = require('util');
-		const execAsync = promisify(exec);
-
-		const tempDir = path.join(process.cwd(), 'temp_audio');
-		const tempAudioPath = path.join(tempDir, `audio_${Date.now()}.wav`);
-		const outputDir = path.join(tempDir, 'output');
-
-		// Ensure temp directory exists
-		await fs.mkdir(tempDir, { recursive: true });
-		await fs.mkdir(outputDir, { recursive: true });
-
-		// Save audio file to temp location
-		const audioBuffer = Buffer.from(await audioFile.arrayBuffer());
-		await fs.writeFile(tempAudioPath, audioBuffer);
-
-		console.log('📁 Audio file saved to:', tempAudioPath);
-
-		// Create Python script for batch transcription using SarvamAI SDK
-		const pythonScript = `
-import os
-import sys
-import json
-import tempfile
-
-try:
-    from sarvamai import SarvamAI
-except ImportError:
-    print(json.dumps({"success": False, "error": "SarvamAI SDK not installed. Please run: pip install sarvamai"}))
-    sys.exit(1)
-
-def main():
-    try:
-        api_key = "${process.env.SARVAM_API_KEY}"
-        audio_path = r"${tempAudioPath.replace(/\\/g, '\\\\')}"
-        output_dir = r"${outputDir.replace(/\\/g, '\\\\')}"
-        
-        print(f"Starting batch transcription for: {audio_path}", file=sys.stderr);
-        
-        # Initialize SarvamAI client
-        client = SarvamAI(api_subscription_key=api_key)
-        
-        # Create batch speech-to-text job
-        job = client.speech_to_text_job.create_job(
-            language_code="en-IN",
-            model="saarika:v2.5",
-            with_timestamps=True,
-            with_diarization=False,
-            num_speakers=1
-        )
-        
-        print(f"Job created with ID: {job.job_id}", file=sys.stderr);
-        
-        # Upload the audio file
-        job.upload_files(file_paths=[audio_path])
-        print("Audio file uploaded", file=sys.stderr);
-        
-        # Start the job
-        job.start()
-        print("Job started, waiting for completion...", file=sys.stderr);
-        
-        # Wait for completion with timeout
-        final_status = job.wait_until_complete()
-        print(f"Job completed with status: {final_status}", file=sys.stderr);
-        
-        # Check if job failed
-        if job.is_failed():
-            error_msg = "Transcription job failed"
-            try:
-                # Try to get more detailed error information
-                job_info = job.get_job_info()
-                if hasattr(job_info, 'error') and job_info.error:
-                    error_msg = f"Transcription job failed: {job_info.error}"
-            except:
-                pass
-            print(json.dumps({"success": False, "error": error_msg}))
-            return
-        
-        # Download outputs to specified directory
-        job.download_outputs(output_dir=output_dir)
-        print(f"Outputs downloaded to: {output_dir}", file=sys.stderr);
-        
-        # Read the transcription result
-        transcript_text = ""
-        transcript_file = None;
-        
-        # Look for JSON or text files in output directory
-        for file in os.listdir(output_dir):
-            file_path = os.path.join(output_dir, file);
-            print(f"Found output file: {file}", file=sys.stderr);
-            
-            if file.endswith('.json'):
-                transcript_file = file_path;
-                break;
-            elif file.endswith('.txt'):
-                # If there's a txt file, use it as fallback
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    transcript_text = f.read().strip();
-        
-        # Process JSON file if found
-        if transcript_file and os.path.exists(transcript_file):
-            try {
-                with open(transcript_file, 'r', encoding='utf-8') as f:
-                    result = json.load(f);
-                    print(f"JSON result structure: {list(result.keys()) if isinstance(result, dict) else type(result)}", file=sys.stderr);
-                    
-                # Extract transcript text from various possible formats
-                if isinstance(result, dict):
-                    if 'segments' in result and isinstance(result['segments'], list):
-                        # Format: {"segments": [{"text": "..."}, ...]}
-                        transcript_text = " ".join([segment.get('text', '') for segment in result['segments'] if segment.get('text')]);
-                    elif 'transcript' in result:
-                        # Format: {"transcript": "..."}
-                        transcript_text = result['transcript'];
-                    elif 'text' in result:
-                        # Format: {"text": "..."}
-                        transcript_text = result['text'];
-                    else:
-                        # Try to find any string value in the dict
-                        for key, value in result.items():
-                            if isinstance(value, str) and len(value) > 10:  # Assume transcript is at least 10 chars
-                                transcript_text = value;
-                                break;
-                elif isinstance(result, list):
-                    # Format: [{"text": "..."}, ...]
-                    transcript_text = " ".join([item.get('text', '') for item in result if isinstance(item, dict) and item.get('text')]);
-                elif isinstance(result, str):
-                    # Format: "transcript text"
-                    transcript_text = result;
-                    
-            } catch (json.JSONDecodeError as e) {
-                print(f"Failed to parse JSON file: {e}", file=sys.stderr);
-                # Try reading as plain text
-                with open(transcript_file, 'r', encoding='utf-8') as f:
-                    transcript_text = f.read().strip();
-        
-        # Clean up the transcript
-        transcript_text = transcript_text.strip();
-        
-        if transcript_text:
-            print(json.dumps({
-                "success": True,
-                "data": {
-                    "transcript": transcript_text,
-                    "language": "en-IN"
-                }
-            }));
-        else:
-            print(json.dumps({"success": False, "error": "No transcript text found in output files"}));
-            
-    except Exception as e:
-        import traceback;
-        error_details = traceback.format_exc();
-        print(f"Exception details: {error_details}", file=sys.stderr);
-        print(json.dumps({"success": False, "error": f"Python script error: {str(e)}"}));
-
-if __name__ == "__main__":
-    main()
-`;
-
-		const pythonScriptPath = path.join(tempDir, 'transcribe_batch.py');
-		await fs.writeFile(pythonScriptPath, pythonScript);
-
-		console.log('🐍 Python script created, executing...');
-
-		// Try executing with virtual environment first, then fallback to system python
-		const pythonCommands = [
-			`source .venv_sarvam/bin/activate && python ${pythonScriptPath}`,
-			`python3 ${pythonScriptPath}`,
-			`python ${pythonScriptPath}`
-		];
-
-		let lastError: Error | null = null;
-
-		for (const command of pythonCommands) {
-			try {
-				console.log(`🔄 Trying command: ${command}`);
-				const { stdout, stderr } = await execAsync(command, {
-					timeout: 300000, // 5 minutes timeout
-					cwd: process.cwd(),
-					shell: '/bin/bash' // Use bash to support source command
-				});
-
-				console.log('📄 Python script output:', stdout);
-				if (stderr && stderr.trim()) {
-					console.log('🐍 Python script stderr:', stderr);
-				}
-
-				// Parse the JSON response from Python script
-				let result;
-				try {
-					const jsonOutput = stdout.trim();
-					const lastLine = jsonOutput.split('\n').pop() || '';
-					result = JSON.parse(lastLine);
-				} catch (parseError) {
-					console.error('❌ Failed to parse Python output as JSON:', parseError);
-					console.error('Raw output:', stdout);
-					throw new Error('Invalid JSON response from Python script');
-				}
-
-				// Cleanup temp files
-				try {
-					await fs.rm(tempDir, { recursive: true, force: true });
-				} catch (cleanupError) {
-					console.warn('⚠️ Failed to cleanup temp files:', cleanupError);
-				}
-
-				return result;
-
-			} catch (execError) {
-				console.error(`❌ Command failed: ${command}`, execError);
-				lastError = execError as Error;
-				continue; // Try next command
-			}
-		}
-
-		// If all commands failed, cleanup and throw error
-		try {
-			await fs.rm(tempDir, { recursive: true, force: true });
-		} catch (cleanupError) {
-			console.warn('⚠️ Failed to cleanup temp files:', cleanupError);
-		}
-
-		const errorMessage = lastError?.message || 'Unknown error';
-
-		if (errorMessage.includes('sarvamai') || errorMessage.includes('ModuleNotFoundError')) {
-			throw new Error('SarvamAI Python SDK not installed. Please run the setup script: npm run setup-python');
-		}
-
-		throw new Error(`Python transcription failed after trying all methods. Last error: ${errorMessage}. Please ensure Python and sarvamai package are installed correctly.`);
-
-	} catch (error) {
-		console.error('=== Batch Transcription Error ===');
-		console.error('Error details:', error);
-
-		const errorMessage = error instanceof Error ? error.message : 'Batch transcription failed';
-
-		// Provide helpful error messages to users
-		if (errorMessage.includes('SarvamAI Python SDK not installed') || errorMessage.includes('sarvamai')) {
-			return {
-				success: false,
-				error: 'Audio processing setup incomplete. Please run "npm run setup-python" to install required dependencies, or keep your answer under 1 minute.'
-			};
-		}
-
-		if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
-			return {
-				success: false,
-				error: 'Audio processing timed out. Please try again with a shorter answer (under 1 minute recommended).'
-			};
-		}
-
-		return {
-			success: false,
-			error: `Audio processing failed. Please try keeping your answer under 1 minute. If the issue persists, contact support. (${errorMessage})`
-		};
-	}
-}
-
 // Function to evaluate user's answer to technical/behavioral questions
 export async function evaluateUserQuestionResponse(
 	questionText: string,
@@ -1482,7 +1176,7 @@ export async function evaluateUserQuestionResponse(
 	answerMethod: 'text' | 'voice' = 'text'
 ): Promise<{ success: boolean; data?: any; error?: string }> {
 	try {
-		const session = await auth()
+		const session = await getSession(headers())
 		if (!session) {
 			throw new Error('User not found')
 		}
@@ -1490,10 +1184,10 @@ export async function evaluateUserQuestionResponse(
 		console.log('Evaluating user response:', { questionText, userAnswer, questionType, questionIndex, interviewId, answerMethod })
 
 		// Get the expert answer for comparison
-		const generation = await prisma.jobInterviewAssistant.findUnique({
-			where: { id: interviewId },
-			select: { generatedContent: true }
-		})
+		const generation = await db.query.jobInterviewAssistant.findFirst({
+			where: eq(jobInterviewAssistant.id, interviewId),
+			columns: { generatedContent: true },
+		});
 
 		if (!generation) {
 			throw new Error('Interview generation not found')
@@ -1598,22 +1292,20 @@ export async function evaluateUserQuestionResponse(
 		}
 
 		// Save the evaluation to database
-		const savedResponse = await prisma.userQuestionResponse.create({
-			data: {
-				interviewId,
-				questionText,
-				questionType,
-				questionIndex,
-				userAnswer,
-				answerMethod,
-				score: evaluation.score,
-				feedback: evaluation.feedback,
-				strengths: evaluation.strengths || [],
-				improvements: evaluation.improvements || [],
-				comparedToExpert: evaluation.comparedToExpert || {},
-				evaluationDetails: evaluation // Save full evaluation details
-			}
-		})
+		const [savedResponse] = await db.insert(userQuestionResponse).values({
+			interviewId,
+			questionText,
+			questionType,
+			questionIndex,
+			userAnswer,
+			answerMethod,
+			score: evaluation.score,
+			feedback: evaluation.feedback,
+			strengths: evaluation.strengths || [],
+			improvements: evaluation.improvements || [],
+			comparedToExpert: evaluation.comparedToExpert || {},
+			evaluationDetails: evaluation // Save full evaluation details
+		}).returning();
 
 		return {
 			success: true,
@@ -1636,24 +1328,22 @@ export async function getUserQuestionResponse(
 	questionIndex: number
 ): Promise<{ success: boolean; data?: any; error?: string }> {
 	try {
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
 
-		const userResponse = await prisma.userQuestionResponse.findUnique({
-			where: {
-				interviewId_questionType_questionIndex: {
-					interviewId,
-					questionType,
-					questionIndex
-				}
-			}
+		const userResp = await db.query.userQuestionResponse.findFirst({
+			where: and(
+				eq(userQuestionResponse.interviewId, interviewId),
+				eq(userQuestionResponse.questionType, questionType),
+				eq(userQuestionResponse.questionIndex, questionIndex)
+			),
 		});
 
 		return {
 			success: true,
-			data: userResponse
+			data: userResp
 		};
 
 	} catch (error) {
@@ -1670,19 +1360,17 @@ export async function getAllUserQuestionResponses(
 	interviewId: string
 ): Promise<{ success: boolean; data?: any[]; error?: string }> {
 	try {
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
 
-		const userResponses = await prisma.userQuestionResponse.findMany({
-			where: {
-				interviewId
-			},
+		const userResponses = await db.query.userQuestionResponse.findMany({
+			where: eq(userQuestionResponse.interviewId, interviewId),
 			orderBy: [
-				{ questionType: 'asc' },
-				{ questionIndex: 'asc' }
-			]
+				userQuestionResponse.questionType,
+				userQuestionResponse.questionIndex,
+			],
 		});
 
 		return {
@@ -1711,7 +1399,7 @@ export async function generateCodingQuestionAnswer(
 		console.log('Language:', language);
 		console.log('Interview ID:', interviewId);
 
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
@@ -1754,16 +1442,6 @@ CRITICAL JSON FORMATTING RULES:
 7. No text before or after the JSON object
 8. The "solution" field must contain ONLY the code, no extra formatting or escape sequences
 9. Write clean, readable code that can be directly copied and used
-
-Example of proper JSON format:
-{
-	"solution": "function example() {\n  return 'Hello World';\n}",
-	"explanation": "This function returns a greeting message",
-	"approach": "Simple function implementation",
-	"timeComplexity": "O(1)",
-	"spaceComplexity": "O(1)",
-	"keyPoints": ["Point 1", "Point 2", "Point 3"]
-}
 
 IMPORTANT: Your response must be VALID JSON only. Start with { and end with }. No extra text before or after. No markdown code blocks like \`\`\`json. Just pure JSON.`;
 
@@ -1813,22 +1491,20 @@ IMPORTANT: Your response must be VALID JSON only. Start with { and end with }. N
 		}
 
 		// Save to database with language field
-		const result = await prisma.questionAnswer.create({
-			data: {
-				interviewId,
-				questionText,
-				questionType: 'coding',
-				language,
-				answer: parsedAnswer,
-			}
-		});
+		const [result] = await db.insert(questionAnswer).values({
+			interviewId,
+			questionText,
+			questionType: 'coding',
+			language,
+			answer: parsedAnswer,
+		}).returning();
 
 		return {
 			success: true,
 			data: {
-				id: result.id,
-				answer: result.answer,
-				questionType: result.questionType,
+				id: result!.id,
+				answer: result!.answer,
+				questionType: result!.questionType,
 				language: language
 			}
 		};
@@ -1849,27 +1525,17 @@ export async function getCodingQuestionAnswer(
 	interviewId: string
 ): Promise<{ success: boolean; data?: any; error?: string }> {
 	try {
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
 
-		// Add null check for prisma
-		if (!prisma) {
-			console.error('Prisma client not available');
-			return {
-				success: false,
-				error: 'Database connection not available'
-			};
-		}
-
-		const questionKey = `${questionText}_${language}`;
-		const existingAnswer = await prisma.questionAnswer.findFirst({
-			where: {
-				questionText,
-				language,
-				interviewId
-			}
+		const existingAnswer = await db.query.questionAnswer.findFirst({
+			where: and(
+				eq(questionAnswer.questionText, questionText),
+				eq(questionAnswer.language, language),
+				eq(questionAnswer.interviewId, interviewId)
+			),
 		});
 
 		return {
@@ -1900,12 +1566,12 @@ export async function runCodeEvaluation(
 		console.log('Interview ID:', interviewId);
 		console.log('User Code Length:', userCode.length);
 
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
-			console.log('❌ Authentication failed - no session');
+			console.log('Authentication failed - no session');
 			throw new Error('User not authenticated');
 		}
-		console.log('✅ User authenticated:', session.user.id);
+		console.log('User authenticated:', session.user.id);
 
 		// Use organized prompt
 		const promptParams: CodeEvaluationParams = {
@@ -1916,7 +1582,7 @@ export async function runCodeEvaluation(
 
 		const evaluationPrompt = getCodeEvaluationPrompt(promptParams);
 
-		console.log('🤖 Calling Sarvam AI for evaluation...');
+		console.log('Calling Sarvam AI for evaluation...');
 
 		// Call Sarvam AI for evaluation
 		const response = await fetch('https://api.sarvam.ai/v1/chat/completions', {
@@ -1938,41 +1604,41 @@ export async function runCodeEvaluation(
 			})
 		});
 
-		console.log('📡 Sarvam AI response status:', response.status);
+		console.log('Sarvam AI response status:', response.status);
 
 		if (!response.ok) {
-			console.log('❌ Sarvam AI API error:', response.status);
+			console.log('Sarvam AI API error:', response.status);
 			throw new Error(`Sarvam AI API error: ${response.status}`);
 		}
 
 		const data = await response.json();
-		console.log('📄 Sarvam AI response keys:', Object.keys(data));
+		console.log('Sarvam AI response keys:', Object.keys(data));
 
 		const evaluationText = data.choices?.[0]?.message?.content;
 
 		if (!evaluationText) {
-			console.log('❌ No evaluation content received from AI');
+			console.log('No evaluation content received from AI');
 			throw new Error('No evaluation received from AI');
 		}
 
-		console.log('📝 Evaluation text length:', evaluationText.length);
-		console.log('📝 Evaluation preview:', evaluationText.substring(0, 200) + '...');
+		console.log('Evaluation text length:', evaluationText.length);
+		console.log('Evaluation preview:', evaluationText.substring(0, 200) + '...');
 
 		// Parse the evaluation JSON
 		let evaluation;
 		try {
 			evaluation = cleanAndParseJSON(evaluationText);
-			console.log('✅ Successfully parsed evaluation JSON');
-			console.log('📊 Evaluation score:', evaluation.score);
+			console.log('Successfully parsed evaluation JSON');
+			console.log('Evaluation score:', evaluation.score);
 		} catch (error) {
-			console.error('❌ Failed to parse evaluation JSON:', error);
+			console.error('Failed to parse evaluation JSON:', error);
 			console.error('Raw evaluation text:', evaluationText);
 			throw new Error('Invalid evaluation format received');
 		}
 
 		// Validate evaluation structure
 		if (typeof evaluation.score !== 'number' || evaluation.score < 0 || evaluation.score > 100 || !evaluation.feedback || typeof evaluation.feedback !== 'string' || evaluation.feedback.trim().length === 0) {
-			console.log('❌ Incomplete evaluation structure:', {
+			console.log('Incomplete evaluation structure:', {
 				hasValidScore: typeof evaluation.score === 'number' && evaluation.score >= 0 && evaluation.score <= 100,
 				hasValidFeedback: !!evaluation.feedback && typeof evaluation.feedback === 'string' && evaluation.feedback.trim().length > 0,
 				actualScore: evaluation.score,
@@ -2020,12 +1686,12 @@ export async function submitCodeEvaluation(
 		console.log('Interview ID:', interviewId);
 		console.log('User Code Length:', userCode.length);
 
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
-			console.log('❌ Authentication failed - no session');
+			console.log('Authentication failed - no session');
 			throw new Error('User not authenticated');
 		}
-		console.log('✅ User authenticated:', session.user.id);
+		console.log('User authenticated:', session.user.id);
 
 		// Use organized prompt
 		const promptParams: CodeEvaluationParams = {
@@ -2036,7 +1702,7 @@ export async function submitCodeEvaluation(
 
 		const evaluationPrompt = getCodeEvaluationPrompt(promptParams);
 
-		console.log('🤖 Calling Sarvam AI for evaluation...');
+		console.log('Calling Sarvam AI for evaluation...');
 
 		// Call Sarvam AI for evaluation
 		const response = await fetch('https://api.sarvam.ai/v1/chat/completions', {
@@ -2058,41 +1724,41 @@ export async function submitCodeEvaluation(
 			})
 		});
 
-		console.log('📡 Sarvam AI response status:', response.status);
+		console.log('Sarvam AI response status:', response.status);
 
 		if (!response.ok) {
-			console.log('❌ Sarvam AI API error:', response.status);
+			console.log('Sarvam AI API error:', response.status);
 			throw new Error(`Sarvam AI API error: ${response.status}`);
 		}
 
 		const data = await response.json();
-		console.log('📄 Sarvam AI response keys:', Object.keys(data));
+		console.log('Sarvam AI response keys:', Object.keys(data));
 
 		const evaluationText = data.choices?.[0]?.message?.content;
 
 		if (!evaluationText) {
-			console.log('❌ No evaluation content received from AI');
+			console.log('No evaluation content received from AI');
 			throw new Error('No evaluation received from AI');
 		}
 
-		console.log('📝 Evaluation text length:', evaluationText.length);
-		console.log('📝 Evaluation preview:', evaluationText.substring(0, 200) + '...');
+		console.log('Evaluation text length:', evaluationText.length);
+		console.log('Evaluation preview:', evaluationText.substring(0, 200) + '...');
 
 		// Parse the evaluation JSON
 		let evaluation;
 		try {
 			evaluation = cleanAndParseJSON(evaluationText);
-			console.log('✅ Successfully parsed evaluation JSON');
-			console.log('📊 Evaluation score:', evaluation.score);
+			console.log('Successfully parsed evaluation JSON');
+			console.log('Evaluation score:', evaluation.score);
 		} catch (error) {
-			console.error('❌ Failed to parse evaluation JSON:', error);
+			console.error('Failed to parse evaluation JSON:', error);
 			console.error('Raw evaluation text:', evaluationText);
 			throw new Error('Invalid evaluation format received');
 		}
 
 		// Validate evaluation structure
 		if (typeof evaluation.score !== 'number' || evaluation.score < 0 || evaluation.score > 100 || !evaluation.feedback || typeof evaluation.feedback !== 'string' || evaluation.feedback.trim().length === 0) {
-			console.log('❌ Incomplete evaluation structure:', {
+			console.log('Incomplete evaluation structure:', {
 				hasValidScore: typeof evaluation.score === 'number' && evaluation.score >= 0 && evaluation.score <= 100,
 				hasValidFeedback: !!evaluation.feedback && typeof evaluation.feedback === 'string' && evaluation.feedback.trim().length > 0,
 				actualScore: evaluation.score,
@@ -2101,38 +1767,36 @@ export async function submitCodeEvaluation(
 			throw new Error('Incomplete evaluation received');
 		}
 
-		console.log('💾 Saving submission to database...');
+		console.log('Saving submission to database...');
 
 		// Save evaluation to database with isSubmitted = true
-		const result = await prisma.codeEvaluation.create({
-			data: {
-				interviewId,
-				questionText,
-				userCode,
-				language,
-				evaluation,
-				score: evaluation.score,
-				feedback: evaluation.feedback,
-				strengths: evaluation.strengths || [],
-				improvements: evaluation.improvements || [],
-				isSubmitted: true
-			}
-		});
-		console.log('✅ Code submission saved with ID:', result.id);
+		const [result] = await db.insert(codeEvaluation).values({
+			interviewId,
+			questionText,
+			userCode,
+			language,
+			evaluation,
+			score: evaluation.score,
+			feedback: evaluation.feedback,
+			strengths: evaluation.strengths || [],
+			improvements: evaluation.improvements || [],
+			isSubmitted: true,
+		}).returning();
+		console.log('Code submission saved with ID:', result!.id);
 
 		console.log('=== Code Submit Evaluation Completed Successfully ===');
 
 		return {
 			success: true,
 			data: {
-				id: result.id,
-				score: result.score,
-				feedback: result.feedback,
-				strengths: result.strengths,
-				improvements: result.improvements,
-				evaluation: result.evaluation,
-				isSubmitted: result.isSubmitted,
-				createdAt: result.createdAt
+				id: result!.id,
+				score: result!.score,
+				feedback: result!.feedback,
+				strengths: result!.strengths,
+				improvements: result!.improvements,
+				evaluation: result!.evaluation,
+				isSubmitted: result!.isSubmitted,
+				createdAt: result!.createdAt
 			}
 		};
 
@@ -2160,22 +1824,20 @@ export async function getPreviousSubmissions(
 		console.log('Language:', language);
 		console.log('Interview ID:', interviewId);
 
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
 
-		const submissions = await prisma.codeEvaluation.findMany({
-			where: {
-				interviewId,
-				questionText,
-				language,
-				isSubmitted: true
-			},
-			orderBy: {
-				createdAt: 'desc'
-			},
-			select: {
+		const submissions = await db.query.codeEvaluation.findMany({
+			where: and(
+				eq(codeEvaluation.interviewId, interviewId),
+				eq(codeEvaluation.questionText, questionText),
+				eq(codeEvaluation.language, language),
+				eq(codeEvaluation.isSubmitted, true)
+			),
+			orderBy: [desc(codeEvaluation.createdAt)],
+			columns: {
 				id: true,
 				userCode: true,
 				score: true,
@@ -2184,11 +1846,11 @@ export async function getPreviousSubmissions(
 				improvements: true,
 				evaluation: true,
 				createdAt: true,
-				isSubmitted: true
-			}
+				isSubmitted: true,
+			},
 		});
 
-		console.log('✅ Found', submissions.length, 'previous submissions');
+		console.log('Found', submissions.length, 'previous submissions');
 
 		return {
 			success: true,
@@ -2208,11 +1870,16 @@ export async function getPreviousSubmissions(
 // Get public interview plans
 export async function getPublicInterviewPlans(limit: number = 10) {
 	try {
-		const publicPlans = await prisma.jobInterviewAssistant.findMany({
-			where: {
-				isPublic: true
+		const publicPlans = await db.query.jobInterviewAssistant.findMany({
+			where: eq(jobInterviewAssistant.isPublic, true),
+			with: {
+				user: {
+					columns: { name: true },
+				},
 			},
-			select: {
+			orderBy: [desc(jobInterviewAssistant.purchaseCount), desc(jobInterviewAssistant.createdAt)],
+			limit,
+			columns: {
 				id: true,
 				position: true,
 				description: true,
@@ -2229,17 +1896,7 @@ export async function getPublicInterviewPlans(limit: number = 10) {
 				tags: true,
 				slug: true,
 				createdAt: true,
-				user: {
-					select: {
-						name: true
-					}
-				}
 			},
-			orderBy: [
-				{ purchaseCount: 'desc' },
-				{ createdAt: 'desc' }
-			],
-			take: limit
 		});
 
 		return {
@@ -2261,7 +1918,7 @@ export async function getPublicInterviewPlans(limit: number = 10) {
 				tags: plan.tags,
 				slug: plan.slug,
 				createdAt: plan.createdAt,
-				creator: plan.user.name || 'Anonymous'
+				creator: plan.user?.name || 'Anonymous'
 			}))
 		};
 	} catch (error) {
@@ -2286,43 +1943,45 @@ export async function getUserInterviewPlans({
 	visibility?: 'all' | 'public' | 'private';
 } = {}) {
 	try {
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
 
-		// Build where clause
-		const whereClause: any = {
-			userId: session.user.id
-		};
+		// Build where conditions
+		const conditions = [eq(jobInterviewAssistant.userId, session.user.id)];
 
 		// Add visibility filter
 		if (visibility === 'public') {
-			whereClause.isPublic = true;
+			conditions.push(eq(jobInterviewAssistant.isPublic, true));
 		} else if (visibility === 'private') {
-			whereClause.isPublic = false;
+			conditions.push(eq(jobInterviewAssistant.isPublic, false));
 		}
 
 		// Add search filter
 		if (search.trim()) {
-			whereClause.position = {
-				contains: search.trim(),
-				mode: 'insensitive'
-			};
+			const { ilike } = await import('drizzle-orm');
+			conditions.push(ilike(jobInterviewAssistant.position, `%${search.trim()}%`));
 		}
+
+		const whereClause = and(...conditions);
 
 		// Calculate pagination
 		const skip = (page - 1) * limit;
 
 		// Get total count for pagination
-		const totalCount = await prisma.jobInterviewAssistant.count({
-			where: whereClause
-		});
+		const [{ count: totalCount }] = await db
+			.select({ count: sql<number>`count(*)` })
+			.from(jobInterviewAssistant)
+			.where(whereClause);
 
 		// Get plans with pagination
-		const plans = await prisma.jobInterviewAssistant.findMany({
+		const plans = await db.query.jobInterviewAssistant.findMany({
 			where: whereClause,
-			select: {
+			orderBy: [desc(jobInterviewAssistant.createdAt)],
+			offset: skip,
+			limit,
+			columns: {
 				id: true,
 				position: true,
 				description: true,
@@ -2339,16 +1998,12 @@ export async function getUserInterviewPlans({
 				rating: true,
 				tags: true,
 				slug: true,
-				createdAt: true
+				createdAt: true,
 			},
-			orderBy: {
-				createdAt: 'desc'
-			},
-			skip,
-			take: limit
 		});
 
-		const totalPages = Math.ceil(totalCount / limit);
+		const total = Number(totalCount);
+		const totalPages = Math.ceil(total / limit);
 		const hasNext = page < totalPages;
 		const hasPrev = page > 1;
 
@@ -2378,7 +2033,7 @@ export async function getUserInterviewPlans({
 				pagination: {
 					currentPage: page,
 					totalPages,
-					totalCount,
+					totalCount: total,
 					hasNext,
 					hasPrev,
 					limit
@@ -2397,17 +2052,17 @@ export async function getUserInterviewPlans({
 // Purchase a public interview plan
 export async function purchaseInterviewPlan(planId: string) {
 	try {
-		const session = await auth();
+		const session = await getSession(headers())
 		if (!session?.user?.id) {
 			throw new Error('User not authenticated');
 		}
 
 		// Get the public plan
-		const publicPlan = await prisma.jobInterviewAssistant.findFirst({
-			where: {
-				id: planId,
-				isPublic: true
-			}
+		const publicPlan = await db.query.jobInterviewAssistant.findFirst({
+			where: and(
+				eq(jobInterviewAssistant.id, planId),
+				eq(jobInterviewAssistant.isPublic, true)
+			),
 		});
 
 		if (!publicPlan) {
@@ -2421,75 +2076,67 @@ export async function purchaseInterviewPlan(planId: string) {
 		const cost = publicPlan.publicCost || 0;
 
 		// Check if user has enough credits
-		const user = await prisma.user.findUnique({
-			where: { id: session.user.id },
-			select: { credits: true }
+		const user = await db.query.users.findFirst({
+			where: eq(users.id, session.user.id),
+			columns: { credits: true },
 		});
 
-		if (!user || user.credits < cost) {
+		if (!user || (user.credits ?? 0) < cost) {
 			throw new Error(`Insufficient credits. Need ${cost} credits.`);
 		}
 
 		// Generate new slug for the purchased plan
 		const newSlug = generateSlug(publicPlan.position);
 
-		const result = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+		const result = await db.transaction(async (tx) => {
 			// Deduct credits from buyer
-			await tx.user.update({
-				where: { id: session.user.id },
-				data: { credits: { decrement: cost } }
-			});
+			await tx.update(users)
+				.set({ credits: sql`${users.credits} - ${cost}` })
+				.where(eq(users.id, session.user.id));
 
 			// Create credit transaction
-			await tx.creditTransaction.create({
-				data: {
-					userId: session.user.id,
-					amount: -cost,
-					type: CreditType.SPEND,
-					currency: Currency.INR,
-					description: `Purchased interview plan: ${publicPlan.position}`,
-				},
+			await tx.insert(creditTransactions).values({
+				userId: session.user.id,
+				amount: -cost,
+				type: 'SPEND',
+				currency: 'INR',
+				description: `Purchased interview plan: ${publicPlan.position}`,
 			});
 
 			// Create new interview plan for the buyer
-			const newPlan = await tx.jobInterviewAssistant.create({
-				data: {
-					userId: session.user.id,
-					position: publicPlan.position,
-					jobDescription: publicPlan.jobDescription,
-					companyUrl: publicPlan.companyUrl,
-					companyInfo: publicPlan.companyInfo || PrismaValue.JsonNull,
-					generatedContent: publicPlan.generatedContent || PrismaValue.JsonNull,
-					includeAnswers: publicPlan.includeAnswers,
-					includePractice: publicPlan.includePractice,
-					technicalCount: publicPlan.technicalCount,
-					behavioralCount: publicPlan.behavioralCount,
-					codingCount: publicPlan.codingCount,
-					isPublic: false, // Purchased plans are private
-					creditsCost: cost, // Store the purchase cost
-					description: `${publicPlan.description} (Purchased)`,
-					tags: publicPlan.tags,
-					slug: newSlug,
-				}
-			});
+			const [newPlan] = await tx.insert(jobInterviewAssistant).values({
+				userId: session.user.id,
+				position: publicPlan.position,
+				jobDescription: publicPlan.jobDescription,
+				companyUrl: publicPlan.companyUrl,
+				companyInfo: publicPlan.companyInfo ?? undefined,
+				generatedContent: publicPlan.generatedContent,
+				includeAnswers: publicPlan.includeAnswers,
+				includePractice: publicPlan.includePractice,
+				technicalCount: publicPlan.technicalCount,
+				behavioralCount: publicPlan.behavioralCount,
+				codingCount: publicPlan.codingCount,
+				isPublic: false, // Purchased plans are private
+				creditsCost: cost, // Store the purchase cost
+				description: `${publicPlan.description} (Purchased)`,
+				tags: publicPlan.tags,
+				slug: newSlug,
+			}).returning();
 
 			// Create purchase record
-			const purchase = await tx.interviewPlanPurchase.create({
-				data: {
-					buyerId: session.user.id,
-					interviewPlanId: planId,
-					cost,
-					newInterviewPlanId: newPlan.id
-				}
+			await tx.insert(interviewPlanPurchase).values({
+				buyerId: session.user.id,
+				interviewPlanId: planId,
+				cost,
+				newInterviewPlanId: newPlan!.id,
 			});
 
 			// Update purchase count on original plan
-			await tx.jobInterviewAssistant.update({
-				where: { id: planId },
-				data: { purchaseCount: { increment: 1 } }
-			});
+			await tx.update(jobInterviewAssistant)
+				.set({ purchaseCount: sql`${jobInterviewAssistant.purchaseCount} + 1` })
+				.where(eq(jobInterviewAssistant.id, planId));
 
-			return newPlan;
+			return newPlan!;
 		});
 
 		return {

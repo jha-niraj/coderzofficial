@@ -1,12 +1,14 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, companyPayments, companySubscriptions } from "@repo/db"
+import { eq, and } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type { CountryCode } from 'dodopayments/resources/misc'
-import { 
+import {
     dodoClient, HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType,
-    createDodoCheckoutSession, getDodoPayment,
+    createDodoCheckoutSession, getDodoPayment
 } from "@/lib/dodopayments"
 
 // ============================================
@@ -47,12 +49,12 @@ interface VerifyCheckoutResult {
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     return member
@@ -90,18 +92,17 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
         }
 
         // Create checkout session with Dodo Payments (RECOMMENDED approach per docs)
-        // Uses checkoutSessions.create which returns checkout_url
         const countryCode = (member.company.country || "IN") as CountryCode
         const checkoutSession = await createDodoCheckoutSession({
             product_cart: [
                 {
                     product_id: planConfig.dodoProductId || "",
-                    quantity: 1,
-                },
+                    quantity: 1
+                }
             ],
             customer: {
                 email: member.email || "",
-                name: member.displayName || member.company.name,
+                name: member.displayName || member.company.name
             },
             return_url: input.returnUrl,
             billing: {
@@ -109,34 +110,32 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
                 country: countryCode,
                 state: member.company.state || "Unknown",
                 street: member.company.address || "Unknown",
-                zipcode: member.company.pincode || "000000",
+                zipcode: member.company.pincode || "000000"
             },
             metadata: {
                 companyId: member.companyId,
                 plan: input.plan,
-                currency: input.currency,
-            },
+                currency: input.currency
+            }
         })
 
         // Store pending payment record
-        await prisma.companyPayment.create({
-            data: {
-                companyId: member.companyId,
-                dodoCheckoutSessionId: checkoutSession.session_id,
-                amount: input.amount,
-                currency: input.currency,
-                status: "PENDING",
-                description: `Subscription upgrade to ${planConfig.name}`,
-                metadata: {
-                    plan: input.plan,
-                }
+        await db.insert(companyPayments).values({
+            companyId: member.companyId,
+            dodoCheckoutSessionId: checkoutSession.session_id,
+            amount: input.amount,
+            currency: input.currency,
+            status: "PENDING",
+            description: `Subscription upgrade to ${planConfig.name}`,
+            metadata: {
+                plan: input.plan
             }
         })
 
         return {
             success: true,
             sessionUrl: checkoutSession.checkout_url || undefined,
-            sessionId: checkoutSession.session_id,
+            sessionId: checkoutSession.session_id
         }
     } catch (error) {
         console.error("Create checkout error:", error)
@@ -155,11 +154,11 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
         }
 
         // Find the payment record
-        const payment = await prisma.companyPayment.findFirst({
-            where: {
-                dodoCheckoutSessionId: input.sessionId,
-                companyId: member.companyId,
-            }
+        const payment = await db.query.companyPayments.findFirst({
+            where: and(
+                eq(companyPayments.dodoCheckoutSessionId, input.sessionId),
+                eq(companyPayments.companyId, member.companyId)
+            )
         })
 
         if (!payment) {
@@ -168,10 +167,10 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
 
         if (payment.status === "SUCCEEDED") {
             // Already verified
-            const subscription = await prisma.companySubscription.findUnique({
-                where: { companyId: member.companyId }
+            const subscription = await db.query.companySubscriptions.findFirst({
+                where: eq(companySubscriptions.companyId, member.companyId)
             })
-            
+
             if (subscription) {
                 return {
                     success: true,
@@ -179,7 +178,7 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
                         plan: subscription.plan,
                         maxJobPosts: subscription.maxJobPosts,
                         maxApplications: subscription.maxApplications,
-                        maxTeamMembers: subscription.maxTeamMembers,
+                        maxTeamMembers: subscription.maxTeamMembers
                     }
                 }
             }
@@ -194,58 +193,49 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
             const planConfig = HIRING_SUBSCRIPTION_PLANS[plan]
 
             // Update payment status
-            await prisma.companyPayment.update({
-                where: { id: payment.id },
-                data: {
+            await db.update(companyPayments)
+                .set({
                     status: "SUCCEEDED",
                     dodoPaymentId: paymentDetails.payment_id,
-                    paidAt: new Date(),
-                }
-            })
+                    paidAt: new Date()
+                })
+                .where(eq(companyPayments.id, payment.id))
 
             // Create or update subscription
-            await prisma.companySubscription.upsert({
-                where: { companyId: member.companyId },
-                create: {
-                    companyId: member.companyId,
-                    plan: plan,
-                    status: "ACTIVE",
-                    dodoSubscriptionId: paymentDetails.payment_id,
-                    maxJobPosts: planConfig.maxJobPosts,
-                    maxApplications: planConfig.maxApplications,
-                    maxInterviewTemplates: planConfig.maxInterviewTemplates,
-                    maxTeamMembers: planConfig.maxTeamMembers,
-                    hasAIScreening: planConfig.hasAIScreening,
-                    hasCustomAssignments: planConfig.hasCustomAssignments,
-                    hasPrioritySupport: planConfig.hasPrioritySupport,
-                    hasAPIAccess: planConfig.hasAPIAccess,
-                    hasSSO: planConfig.hasSSO,
-                    hasWhiteLabel: planConfig.hasWhiteLabel,
-                    amount: payment.amount,
-                    currency: payment.currency,
-                    currentPeriodStart: new Date(),
-                    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-                },
-                update: {
-                    plan: plan,
-                    status: "ACTIVE",
-                    dodoSubscriptionId: paymentDetails.payment_id,
-                    maxJobPosts: planConfig.maxJobPosts,
-                    maxApplications: planConfig.maxApplications,
-                    maxInterviewTemplates: planConfig.maxInterviewTemplates,
-                    maxTeamMembers: planConfig.maxTeamMembers,
-                    hasAIScreening: planConfig.hasAIScreening,
-                    hasCustomAssignments: planConfig.hasCustomAssignments,
-                    hasPrioritySupport: planConfig.hasPrioritySupport,
-                    hasAPIAccess: planConfig.hasAPIAccess,
-                    hasSSO: planConfig.hasSSO,
-                    hasWhiteLabel: planConfig.hasWhiteLabel,
-                    amount: payment.amount,
-                    currency: payment.currency,
-                    currentPeriodStart: new Date(),
-                    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                }
+            const subData = {
+                plan,
+                status: "ACTIVE" as const,
+                dodoSubscriptionId: paymentDetails.payment_id,
+                maxJobPosts: planConfig.maxJobPosts,
+                maxApplications: planConfig.maxApplications,
+                maxInterviewTemplates: planConfig.maxInterviewTemplates,
+                maxTeamMembers: planConfig.maxTeamMembers,
+                hasAIScreening: planConfig.hasAIScreening,
+                hasCustomAssignments: planConfig.hasCustomAssignments,
+                hasPrioritySupport: planConfig.hasPrioritySupport,
+                hasAPIAccess: planConfig.hasAPIAccess,
+                hasSSO: planConfig.hasSSO,
+                hasWhiteLabel: planConfig.hasWhiteLabel,
+                amount: payment.amount,
+                currency: payment.currency,
+                currentPeriodStart: new Date(),
+                currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+            }
+
+            const existingSub = await db.query.companySubscriptions.findFirst({
+                where: eq(companySubscriptions.companyId, member.companyId)
             })
+
+            if (existingSub) {
+                await db.update(companySubscriptions)
+                    .set(subData)
+                    .where(eq(companySubscriptions.companyId, member.companyId))
+            } else {
+                await db.insert(companySubscriptions).values({
+                    companyId: member.companyId,
+                    ...subData
+                })
+            }
 
             revalidatePath("/billing")
 
@@ -255,17 +245,16 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
                     plan: planConfig.name,
                     maxJobPosts: planConfig.maxJobPosts,
                     maxApplications: planConfig.maxApplications,
-                    maxTeamMembers: planConfig.maxTeamMembers,
+                    maxTeamMembers: planConfig.maxTeamMembers
                 }
             }
         } else if (paymentDetails.status === "failed") {
-            await prisma.companyPayment.update({
-                where: { id: payment.id },
-                data: {
+            await db.update(companyPayments)
+                .set({
                     status: "FAILED",
-                    failedAt: new Date(),
-                }
-            })
+                    failedAt: new Date()
+                })
+                .where(eq(companyPayments.id, payment.id))
             return { success: false, error: "Payment failed" }
         }
 

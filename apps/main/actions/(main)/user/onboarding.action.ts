@@ -1,8 +1,10 @@
 "use server"
 
-import { auth } from '@repo/auth'
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import prisma from "@repo/prisma"
+import { db, users } from "@repo/db"
+import { eq } from "drizzle-orm"
 
 export async function checkUsernameAvailability(username: string) {
     try {
@@ -24,8 +26,8 @@ export async function checkUsernameAvailability(username: string) {
         }
 
         // Check if username exists
-        const existingUser = await prisma.user.findUnique({
-            where: { username: username.toLowerCase() },
+        const existingUser = await db.query.users.findFirst({
+            where: eq(users.username, username.toLowerCase()),
         })
 
         if (existingUser) {
@@ -56,7 +58,7 @@ export async function completeOnboarding(data: {
     resumeText?: string
     learningPreferences?: string[]
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         throw new Error("You must be logged in to complete onboarding")
     }
@@ -71,19 +73,16 @@ export async function completeOnboarding(data: {
         }
 
         // Update user with onboarding data
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                username: data.username.toLowerCase(),
-                university: data.university || null,
-                semester: data.semester || null,
-                resume: data.resume || null,
-                resumeText: data.resumeText || null,
-                hasResume: data.resume ? true : false,
-                learningPreferences: data.learningPreferences || [],
-                onboardingCompleted: true,
-            },
-        })
+        await db.update(users).set({
+            username: data.username.toLowerCase(),
+            university: data.university || null,
+            semester: data.semester || null,
+            resume: data.resume || null,
+            resumeText: data.resumeText || null,
+            hasResume: data.resume ? true : false,
+            learningPreferences: data.learningPreferences || [],
+            onboardingCompleted: true,
+        }).where(eq(users.id, userId))
 
         revalidatePath("/")
         return { success: true }
@@ -95,15 +94,15 @@ export async function completeOnboarding(data: {
 }
 
 export async function checkOnboardingStatus() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return { completed: false }
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: {
                 onboardingCompleted: true,
             },
         })

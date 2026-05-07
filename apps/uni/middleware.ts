@@ -1,5 +1,5 @@
-import { withAuth, type NextRequestWithAuth } from "@repo/auth/middleware"
-import { NextResponse } from "next/server"
+import { getSessionFromRequest, redirectToSignIn } from "@repo/auth/middleware"
+import { NextRequest, NextResponse } from "next/server"
 
 // Protected routes that require authentication
 const protectedRoutes = [
@@ -45,107 +45,72 @@ const apiRoutes = [
     '/api/user/verify-status',
 ]
 
-export default withAuth(
-    function middleware(req: NextRequestWithAuth) {
-        const { nextUrl } = req
-        const isLoggedIn = !!req.nextauth.token
-        const onboardingCompleted = req.nextauth.token?.onboardingCompleted || false
+export default async function middleware(req: NextRequest) {
+    const { nextUrl } = req
 
-        console.log(`[University] Middleware: ${nextUrl.pathname}, isLoggedIn: ${isLoggedIn}, onboarding: ${onboardingCompleted}`)
-
-        // Allow API routes to pass through
-        if (apiRoutes.some(route => nextUrl.pathname.startsWith(route))) {
-            return NextResponse.next()
-        }
-
-        // Allow static files and Next.js internals
-        if (
-            nextUrl.pathname.startsWith('/_next/') ||
-            nextUrl.pathname.startsWith('/api/') ||
-            nextUrl.pathname.includes('.')
-        ) {
-            return NextResponse.next()
-        }
-
-        // Check if current path is a protected route
-        const isProtectedRoute = protectedRoutes.some(route =>
-            nextUrl.pathname.startsWith(route)
-        )
-
-        // Check if current path is a public route
-        const isPublicRoute = publicRoutes.some(route =>
-            nextUrl.pathname === route || (route !== '/' && nextUrl.pathname.startsWith(route))
-        )
-
-        // If user is not logged in and trying to access protected route
-        if (!isLoggedIn && isProtectedRoute) {
-            const signInUrl = new URL('/signin', nextUrl.origin)
-            signInUrl.searchParams.set('callbackUrl', nextUrl.pathname)
-            return NextResponse.redirect(signInUrl)
-        }
-
-        // Handle post-login redirection logic
-        if (isLoggedIn) {
-            // Check onboarding status
-            if (!onboardingCompleted && nextUrl.pathname !== '/onboarding' && nextUrl.pathname !== '/verify') {
-                // Redirect to onboarding if not completed (except verify and onboarding itself)
-                return NextResponse.redirect(new URL('/onboarding', nextUrl.origin))
-            }
-
-            // If onboarding is completed and user tries to access onboarding page, redirect to dashboard
-            if (onboardingCompleted && nextUrl.pathname === '/onboarding') {
-                return NextResponse.redirect(new URL('/dashboard', nextUrl.origin))
-            }
-
-            // If user is trying to access signin/register, redirect based on onboarding status
-            if (nextUrl.pathname === '/signin' || nextUrl.pathname === '/register') {
-                const redirectUrl = onboardingCompleted ? '/dashboard' : '/onboarding'
-                return NextResponse.redirect(new URL(redirectUrl, nextUrl.origin))
-            }
-
-            // For the root path, redirect authenticated users based on onboarding status
-            if (nextUrl.pathname === '/') {
-                const redirectUrl = onboardingCompleted ? '/dashboard' : '/onboarding'
-                return NextResponse.redirect(new URL(redirectUrl, nextUrl.origin))
-            }
-        }
-
+    // Allow API routes to pass through
+    if (apiRoutes.some(route => nextUrl.pathname.startsWith(route))) {
         return NextResponse.next()
-    },
-    {
-        callbacks: {
-            authorized: ({ token, req }) => {
-                const { pathname } = req.nextUrl
-
-                // Allow access to public routes
-                if (publicRoutes.some(route =>
-                    pathname === route || (route !== '/' && pathname.startsWith(route))
-                )) {
-                    return true
-                }
-
-                // Allow access to API routes
-                if (apiRoutes.some(route => pathname.startsWith(route))) {
-                    return true
-                }
-
-                // Check if route is protected
-                const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-
-                // If it's a protected route, require authentication
-                if (isProtectedRoute) {
-                    return !!token
-                }
-
-                // Allow everything else
-                return true
-            },
-        },
-        pages: {
-            signIn: '/signin',
-        },
     }
-)
+
+    // Allow static files and Next.js internals
+    if (
+        nextUrl.pathname.startsWith('/_next/') ||
+        nextUrl.pathname.startsWith('/api/') ||
+        nextUrl.pathname.includes('.')
+    ) {
+        return NextResponse.next()
+    }
+
+    const session = await getSessionFromRequest(req)
+    const isLoggedIn = !!session
+    const onboardingCompleted = (session?.user as { onboardingCompleted?: boolean } | undefined)?.onboardingCompleted ?? false
+
+    console.log(`[University] Middleware: ${nextUrl.pathname}, isLoggedIn: ${isLoggedIn}, onboarding: ${onboardingCompleted}`)
+
+    // Check if current path is a protected route
+    const isProtectedRoute = protectedRoutes.some(route =>
+        nextUrl.pathname.startsWith(route)
+    )
+
+    // Check if current path is a public route
+    const isPublicRoute = publicRoutes.some(route =>
+        nextUrl.pathname === route || (route !== '/' && nextUrl.pathname.startsWith(route))
+    )
+
+    // If user is not logged in and trying to access protected route
+    if (!isLoggedIn && isProtectedRoute) {
+        return redirectToSignIn(req)
+    }
+
+    // Handle post-login redirection logic
+    if (isLoggedIn) {
+        // Check onboarding status
+        if (!onboardingCompleted && nextUrl.pathname !== '/onboarding' && nextUrl.pathname !== '/verify') {
+            // Redirect to onboarding if not completed (except verify and onboarding itself)
+            return NextResponse.redirect(new URL('/onboarding', nextUrl.origin))
+        }
+
+        // If onboarding is completed and user tries to access onboarding page, redirect to dashboard
+        if (onboardingCompleted && nextUrl.pathname === '/onboarding') {
+            return NextResponse.redirect(new URL('/dashboard', nextUrl.origin))
+        }
+
+        // If user is trying to access signin/register, redirect based on onboarding status
+        if (nextUrl.pathname === '/signin' || nextUrl.pathname === '/register') {
+            const redirectUrl = onboardingCompleted ? '/dashboard' : '/onboarding'
+            return NextResponse.redirect(new URL(redirectUrl, nextUrl.origin))
+        }
+
+        // For the root path, redirect authenticated users based on onboarding status
+        if (nextUrl.pathname === '/') {
+            const redirectUrl = onboardingCompleted ? '/dashboard' : '/onboarding'
+            return NextResponse.redirect(new URL(redirectUrl, nextUrl.origin))
+        }
+    }
+
+    return NextResponse.next()
+}
 
 export const config = {
     matcher: [

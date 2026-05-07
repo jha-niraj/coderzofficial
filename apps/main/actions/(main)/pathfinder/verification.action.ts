@@ -1,16 +1,28 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db,
+    pathfinderGoals,
+    pathfinderVerifications,
+    pathfinderQuizAttempts,
+    pathfinderCodingSubmissions,
+    mockInterviewVoice,
+    users,
+    creditTransactions,
+} from '@repo/db'
+import { eq, and, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import OpenAI from 'openai'
-import { VerificationSectionStatus, Currency } from '@repo/prisma/client'
 import type { VerificationAIPlan } from '@/types/pathfinder'
 import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 
 // ================================================================================
 // TYPES
 // ================================================================================
+
+export type VerificationSectionStatus = 'LOCKED' | 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'
 
 export interface VerificationQuizSubmission {
     goalId: string
@@ -47,14 +59,14 @@ export interface VerificationCodingSubmission {
 
 export async function startVerification(goalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
-            include: { verification: true },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
+            with: { verification: true },
         })
 
         if (!goal) {
@@ -65,14 +77,12 @@ export async function startVerification(goalId: string) {
             return { success: false, error: 'Goal is not in active status' }
         }
 
-        // Update goal status
-        await prisma.pathfinderGoal.update({
-            where: { id: goalId },
-            data: {
+        await db.update(pathfinderGoals)
+            .set({
                 status: 'VERIFICATION',
                 verificationStartedAt: new Date(),
-            },
-        })
+            })
+            .where(eq(pathfinderGoals.id, goalId))
 
         revalidatePath(`/pathfinder/${goalId}`)
         return { success: true }
@@ -91,25 +101,25 @@ const CUID_REGEX = /^c[a-z0-9]{24}$/i
 
 export async function getVerificationStatus(slugOrId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', verification: null }
         }
 
         const isId = UUID_REGEX.test(slugOrId) || CUID_REGEX.test(slugOrId)
-        const goal = await prisma.pathfinderGoal.findFirst({
+        const goal = await db.query.pathfinderGoals.findFirst({
             where: isId
-                ? { id: slugOrId, userId: session.user.id }
-                : { userId: session.user.id, slug: slugOrId },
-            include: { verification: true },
+                ? and(eq(pathfinderGoals.id, slugOrId), eq(pathfinderGoals.userId, session.user.id))
+                : and(eq(pathfinderGoals.userId, session.user.id), eq(pathfinderGoals.slug, slugOrId)),
+            with: { verification: true },
         })
 
         if (!goal) {
             return { success: false, error: 'Goal not found', verification: null }
         }
 
-        const verification = (goal as { verification?: { id: string } | null }).verification
-        return { success: true, verification: verification ?? null }
+        const verification = goal.verification ?? null
+        return { success: true, verification }
     } catch (error) {
         console.error('Error fetching verification status:', error)
         return { success: false, error: 'Failed to fetch status', verification: null }
@@ -122,19 +132,22 @@ export async function getVerificationStatus(slugOrId: string) {
 
 export async function generateVerificationContent(goalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', plan: null }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
-            include: {
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
+            with: {
                 dailySessions: {
-                    orderBy: { date: 'desc' },
-                    take: 14,
-                    include: {
-                        subGoals: { orderBy: { order: 'asc' }, select: { title: true, quizCompleted: true, codingCompleted: true } },
+                    orderBy: (ds: any, { desc }: any) => [desc(ds.date)],
+                    limit: 14,
+                    with: {
+                        subGoals: {
+                            columns: { title: true, quizCompleted: true, codingCompleted: true },
+                            orderBy: (sg: any, { asc }: any) => [asc(sg.order)],
+                        },
                     },
                 },
             },
@@ -144,12 +157,8 @@ export async function generateVerificationContent(goalId: string) {
             return { success: false, error: 'Goal not found', plan: null }
         }
 
-        // Charge verification fee (20 credits) before generating
         const fee = PATHFINDER_CREDITS.verificationFee
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { credits: true },
-        })
+        const [user] = await db.select({ credits: users.credits }).from(users).where(eq(users.id, session.user.id))
         if (!user || user.credits < fee) {
             return {
                 success: false,
@@ -161,37 +170,32 @@ export async function generateVerificationContent(goalId: string) {
             }
         }
 
-        await prisma.$transaction([
-            prisma.user.update({
-                where: { id: session.user.id },
-                data: { credits: { decrement: fee } },
-            }),
-            prisma.creditTransaction.create({
-                data: {
-                    userId: session.user.id,
-                    amount: -fee,
-                    type: 'SPEND',
-                    description: `Pathfinder Verification: ${goal.title}`,
-                    currency: Currency.INR,
-                },
-            }),
-            prisma.pathfinderVerification.update({
-                where: { goalId },
-                data: { verificationCreditsCharged: fee },
-            }),
-        ])
+        await db.update(users)
+            .set({ credits: sql`${users.credits} - ${fee}` })
+            .where(eq(users.id, session.user.id))
+        await db.insert(creditTransactions).values({
+            userId: session.user.id,
+            amount: -fee,
+            type: 'SPEND',
+            description: `Pathfinder Verification: ${goal.title}`,
+            currency: 'INR',
+        })
+        await db.update(pathfinderVerifications)
+            .set({ verificationCreditsCharged: fee })
+            .where(eq(pathfinderVerifications.goalId, goalId))
 
         const assistantId = process.env.PATHFINDER_ASSISTANT_ID
         if (!assistantId) {
             return { success: false, error: 'Verification generation not configured', plan: null }
         }
 
-        // Build condensed user learning context (avoid token bloat)
-        const subGoalTitles = goal.dailySessions.flatMap((s) => s.subGoals.map((sg) => sg.title))
-        const uniqueTopics = [...new Set(subGoalTitles)].slice(0, 15)
-        const completedCount = goal.dailySessions.reduce((sum, s) => sum + s.completedSubGoals, 0)
-        const quizTotal = goal.dailySessions.reduce((sum, s) => sum + s.correctQuizAnswers, 0)
-        const codingTotal = goal.dailySessions.reduce((sum, s) => sum + s.solvedCodingProblems, 0)
+        // Build condensed user learning context
+        const dailySessions = (goal as any).dailySessions ?? []
+        const subGoalTitles = dailySessions.flatMap((s: any) => s.subGoals.map((sg: any) => sg.title))
+        const uniqueTopics = [...new Set(subGoalTitles)].slice(0, 15) as string[]
+        const completedCount = dailySessions.reduce((sum: number, s: any) => sum + s.completedSubGoals, 0)
+        const quizTotal = dailySessions.reduce((sum: number, s: any) => sum + s.correctQuizAnswers, 0)
+        const codingTotal = dailySessions.reduce((sum: number, s: any) => sum + s.solvedCodingProblems, 0)
 
         const userContext = {
             goal: {
@@ -244,50 +248,45 @@ export async function generateVerificationContent(goalId: string) {
 
         const aiPlan = JSON.parse(content.text.value) as VerificationAIPlan
 
-        // Create mock interview for verification (included in verification fee)
+        // Create mock interview for verification
         const mockConfig = aiPlan.mockInterview
         let mockId: string | null = null
         if (mockConfig) {
-            const mock = await prisma.mockInterviewVoice.create({
-                data: {
-                    title: mockConfig.title || `Verification: ${goal.title}`,
-                    description: mockConfig.description || `Mock interview for ${goal.title} verification`,
-                    category: 'TECHNICAL',
-                    level: (goal.level as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED') ?? 'INTERMEDIATE',
-                    duration: mockConfig.duration || 15,
-                    questionsCount: mockConfig.questionsCount || 5,
-                    knowledgeBase: mockConfig.knowledgeBase || `Verification interview for: ${goal.title}. Category: ${goal.category}. Level: ${goal.level}.`,
-                    isPublic: false,
-                    isPredefined: false,
-                    createdById: session.user.id,
-                    includesResume: false,
-                    baseCredits: 0,
-                    creditsRequired: 0,
-                    tags: ['pathfinder', 'verification'],
-                },
-            })
+            const [mock] = await db.insert(mockInterviewVoice).values({
+                title: mockConfig.title || `Verification: ${goal.title}`,
+                description: mockConfig.description || `Mock interview for ${goal.title} verification`,
+                category: 'TECHNICAL',
+                level: (goal.level as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED') ?? 'INTERMEDIATE',
+                duration: mockConfig.duration || 15,
+                questionsCount: mockConfig.questionsCount || 5,
+                knowledgeBase: mockConfig.knowledgeBase || `Verification interview for: ${goal.title}. Category: ${goal.category}. Level: ${goal.level}.`,
+                isPublic: false,
+                isPredefined: false,
+                createdById: session.user.id,
+                includesResume: false,
+                baseCredits: 0,
+                creditsRequired: 0,
+                tags: ['pathfinder', 'verification'],
+            }).returning()
             mockId = mock.id
         }
 
-        await prisma.pathfinderGoal.update({
-            where: { id: goalId },
-            data: {
+        await db.update(pathfinderGoals)
+            .set({
                 overview: aiPlan.overview ?? goal.overview,
                 learningObjectives: aiPlan.learningObjectives ?? goal.learningObjectives,
                 prerequisites: aiPlan.prerequisites ?? goal.prerequisites,
-            },
-        })
+            })
+            .where(eq(pathfinderGoals.id, goalId))
 
-        // Store plan and mock in verification
-        await prisma.pathfinderVerification.update({
-            where: { goalId },
-            data: {
+        await db.update(pathfinderVerifications)
+            .set({
                 generatedPlan: aiPlan as object,
                 mockInterviewId: mockId,
                 codingStatus: 'PENDING',
                 mockStatus: 'PENDING',
-            },
-        })
+            })
+            .where(eq(pathfinderVerifications.goalId, goalId))
 
         revalidatePath(`/pathfinder/${goal.slug}/verify`)
         return { success: true, plan: aiPlan }
@@ -303,57 +302,48 @@ export async function generateVerificationContent(goalId: string) {
 
 export async function submitVerificationQuiz(submission: VerificationQuizSubmission) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: submission.goalId, userId: session.user.id },
-            include: { verification: true },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, submission.goalId), eq(pathfinderGoals.userId, session.user.id)),
+            with: { verification: true },
         })
 
         if (!goal || !goal.verification) {
             return { success: false, error: 'Goal not found' }
         }
 
-        // Calculate score
         const correctCount = submission.answers.filter((a) => a.isCorrect).length
         const score = Math.round((correctCount / submission.answers.length) * 100)
 
-        // Create quiz attempt record
-        await prisma.pathfinderQuizAttempt.create({
-            data: {
-                goalId: submission.goalId,
-                userId: session.user.id,
-                quizType: 'VERIFICATION',
-                score,
-                correctCount,
-                totalQuestions: submission.answers.length,
-                timeTaken: submission.totalTime,
-                answers: submission.answers,
-                startedAt: new Date(Date.now() - submission.totalTime * 1000),
-            },
+        await db.insert(pathfinderQuizAttempts).values({
+            goalId: submission.goalId,
+            userId: session.user.id,
+            quizType: 'VERIFICATION',
+            score,
+            correctCount,
+            totalQuestions: submission.answers.length,
+            timeTaken: submission.totalTime,
+            answers: submission.answers,
+            startedAt: new Date(Date.now() - submission.totalTime * 1000),
         })
 
-        // Determine pass/fail (need 70% to pass)
         const passed = score >= 70
         const newStatus: VerificationSectionStatus = passed ? 'COMPLETED' : 'FAILED'
 
-        // Update verification
-        await prisma.pathfinderVerification.update({
-            where: { id: goal.verification.id },
-            data: {
+        await db.update(pathfinderVerifications)
+            .set({
                 quizStatus: newStatus,
                 quizScore: score,
                 quizAttempts: goal.verification.quizAttempts + 1,
                 quizCompletedAt: passed ? new Date() : undefined,
-                // Unlock next section if passed
-                ...(passed ? { codingStatus: 'PENDING' } : {}),
-            },
-        })
+                ...(passed ? { codingStatus: 'PENDING' as VerificationSectionStatus } : {}),
+            })
+            .where(eq(pathfinderVerifications.id, goal.verification.id))
 
-        // Check if all sections complete
         if (passed) {
             await checkVerificationCompletion(goal.verification.id)
         }
@@ -372,71 +362,63 @@ export async function submitVerificationQuiz(submission: VerificationQuizSubmiss
 
 export async function submitVerificationCoding(submission: VerificationCodingSubmission) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: submission.goalId, userId: session.user.id },
-            include: { verification: true },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, submission.goalId), eq(pathfinderGoals.userId, session.user.id)),
+            with: { verification: true },
         })
 
         if (!goal || !goal.verification) {
             return { success: false, error: 'Goal not found' }
         }
 
-        // Create coding submission record
-        await prisma.pathfinderCodingSubmission.create({
-            data: {
-                goalId: submission.goalId,
-                userId: session.user.id,
-                submissionType: 'VERIFICATION',
-                problemId: submission.problemId,
-                code: submission.code,
-                language: submission.language,
-                passed: submission.passed,
-                testsPassed: submission.testsPassed,
-                totalTests: submission.totalTests,
-                testResults: submission.testResults,
-            },
+        await db.insert(pathfinderCodingSubmissions).values({
+            goalId: submission.goalId,
+            userId: session.user.id,
+            submissionType: 'VERIFICATION',
+            problemId: submission.problemId,
+            code: submission.code,
+            language: submission.language,
+            passed: submission.passed,
+            testsPassed: submission.testsPassed,
+            totalTests: submission.totalTests,
+            testResults: submission.testResults,
         })
 
-        // Calculate overall coding score
-        const allSubmissions = await prisma.pathfinderCodingSubmission.findMany({
-            where: {
-                goalId: submission.goalId,
-                submissionType: 'VERIFICATION',
-            },
+        const allSubmissions = await db.query.pathfinderCodingSubmissions.findMany({
+            where: and(
+                eq(pathfinderCodingSubmissions.goalId, submission.goalId),
+                eq(pathfinderCodingSubmissions.submissionType, 'VERIFICATION')
+            ),
         })
 
-        // Get unique problems passed
         const passedProblems = new Set(
-            allSubmissions.filter((s: { passed: boolean }) => s.passed).map((s: { problemId: string }) => s.problemId)
+            allSubmissions.filter((s) => s.passed).map((s) => s.problemId)
         )
 
-        // Get total problems from verification generated plan
         const aiPlan = (goal.verification as { generatedPlan?: { codingQuestions?: unknown[] } } | null)?.generatedPlan as { codingQuestions?: unknown[] } | null
         const totalProblems = aiPlan?.codingQuestions?.length || 5
 
         const score = Math.round((passedProblems.size / totalProblems) * 100)
         const allPassed = passedProblems.size >= totalProblems
 
-        // Update verification (need to pass all problems)
-        await prisma.pathfinderVerification.update({
-            where: { id: goal.verification.id },
-            data: {
+        await db.update(pathfinderVerifications)
+            .set({
                 codingScore: score,
                 codingAttempts: goal.verification.codingAttempts + 1,
                 ...(allPassed
                     ? {
-                          codingStatus: 'COMPLETED',
-                          codingCompletedAt: new Date(),
-                          mockStatus: 'PENDING', // Unlock mock interview
-                      }
+                        codingStatus: 'COMPLETED' as VerificationSectionStatus,
+                        codingCompletedAt: new Date(),
+                        mockStatus: 'PENDING' as VerificationSectionStatus,
+                    }
                     : {}),
-            },
-        })
+            })
+            .where(eq(pathfinderVerifications.id, goal.verification.id))
 
         if (allPassed) {
             await checkVerificationCompletion(goal.verification.id)
@@ -460,14 +442,14 @@ export async function completeMockInterview(
     score: number
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
-            include: { verification: true },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
+            with: { verification: true },
         })
 
         if (!goal || !goal.verification) {
@@ -477,22 +459,19 @@ export async function completeMockInterview(
         const passed = score >= 70
         const newStatus: VerificationSectionStatus = passed ? 'COMPLETED' : 'FAILED'
 
-        // Get generated plan to check if project is required
         const aiPlan = (goal.verification as { generatedPlan?: { minorProject?: unknown; majorProject?: unknown } } | null)?.generatedPlan as { minorProject?: unknown; majorProject?: unknown } | null
         const hasProject = !!(aiPlan?.minorProject || aiPlan?.majorProject)
 
-        await prisma.pathfinderVerification.update({
-            where: { id: goal.verification.id },
-            data: {
+        await db.update(pathfinderVerifications)
+            .set({
                 mockStatus: newStatus,
                 mockScore: score,
                 mockAttempts: goal.verification.mockAttempts + 1,
                 mockSessionId,
                 mockCompletedAt: passed ? new Date() : undefined,
-                // Unlock project if passed and project exists
-                ...(passed && hasProject ? { projectStatus: 'PENDING' } : {}),
-            },
-        })
+                ...(passed && hasProject ? { projectStatus: 'PENDING' as VerificationSectionStatus } : {}),
+            })
+            .where(eq(pathfinderVerifications.id, goal.verification.id))
 
         if (passed) {
             await checkVerificationCompletion(goal.verification.id)
@@ -516,30 +495,29 @@ export async function submitProject(
     projectId: string
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
-            include: { verification: true },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
+            with: { verification: true },
         })
 
         if (!goal || !goal.verification) {
             return { success: false, error: 'Goal not found' }
         }
 
-        await prisma.pathfinderVerification.update({
-            where: { id: goal.verification.id },
-            data: {
+        await db.update(pathfinderVerifications)
+            .set({
                 projectStatus: 'COMPLETED',
                 projectComplete: true,
                 projectType,
                 projectId,
                 projectCompletedAt: new Date(),
-            },
-        })
+            })
+            .where(eq(pathfinderVerifications.id, goal.verification.id))
 
         await checkVerificationCompletion(goal.verification.id)
 
@@ -560,14 +538,14 @@ export async function retryVerificationSection(
     section: 'quiz' | 'coding' | 'mock' | 'project'
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
-            include: { verification: true },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
+            with: { verification: true },
         })
 
         if (!goal || !goal.verification) {
@@ -575,14 +553,9 @@ export async function retryVerificationSection(
         }
 
         const statusField = `${section}Status` as const
-        const updateData: Record<string, VerificationSectionStatus> = {
-            [statusField]: 'PENDING',
-        }
-
-        await prisma.pathfinderVerification.update({
-            where: { id: goal.verification.id },
-            data: updateData,
-        })
+        await db.update(pathfinderVerifications)
+            .set({ [statusField]: 'PENDING' as VerificationSectionStatus })
+            .where(eq(pathfinderVerifications.id, goal.verification.id))
 
         revalidatePath(`/pathfinder/${goalId}/verify`)
         return { success: true }
@@ -597,21 +570,19 @@ export async function retryVerificationSection(
 // ================================================================================
 
 async function checkVerificationCompletion(verificationId: string) {
-    const verification = await prisma.pathfinderVerification.findUnique({
-        where: { id: verificationId },
-        include: { goal: true },
+    const verification = await db.query.pathfinderVerifications.findFirst({
+        where: eq(pathfinderVerifications.id, verificationId),
+        with: { goal: true },
     })
 
     if (!verification) return
 
-    // Check which sections are required
     const aiPlan = verification.generatedPlan as {
         minorProject?: unknown
         majorProject?: unknown
     } | null
     const projectRequired = !!(aiPlan?.minorProject || aiPlan?.majorProject)
 
-    // Check all required sections are complete
     const quizComplete = verification.quizStatus === 'COMPLETED'
     const codingComplete = verification.codingStatus === 'COMPLETED'
     const mockComplete = verification.mockStatus === 'COMPLETED'
@@ -620,7 +591,6 @@ async function checkVerificationCompletion(verificationId: string) {
         : true
 
     if (quizComplete && codingComplete && mockComplete && projectComplete) {
-        // Weighted score: Quiz 30%, Coding 35%, Mock 35%
         const w = PATHFINDER_CREDITS.verificationWeights
         const weightedScore = Math.round(
             (verification.quizScore || 0) * w.quiz +
@@ -633,39 +603,35 @@ async function checkVerificationCompletion(verificationId: string) {
             (verification.verificationCreditsCharged || 0) * (weightedScore / 100)
         )
 
-        await prisma.$transaction(async (tx) => {
-            await tx.pathfinderVerification.update({
-                where: { id: verificationId },
-                data: {
-                    passed: true,
-                    overallScore,
-                    completedAt: new Date(),
-                },
+        await db.update(pathfinderVerifications)
+            .set({
+                passed: true,
+                overallScore,
+                completedAt: new Date(),
             })
-            await tx.pathfinderGoal.update({
-                where: { id: verification.goalId },
-                data: {
-                    status: 'COMPLETED',
-                    completedAt: new Date(),
-                    progressPercent: 100,
-                },
+            .where(eq(pathfinderVerifications.id, verificationId))
+
+        await db.update(pathfinderGoals)
+            .set({
+                status: 'COMPLETED',
+                completedAt: new Date(),
+                progressPercent: 100,
             })
-            if (refundCredits > 0) {
-                await tx.user.update({
-                    where: { id: verification.goal.userId },
-                    data: { credits: { increment: refundCredits } },
-                })
-                await tx.creditTransaction.create({
-                    data: {
-                        userId: verification.goal.userId,
-                        amount: refundCredits,
-                        type: 'REWARD',
-                        description: `Pathfinder Verification Refund: ${weightedScore}% score (${refundCredits} credits)`,
-                        currency: Currency.INR,
-                    },
-                })
-            }
-        })
+            .where(eq(pathfinderGoals.id, verification.goalId))
+
+        if (refundCredits > 0) {
+            const goal = (verification as any).goal
+            await db.update(users)
+                .set({ credits: sql`${users.credits} + ${refundCredits}` })
+                .where(eq(users.id, goal.userId))
+            await db.insert(creditTransactions).values({
+                userId: goal.userId,
+                amount: refundCredits,
+                type: 'REWARD',
+                description: `Pathfinder Verification Refund: ${weightedScore}% score (${refundCredits} credits)`,
+                currency: 'INR',
+            })
+        }
 
         // TODO: Award XP, achievements, etc.
     }

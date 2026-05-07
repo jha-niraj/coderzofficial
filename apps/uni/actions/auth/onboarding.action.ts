@@ -1,9 +1,10 @@
 "use server"
 
-import { prisma } from "@repo/prisma";
-import { auth } from "@repo/auth";
-import { UniversityType } from "@repo/prisma/client";
-import type { 
+import { db, users, universities, universityMembers, universityMemberInvitations } from "@repo/db"
+import { eq, and } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import type {
     UniversityMemberRole, UniversityMemberJobTitle,
     UniversityPermission, DEFAULT_HEAD_PERMISSIONS
 } from "@/types";
@@ -60,7 +61,7 @@ const HEAD_PERMISSIONS: UniversityPermission[] = [
  * Complete onboarding for a new university
  */
 export async function completeUniversityOnboarding(data: UniversityOnboardingData) {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
@@ -77,9 +78,9 @@ export async function completeUniversityOnboarding(data: UniversityOnboardingDat
             "-" + Math.random().toString(36).substring(2, 8);
 
         // Get user email
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { email: true, name: true },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: { email: true, name: true },
         });
 
         if (!user) {
@@ -87,46 +88,44 @@ export async function completeUniversityOnboarding(data: UniversityOnboardingDat
         }
 
         // Create university
-        const university = await prisma.university.create({
-            data: {
-                name: data.universityName,
-                slug,
-                website: data.website || null,
-                description: data.description || null,
-                universityType: data.universityType as UniversityType | null ?? null,
-                affiliatedTo: data.affiliatedTo || null,
-                accreditation: data.accreditation || null,
-                establishedYear: data.establishedYear || null,
-                emailDomain: data.emailDomain,
-                createdByUserId: userId,
-                verificationStatus: "PENDING",
-            },
-        });
+        const universityRows = await db.insert(universities).values({
+            name: data.universityName,
+            slug,
+            website: data.website || null,
+            description: data.description || null,
+            universityType: data.universityType as any || null,
+            affiliatedTo: data.affiliatedTo || null,
+            accreditation: data.accreditation || null,
+            establishedYear: data.establishedYear || null,
+            emailDomain: data.emailDomain,
+            createdByUserId: userId,
+            verificationStatus: "PENDING",
+        }).returning();
+
+        const university = universityRows[0];
+        if (!university) {
+            return { success: false, error: "Failed to create university" };
+        }
 
         // Create university member (the user who registered as HEAD)
-        await prisma.universityMember.create({
-            data: {
-                userId,
-                universityId: university.id,
-                email: user.email,
-                displayName: data.displayName || user.name,
-                phone: data.phone || null,
-                role: "HEAD",
-                jobTitle: data.userRole,
-                inviteStatus: "ACCEPTED",
-                acceptedAt: new Date(),
-                permissions: HEAD_PERMISSIONS,
-            },
+        await db.insert(universityMembers).values({
+            userId,
+            universityId: university.id,
+            email: user.email,
+            displayName: data.displayName || user.name,
+            phone: data.phone || null,
+            role: "HEAD",
+            jobTitle: data.userRole,
+            inviteStatus: "ACCEPTED",
+            acceptedAt: new Date(),
+            permissions: HEAD_PERMISSIONS,
         });
 
         // Mark user onboarding as completed and set role to UNI
-        await prisma.user.update({
-            where: { id: userId },
-            data: { 
-                onboardingCompleted: true,
-                role: "UNI",
-            },
-        });
+        await db.update(users).set({
+            onboardingCompleted: true,
+            role: "UNI",
+        }).where(eq(users.id, userId));
 
         return { success: true, universityId: university.id, slug };
     } catch (error) {
@@ -139,24 +138,24 @@ export async function completeUniversityOnboarding(data: UniversityOnboardingDat
  * Get current user's university
  */
 export async function getUserUniversity() {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
     }
 
     try {
-        const universityMember = await prisma.universityMember.findFirst({
-            where: { userId: session.user.id },
-            include: { university: true },
+        const universityMember = await db.query.universityMembers.findFirst({
+            where: eq(universityMembers.userId, session.user.id),
+            with: { university: true },
         });
 
         if (!universityMember) {
             return { success: false, error: "No university found" };
         }
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: {
                 member: universityMember,
                 university: universityMember.university,
@@ -172,35 +171,34 @@ export async function getUserUniversity() {
  * Check if user has completed university onboarding
  */
 export async function checkUniversityOnboardingStatus() {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
-        return { 
-            success: false, 
-            isOnboarded: false, 
-            error: "Unauthorized" 
+        return {
+            success: false,
+            isOnboarded: false,
+            error: "Unauthorized"
         };
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { onboardingCompleted: true, role: true },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: { onboardingCompleted: true, role: true },
         });
 
         if (!user) {
             return { success: false, isOnboarded: false, error: "User not found" };
         }
 
-        // Check if user has a university membership
-        const universityMember = await prisma.universityMember.findFirst({
-            where: { userId: session.user.id },
+        const universityMember = await db.query.universityMembers.findFirst({
+            where: eq(universityMembers.userId, session.user.id),
         });
 
         const isOnboarded = user.onboardingCompleted && !!universityMember;
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             isOnboarded,
             role: user.role,
         };
@@ -214,31 +212,30 @@ export async function checkUniversityOnboardingStatus() {
  * Join an existing university via invite
  */
 export async function joinUniversityViaInvite(inviteCode: string) {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
     }
 
     try {
-        // Find the invite from UniversityMemberInvitation table
-        const invite = await prisma.universityMemberInvitation.findFirst({
-            where: { 
-                inviteCode,
-                status: "PENDING",
-                expiresAt: { gte: new Date() },
-            },
-            include: { university: true },
+        // Find the invite
+        const invite = await db.query.universityMemberInvitations.findFirst({
+            where: and(
+                eq(universityMemberInvitations.inviteCode, inviteCode),
+                eq(universityMemberInvitations.status, "PENDING"),
+            ),
+            with: { university: true },
         });
 
-        if (!invite) {
+        if (!invite || (invite.expiresAt && invite.expiresAt < new Date())) {
             return { success: false, error: "Invalid or expired invite" };
         }
 
         // Get user
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { email: true, name: true },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: { email: true, name: true },
         });
 
         if (!user) {
@@ -246,44 +243,41 @@ export async function joinUniversityViaInvite(inviteCode: string) {
         }
 
         // Create the university member from the invite
-        const member = await prisma.universityMember.create({
-            data: {
-                userId: session.user.id,
-                universityId: invite.universityId,
-                departmentId: invite.departmentId,
-                email: user.email,
-                displayName: invite.name || user.name,
-                role: invite.role,
-                jobTitle: invite.jobTitle,
-                inviteStatus: "ACCEPTED",
-                invitedById: invite.invitedById,
-                invitedAt: invite.createdAt,
-                acceptedAt: new Date(),
-                permissions: getDefaultPermissionsForRole(invite.role),
-            },
-        });
+        const memberRows = await db.insert(universityMembers).values({
+            userId: session.user.id,
+            universityId: invite.universityId,
+            departmentId: invite.departmentId,
+            email: user.email,
+            displayName: invite.name || user.name,
+            role: invite.role,
+            jobTitle: invite.jobTitle,
+            inviteStatus: "ACCEPTED",
+            invitedById: invite.invitedById,
+            invitedAt: invite.createdAt,
+            acceptedAt: new Date(),
+            permissions: getDefaultPermissionsForRole(invite.role),
+        }).returning();
+
+        const member = memberRows[0];
+        if (!member) {
+            return { success: false, error: "Failed to create university member" };
+        }
 
         // Update the invitation status
-        await prisma.universityMemberInvitation.update({
-            where: { id: invite.id },
-            data: {
-                status: "ACCEPTED",
-                acceptedAt: new Date(),
-                resultingMemberId: member.id,
-            },
-        });
+        await db.update(universityMemberInvitations).set({
+            status: "ACCEPTED",
+            acceptedAt: new Date(),
+            resultingMemberId: member.id,
+        }).where(eq(universityMemberInvitations.id, invite.id));
 
         // Update user role if not already UNI
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { 
-                onboardingCompleted: true,
-                role: "UNI",
-            },
-        });
+        await db.update(users).set({
+            onboardingCompleted: true,
+            role: "UNI",
+        }).where(eq(users.id, session.user.id));
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             universityId: invite.universityId,
             universityName: invite.university.name,
         };
@@ -315,34 +309,23 @@ function getDefaultPermissionsForRole(role: string): string[] {
 
 /**
  * Get current user's university member details
- * Used for determining role-based dashboard rendering
  */
 export async function getCurrentMemberDetails() {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
     }
 
     try {
-        const member = await prisma.universityMember.findFirst({
-            where: { 
-                userId: session.user.id,
-                isActive: true,
-            },
-            include: { 
-                university: {
-                    select: {
-                        id: true,
-                        name: true,
-                    }
-                },
-                department: {
-                    select: {
-                        id: true,
-                        name: true,
-                    }
-                },
+        const member = await db.query.universityMembers.findFirst({
+            where: and(
+                eq(universityMembers.userId, session.user.id),
+                eq(universityMembers.isActive, true),
+            ),
+            with: {
+                university: { columns: { id: true, name: true } },
+                department: { columns: { id: true, name: true } },
             },
         });
 
@@ -350,8 +333,8 @@ export async function getCurrentMemberDetails() {
             return { success: false, error: "Member not found" };
         }
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             member: {
                 id: member.id,
                 role: member.role,

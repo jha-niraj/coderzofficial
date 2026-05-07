@@ -113,15 +113,17 @@ function VerifyContent() {
                 toast.success("Email verified successfully!")
 
                 // Auto-signin using the "verified" password flow
-                const result = await signIn('credentials', {
+                const result = await signIn.email({
                     email,
                     password: 'verified',
-                    redirect: false,
+                    callbackURL: inviteBy
+                        ? `/onboarding?inviteBy=${encodeURIComponent(inviteBy)}`
+                        : '/onboarding'
                 })
 
-                if (result?.ok) {
+                if (result?.data) {
                     // Redirect to onboarding after successful auto-signin, forwarding inviteBy if present
-                    const onboardingUrl = inviteBy 
+                    const onboardingUrl = inviteBy
                         ? `/onboarding?inviteBy=${encodeURIComponent(inviteBy)}`
                         : '/onboarding'
                     setTimeout(() => router.push(onboardingUrl), 1000)

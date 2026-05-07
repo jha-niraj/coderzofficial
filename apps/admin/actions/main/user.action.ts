@@ -1,12 +1,12 @@
 "use server"
 
-import { Currency } from "@repo/prisma/client"
+import { db, users, creditTransactions, adminAuditLogs } from "@repo/db"
+import { eq, and, gte, lte, ilike, or, count, inArray, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { checkAdminAccess } from "../admin.action"
-import { Resend } from "resend";
-import { prisma } from "@repo/prisma"
+import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 // Types
 interface UserFilters {
@@ -39,33 +39,37 @@ export async function getAllUsers(
 
         const page = pagination?.page || 1
         const limit = pagination?.limit || 10
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        // Build where clause
-        const where: any = {}
+        const whereConditions = []
 
         if (filters?.search) {
-            where.OR = [
-                { name: { contains: filters.search, mode: "insensitive" } },
-                { email: { contains: filters.search, mode: "insensitive" } },
-                { username: { contains: filters.search, mode: "insensitive" } },
-            ]
+            whereConditions.push(
+                or(
+                    ilike(users.name, `%${filters.search}%`),
+                    ilike(users.email, `%${filters.search}%`),
+                    ilike(users.username, `%${filters.search}%`)
+                )
+            )
         }
 
         if (filters?.role && filters.role !== "all") {
-            where.role = filters.role
+            whereConditions.push(eq(users.role, filters.role))
         }
 
-        if (filters?.dateFrom || filters?.dateTo) {
-            where.createdAt = {}
-            if (filters.dateFrom) where.createdAt.gte = filters.dateFrom
-            if (filters.dateTo) where.createdAt.lte = filters.dateTo
+        if (filters?.dateFrom) {
+            whereConditions.push(gte(users.createdAt, filters.dateFrom))
+        }
+        if (filters?.dateTo) {
+            whereConditions.push(lte(users.createdAt, filters.dateTo))
         }
 
-        const [users, total] = await Promise.all([
-            prisma.user.findMany({
-                where,
-                select: {
+        const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
+
+        const [userList, totalResult] = await Promise.all([
+            db.query.users.findMany({
+                where: whereClause,
+                columns: {
                     id: true,
                     name: true,
                     email: true,
@@ -79,15 +83,16 @@ export async function getAllUsers(
                     createdAt: true,
                     onboardingCompleted: true,
                 },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit,
+                offset
             }),
-            prisma.user.count({ where }),
+            db.select({ total: count() }).from(users).where(whereClause)
         ])
+        const total = totalResult[0]?.total ?? 0
 
         // Map to include status
-        const usersWithStatus = users.map(user => ({
+        const usersWithStatus = userList.map(user => ({
             ...user,
             status: user.emailVerified ? "active" : "inactive",
         }))
@@ -112,26 +117,11 @@ export async function getUserById(userId: string): Promise<AdminResponse<any>> {
         const { success, error } = await checkAdminAccess()
         if (!success) return { success: false, error }
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            include: {
-                skills: true,
-                certifications: true,
-                recentActivity: {
-                    take: 10,
-                    orderBy: { createdAt: "desc" },
-                },
-                portfolioProjects: {
-                    take: 5,
-                    orderBy: { createdAt: "desc" },
-                },
-                creditTransactions: {
-                    take: 10,
-                    orderBy: { createdAt: "desc" },
-                },
-                achievements: true,
-                adminAccess: true,
-            },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            with: {
+                userSkills: true,
+            }
         })
 
         if (!user) {
@@ -154,29 +144,27 @@ export async function updateUserRole(
         const accessCheck = await checkAdminAccess()
         if (!accessCheck.success) return { success: false, error: accessCheck.error }
 
-        const adminAccess = accessCheck.data?.adminAccess
+        const adminRecord = accessCheck.data?.adminAccess
 
         // Only SUPER_ADMIN can change roles
-        if (adminAccess.adminRole !== "SUPER_ADMIN") {
+        if (!adminRecord || adminRecord.adminRole !== "SUPER_ADMIN") {
             return { success: false, error: "Only super admins can change user roles" }
         }
 
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: { role },
-        })
+        const [user] = await db.update(users)
+            .set({ role })
+            .where(eq(users.id, userId))
+            .returning()
 
         // Create audit log
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: adminAccess.id,
-                action: "UPDATE",
-                module: "users",
-                resourceType: "User",
-                resourceId: userId,
-                description: `Changed user role to ${role}`,
-                changes: { role },
-            },
+        await db.insert(adminAuditLogs).values({
+            adminId: adminRecord.id,
+            action: "UPDATE",
+            module: "users",
+            resourceType: "User",
+            resourceId: userId,
+            description: `Changed user role to ${role}`,
+            changes: { role },
         })
 
         revalidatePath("/users")
@@ -199,11 +187,12 @@ export async function updateUserCredits(
         const accessCheck = await checkAdminAccess()
         if (!accessCheck.success) return { success: false, error: accessCheck.error }
 
-        const adminAccess = accessCheck.data?.adminAccess
+        const adminRecord = accessCheck.data?.adminAccess
+        if (!adminRecord) return { success: false, error: "Admin record not found" }
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { credits: true, name: true, email: true },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: { credits: true, name: true, email: true }
         })
 
         if (!user) {
@@ -217,35 +206,31 @@ export async function updateUserCredits(
         }
 
         // Update user credits
-        const updatedUser = await prisma.user.update({
-            where: { id: userId },
-            data: { credits: newCredits },
-        })
+        const [updatedUser] = await db.update(users)
+            .set({ credits: newCredits })
+            .where(eq(users.id, userId))
+            .returning()
 
         // Create credit transaction
-        await prisma.creditTransaction.create({
-            data: {
-                userId,
-                amount: Math.abs(amount),
-                type: amount > 0 ? "BONUS" : "SPEND",
-                description: reason,
-                currency: Currency.INR,
-            },
+        await db.insert(creditTransactions).values({
+            userId,
+            amount: Math.abs(amount),
+            type: amount > 0 ? "BONUS" : "SPEND",
+            description: reason,
+            currency: "INR",
         })
 
         // Create audit log
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: adminAccess.id,
-                action: "UPDATE",
-                module: "users",
-                resourceType: "User",
-                resourceId: userId,
-                description: `${amount > 0 ? "Added" : "Deducted"} ${Math.abs(amount)} credits: ${reason}`,
-                changes: {
-                    before: user.credits,
-                    after: newCredits,
-                },
+        await db.insert(adminAuditLogs).values({
+            adminId: adminRecord.id,
+            action: "UPDATE",
+            module: "users",
+            resourceType: "User",
+            resourceId: userId,
+            description: `${amount > 0 ? "Added" : "Deducted"} ${Math.abs(amount)} credits: ${reason}`,
+            changes: {
+                before: user.credits,
+                after: newCredits,
             },
         })
 
@@ -269,23 +254,22 @@ export async function suspendUser(
         const accessCheck = await checkAdminAccess()
         if (!accessCheck.success) return { success: false, error: accessCheck.error }
 
-        const adminAccess = accessCheck.data?.adminAccess
+        const adminRecord = accessCheck.data?.adminAccess
+        if (!adminRecord) return { success: false, error: "Admin record not found" }
 
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: { emailVerified: false },
-        })
+        const [user] = await db.update(users)
+            .set({ emailVerified: false })
+            .where(eq(users.id, userId))
+            .returning()
 
         // Create audit log
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: adminAccess.id,
-                action: "UPDATE",
-                module: "users",
-                resourceType: "User",
-                resourceId: userId,
-                description: `Suspended user: ${reason}`,
-            },
+        await db.insert(adminAuditLogs).values({
+            adminId: adminRecord.id,
+            action: "UPDATE",
+            module: "users",
+            resourceType: "User",
+            resourceId: userId,
+            description: `Suspended user: ${reason}`,
         })
 
         revalidatePath("/users")
@@ -304,23 +288,22 @@ export async function activateUser(userId: string): Promise<AdminResponse> {
         const accessCheck = await checkAdminAccess()
         if (!accessCheck.success) return { success: false, error: accessCheck.error }
 
-        const adminAccess = accessCheck.data?.adminAccess
+        const adminRecord = accessCheck.data?.adminAccess
+        if (!adminRecord) return { success: false, error: "Admin record not found" }
 
-        const user = await prisma.user.update({
-            where: { id: userId },
-            data: { emailVerified: true },
-        })
+        const [user] = await db.update(users)
+            .set({ emailVerified: true })
+            .where(eq(users.id, userId))
+            .returning()
 
         // Create audit log
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: adminAccess.id,
-                action: "UPDATE",
-                module: "users",
-                resourceType: "User",
-                resourceId: userId,
-                description: "Activated user account",
-            },
+        await db.insert(adminAuditLogs).values({
+            adminId: adminRecord.id,
+            action: "UPDATE",
+            module: "users",
+            resourceType: "User",
+            resourceId: userId,
+            description: "Activated user account",
         })
 
         revalidatePath("/users")
@@ -339,32 +322,28 @@ export async function deleteUser(userId: string): Promise<AdminResponse> {
         const accessCheck = await checkAdminAccess()
         if (!accessCheck.success) return { success: false, error: accessCheck.error }
 
-        const adminAccess = accessCheck.data?.adminAccess
+        const adminRecord = accessCheck.data?.adminAccess
 
         // Only SUPER_ADMIN can delete users
-        if (adminAccess.adminRole !== "SUPER_ADMIN") {
+        if (!adminRecord || adminRecord.adminRole !== "SUPER_ADMIN") {
             return { success: false, error: "Only super admins can delete users" }
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { email: true, name: true },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: { email: true, name: true }
         })
 
-        await prisma.user.delete({
-            where: { id: userId },
-        })
+        await db.delete(users).where(eq(users.id, userId))
 
         // Create audit log
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: adminAccess.id,
-                action: "DELETE",
-                module: "users",
-                resourceType: "User",
-                resourceId: userId,
-                description: `Deleted user: ${user?.email}`,
-            },
+        await db.insert(adminAuditLogs).values({
+            adminId: adminRecord.id,
+            action: "DELETE",
+            module: "users",
+            resourceType: "User",
+            resourceId: userId,
+            description: `Deleted user: ${user?.email}`,
         })
 
         revalidatePath("/users")
@@ -389,43 +368,42 @@ export async function bulkUpdateUsers(
         const accessCheck = await checkAdminAccess()
         if (!accessCheck.success) return { success: false, error: accessCheck.error }
 
-        const adminAccess = accessCheck.data?.adminAccess
+        const adminRecord = accessCheck.data?.adminAccess
+        if (!adminRecord) return { success: false, error: "Admin record not found" }
 
-        const updateData: any = {}
-        if (updates.emailVerified !== undefined) {
-            updateData.emailVerified = updates.emailVerified
-        }
-        if (updates.credits !== undefined) {
-            updateData.credits = updates.credits
-        }
         if (updates.addCredits !== undefined) {
-            // Increment credits
-            await prisma.$transaction(
+            // Increment credits for each user individually
+            await Promise.all(
                 userIds.map(userId =>
-                    prisma.user.update({
-                        where: { id: userId },
-                        data: { credits: { increment: updates.addCredits } },
-                    })
+                    db.update(users)
+                        .set({ credits: sql`${users.credits} + ${updates.addCredits}` })
+                        .where(eq(users.id, userId))
                 )
             )
-        } else if (Object.keys(updateData).length > 0) {
-            await prisma.user.updateMany({
-                where: { id: { in: userIds } },
-                data: updateData,
-            })
+        } else {
+            const updateData: any = {}
+            if (updates.emailVerified !== undefined) {
+                updateData.emailVerified = updates.emailVerified
+            }
+            if (updates.credits !== undefined) {
+                updateData.credits = updates.credits
+            }
+            if (Object.keys(updateData).length > 0) {
+                await db.update(users)
+                    .set(updateData)
+                    .where(inArray(users.id, userIds))
+            }
         }
 
         // Create audit log
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: adminAccess.id,
-                action: "UPDATE",
-                module: "users",
-                resourceType: "User",
-                resourceId: userIds.join(","),
-                description: `Bulk updated ${userIds.length} users`,
-                changes: updates,
-            },
+        await db.insert(adminAuditLogs).values({
+            adminId: adminRecord.id,
+            action: "UPDATE",
+            module: "users",
+            resourceType: "User",
+            resourceId: userIds.join(","),
+            description: `Bulk updated ${userIds.length} users`,
+            changes: updates,
         })
 
         revalidatePath("/users")
@@ -443,23 +421,26 @@ export async function exportUsers(filters?: UserFilters): Promise<AdminResponse<
         const { success, error } = await checkAdminAccess()
         if (!success) return { success: false, error }
 
-        // Build where clause
-        const where: any = {}
+        const whereConditions = []
 
         if (filters?.search) {
-            where.OR = [
-                { name: { contains: filters.search, mode: "insensitive" } },
-                { email: { contains: filters.search, mode: "insensitive" } },
-            ]
+            whereConditions.push(
+                or(
+                    ilike(users.name, `%${filters.search}%`),
+                    ilike(users.email, `%${filters.search}%`)
+                )
+            )
         }
 
         if (filters?.role && filters.role !== "all") {
-            where.role = filters.role
+            whereConditions.push(eq(users.role, filters.role))
         }
 
-        const users = await prisma.user.findMany({
-            where,
-            select: {
+        const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
+
+        const userList = await db.query.users.findMany({
+            where: whereClause,
+            columns: {
                 id: true,
                 name: true,
                 email: true,
@@ -471,7 +452,7 @@ export async function exportUsers(filters?: UserFilters): Promise<AdminResponse<
                 emailVerified: true,
                 createdAt: true,
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: (t, { desc }) => [desc(t.createdAt)]
         })
 
         // Convert to CSV
@@ -487,7 +468,7 @@ export async function exportUsers(filters?: UserFilters): Promise<AdminResponse<
             "Verified",
             "Joined",
         ]
-        const rows = users.map(user => [
+        const rows = userList.map(user => [
             user.id,
             user.name || "",
             user.email,
@@ -523,22 +504,28 @@ export async function getUserStats(): Promise<AdminResponse<any>> {
         const today = new Date(now.setHours(0, 0, 0, 0))
 
         const [
-            totalUsers,
-            verifiedUsers,
-            adminUsers,
-            newUsersThisMonth,
-            activeToday,
-            totalCredits,
-            totalXP,
+            totalUsersResult,
+            verifiedUsersResult,
+            adminUsersResult,
+            newUsersThisMonthResult,
+            activeTodayResult,
+            allUsers,
         ] = await Promise.all([
-            prisma.user.count(),
-            prisma.user.count({ where: { emailVerified: true } }),
-            prisma.user.count({ where: { role: "Admin" } }),
-            prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
-            prisma.user.count({ where: { createdAt: { gte: today } } }),
-            prisma.user.aggregate({ _sum: { credits: true } }),
-            prisma.user.aggregate({ _sum: { currentXp: true } }),
+            db.select({ totalUsers: count() }).from(users),
+            db.select({ verifiedUsers: count() }).from(users).where(eq(users.emailVerified, true)),
+            db.select({ adminUsers: count() }).from(users).where(eq(users.role, "Admin")),
+            db.select({ newUsersThisMonth: count() }).from(users).where(gte(users.createdAt, thirtyDaysAgo)),
+            db.select({ activeToday: count() }).from(users).where(gte(users.createdAt, today)),
+            db.query.users.findMany({ columns: { credits: true, currentXp: true } }),
         ])
+        const totalUsers = totalUsersResult[0]?.totalUsers ?? 0
+        const verifiedUsers = verifiedUsersResult[0]?.verifiedUsers ?? 0
+        const adminUsers = adminUsersResult[0]?.adminUsers ?? 0
+        const newUsersThisMonth = newUsersThisMonthResult[0]?.newUsersThisMonth ?? 0
+        const activeToday = activeTodayResult[0]?.activeToday ?? 0
+
+        const totalCredits = allUsers.reduce((sum, u) => sum + (u.credits || 0), 0)
+        const totalXP = allUsers.reduce((sum, u) => sum + (u.currentXp || 0), 0)
 
         return {
             success: true,
@@ -548,8 +535,8 @@ export async function getUserStats(): Promise<AdminResponse<any>> {
                 adminUsers,
                 newUsersThisMonth,
                 activeToday,
-                totalCredits: totalCredits._sum.credits || 0,
-                totalXP: totalXP._sum.currentXp || 0,
+                totalCredits,
+                totalXP,
                 growthRate:
                     totalUsers > 0
                         ? Math.round((newUsersThisMonth / totalUsers) * 100)
@@ -564,20 +551,20 @@ export async function getUserStats(): Promise<AdminResponse<any>> {
 
 export async function adminSendEmail({ to, subject, text }: { to: string; subject: string; text: string }): Promise<AdminResponse> {
     try {
-        const { success, error } = await checkAdminAccess();
-        if (!success) return { success: false, error };
+        const { success, error } = await checkAdminAccess()
+        if (!success) return { success: false, error }
 
         const result = await resend.emails.send({
             from: "The Coder'z <noreply@coderzai.xyz>",
             to,
             subject,
             text,
-        });
+        })
         if (result.error) {
-            return { success: false, error: result.error.message || "Failed to send email" };
+            return { success: false, error: result.error.message || "Failed to send email" }
         }
-        return { success: true };
+        return { success: true }
     } catch (err: any) {
-        return { success: false, error: err.message || "Failed to send email" };
+        return { success: false, error: err.message || "Failed to send email" }
     }
 }

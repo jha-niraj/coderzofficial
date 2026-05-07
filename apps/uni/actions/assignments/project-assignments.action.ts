@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma";
-import { auth } from "@repo/auth";
+import { db, projectsV2, universityClasses, classEnrollments, users, userProjectV2Progress, projectV2Submissions, backgroundJobs } from "@repo/db"
+import { eq, and, inArray, desc, asc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import crypto from 'crypto';
 import type { UniversityPermission } from "@/types";
 
@@ -23,7 +25,6 @@ interface CreateProjectAssignmentPayload {
         deployment?: string;
         aiProvider?: string;
     };
-    // University-specific fields
     classIds: string[];
     deadline?: Date;
     credits?: number;
@@ -43,13 +44,13 @@ interface AssignExistingProjectPayload {
 // ============================================
 
 async function getCurrentMember() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) throw new Error("Not authenticated");
 
-    const member = await prisma.universityMember.findFirst({
-        where: { userId: session.user.id },
-        include: { 
-            university: { select: { id: true, name: true } },
+    const member = await db.query.universityMembers.findFirst({
+        where: (tbl, { eq }) => eq(tbl.userId, session.user.id),
+        with: {
+            university: { columns: { id: true, name: true } },
         },
     });
 
@@ -60,8 +61,8 @@ async function getCurrentMember() {
 async function hasPermission(member: { permissions: unknown }, permission: UniversityPermission): Promise<boolean> {
     if (!member.permissions) return false;
     try {
-        const permissions = typeof member.permissions === "string" 
-            ? JSON.parse(member.permissions) 
+        const permissions = typeof member.permissions === "string"
+            ? JSON.parse(member.permissions)
             : member.permissions;
         return Array.isArray(permissions) && permissions.includes(permission);
     } catch {
@@ -70,7 +71,7 @@ async function hasPermission(member: { permissions: unknown }, permission: Unive
 }
 
 async function issueWorkerToken(action: string, jobId?: string) {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) throw new Error("Not authenticated");
 
     const secret = process.env.WORKER_SECRET;
@@ -98,27 +99,24 @@ async function issueWorkerToken(action: string, jobId?: string) {
 
 /**
  * Create a new project assignment using AI generation
- * This creates a BackgroundJob and calls the worker to generate the project
  */
 export async function createProjectAssignment(payload: CreateProjectAssignmentPayload) {
     try {
         const member = await getCurrentMember();
 
-        // Check permission
         if (!await hasPermission(member, "create_assignments")) {
             return { success: false, error: "You don't have permission to create assignments" };
         }
 
-        // Validate classes belong to the university
         if (payload.classIds.length === 0) {
             return { success: false, error: "Please select at least one class" };
         }
 
-        const validClasses = await prisma.universityClass.findMany({
-            where: {
-                id: { in: payload.classIds },
-                universityId: member.universityId,
-            },
+        const validClasses = await db.query.universityClasses.findMany({
+            where: and(
+                inArray(universityClasses.id, payload.classIds),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         });
 
         if (validClasses.length !== payload.classIds.length) {
@@ -141,17 +139,14 @@ export async function createProjectAssignment(payload: CreateProjectAssignmentPa
             includeAssessment: payload.includeAssessment,
             stacks: stacksArray,
             userId: member.userId,
-            // University-specific fields to be saved after generation
             universityId: member.universityId,
             teacherMemberId: member.id,
             classIds: payload.classIds,
             isUniversityProject: true,
         };
 
-        // Get worker token
         const workerToken = await issueWorkerToken('generate_project');
 
-        // Call worker API to create job
         const response = await fetch(`${process.env.WORKER_API_URL}/api/v1/generateproject`, {
             method: 'POST',
             headers: {
@@ -176,20 +171,18 @@ export async function createProjectAssignment(payload: CreateProjectAssignmentPa
             throw new Error('Failed to create job in worker');
         }
 
-        // Create job record in database with university metadata
-        await prisma.backgroundJob.create({
-            data: {
-                jobId: result.jobId,
-                status: 'waiting',
-                progress: 0,
-                userId: member.userId,
-                input: {
-                    ...payload,
-                    universityId: member.universityId,
-                    teacherMemberId: member.id,
-                    isUniversityProject: true,
-                } as any,
-            }
+        // Create job record in database
+        await db.insert(backgroundJobs).values({
+            jobId: result.jobId,
+            status: 'waiting',
+            progress: 0,
+            userId: member.userId,
+            input: {
+                ...payload,
+                universityId: member.universityId,
+                teacherMemberId: member.id,
+                isUniversityProject: true,
+            } as any,
         });
 
         return {
@@ -210,9 +203,8 @@ export async function finalizeProjectAssignment(jobId: string, workerData: { pro
     try {
         const member = await getCurrentMember();
 
-        // Get the job from database
-        const job = await prisma.backgroundJob.findUnique({
-            where: { jobId },
+        const job = await db.query.backgroundJobs.findFirst({
+            where: eq(backgroundJobs.jobId, jobId),
         });
 
         if (!job) {
@@ -221,28 +213,20 @@ export async function finalizeProjectAssignment(jobId: string, workerData: { pro
 
         const inputData = job.input as any;
 
-        // Update the project with university assignment details
-        await prisma.projectV2.update({
-            where: { id: workerData.projectId },
-            data: {
-                isUniversityProject: true,
-                universityId: inputData.universityId || member.universityId,
-                teacherMemberId: inputData.teacherMemberId || member.id,
-                classIds: inputData.classIds || [],
-                assignmentDeadline: inputData.deadline ? new Date(inputData.deadline) : null,
-                assignmentCredits: inputData.credits || null,
-                assignmentInstructions: inputData.instructions || null,
-            },
-        });
+        await db.update(projectsV2).set({
+            isUniversityProject: true,
+            universityId: inputData.universityId || member.universityId,
+            teacherMemberId: inputData.teacherMemberId || member.id,
+            classIds: inputData.classIds || [],
+            assignmentDeadline: inputData.deadline ? new Date(inputData.deadline) : null,
+            assignmentCredits: inputData.credits || null,
+            assignmentInstructions: inputData.instructions || null,
+        }).where(eq(projectsV2.id, workerData.projectId));
 
-        // Update job status
-        await prisma.backgroundJob.update({
-            where: { jobId },
-            data: {
-                status: 'completed',
-                progress: 100,
-            },
-        });
+        await db.update(backgroundJobs).set({
+            status: 'completed',
+            progress: 100,
+        }).where(eq(backgroundJobs.jobId, jobId));
 
         return {
             success: true,
@@ -269,51 +253,37 @@ export async function assignExistingProject(payload: AssignExistingProjectPayloa
             return { success: false, error: "You don't have permission to create assignments" };
         }
 
-        // Verify the project exists and teacher has access
-        const project = await prisma.projectV2.findFirst({
-            where: {
-                id: payload.projectId,
-                OR: [
-                    { visibility: "PUBLIC" },
-                    { createdBy: member.userId },
-                    { universityId: member.universityId },
-                ],
-            },
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, payload.projectId),
         });
 
         if (!project) {
             return { success: false, error: "Project not found or you don't have access" };
         }
 
-        // Validate classes
-        const validClasses = await prisma.universityClass.findMany({
-            where: {
-                id: { in: payload.classIds },
-                universityId: member.universityId,
-            },
+        const validClasses = await db.query.universityClasses.findMany({
+            where: and(
+                inArray(universityClasses.id, payload.classIds),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         });
 
         if (validClasses.length !== payload.classIds.length) {
             return { success: false, error: "Invalid class selection" };
         }
 
-        // If it's already a university project, add to existing classIds
-        // Otherwise, convert it to a university project
         const existingClassIds = project.classIds || [];
         const newClassIds = [...new Set([...existingClassIds, ...payload.classIds])];
 
-        await prisma.projectV2.update({
-            where: { id: payload.projectId },
-            data: {
-                isUniversityProject: true,
-                universityId: member.universityId,
-                teacherMemberId: member.id,
-                classIds: newClassIds,
-                assignmentDeadline: payload.deadline || project.assignmentDeadline,
-                assignmentCredits: payload.credits || project.assignmentCredits,
-                assignmentInstructions: payload.instructions || project.assignmentInstructions,
-            },
-        });
+        await db.update(projectsV2).set({
+            isUniversityProject: true,
+            universityId: member.universityId,
+            teacherMemberId: member.id,
+            classIds: newClassIds,
+            assignmentDeadline: payload.deadline || project.assignmentDeadline,
+            assignmentCredits: payload.credits || project.assignmentCredits,
+            assignmentInstructions: payload.instructions || project.assignmentInstructions,
+        }).where(eq(projectsV2.id, payload.projectId));
 
         return {
             success: true,
@@ -335,71 +305,44 @@ export async function getProjectAssignments(filters?: {
     try {
         const member = await getCurrentMember();
 
-        const whereClause: any = {
-            isUniversityProject: true,
-            universityId: member.universityId,
-        };
-
-        // If not HEAD, only show projects they created
-        if (member.role !== "HEAD") {
-            whereClause.teacherMemberId = member.id;
-        }
-
-        // Filter by class if provided
-        if (filters?.classId) {
-            whereClause.classIds = { has: filters.classId };
-        }
-
-        // Filter by deadline status
-        if (filters?.status === "active") {
-            whereClause.OR = [
-                { assignmentDeadline: null },
-                { assignmentDeadline: { gte: new Date() } },
-            ];
-        } else if (filters?.status === "past") {
-            whereClause.assignmentDeadline = { lt: new Date() };
-        }
-
-        const projects = await prisma.projectV2.findMany({
-            where: whereClause,
-            select: {
-                id: true,
-                title: true,
-                slug: true,
-                description: true,
-                shortDescription: true,
-                difficulty: true,
-                generationType: true,
-                classIds: true,
-                assignmentDeadline: true,
-                assignmentCredits: true,
-                assignmentInstructions: true,
-                teacherMemberId: true,
-                createdAt: true,
-                _count: {
-                    select: {
-                        progress: true,
-                        submissions: true,
-                    },
-                },
+        const projects = await db.query.projectsV2.findMany({
+            where: (tbl, { and, eq }) => {
+                const conditions = [
+                    eq(tbl.isUniversityProject, true),
+                    eq(tbl.universityId, member.universityId),
+                ]
+                if (member.role !== "HEAD") {
+                    conditions.push(eq(tbl.teacherMemberId, member.id))
+                }
+                return and(...conditions)
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: desc(projectsV2.createdAt),
         });
 
-        // Get class names for the projects
-        const allClassIds = projects.flatMap(p => p.classIds);
-        const classes = await prisma.universityClass.findMany({
-            where: { id: { in: allClassIds } },
-            select: { id: true, name: true, code: true },
-        });
-        const classMap = new Map(classes.map(c => [c.id, c]));
+        // Apply class and status filters in-memory
+        let filtered = projects
+        if (filters?.classId) {
+            filtered = filtered.filter(p => p.classIds.includes(filters.classId!))
+        }
+        if (filters?.status === "active") {
+            filtered = filtered.filter(p => !p.assignmentDeadline || p.assignmentDeadline >= new Date())
+        } else if (filters?.status === "past") {
+            filtered = filtered.filter(p => p.assignmentDeadline && p.assignmentDeadline < new Date())
+        }
 
-        // Enrich projects with class info
-        const enrichedProjects = projects.map(project => ({
+        // Get class names
+        const allClassIds = filtered.flatMap(p => p.classIds)
+        const classes = allClassIds.length > 0
+            ? await db.query.universityClasses.findMany({
+                where: inArray(universityClasses.id, allClassIds),
+                columns: { id: true, name: true, code: true },
+            })
+            : []
+        const classMap = new Map(classes.map(c => [c.id, c]))
+
+        const enrichedProjects = filtered.map(project => ({
             ...project,
             classes: project.classIds.map(id => classMap.get(id)).filter(Boolean),
-            studentsStarted: project._count.progress,
-            studentsCompleted: project._count.submissions,
         }));
 
         return {
@@ -419,37 +362,28 @@ export async function getTeacherClasses() {
     try {
         const member = await getCurrentMember();
 
-        // HEAD can see all classes, others see classes they're assigned to
-        const whereClause: any = {
-            universityId: member.universityId,
-            isActive: true,
-        };
-
-        // For non-HEAD, we could add faculty filter here
-        // For now, all faculty can assign to any class
-
-        const classes = await prisma.universityClass.findMany({
-            where: whereClause,
-            select: {
-                id: true,
-                name: true,
-                code: true,
-                semester: true,
-                academicYear: true,
-                studentCount: true,
-                department: {
-                    select: { name: true, code: true },
-                },
+        const classes = await db.query.universityClasses.findMany({
+            where: and(
+                eq(universityClasses.universityId, member.universityId),
+                eq(universityClasses.isActive, true),
+            ),
+            with: {
+                department: { columns: { name: true, code: true } },
             },
-            orderBy: [
-                { department: { name: "asc" } },
-                { name: "asc" },
-            ],
+            orderBy: [asc(universityClasses.name)],
         });
 
         return {
             success: true,
-            data: classes,
+            data: classes.map(c => ({
+                id: c.id,
+                name: c.name,
+                code: c.code,
+                semester: c.semester,
+                academicYear: c.academicYear,
+                studentCount: c.studentCount,
+                department: c.department,
+            })),
         };
     } catch (error: any) {
         console.error("Get teacher classes error:", error);
@@ -472,32 +406,24 @@ export async function updateProjectAssignment(
     try {
         const member = await getCurrentMember();
 
-        // Verify ownership
-        const project = await prisma.projectV2.findFirst({
-            where: {
-                id: projectId,
-                universityId: member.universityId,
-                OR: [
-                    { teacherMemberId: member.id },
-                    ...(member.role === "HEAD" ? [{ universityId: member.universityId }] : []),
-                ],
-            },
+        const project = await db.query.projectsV2.findFirst({
+            where: and(
+                eq(projectsV2.id, projectId),
+                eq(projectsV2.universityId, member.universityId),
+            ),
         });
 
         if (!project) {
             return { success: false, error: "Project not found or you don't have access" };
         }
 
-        const updateData: any = {};
+        const updateData: Record<string, unknown> = {};
         if (updates.classIds !== undefined) updateData.classIds = updates.classIds;
         if (updates.deadline !== undefined) updateData.assignmentDeadline = updates.deadline;
         if (updates.credits !== undefined) updateData.assignmentCredits = updates.credits;
         if (updates.instructions !== undefined) updateData.assignmentInstructions = updates.instructions;
 
-        await prisma.projectV2.update({
-            where: { id: projectId },
-            data: updateData,
-        });
+        await db.update(projectsV2).set(updateData).where(eq(projectsV2.id, projectId));
 
         return { success: true, message: "Assignment updated" };
     } catch (error: any) {
@@ -507,39 +433,32 @@ export async function updateProjectAssignment(
 }
 
 /**
- * Remove project assignment (doesn't delete the project, just removes university linking)
+ * Remove project assignment
  */
 export async function removeProjectAssignment(projectId: string) {
     try {
         const member = await getCurrentMember();
 
-        const project = await prisma.projectV2.findFirst({
-            where: {
-                id: projectId,
-                universityId: member.universityId,
-                OR: [
-                    { teacherMemberId: member.id },
-                    ...(member.role === "HEAD" ? [{ universityId: member.universityId }] : []),
-                ],
-            },
+        const project = await db.query.projectsV2.findFirst({
+            where: and(
+                eq(projectsV2.id, projectId),
+                eq(projectsV2.universityId, member.universityId),
+            ),
         });
 
         if (!project) {
             return { success: false, error: "Project not found or you don't have access" };
         }
 
-        await prisma.projectV2.update({
-            where: { id: projectId },
-            data: {
-                isUniversityProject: false,
-                universityId: null,
-                teacherMemberId: null,
-                classIds: [],
-                assignmentDeadline: null,
-                assignmentCredits: null,
-                assignmentInstructions: null,
-            },
-        });
+        await db.update(projectsV2).set({
+            isUniversityProject: false,
+            universityId: null,
+            teacherMemberId: null,
+            classIds: [],
+            assignmentDeadline: null,
+            assignmentCredits: null,
+            assignmentInstructions: null,
+        }).where(eq(projectsV2.id, projectId));
 
         return { success: true, message: "Assignment removed" };
     } catch (error: any) {
@@ -555,15 +474,12 @@ export async function getProjectStudentProgress(projectId: string) {
     try {
         const member = await getCurrentMember();
 
-        // Verify access
-        const project = await prisma.projectV2.findFirst({
-            where: {
-                id: projectId,
-                universityId: member.universityId,
-            },
-            select: {
-                classIds: true,
-            },
+        const project = await db.query.projectsV2.findFirst({
+            where: and(
+                eq(projectsV2.id, projectId),
+                eq(projectsV2.universityId, member.universityId),
+            ),
+            columns: { classIds: true },
         });
 
         if (!project) {
@@ -571,69 +487,53 @@ export async function getProjectStudentProgress(projectId: string) {
         }
 
         // Get students from the assigned classes
-        const classEnrollments = await prisma.classEnrollment.findMany({
-            where: {
-                classId: { in: project.classIds },
-                isActive: true,
-            },
-            select: {
-                studentLink: {
-                    select: {
-                        userId: true,
-                    },
+        const classEnrollmentRows = project.classIds.length > 0
+            ? await db.query.classEnrollments.findMany({
+                where: and(
+                    inArray(classEnrollments.classId, project.classIds),
+                    eq(classEnrollments.isActive, true),
+                ),
+                with: {
+                    studentLink: { columns: { userId: true } },
                 },
-            },
-        });
+            })
+            : []
 
-        const studentUserIds = classEnrollments.map(ce => ce.studentLink.userId);
+        const studentUserIds = classEnrollmentRows.map(ce => ce.studentLink.userId)
 
-        // Get user info for these students
-        const users = await prisma.user.findMany({
-            where: {
-                id: { in: studentUserIds },
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-            },
-        });
-        const userMap = new Map(users.map(u => [u.id, u]));
+        const userRows = studentUserIds.length > 0
+            ? await db.query.users.findMany({
+                where: inArray(users.id, studentUserIds),
+                columns: { id: true, name: true, email: true, image: true },
+            })
+            : []
+        const userMap = new Map(userRows.map(u => [u.id, u]))
 
-        // Get progress for these students
-        const progress = await prisma.userProjectV2Progress.findMany({
-            where: {
-                projectId,
-                userId: { in: studentUserIds },
-            },
-            select: {
-                userId: true,
-                progressPercentage: true,
-                startedAt: true,
-                completedAt: true,
-                totalScore: true,
-            },
-        });
+        // Get progress
+        const progressRows = studentUserIds.length > 0
+            ? await db.query.userProjectV2Progress.findMany({
+                where: and(
+                    eq(userProjectV2Progress.projectId, projectId),
+                    inArray(userProjectV2Progress.userId, studentUserIds),
+                ),
+                columns: { userId: true, progressPercentage: true, startedAt: true, completedAt: true, totalScore: true },
+            })
+            : []
 
         // Get submissions
-        const submissions = await prisma.projectV2Submission.findMany({
-            where: {
-                projectId,
-                userId: { in: studentUserIds },
-            },
-            select: {
-                userId: true,
-                status: true,
-                createdAt: true,
-                scores: true,
-            },
-        });
+        const submissionRows = studentUserIds.length > 0
+            ? await db.query.projectV2Submissions.findMany({
+                where: and(
+                    eq(projectV2Submissions.projectId, projectId),
+                    inArray(projectV2Submissions.userId, studentUserIds),
+                ),
+                columns: { userId: true, status: true, createdAt: true, scores: true },
+            })
+            : []
 
-        const progressMap = new Map(progress.map(p => [p.userId, p]));
-        const submissionMap = new Map(submissions.map(s => [s.userId, s]));
+        const progressMap = new Map(progressRows.map(p => [p.userId, p]))
+        const submissionMap = new Map(submissionRows.map(s => [s.userId, s]))
 
-        // Combine data
         const studentProgress = studentUserIds.map(userId => {
             const user = userMap.get(userId);
             const userProgress = progressMap.get(userId);
@@ -659,3 +559,4 @@ export async function getProjectStudentProgress(projectId: string) {
         return { success: false, error: error.message || "Failed to fetch student progress" };
     }
 }
+

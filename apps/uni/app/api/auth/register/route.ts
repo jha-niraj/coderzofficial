@@ -1,4 +1,5 @@
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
+import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import bcryptjs from "bcryptjs";
 import { sendEmail } from "@/utils/mail";
@@ -43,8 +44,8 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('Checking for existing user...');
-        const existingUser = await prisma.user.findUnique({
-            where: { email }
+        const existingUser = await db.query.users.findFirst({
+            where: eq(users.email, email),
         });
 
         if (existingUser) {
@@ -61,19 +62,22 @@ export async function POST(request: NextRequest) {
         // Generate 6-digit OTP for email verification
         const verifyOTP = Math.floor(100000 + Math.random() * 900000).toString();
         const verifyOTPExpiry = new Date();
-        verifyOTPExpiry.setMinutes(verifyOTPExpiry.getMinutes() + 10); // 10 minutes expiry
+        verifyOTPExpiry.setMinutes(verifyOTPExpiry.getMinutes() + 10);
 
-        const user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                hashedPassword,
-                verifyOTP,
-                verifyOTPExpiry,
-                onboardingCompleted: false, // User needs to complete company onboarding
-                // Note: We'll create the Company and CompanyMember records after onboarding
-            }
-        });
+        const rows = await db.insert(users).values({
+            name,
+            email,
+            hashedPassword,
+            verifyOTP,
+            verifyOTPExpiry,
+            onboardingCompleted: false,
+        }).returning();
+
+        const user = rows[0];
+        if (!user) {
+            throw new Error("Failed to create user record");
+        }
+
         console.log('✅ User created successfully:', user.id);
 
         // Send verification email
@@ -88,7 +92,6 @@ export async function POST(request: NextRequest) {
             console.log('✅ Verification email sent successfully');
         } catch (emailError) {
             console.error("❌ Failed to send verification email:", emailError);
-            // Don't fail the registration if email fails - user can resend
         }
 
         console.log('✅ Registration completed successfully');

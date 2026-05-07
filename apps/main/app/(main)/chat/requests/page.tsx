@@ -3,7 +3,7 @@ import {
 } from "@repo/ui/components/ui/tabs"
 import {
     getFollowRequests, getSentFollowRequests
-} from "@/actions/(main)/community/follow.action"
+} from "@/actions/(main)/social/follow.action"
 import RequestCard from "@/components/chat/request-card"
 import { UserPlus, Send } from "lucide-react"
 

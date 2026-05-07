@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { auth } from '@repo/auth';
-import prisma from '@repo/prisma';
+import { getSession } from '@repo/auth';
+import { db, users, payments } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import {
     creditPackages, convertToPaise, calculatePrice, paymentConfig
 } from '@/lib/payment-config';
-import { Currency } from '@repo/prisma/client';
 
 export async function POST(req: NextRequest) {
     try {
-        const session = await auth();
+        const session = await getSession(req.headers);
         if (!session?.user?.id) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
@@ -27,20 +27,20 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: 'Invalid currency. Only INR and USD are supported' }, { status: 400 });
         }
 
+        if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+            return NextResponse.json({ message: 'Razorpay credentials not configured' }, { status: 500 });
+        }
+
         // Initialize Razorpay
         const razorpay = new Razorpay({
             key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
             key_secret: process.env.RAZORPAY_KEY_SECRET!,
         });
 
-        if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-            return NextResponse.json({ message: 'Razorpay credentials not configured' }, { status: 500 });
-        }
-
         // Get user details
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { id: true, name: true, email: true }
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: { id: true, name: true, email: true },
         });
 
         if (!user) {
@@ -83,22 +83,20 @@ export async function POST(req: NextRequest) {
         console.log('Razorpay order created:', razorpayOrder);
 
         // Store payment record in database
-        const paymentRecord = await prisma.payment.create({
-            data: {
-                userId: user.id,
-                credits: credits,
-                amount: amount,
-                currency: currency === 'INR' ? Currency.INR : Currency.USD,
-                status: 'PENDING',
-                orderId: razorpayOrder.id,
-                razorpayOrderId: razorpayOrder.id,
-                receipt: receipt,
-                notes: {
-                    packageName: packageInfo?.badge || 'Custom',
-                    originalAmount: packageInfo ? (currency === 'INR' ? packageInfo.originalInr : packageInfo.originalUsd) : null,
-                }
+        const [paymentRecord] = await db.insert(payments).values({
+            userId: user.id,
+            credits: credits,
+            amount: String(amount),
+            currency: currency === 'INR' ? 'INR' : 'USD',
+            status: 'PENDING',
+            orderId: razorpayOrder.id,
+            razorpayOrderId: razorpayOrder.id,
+            receipt: receipt,
+            notes: {
+                packageName: packageInfo?.badge || 'Custom',
+                originalAmount: packageInfo ? (currency === 'INR' ? packageInfo.originalInr : packageInfo.originalUsd) : null,
             }
-        });
+        }).returning();
 
         console.log('Payment record created:', paymentRecord.id);
 

@@ -1,13 +1,20 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db,
+    pathfinderGoals,
+    pathfinderDailySessions,
+    pathfinderSubGoals,
+    studios,
+} from '@repo/db'
+import { eq, and, asc, desc, sql, max } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
-import { StudioVisibility } from '@repo/prisma/client'
-import { 
-    generateExplanation, generateVideos, generateDocuments 
+import {
+    generateExplanation, generateVideos, generateDocuments
 } from '@/actions/(main)/studios/ai-generation.actions'
 import { canRunPathfinderAI, getGoalUsageSummary } from './usage.action'
 
@@ -48,44 +55,34 @@ export interface CodingProblem {
 
 export async function getOrCreateDailySession(goalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        // Get today's date (without time)
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
-        // Check if session exists for today
-        let dailySession = await prisma.pathfinderDailySession.findUnique({
-            where: {
-                goalId_date: {
-                    goalId,
-                    date: today,
-                },
-            },
-            include: {
+        let dailySession = await db.query.pathfinderDailySessions.findFirst({
+            where: and(
+                eq(pathfinderDailySessions.goalId, goalId),
+                eq(pathfinderDailySessions.date, today)
+            ),
+            with: {
                 subGoals: {
-                    orderBy: { order: 'asc' },
+                    orderBy: [asc(pathfinderSubGoals.order)],
                 },
             },
         })
 
         if (!dailySession) {
-            // Create new session for today
-            dailySession = await prisma.pathfinderDailySession.create({
-                data: {
-                    goalId,
-                    userId: session.user.id,
-                    date: today,
-                },
-                include: {
-                    subGoals: {
-                        orderBy: { order: 'asc' },
-                    },
-                },
-            })
+            const [created] = await db.insert(pathfinderDailySessions).values({
+                goalId,
+                userId: session.user.id,
+                date: today,
+            }).returning()
+
+            dailySession = { ...created, subGoals: [] }
         }
 
         return { success: true, session: dailySession }
@@ -101,25 +98,22 @@ export async function getOrCreateDailySession(goalId: string) {
 
 export async function getDailySessionByDate(goalId: string, date: Date) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        // Normalize date
         const normalizedDate = new Date(date)
         normalizedDate.setHours(0, 0, 0, 0)
 
-        const dailySession = await prisma.pathfinderDailySession.findUnique({
-            where: {
-                goalId_date: {
-                    goalId,
-                    date: normalizedDate,
-                },
-            },
-            include: {
+        const dailySession = await db.query.pathfinderDailySessions.findFirst({
+            where: and(
+                eq(pathfinderDailySessions.goalId, goalId),
+                eq(pathfinderDailySessions.date, normalizedDate)
+            ),
+            with: {
                 subGoals: {
-                    orderBy: { order: 'asc' },
+                    orderBy: [asc(pathfinderSubGoals.order)],
                 },
             },
         })
@@ -137,17 +131,17 @@ export async function getDailySessionByDate(goalId: string, date: Date) {
 
 export async function getGoalSessions(goalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', sessions: [] }
         }
 
-        const sessions = await prisma.pathfinderDailySession.findMany({
-            where: { goalId },
-            orderBy: { date: 'desc' },
-            include: {
+        const sessions = await db.query.pathfinderDailySessions.findMany({
+            where: eq(pathfinderDailySessions.goalId, goalId),
+            orderBy: [desc(pathfinderDailySessions.date)],
+            with: {
                 subGoals: {
-                    orderBy: { order: 'asc' },
+                    orderBy: [asc(pathfinderSubGoals.order)],
                 },
             },
         })
@@ -165,14 +159,14 @@ export async function getGoalSessions(goalId: string) {
 
 export async function createSubGoal(input: CreateSubGoalInput) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
         // Verify goal belongs to user
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: input.goalId, userId: session.user.id },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, input.goalId), eq(pathfinderGoals.userId, session.user.id)),
         })
 
         if (!goal) {
@@ -199,68 +193,59 @@ export async function createSubGoal(input: CreateSubGoalInput) {
         const dailySession = sessionResult.session
 
         // Get max order for this session
-        const maxOrder = await prisma.pathfinderSubGoal.aggregate({
-            where: { sessionId: dailySession.id },
-            _max: { order: true },
-        })
+        const [maxResult] = await db
+            .select({ maxOrder: max(pathfinderSubGoals.order) })
+            .from(pathfinderSubGoals)
+            .where(eq(pathfinderSubGoals.sessionId, dailySession.id))
 
         // Create sub-goal
-        const subGoal = await prisma.pathfinderSubGoal.create({
-            data: {
-                goalId: input.goalId,
-                sessionId: dailySession.id,
-                title: input.title,
-                description: input.description,
-                source: input.source || 'text',
-                voiceTranscript: input.voiceTranscript,
-                order: (maxOrder._max.order || 0) + 1,
-            },
-        })
+        const [subGoal] = await db.insert(pathfinderSubGoals).values({
+            goalId: input.goalId,
+            sessionId: dailySession.id,
+            title: input.title,
+            description: input.description,
+            source: input.source || 'text',
+            voiceTranscript: input.voiceTranscript,
+            order: (maxResult?.maxOrder || 0) + 1,
+        }).returning()
 
         // Update session stats
-        await prisma.pathfinderDailySession.update({
-            where: { id: dailySession.id },
-            data: {
-                totalSubGoals: { increment: 1 },
-            },
-        })
+        await db.update(pathfinderDailySessions)
+            .set({ totalSubGoals: sql`${pathfinderDailySessions.totalSubGoals} + 1` })
+            .where(eq(pathfinderDailySessions.id, dailySession.id))
 
         // Update goal stats
-        await prisma.pathfinderGoal.update({
-            where: { id: input.goalId },
-            data: {
-                totalSubGoals: { increment: 1 },
+        await db.update(pathfinderGoals)
+            .set({
+                totalSubGoals: sql`${pathfinderGoals.totalSubGoals} + 1`,
                 lastActivityAt: new Date(),
-            },
-        })
+            })
+            .where(eq(pathfinderGoals.id, input.goalId))
 
-        // Create Studio for this sub-goal (notes, quiz, flashcards, videos, docs)
+        // Create Studio for this sub-goal
         const studioSlug = `subgoal-${subGoal.id}-${Date.now().toString(36)}`
-        const studio = await prisma.studio.create({
-            data: {
-                slug: studioSlug,
-                title: `📝 ${input.title}`,
-                description: `Study notes for: ${input.title}`,
-                source: 'PATHFINDER',
-                sourceId: subGoal.id,
-                visibility: StudioVisibility.PRIVATE,
-                userId: session.user.id,
-                stepCount: 0,
-            },
-        })
+        const [studio] = await db.insert(studios).values({
+            slug: studioSlug,
+            title: `📝 ${input.title}`,
+            description: `Study notes for: ${input.title}`,
+            source: 'PATHFINDER',
+            sourceId: subGoal.id,
+            visibility: 'PRIVATE',
+            userId: session.user.id,
+            stepCount: 0,
+        }).returning()
 
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoal.id },
-            data: { studioId: studio.id },
-        })
+        await db.update(pathfinderSubGoals)
+            .set({ studioId: studio.id })
+            .where(eq(pathfinderSubGoals.id, subGoal.id))
 
-        // Generate explanation via Studio's generateExplanation (consistent with Studio flow)
+        // Generate explanation via Studio's generateExplanation
         const explanationResult = await generateExplanation(
             studio.id,
             `Provide a detailed explanation of "${input.title}". Include key concepts, practical examples, code snippets where relevant, and best practices. Use clear markdown formatting.`
         )
 
-        // Add videos (2) and docs (5) via Exa - non-blocking, best effort
+        // Add videos and docs - non-blocking
         Promise.all([
             generateVideos(studio.id, input.title),
             generateDocuments(studio.id, input.title),
@@ -277,9 +262,9 @@ export async function createSubGoal(input: CreateSubGoalInput) {
         )
 
         // Refetch sub-goal with studio and coding content
-        const updatedSubGoal = await prisma.pathfinderSubGoal.findUnique({
-            where: { id: subGoal.id },
-            include: { goal: true, studio: true },
+        const updatedSubGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoal.id),
+            with: { goal: true },
         })
 
         const usageSummary = await getGoalUsageSummary(input.goalId)
@@ -389,27 +374,22 @@ Return ONLY valid JSON, no markdown or code blocks.`
                 : []
         const hasCoding = codingProblems.length > 0
 
-        // Update sub-goal with coding only (quiz lives in Studio)
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoalId },
-            data: {
+        await db.update(pathfinderSubGoals)
+            .set({
                 aiCodingProblem: codingProblems.length > 0 ? codingProblems : null,
                 hasCoding,
-            },
-        })
+            })
+            .where(eq(pathfinderSubGoals.id, subGoalId))
 
-        const subGoal = await prisma.pathfinderSubGoal.findUnique({
-            where: { id: subGoalId },
-            select: { sessionId: true },
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            columns: { sessionId: true },
         })
 
         if (subGoal) {
-            await prisma.pathfinderDailySession.update({
-                where: { id: subGoal.sessionId },
-                data: {
-                    totalCodingProblems: { increment: codingProblems.length },
-                },
-            })
+            await db.update(pathfinderDailySessions)
+                .set({ totalCodingProblems: sql`${pathfinderDailySessions.totalCodingProblems} + ${codingProblems.length}` })
+                .where(eq(pathfinderDailySessions.id, subGoal.sessionId))
         }
     } catch (error) {
         console.error('Error generating AI content for sub-goal:', error)
@@ -422,16 +402,16 @@ Return ONLY valid JSON, no markdown or code blocks.`
 
 export async function getSubGoalWithContent(subGoalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const subGoal = await prisma.pathfinderSubGoal.findFirst({
-            where: { id: subGoalId },
-            include: {
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            with: {
                 goal: {
-                    select: { userId: true },
+                    columns: { userId: true },
                 },
             },
         })
@@ -456,16 +436,16 @@ export async function updateSubGoalStatus(
     status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'SKIPPED'
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const subGoal = await prisma.pathfinderSubGoal.findFirst({
-            where: { id: subGoalId },
-            include: {
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            with: {
                 goal: {
-                    select: { id: true, userId: true },
+                    columns: { id: true, userId: true },
                 },
             },
         })
@@ -477,36 +457,31 @@ export async function updateSubGoalStatus(
         const wasCompleted = subGoal.status === 'COMPLETED'
         const isNowCompleted = status === 'COMPLETED'
 
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoalId },
-            data: {
+        await db.update(pathfinderSubGoals)
+            .set({
                 status,
                 completedAt: isNowCompleted ? new Date() : null,
-            },
-        })
+            })
+            .where(eq(pathfinderSubGoals.id, subGoalId))
 
         // Update counters
         if (!wasCompleted && isNowCompleted) {
-            await prisma.pathfinderDailySession.update({
-                where: { id: subGoal.sessionId },
-                data: { completedSubGoals: { increment: 1 } },
-            })
-            await prisma.pathfinderGoal.update({
-                where: { id: subGoal.goalId },
-                data: {
-                    completedSubGoals: { increment: 1 },
+            await db.update(pathfinderDailySessions)
+                .set({ completedSubGoals: sql`${pathfinderDailySessions.completedSubGoals} + 1` })
+                .where(eq(pathfinderDailySessions.id, subGoal.sessionId))
+            await db.update(pathfinderGoals)
+                .set({
+                    completedSubGoals: sql`${pathfinderGoals.completedSubGoals} + 1`,
                     lastActivityAt: new Date(),
-                },
-            })
+                })
+                .where(eq(pathfinderGoals.id, subGoal.goalId))
         } else if (wasCompleted && !isNowCompleted) {
-            await prisma.pathfinderDailySession.update({
-                where: { id: subGoal.sessionId },
-                data: { completedSubGoals: { decrement: 1 } },
-            })
-            await prisma.pathfinderGoal.update({
-                where: { id: subGoal.goalId },
-                data: { completedSubGoals: { decrement: 1 } },
-            })
+            await db.update(pathfinderDailySessions)
+                .set({ completedSubGoals: sql`${pathfinderDailySessions.completedSubGoals} - 1` })
+                .where(eq(pathfinderDailySessions.id, subGoal.sessionId))
+            await db.update(pathfinderGoals)
+                .set({ completedSubGoals: sql`${pathfinderGoals.completedSubGoals} - 1` })
+                .where(eq(pathfinderGoals.id, subGoal.goalId))
         }
 
         revalidatePath(`/pathfinder/${subGoal.goal.id}`)
@@ -526,16 +501,16 @@ export async function submitSubGoalQuiz(
     answers: { questionId: string; selectedAnswer: number }[]
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const subGoal = await prisma.pathfinderSubGoal.findFirst({
-            where: { id: subGoalId },
-            include: {
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            with: {
                 goal: {
-                    select: { id: true, userId: true },
+                    columns: { id: true, userId: true },
                 },
             },
         })
@@ -562,31 +537,23 @@ export async function submitSubGoalQuiz(
 
         const score = Math.round((correctCount / quizQuestions.length) * 100)
 
-        // Update sub-goal
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoalId },
-            data: {
+        await db.update(pathfinderSubGoals)
+            .set({
                 quizCompleted: true,
                 quizScore: score,
-            },
-        })
+            })
+            .where(eq(pathfinderSubGoals.id, subGoalId))
 
-        // Update session stats
-        await prisma.pathfinderDailySession.update({
-            where: { id: subGoal.sessionId },
-            data: {
-                correctQuizAnswers: { increment: correctCount },
-            },
-        })
+        await db.update(pathfinderDailySessions)
+            .set({ correctQuizAnswers: sql`${pathfinderDailySessions.correctQuizAnswers} + ${correctCount}` })
+            .where(eq(pathfinderDailySessions.id, subGoal.sessionId))
 
-        // Update goal stats
-        await prisma.pathfinderGoal.update({
-            where: { id: subGoal.goalId },
-            data: {
-                totalQuizAnswered: { increment: quizQuestions.length },
+        await db.update(pathfinderGoals)
+            .set({
+                totalQuizAnswered: sql`${pathfinderGoals.totalQuizAnswered} + ${quizQuestions.length}`,
                 lastActivityAt: new Date(),
-            },
-        })
+            })
+            .where(eq(pathfinderGoals.id, subGoal.goalId))
 
         revalidatePath(`/pathfinder/${subGoal.goal.id}`)
         return { success: true, score, correctCount, total: quizQuestions.length }
@@ -607,16 +574,16 @@ export async function submitSubGoalCoding(
     problemId?: string
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const subGoal = await prisma.pathfinderSubGoal.findFirst({
-            where: { id: subGoalId },
-            include: {
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            with: {
                 goal: {
-                    select: { id: true, userId: true },
+                    columns: { id: true, userId: true },
                 },
             },
         })
@@ -688,31 +655,26 @@ Return ONLY valid JSON.`
         const allPassed = problems.every((p) => newProgress[(p?.id ?? 'cp0') as string] === true)
         const allAttempted = problems.every((p) => (p?.id ?? 'cp0') as string in newProgress)
 
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoalId },
-            data: {
+        await db.update(pathfinderSubGoals)
+            .set({
                 codingProgress: newProgress,
                 codingCompleted: allAttempted,
                 codingPassed: allPassed,
-            },
-        })
-
-        // Update session stats
-        if (evaluation.passed) {
-            await prisma.pathfinderDailySession.update({
-                where: { id: subGoal.sessionId },
-                data: { solvedCodingProblems: { increment: 1 } },
             })
+            .where(eq(pathfinderSubGoals.id, subGoalId))
+
+        if (evaluation.passed) {
+            await db.update(pathfinderDailySessions)
+                .set({ solvedCodingProblems: sql`${pathfinderDailySessions.solvedCodingProblems} + 1` })
+                .where(eq(pathfinderDailySessions.id, subGoal.sessionId))
         }
 
-        // Update goal stats
-        await prisma.pathfinderGoal.update({
-            where: { id: subGoal.goalId },
-            data: {
-                totalCodingSolved: { increment: evaluation.passed ? 1 : 0 },
+        await db.update(pathfinderGoals)
+            .set({
+                totalCodingSolved: sql`${pathfinderGoals.totalCodingSolved} + ${evaluation.passed ? 1 : 0}`,
                 lastActivityAt: new Date(),
-            },
-        })
+            })
+            .where(eq(pathfinderGoals.id, subGoal.goalId))
 
         revalidatePath(`/pathfinder/${subGoal.goal.id}`)
         return {
@@ -735,16 +697,16 @@ Return ONLY valid JSON.`
 
 export async function deleteSubGoal(subGoalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const subGoal = await prisma.pathfinderSubGoal.findFirst({
-            where: { id: subGoalId },
-            include: {
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            with: {
                 goal: {
-                    select: { id: true, userId: true },
+                    columns: { id: true, userId: true },
                 },
             },
         })
@@ -753,30 +715,23 @@ export async function deleteSubGoal(subGoalId: string) {
             return { success: false, error: 'Sub-goal not found' }
         }
 
-        // Update counters before deletion
         const wasCompleted = subGoal.status === 'COMPLETED'
 
-        await prisma.pathfinderSubGoal.delete({
-            where: { id: subGoalId },
-        })
+        await db.delete(pathfinderSubGoals).where(eq(pathfinderSubGoals.id, subGoalId))
 
-        // Update session stats
-        await prisma.pathfinderDailySession.update({
-            where: { id: subGoal.sessionId },
-            data: {
-                totalSubGoals: { decrement: 1 },
-                completedSubGoals: wasCompleted ? { decrement: 1 } : undefined,
-            },
-        })
+        await db.update(pathfinderDailySessions)
+            .set({
+                totalSubGoals: sql`${pathfinderDailySessions.totalSubGoals} - 1`,
+                ...(wasCompleted ? { completedSubGoals: sql`${pathfinderDailySessions.completedSubGoals} - 1` } : {}),
+            })
+            .where(eq(pathfinderDailySessions.id, subGoal.sessionId))
 
-        // Update goal stats
-        await prisma.pathfinderGoal.update({
-            where: { id: subGoal.goalId },
-            data: {
-                totalSubGoals: { decrement: 1 },
-                completedSubGoals: wasCompleted ? { decrement: 1 } : undefined,
-            },
-        })
+        await db.update(pathfinderGoals)
+            .set({
+                totalSubGoals: sql`${pathfinderGoals.totalSubGoals} - 1`,
+                ...(wasCompleted ? { completedSubGoals: sql`${pathfinderGoals.completedSubGoals} - 1` } : {}),
+            })
+            .where(eq(pathfinderGoals.id, subGoal.goalId))
 
         revalidatePath(`/pathfinder/${subGoal.goal.id}`)
         return { success: true }
@@ -792,12 +747,11 @@ export async function deleteSubGoal(subGoalId: string) {
 
 export async function transcribeVoiceRecording(audioBlob: Blob) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        // Convert blob to file for OpenAI Whisper
         const file = new File([audioBlob], 'recording.webm', { type: 'audio/webm' })
 
         const response = await openai.audio.transcriptions.create({
@@ -819,23 +773,25 @@ export async function transcribeVoiceRecording(audioBlob: Blob) {
 
 export async function saveSessionNotes(sessionId: string, notes: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const dailySession = await prisma.pathfinderDailySession.findFirst({
-            where: { id: sessionId, userId: session.user.id },
+        const dailySession = await db.query.pathfinderDailySessions.findFirst({
+            where: and(
+                eq(pathfinderDailySessions.id, sessionId),
+                eq(pathfinderDailySessions.userId, session.user.id)
+            ),
         })
 
         if (!dailySession) {
             return { success: false, error: 'Session not found' }
         }
 
-        await prisma.pathfinderDailySession.update({
-            where: { id: sessionId },
-            data: { notes },
-        })
+        await db.update(pathfinderDailySessions)
+            .set({ notes })
+            .where(eq(pathfinderDailySessions.id, sessionId))
 
         return { success: true }
     } catch (error) {
@@ -843,4 +799,3 @@ export async function saveSessionNotes(sessionId: string, notes: string) {
         return { success: false, error: 'Failed to save notes' }
     }
 }
-

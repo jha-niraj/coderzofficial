@@ -32,13 +32,13 @@ function SignInForm({ searchParams }: SignInFormProps) {
     const [googleSignIn, setGoogleSignIn] = useState<boolean>(false);
     const router = useRouter();
     const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard";
-    const { status } = useSession();
+    const { data: session, isPending } = useSession();
 
     useEffect(() => {
-        if (status === 'authenticated') {
+        if (session && !isPending) {
             router.push(callbackUrl);
         }
-    }, [status, callbackUrl, router]);
+    }, [session, isPending, callbackUrl, router]);
 
     // Show success message if user just verified their email
     useEffect(() => {
@@ -51,8 +51,9 @@ function SignInForm({ searchParams }: SignInFormProps) {
     const handleSignInWithGoogle = async () => {
         try {
             setGoogleSignIn(true)
-            await signIn('google', {
-                callbackUrl: callbackUrl
+            await signIn.social({
+                provider: "google",
+                callbackURL: callbackUrl
             })
         } catch (error) {
             console.error('Google sign in error:', error)
@@ -66,11 +67,10 @@ function SignInForm({ searchParams }: SignInFormProps) {
         setIsSubmitting(true);
 
         try {
-            const result = await signIn("credentials", {
+            const result = await signIn.email({
                 email,
                 password,
-                redirect: false,
-                callbackUrl
+                callbackURL: callbackUrl
             });
 
             if (result?.error) {
@@ -78,9 +78,9 @@ function SignInForm({ searchParams }: SignInFormProps) {
                 return;
             }
 
-            if (result?.ok) {
+            if (result?.data) {
                 toast.success("Welcome back!");
-                router.push(result?.url || callbackUrl);
+                router.push(callbackUrl);
             } else {
                 toast.error("Sign in failed. Please try again.");
             }

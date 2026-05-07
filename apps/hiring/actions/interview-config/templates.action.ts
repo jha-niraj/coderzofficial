@@ -1,9 +1,10 @@
 // Interview Process Templates Actions
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { Prisma } from "@repo/prisma/client"
-import { auth } from "@repo/auth"
+import { db, interviewProcessTemplates, companyMembers } from "@repo/db"
+import { eq, desc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 
 // Types
@@ -148,22 +149,15 @@ export async function getInterviewTemplates(filters?: {
     try {
         // Try to fetch from database
         let templates: InterviewTemplate[]
-        
-        try {
-            const where: Record<string, unknown> = { isPublic: true }
-            
-            if (filters?.style && filters.style !== "ALL") {
-                where.style = filters.style
-            }
-            if (filters?.category && filters.category !== "ALL") {
-                where.category = filters.category
-            }
 
-            const dbTemplates = await prisma.interviewProcessTemplate.findMany({
-                where,
+        try {
+            const conditions = [eq(interviewProcessTemplates.isPublic, true)]
+
+            const dbTemplates = await db.query.interviewProcessTemplates.findMany({
+                where: eq(interviewProcessTemplates.isPublic, true),
                 orderBy: [
-                    { usageCount: "desc" },
-                    { createdAt: "desc" }
+                    desc(interviewProcessTemplates.usageCount),
+                    desc(interviewProcessTemplates.createdAt)
                 ]
             })
 
@@ -227,8 +221,8 @@ export async function getInterviewTemplate(id: string) {
 
         // Try database
         try {
-            const template = await prisma.interviewProcessTemplate.findUnique({
-                where: { id }
+            const template = await db.query.interviewProcessTemplates.findFirst({
+                where: eq(interviewProcessTemplates.id, id)
             })
 
             if (template) {
@@ -261,10 +255,17 @@ export async function incrementTemplateUsage(id: string) {
             return { success: true }
         }
 
-        await prisma.interviewProcessTemplate.update({
-            where: { id },
-            data: { usageCount: { increment: 1 } }
+        const existing = await db.query.interviewProcessTemplates.findFirst({
+            where: eq(interviewProcessTemplates.id, id),
+            columns: { id: true, usageCount: true }
         })
+
+        if (existing) {
+            await db.update(interviewProcessTemplates)
+                .set({ usageCount: existing.usageCount + 1 })
+                .where(eq(interviewProcessTemplates.id, id))
+        }
+
         return { success: true }
     } catch (error) {
         console.error("Error incrementing usage:", error)
@@ -283,8 +284,8 @@ interface AIGenerationInput {
 }
 
 export async function generateInterviewTemplate(input: AIGenerationInput) {
-    const session = await auth()
-    
+    const session = await getSession(headers())
+
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
@@ -317,7 +318,7 @@ export async function generateInterviewTemplate(input: AIGenerationInput) {
             MNC: "Traditional corporate style with structured rounds, panel interviews, and HR involvement. Usually 4-5 rounds over 2-3 weeks."
         }
 
-        const systemPrompt = `You are an expert HR consultant who designs interview processes for tech companies. 
+        const systemPrompt = `You are an expert HR consultant who designs interview processes for tech companies.
 Generate a detailed interview process based on the given style and role type.
 
 The interview process should include:
@@ -374,26 +375,28 @@ Generate a realistic and comprehensive interview process.`
 
         // Try to save to database
         try {
-            const member = await prisma.companyMember.findFirst({
-                where: { userId: session.user.id }
+            const member = await db.query.companyMembers.findFirst({
+                where: eq(companyMembers.userId, session.user.id),
+                columns: { companyId: true }
             })
 
-            const template = await prisma.interviewProcessTemplate.create({
-                data: {
-                    name: generated.name,
-                    description: generated.description,
-                    style: input.style,
-                    category: "GENERAL",
-                    rounds: generated.rounds as unknown as Prisma.InputJsonValue,
-                    estimatedDurationWeeks: generated.estimatedDurationWeeks,
-                    roundCount: generated.rounds.length,
-                    isAiGenerated: true,
-                    aiPrompt: userPrompt,
-                    isPublic: true,
-                    createdByCompanyId: member?.companyId || null,
-                    createdByUserId: session.user.id
-                }
-            })
+            const insertedTemplates = await db.insert(interviewProcessTemplates).values({
+                name: generated.name,
+                description: generated.description,
+                style: input.style,
+                category: "GENERAL",
+                rounds: generated.rounds as unknown as Record<string, unknown>[],
+                estimatedDurationWeeks: generated.estimatedDurationWeeks,
+                roundCount: generated.rounds.length,
+                isAiGenerated: true,
+                aiPrompt: userPrompt,
+                isPublic: true,
+                createdByCompanyId: member?.companyId || null,
+                createdByUserId: session.user.id
+            }).returning()
+
+            const template = insertedTemplates[0]
+            if (!template) throw new Error("Failed to save template")
 
             revalidatePath("/interview-config")
 

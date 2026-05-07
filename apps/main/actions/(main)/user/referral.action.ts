@@ -1,11 +1,13 @@
 "use server"
 
-import { auth } from '@repo/auth';
-import { prisma } from "@repo/prisma";
+import { getSession } from '@repo/auth';
+import { headers } from 'next/headers';
+import { db, referrals, users } from "@repo/db";
+import { eq, and } from "drizzle-orm";
 
 export async function getReferralStats() {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return {
                 success: false,
@@ -16,38 +18,27 @@ export async function getReferralStats() {
 
         const userId = session.user.id;
 
-        // Get total referrals
-        const totalReferrals = await prisma.referral.count({
-            where: { referrerId: userId }
-        });
-
-        // Get successful referrals (those who completed onboarding)
-        const successfulReferrals = await prisma.referral.count({
-            where: {
-                referrerId: userId,
+        // Get all referrals for this user
+        const allReferrals = await db.query.referrals.findMany({
+            where: eq(referrals.referrerId, userId),
+            with: {
                 referredUser: {
-                    onboardingCompleted: true
+                    columns: { onboardingCompleted: true }
                 }
             }
         });
 
-        // Get pending referrals (those who haven't completed onboarding)
-        const pendingReferrals = await prisma.referral.count({
-            where: {
-                referrerId: userId,
-                referredUser: {
-                    onboardingCompleted: false
-                }
-            }
-        });
+        const totalReferrals = allReferrals.length;
+        const successfulReferrals = allReferrals.filter(r => r.referredUser.onboardingCompleted).length;
+        const pendingReferrals = allReferrals.filter(r => !r.referredUser.onboardingCompleted).length;
 
         // Calculate total XP earned (300 XP per successful referral)
         const totalXpEarned = successfulReferrals * 300;
 
         // Get user's referral code
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { referralCode: true }
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: { referralCode: true }
         });
 
         return {
@@ -72,7 +63,7 @@ export async function getReferralStats() {
 
 export async function getReferrals(page: number = 1, limit: number = 10, status: string = "all") {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return {
                 success: false,
@@ -86,24 +77,12 @@ export async function getReferrals(page: number = 1, limit: number = 10, status:
         const userId = session.user.id;
         const skip = (page - 1) * limit;
 
-        // Build where clause based on status filter
-        const whereClause: any = { referrerId: userId };
-        
-        if (status === "successful") {
-            whereClause.referredUser = { onboardingCompleted: true };
-        } else if (status === "pending") {
-            whereClause.referredUser = { onboardingCompleted: false };
-        }
-
-        // Get total count
-        const total = await prisma.referral.count({ where: whereClause });
-
-        // Get referrals with pagination
-        const referrals = await prisma.referral.findMany({
-            where: whereClause,
-            include: {
+        // Get all referrals with referred user details
+        const allReferrals = await db.query.referrals.findMany({
+            where: eq(referrals.referrerId, userId),
+            with: {
                 referredUser: {
-                    select: {
+                    columns: {
                         name: true,
                         email: true,
                         image: true,
@@ -112,16 +91,23 @@ export async function getReferrals(page: number = 1, limit: number = 10, status:
                     }
                 }
             },
-            orderBy: { createdAt: "desc" },
-            skip,
-            take: limit
+            orderBy: (referrals, { desc }) => [desc(referrals.createdAt)],
         });
 
+        // Filter by status
+        const filtered = status === "successful"
+            ? allReferrals.filter(r => r.referredUser.onboardingCompleted)
+            : status === "pending"
+                ? allReferrals.filter(r => !r.referredUser.onboardingCompleted)
+                : allReferrals;
+
+        const total = filtered.length;
+        const paginated = filtered.slice(skip, skip + limit);
         const totalPages = Math.ceil(total / limit);
 
         return {
             success: true,
-            referrals: referrals.map(ref => ({
+            referrals: paginated.map(ref => ({
                 id: ref.id,
                 referralCode: ref.referralCode,
                 pointsAwarded: ref.pointsAwarded,
@@ -149,5 +135,3 @@ export async function getReferrals(page: number = 1, limit: number = 10, status:
         };
     }
 }
-
-

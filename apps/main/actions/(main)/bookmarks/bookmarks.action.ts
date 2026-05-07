@@ -1,13 +1,27 @@
 "use server";
 
-import { auth } from '@repo/auth';
-import { prisma } from "@repo/prisma";
+import {
+    db,
+    learnBookmark,
+    projectV2Bookmark,
+    communityPostBookmark,
+    mockInterviewBookmark,
+    projectsV2,
+    communityPosts,
+    communities,
+    mockVoiceSession,
+    mockInterviewVoice,
+    users,
+} from "@repo/db"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { eq, and, count, inArray } from "drizzle-orm"
 
 // ==========================================
 // HELPER FUNCTIONS
 // ==========================================
 async function getCurrentUser() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         return null;
     }
@@ -24,102 +38,63 @@ export async function getBookmarksSummary() {
             return { success: false, error: "Unauthorized" };
         }
 
-        // Fetch all bookmark counts and recent items in parallel
+        // Fetch all bookmarks in parallel
         const [
-            LearnBookmarks,
-            projectV2Bookmarks,
-            communityPostBookmarks,
-            mockInterviewBookmarks,
+            learnBMs,
+            projectV2BMs,
+            communityPostBMs,
+            mockBMs,
         ] = await Promise.all([
-            prisma.learnBookmark.findMany({
-                where: { userId: user.id },
-                include: {
-                    learn: {
-                        select: {
-                            id: true,
-                            title: true,
-                            slug: true,
-                            mainCategory: {
-                                select: {
-                                    name: true
-                                }
-                            },
-                            difficulty: true,
-                            thumbnail: true,
-                            estimatedTime: true,
-                        },
-                    },
-                },
-                orderBy: { createdAt: "desc" },
-                take: 10,
+            db.query.learnBookmark.findMany({
+                where: eq(learnBookmark.userId, user.id),
+                with: { learn: { with: { mainCategory: true } } },
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit: 10,
             }),
-            prisma.projectV2Bookmark.findMany({
-                where: { userId: user.id },
-                include: {
-                    project: {
-                        select: {
-                            id: true,
-                            title: true,
-                            slug: true,
-                            shortDescription: true,
-                            difficulty: true,
-                            technologies: true,
-                        },
-                    },
-                },
-                orderBy: { createdAt: "desc" },
-                take: 10,
+            db.query.projectV2Bookmark.findMany({
+                where: eq(projectV2Bookmark.userId, user.id),
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit: 10,
             }),
-            prisma.communityPostBookmark.findMany({
-                where: { userId: user.id },
-                include: {
-                    post: {
-                        select: {
-                            id: true,
-                            title: true,
-                            content: true,
-                            slug: true,
-                            community: {
-                                select: {
-                                    name: true,
-                                    slug: true,
-                                },
-                            },
-                            author: {
-                                select: {
-                                    name: true,
-                                    image: true,
-                                },
-                            },
-                        },
-                    },
-                },
-                orderBy: { createdAt: "desc" },
-                take: 10,
+            db.query.communityPostBookmark.findMany({
+                where: eq(communityPostBookmark.userId, user.id),
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit: 10,
             }),
-            prisma.mockInterviewBookmark.findMany({
-                where: { userId: user.id },
-                include: {
-                    session: {
-                        select: {
-                            id: true,
-                            status: true,
-                            createdAt: true,
-                            mock: {
-                                select: {
-                                    title: true,
-                                    description: true,
-                                },
-                            },
-                        },
-                    },
-                },
-                orderBy: { createdAt: "desc" },
-                take: 10,
+            db.query.mockInterviewBookmark.findMany({
+                where: eq(mockInterviewBookmark.userId, user.id),
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit: 10,
             }),
         ]);
 
-        // Build combined recent saves
+        // Fetch joined data for bookmarks that lack relations
+        const projectIds = projectV2BMs.map(b => b.projectId)
+        const postIds = communityPostBMs.map(b => b.postId)
+        const sessionIds = mockBMs.map(b => b.sessionId)
+
+        const [projectsData, postsData, sessionsData] = await Promise.all([
+            projectIds.length > 0
+                ? db.query.projectsV2.findMany({ where: inArray(projectsV2.id, projectIds) })
+                : Promise.resolve([]),
+            postIds.length > 0
+                ? db.query.communityPosts.findMany({
+                    where: inArray(communityPosts.id, postIds),
+                    with: { community: true, author: true }
+                  })
+                : Promise.resolve([]),
+            sessionIds.length > 0
+                ? db.query.mockVoiceSession.findMany({
+                    where: inArray(mockVoiceSession.id, sessionIds),
+                    with: { mock: true }
+                  })
+                : Promise.resolve([]),
+        ])
+
+        const projectMap = Object.fromEntries(projectsData.map(p => [p.id, p]))
+        const postMap = Object.fromEntries(postsData.map(p => [p.id, p]))
+        const sessionMap = Object.fromEntries(sessionsData.map(s => [s.id, s]))
+
         type BookmarkType = 'Learn' | 'project' | 'projectV2' | 'community' | 'mock' | 'v1' | 'v2';
         const recentSaves: Array<{
             type: BookmarkType;
@@ -133,7 +108,7 @@ export async function getBookmarksSummary() {
             savedAt: Date;
         }> = [];
 
-        LearnBookmarks.forEach(b => {
+        learnBMs.forEach(b => {
             recentSaves.push({
                 type: "Learn" as const,
                 id: b.learn.id,
@@ -145,56 +120,64 @@ export async function getBookmarksSummary() {
             });
         });
 
-        projectV2Bookmarks.forEach(b => {
-            recentSaves.push({
-                type: "projectV2" as const,
-                id: b.project.id,
-                title: b.project.title,
-                slug: b.project.slug,
-                savedAt: b.createdAt,
-            });
+        projectV2BMs.forEach(b => {
+            const project = projectMap[b.projectId]
+            if (project) {
+                recentSaves.push({
+                    type: "projectV2" as const,
+                    id: project.id,
+                    title: project.title,
+                    slug: project.slug,
+                    savedAt: b.createdAt,
+                });
+            }
         });
 
-        communityPostBookmarks.forEach(b => {
-            recentSaves.push({
-                type: "community" as const,
-                id: b.post.id,
-                title: b.post.title || b.post.content?.substring(0, 50) + "...",
-                slug: b.post.slug ?? undefined,
-                communityName: b.post.community?.name,
-                communitySlug: b.post.community?.slug,
-                savedAt: b.createdAt,
-            });
+        communityPostBMs.forEach(b => {
+            const post = postMap[b.postId]
+            if (post) {
+                recentSaves.push({
+                    type: "community" as const,
+                    id: post.id,
+                    title: post.title || post.content?.substring(0, 50) + "...",
+                    slug: post.slug ?? undefined,
+                    communityName: post.community?.name,
+                    communitySlug: post.community?.slug,
+                    savedAt: b.createdAt,
+                });
+            }
         });
 
-        mockInterviewBookmarks.forEach(b => {
-            recentSaves.push({
-                type: "mock" as const,
-                id: b.session.id,
-                title: b.session.mock.title || b.session.mock.description,
-                savedAt: b.createdAt,
-            });
+        mockBMs.forEach(b => {
+            const session = sessionMap[b.sessionId]
+            if (session) {
+                recentSaves.push({
+                    type: "mock" as const,
+                    id: session.id,
+                    title: session.mock.title || session.mock.description,
+                    savedAt: b.createdAt,
+                });
+            }
         });
 
-        // Sort by saved date
         recentSaves.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
 
-        const totalProjects = projectV2Bookmarks.length;
+        const totalProjects = projectV2BMs.length;
 
         return {
             success: true,
             data: {
-                total: LearnBookmarks.length + totalProjects + communityPostBookmarks.length + mockInterviewBookmarks.length,
-                totalBookmarks: LearnBookmarks.length + totalProjects + communityPostBookmarks.length + mockInterviewBookmarks.length,
-                Learns: LearnBookmarks.length,
+                total: learnBMs.length + totalProjects + communityPostBMs.length + mockBMs.length,
+                totalBookmarks: learnBMs.length + totalProjects + communityPostBMs.length + mockBMs.length,
+                Learns: learnBMs.length,
                 projects: totalProjects,
-                community: communityPostBookmarks.length,
-                mock: mockInterviewBookmarks.length,
-                studio: 0, // Coming soon
+                community: communityPostBMs.length,
+                mock: mockBMs.length,
+                studio: 0,
                 byModule: {
                     Learns: {
-                        count: LearnBookmarks.length,
-                        recent: LearnBookmarks.slice(0, 5).map(b => ({
+                        count: learnBMs.length,
+                        recent: learnBMs.slice(0, 5).map(b => ({
                             id: b.learn.id,
                             title: b.learn.title,
                             slug: b.learn.slug,
@@ -206,32 +189,41 @@ export async function getBookmarksSummary() {
                     },
                     projects: {
                         count: totalProjects,
-                        recent: projectV2Bookmarks.slice(0, 5).map(b => ({
-                            id: b.project.id,
-                            title: b.project.title,
-                            slug: b.project.slug,
-                            type: "v2" as const,
-                            savedAt: b.createdAt,
-                        })),
+                        recent: projectV2BMs.slice(0, 5).map(b => {
+                            const project = projectMap[b.projectId]
+                            return {
+                                id: b.projectId,
+                                title: project?.title ?? null,
+                                slug: project?.slug ?? '',
+                                type: "v2" as const,
+                                savedAt: b.createdAt,
+                            }
+                        }),
                     },
                     community: {
-                        count: communityPostBookmarks.length,
-                        recent: communityPostBookmarks.slice(0, 5).map(b => ({
-                            id: b.post.id,
-                            title: b.post.title,
-                            slug: b.post.slug,
-                            communityName: b.post.community?.name,
-                            communitySlug: b.post.community?.slug,
-                            savedAt: b.createdAt,
-                        })),
+                        count: communityPostBMs.length,
+                        recent: communityPostBMs.slice(0, 5).map(b => {
+                            const post = postMap[b.postId]
+                            return {
+                                id: b.postId,
+                                title: post?.title ?? null,
+                                slug: post?.slug ?? null,
+                                communityName: post?.community?.name,
+                                communitySlug: post?.community?.slug,
+                                savedAt: b.createdAt,
+                            }
+                        }),
                     },
                     mock: {
-                        count: mockInterviewBookmarks.length,
-                        recent: mockInterviewBookmarks.slice(0, 5).map(b => ({
-                            id: b.session.id,
-                            title: b.session.mock.title || b.session.mock.description,
-                            savedAt: b.createdAt,
-                        })),
+                        count: mockBMs.length,
+                        recent: mockBMs.slice(0, 5).map(b => {
+                            const session = sessionMap[b.sessionId]
+                            return {
+                                id: b.sessionId,
+                                title: session?.mock.title || session?.mock.description,
+                                savedAt: b.createdAt,
+                            }
+                        }),
                     },
                     collectives: {
                         count: 0,
@@ -258,26 +250,14 @@ export async function getLearnBookmarks() {
             return { success: false, error: "Unauthorized" };
         }
 
-        const bookmarks = await prisma.learnBookmark.findMany({
-            where: { userId: user.id },
-            include: {
+        const bookmarks = await db.query.learnBookmark.findMany({
+            where: eq(learnBookmark.userId, user.id),
+            with: {
                 learn: {
-                    include: {
-                        mainCategory: {
-                            select: {
-                                name: true
-                            }
-                        },
-                        _count: {
-                            select: {
-                                steps: true,
-                                likes: true,
-                            },
-                        },
-                    },
-                },
+                    with: { mainCategory: true }
+                }
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: (t, { desc }) => [desc(t.createdAt)],
         });
 
         return {
@@ -291,8 +271,6 @@ export async function getLearnBookmarks() {
                 difficulty: b.learn.difficulty,
                 thumbnail: b.learn.thumbnail,
                 estimatedTime: b.learn.estimatedTime,
-                stepCount: b.learn._count.steps,
-                likeCount: b.learn._count.likes,
                 savedAt: b.createdAt,
                 folder: b.folder,
                 notes: b.notes,
@@ -311,27 +289,18 @@ export async function toggleLearnBookmark(learnId: string) {
             return { success: false, error: "Unauthorized" };
         }
 
-        const existing = await prisma.learnBookmark.findUnique({
-            where: {
-                learnId_userId: {
-                    learnId,
-                    userId: user.id,
-                },
-            },
+        const existing = await db.query.learnBookmark.findFirst({
+            where: and(
+                eq(learnBookmark.learnId, learnId),
+                eq(learnBookmark.userId, user.id)
+            ),
         });
 
         if (existing) {
-            await prisma.learnBookmark.delete({
-                where: { id: existing.id },
-            });
+            await db.delete(learnBookmark).where(eq(learnBookmark.id, existing.id));
             return { success: true, bookmarked: false };
         } else {
-            await prisma.learnBookmark.create({
-                data: {
-                    learnId,
-                    userId: user.id,
-                },
-            });
+            await db.insert(learnBookmark).values({ learnId, userId: user.id });
             return { success: true, bookmarked: true };
         }
     } catch (error) {
@@ -361,39 +330,36 @@ export async function getProjectV2Bookmarks() {
             return { success: false, error: "Unauthorized" };
         }
 
-        const bookmarks = await prisma.projectV2Bookmark.findMany({
-            where: { userId: user.id },
-            include: {
-                project: {
-                    include: {
-                        _count: {
-                            select: {
-                                pages: true,
-                            },
-                        },
-                    },
-                },
-            },
-            orderBy: { createdAt: "desc" },
+        const bookmarks = await db.query.projectV2Bookmark.findMany({
+            where: eq(projectV2Bookmark.userId, user.id),
+            orderBy: (t, { desc }) => [desc(t.createdAt)],
         });
+
+        const projectIds = bookmarks.map(b => b.projectId)
+        const projects = projectIds.length > 0
+            ? await db.query.projectsV2.findMany({ where: inArray(projectsV2.id, projectIds) })
+            : []
+        const projectMap = Object.fromEntries(projects.map(p => [p.id, p]))
 
         return {
             success: true,
-            data: bookmarks.map(b => ({
-                id: b.project.id,
-                title: b.project.title,
-                slug: b.project.slug,
-                description: b.project.shortDescription,
-                difficulty: b.project.difficulty,
-                technologies: b.project.technologies,
-                estimatedHours: b.project.estimatedHours,
-                taskCount: 0, // Tasks are now in sprints, counting them requires deep query
-                pageCount: b.project._count.pages,
-                savedAt: b.createdAt,
-                folder: b.folder,
-                notes: b.notes,
-                type: "v2",
-            })),
+            data: bookmarks.map(b => {
+                const project = projectMap[b.projectId]
+                return {
+                    id: b.projectId,
+                    title: project?.title ?? null,
+                    slug: project?.slug ?? '',
+                    description: project?.shortDescription,
+                    difficulty: project?.difficulty,
+                    technologies: project?.technologies ?? [],
+                    estimatedHours: project?.estimatedHours,
+                    taskCount: 0,
+                    savedAt: b.createdAt,
+                    folder: b.folder,
+                    notes: b.notes,
+                    type: "v2",
+                }
+            }),
         };
     } catch (error) {
         console.error("Error fetching projectV2 bookmarks:", error);
@@ -408,27 +374,18 @@ export async function toggleProjectV2Bookmark(projectId: string) {
             return { success: false, error: "Unauthorized" };
         }
 
-        const existing = await prisma.projectV2Bookmark.findUnique({
-            where: {
-                projectId_userId: {
-                    projectId,
-                    userId: user.id,
-                },
-            },
+        const existing = await db.query.projectV2Bookmark.findFirst({
+            where: and(
+                eq(projectV2Bookmark.projectId, projectId),
+                eq(projectV2Bookmark.userId, user.id)
+            ),
         });
 
         if (existing) {
-            await prisma.projectV2Bookmark.delete({
-                where: { id: existing.id },
-            });
+            await db.delete(projectV2Bookmark).where(eq(projectV2Bookmark.id, existing.id));
             return { success: true, bookmarked: false };
         } else {
-            await prisma.projectV2Bookmark.create({
-                data: {
-                    projectId,
-                    userId: user.id,
-                },
-            });
+            await db.insert(projectV2Bookmark).values({ projectId, userId: user.id });
             return { success: true, bookmarked: true };
         }
     } catch (error) {
@@ -448,54 +405,38 @@ export async function getCommunityBookmarks() {
             return { success: false, error: "Unauthorized" };
         }
 
-        const bookmarks = await prisma.communityPostBookmark.findMany({
-            where: { userId: user.id },
-            include: {
-                post: {
-                    include: {
-                        community: {
-                            select: {
-                                id: true,
-                                name: true,
-                                slug: true,
-                                logo: true,
-                            },
-                        },
-                        author: {
-                            select: {
-                                id: true,
-                                name: true,
-                                image: true,
-                                username: true,
-                            },
-                        },
-                        _count: {
-                            select: {
-                                comments: true,
-                                likes: true,
-                            },
-                        },
-                    },
-                },
-            },
-            orderBy: { createdAt: "desc" },
+        const bookmarks = await db.query.communityPostBookmark.findMany({
+            where: eq(communityPostBookmark.userId, user.id),
+            orderBy: (t, { desc }) => [desc(t.createdAt)],
         });
+
+        const postIds = bookmarks.map(b => b.postId)
+        const posts = postIds.length > 0
+            ? await db.query.communityPosts.findMany({
+                where: inArray(communityPosts.id, postIds),
+                with: { community: true, author: true, likes: true, comments: true }
+              })
+            : []
+        const postMap = Object.fromEntries(posts.map(p => [p.id, p]))
 
         return {
             success: true,
-            data: bookmarks.map(b => ({
-                id: b.post.id,
-                title: b.post.title,
-                content: b.post.content?.substring(0, 200),
-                slug: b.post.slug,
-                community: b.post.community,
-                author: b.post.author,
-                commentCount: b.post._count.comments,
-                likeCount: b.post._count.likes,
-                savedAt: b.createdAt,
-                folder: b.folder,
-                notes: b.notes,
-            })),
+            data: bookmarks.map(b => {
+                const post = postMap[b.postId]
+                return {
+                    id: b.postId,
+                    title: post?.title ?? null,
+                    content: post?.content?.substring(0, 200),
+                    slug: post?.slug,
+                    community: post?.community,
+                    author: post?.author,
+                    commentCount: post?._count?.comments ?? post?.comments?.length ?? 0,
+                    likeCount: post?._count?.likes ?? post?.likes?.length ?? 0,
+                    savedAt: b.createdAt,
+                    folder: b.folder,
+                    notes: b.notes,
+                }
+            }),
         };
     } catch (error) {
         console.error("Error fetching community bookmarks:", error);
@@ -510,27 +451,18 @@ export async function toggleCommunityPostBookmark(postId: string) {
             return { success: false, error: "Unauthorized" };
         }
 
-        const existing = await prisma.communityPostBookmark.findUnique({
-            where: {
-                postId_userId: {
-                    postId,
-                    userId: user.id,
-                },
-            },
+        const existing = await db.query.communityPostBookmark.findFirst({
+            where: and(
+                eq(communityPostBookmark.postId, postId),
+                eq(communityPostBookmark.userId, user.id)
+            ),
         });
 
         if (existing) {
-            await prisma.communityPostBookmark.delete({
-                where: { id: existing.id },
-            });
+            await db.delete(communityPostBookmark).where(eq(communityPostBookmark.id, existing.id));
             return { success: true, bookmarked: false };
         } else {
-            await prisma.communityPostBookmark.create({
-                data: {
-                    postId,
-                    userId: user.id,
-                },
-            });
+            await db.insert(communityPostBookmark).values({ postId, userId: user.id });
             return { success: true, bookmarked: true };
         }
     } catch (error) {
@@ -550,38 +482,36 @@ export async function getMockBookmarks() {
             return { success: false, error: "Unauthorized" };
         }
 
-        const bookmarks = await prisma.mockInterviewBookmark.findMany({
-            where: { userId: user.id },
-            include: {
-                session: {
-                    include: {
-                        mock: {
-                            select: {
-                                id: true,
-                                title: true,
-                                description: true,
-                                level: true,
-                            },
-                        },
-                    },
-                },
-            },
-            orderBy: { createdAt: "desc" },
+        const bookmarks = await db.query.mockInterviewBookmark.findMany({
+            where: eq(mockInterviewBookmark.userId, user.id),
+            orderBy: (t, { desc }) => [desc(t.createdAt)],
         });
+
+        const sessionIds = bookmarks.map(b => b.sessionId)
+        const sessions = sessionIds.length > 0
+            ? await db.query.mockVoiceSession.findMany({
+                where: inArray(mockVoiceSession.id, sessionIds),
+                with: { mock: true }
+              })
+            : []
+        const sessionMap = Object.fromEntries(sessions.map(s => [s.id, s]))
 
         return {
             success: true,
-            data: bookmarks.map(b => ({
-                id: b.session.id,
-                mockTitle: b.session.mock.title,
-                topic: b.session.mock.description,
-                level: b.session.mock.level,
-                status: b.session.status,
-                sessionDate: b.session.createdAt,
-                savedAt: b.createdAt,
-                folder: b.folder,
-                notes: b.notes,
-            })),
+            data: bookmarks.map(b => {
+                const session = sessionMap[b.sessionId]
+                return {
+                    id: b.sessionId,
+                    mockTitle: session?.mock.title ?? null,
+                    topic: session?.mock.description ?? null,
+                    level: session?.mock.level ?? null,
+                    status: session?.status ?? null,
+                    sessionDate: session?.createdAt ?? null,
+                    savedAt: b.createdAt,
+                    folder: b.folder,
+                    notes: b.notes,
+                }
+            }),
         };
     } catch (error) {
         console.error("Error fetching mock bookmarks:", error);
@@ -596,27 +526,18 @@ export async function toggleMockBookmark(sessionId: string) {
             return { success: false, error: "Unauthorized" };
         }
 
-        const existing = await prisma.mockInterviewBookmark.findUnique({
-            where: {
-                sessionId_userId: {
-                    sessionId,
-                    userId: user.id,
-                },
-            },
+        const existing = await db.query.mockInterviewBookmark.findFirst({
+            where: and(
+                eq(mockInterviewBookmark.sessionId, sessionId),
+                eq(mockInterviewBookmark.userId, user.id)
+            ),
         });
 
         if (existing) {
-            await prisma.mockInterviewBookmark.delete({
-                where: { id: existing.id },
-            });
+            await db.delete(mockInterviewBookmark).where(eq(mockInterviewBookmark.id, existing.id));
             return { success: true, bookmarked: false };
         } else {
-            await prisma.mockInterviewBookmark.create({
-                data: {
-                    sessionId,
-                    userId: user.id,
-                },
-            });
+            await db.insert(mockInterviewBookmark).values({ sessionId, userId: user.id });
             return { success: true, bookmarked: true };
         }
     } catch (error) {
@@ -636,13 +557,11 @@ export async function isLearnBookmarked(learnId: string) {
             return { success: true, bookmarked: false };
         }
 
-        const bookmark = await prisma.learnBookmark.findUnique({
-            where: {
-                learnId_userId: {
-                    learnId,
-                    userId: user.id,
-                },
-            },
+        const bookmark = await db.query.learnBookmark.findFirst({
+            where: and(
+                eq(learnBookmark.learnId, learnId),
+                eq(learnBookmark.userId, user.id)
+            ),
         });
 
         return { success: true, bookmarked: !!bookmark };
@@ -660,13 +579,11 @@ export async function isProjectBookmarked(projectId: string, version: "v1" | "v2
         }
 
         // All project bookmarks now use ProjectV2Bookmark
-        const bookmark = await prisma.projectV2Bookmark.findUnique({
-            where: {
-                projectId_userId: {
-                    projectId,
-                    userId: user.id,
-                },
-            },
+        const bookmark = await db.query.projectV2Bookmark.findFirst({
+            where: and(
+                eq(projectV2Bookmark.projectId, projectId),
+                eq(projectV2Bookmark.userId, user.id)
+            ),
         });
 
         return { success: true, bookmarked: !!bookmark };
@@ -683,13 +600,11 @@ export async function isCommunityPostBookmarked(postId: string) {
             return { success: true, bookmarked: false };
         }
 
-        const bookmark = await prisma.communityPostBookmark.findUnique({
-            where: {
-                postId_userId: {
-                    postId,
-                    userId: user.id,
-                },
-            },
+        const bookmark = await db.query.communityPostBookmark.findFirst({
+            where: and(
+                eq(communityPostBookmark.postId, postId),
+                eq(communityPostBookmark.userId, user.id)
+            ),
         });
 
         return { success: true, bookmarked: !!bookmark };
@@ -710,11 +625,11 @@ export async function getBookmarkStats() {
             return { success: false, error: "Unauthorized" };
         }
 
-        const [LearnCount, projectV2Count, communityCount, mockCount] = await Promise.all([
-            prisma.learnBookmark.count({ where: { userId: user.id } }),
-            prisma.projectV2Bookmark.count({ where: { userId: user.id } }),
-            prisma.communityPostBookmark.count({ where: { userId: user.id } }),
-            prisma.mockInterviewBookmark.count({ where: { userId: user.id } }),
+        const [[{ value: LearnCount }], [{ value: projectV2Count }], [{ value: communityCount }], [{ value: mockCount }]] = await Promise.all([
+            db.select({ value: count() }).from(learnBookmark).where(eq(learnBookmark.userId, user.id)),
+            db.select({ value: count() }).from(projectV2Bookmark).where(eq(projectV2Bookmark.userId, user.id)),
+            db.select({ value: count() }).from(communityPostBookmark).where(eq(communityPostBookmark.userId, user.id)),
+            db.select({ value: count() }).from(mockInterviewBookmark).where(eq(mockInterviewBookmark.userId, user.id)),
         ]);
 
         return {

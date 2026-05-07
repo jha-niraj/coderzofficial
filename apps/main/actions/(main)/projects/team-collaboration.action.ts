@@ -1,17 +1,25 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import prisma from '@repo/prisma'
-import { auth } from '@repo/auth'
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    users,
+    projectsV2,
+    projectV2Members,
+    projectV2Invitations,
+} from "@repo/db";
+import { eq, and, or } from "drizzle-orm";
 
 // ============================================================================
 // Helper Functions
 // ============================================================================
 
 async function getCurrentUser() {
-    const session = await auth()
+    const session = await getSession(headers());
     if (!session?.user?.email) throw new Error('Not authenticated')
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    const [user] = await db.select().from(users).where(eq(users.email, session.user.email));
     if (!user) throw new Error('User not found')
     return user
 }
@@ -41,80 +49,73 @@ export async function inviteToProject(
     try {
         const user = await getCurrentUser()
 
-        // Verify user is project creator or admin
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId),
+            with: {
                 members: {
-                    where: { userId: user.id }
+                    where: eq(projectV2Members.userId, user.id)
                 }
             }
-        })
+        });
 
         if (!project) {
             return { success: false, error: 'Project not found' }
         }
 
         const isCreator = project.createdBy === user.id
-        const isAdmin = project.members?.some(m => m.role === 'ADMIN')
+        const isAdmin = project.members?.some((m: any) => m.role === 'ADMIN')
 
         if (!isCreator && !isAdmin) {
             return { success: false, error: 'You do not have permission to invite members' }
         }
 
-        // Check if user exists with this email
-        const invitedUser = await prisma.user.findFirst({
-            where: { email: email.toLowerCase() }
-        })
+        const invitedUser = await db.query.users.findFirst({
+            where: eq(users.email, email.toLowerCase())
+        });
 
-        // Check if already a member
         if (invitedUser) {
-            const existingMember = await prisma.projectV2Member.findFirst({
-                where: {
-                    projectId,
-                    userId: invitedUser.id
-                }
-            })
+            const existingMember = await db.query.projectV2Members.findFirst({
+                where: and(
+                    eq(projectV2Members.projectId, projectId),
+                    eq(projectV2Members.userId, invitedUser.id)
+                )
+            });
 
             if (existingMember) {
                 return { success: false, error: 'User is already a member of this project' }
             }
         }
 
-        // Check for existing pending invitation
-        const existingInvitation = await prisma.projectV2Invitation.findFirst({
-            where: {
-                projectId,
-                OR: [
-                    { invitedEmail: email.toLowerCase() },
-                    { invitedUserId: invitedUser?.id }
-                ],
-                status: 'PENDING'
-            }
-        })
+        const existingInvitation = await db.query.projectV2Invitations.findFirst({
+            where: and(
+                eq(projectV2Invitations.projectId, projectId),
+                eq(projectV2Invitations.status, 'PENDING'),
+                invitedUser
+                    ? or(
+                        eq(projectV2Invitations.invitedEmail, email.toLowerCase()),
+                        eq(projectV2Invitations.invitedUserId, invitedUser.id)
+                    )
+                    : eq(projectV2Invitations.invitedEmail, email.toLowerCase())
+            )
+        });
 
         if (existingInvitation) {
             return { success: false, error: 'An invitation is already pending for this user' }
         }
 
-        // Create invitation
-        const invitation = await prisma.projectV2Invitation.create({
-            data: {
-                projectId,
-                invitedEmail: email.toLowerCase(),
-                invitedUserId: invitedUser?.id,
-                invitedById: user.id,
-                role,
-                status: 'PENDING',
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
-            }
-        })
-
-        // TODO: Send email notification
+        const [invitation] = await db.insert(projectV2Invitations).values({
+            projectId,
+            invitedEmail: email.toLowerCase(),
+            invitedUserId: invitedUser?.id,
+            invitedById: user.id,
+            role,
+            status: 'PENDING',
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        }).returning();
 
         revalidatePath(`/projects/${project.slug}`)
 
-        return { success: true, data: { invitationId: invitation.id } }
+        return { success: true, data: { invitationId: invitation!.id } }
     } catch (error) {
         console.error('Error inviting to project:', error)
         return { success: false, error: 'Failed to send invitation' }
@@ -130,16 +131,15 @@ export async function acceptInvitation(
     try {
         const user = await getCurrentUser()
 
-        const invitation = await prisma.projectV2Invitation.findUnique({
-            where: { id: invitationId },
-            include: { project: true }
-        })
+        const invitation = await db.query.projectV2Invitations.findFirst({
+            where: eq(projectV2Invitations.id, invitationId),
+            with: { project: true }
+        });
 
         if (!invitation) {
             return { success: false, error: 'Invitation not found' }
         }
 
-        // Verify invitation is for this user
         if (invitation.invitedUserId !== user.id &&
             invitation.invitedEmail?.toLowerCase() !== user.email?.toLowerCase()) {
             return { success: false, error: 'This invitation is not for you' }
@@ -150,31 +150,26 @@ export async function acceptInvitation(
         }
 
         if (invitation.expiresAt && new Date() > invitation.expiresAt) {
-            await prisma.projectV2Invitation.update({
-                where: { id: invitationId },
-                data: { status: 'EXPIRED' }
-            })
+            await db.update(projectV2Invitations)
+                .set({ status: 'EXPIRED' })
+                .where(eq(projectV2Invitations.id, invitationId));
             return { success: false, error: 'This invitation has expired' }
         }
 
-        // Add user as member and update invitation
-        await prisma.$transaction([
-            prisma.projectV2Member.create({
-                data: {
-                    projectId: invitation.projectId,
-                    userId: user.id,
-                    role: invitation.role,
-                    invitedBy: invitation.invitedById
-                }
-            }),
-            prisma.projectV2Invitation.update({
-                where: { id: invitationId },
-                data: {
+        await db.transaction(async (tx) => {
+            await tx.insert(projectV2Members).values({
+                projectId: invitation.projectId,
+                userId: user.id,
+                role: invitation.role,
+                invitedBy: invitation.invitedById
+            });
+            await tx.update(projectV2Invitations)
+                .set({
                     status: 'ACCEPTED',
                     respondedAt: new Date()
-                }
-            })
-        ])
+                })
+                .where(eq(projectV2Invitations.id, invitationId));
+        });
 
         revalidatePath(`/projects/${invitation.project.slug}`)
 
@@ -194,9 +189,9 @@ export async function declineInvitation(
     try {
         const user = await getCurrentUser()
 
-        const invitation = await prisma.projectV2Invitation.findUnique({
-            where: { id: invitationId }
-        })
+        const invitation = await db.query.projectV2Invitations.findFirst({
+            where: eq(projectV2Invitations.id, invitationId)
+        });
 
         if (!invitation) {
             return { success: false, error: 'Invitation not found' }
@@ -207,13 +202,12 @@ export async function declineInvitation(
             return { success: false, error: 'This invitation is not for you' }
         }
 
-        await prisma.projectV2Invitation.update({
-            where: { id: invitationId },
-            data: {
+        await db.update(projectV2Invitations)
+            .set({
                 status: 'DECLINED',
                 respondedAt: new Date()
-            }
-        })
+            })
+            .where(eq(projectV2Invitations.id, invitationId));
 
         return { success: true }
     } catch (error) {
@@ -231,10 +225,10 @@ export async function cancelInvitation(
     try {
         const user = await getCurrentUser()
 
-        const invitation = await prisma.projectV2Invitation.findUnique({
-            where: { id: invitationId },
-            include: { project: true }
-        })
+        const invitation = await db.query.projectV2Invitations.findFirst({
+            where: eq(projectV2Invitations.id, invitationId),
+            with: { project: true }
+        });
 
         if (!invitation) {
             return { success: false, error: 'Invitation not found' }
@@ -247,9 +241,7 @@ export async function cancelInvitation(
             return { success: false, error: 'You cannot cancel this invitation' }
         }
 
-        await prisma.projectV2Invitation.delete({
-            where: { id: invitationId }
-        })
+        await db.delete(projectV2Invitations).where(eq(projectV2Invitations.id, invitationId));
 
         revalidatePath(`/projects/${invitation.project.slug}`)
 
@@ -270,9 +262,9 @@ export async function removeMember(
     try {
         const user = await getCurrentUser()
 
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId }
-        })
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId)
+        });
 
         if (!project) {
             return { success: false, error: 'Project not found' }
@@ -282,22 +274,19 @@ export async function removeMember(
             return { success: false, error: 'Only the project creator can remove members' }
         }
 
-        const member = await prisma.projectV2Member.findUnique({
-            where: { id: memberId }
-        })
+        const member = await db.query.projectV2Members.findFirst({
+            where: eq(projectV2Members.id, memberId)
+        });
 
         if (!member || member.projectId !== projectId) {
             return { success: false, error: 'Member not found' }
         }
 
-        // Cannot remove self (creator)
         if (member.userId === user.id) {
             return { success: false, error: 'You cannot remove yourself from the project' }
         }
 
-        await prisma.projectV2Member.delete({
-            where: { id: memberId }
-        })
+        await db.delete(projectV2Members).where(eq(projectV2Members.id, memberId));
 
         revalidatePath(`/projects/${project.slug}`)
 
@@ -318,10 +307,10 @@ export async function updateMemberRole(
     try {
         const user = await getCurrentUser()
 
-        const member = await prisma.projectV2Member.findUnique({
-            where: { id: memberId },
-            include: { project: true }
-        })
+        const member = await db.query.projectV2Members.findFirst({
+            where: eq(projectV2Members.id, memberId),
+            with: { project: true }
+        });
 
         if (!member) {
             return { success: false, error: 'Member not found' }
@@ -331,10 +320,9 @@ export async function updateMemberRole(
             return { success: false, error: 'Only the project creator can update roles' }
         }
 
-        await prisma.projectV2Member.update({
-            where: { id: memberId },
-            data: { role }
-        })
+        await db.update(projectV2Members)
+            .set({ role })
+            .where(eq(projectV2Members.id, memberId));
 
         revalidatePath(`/projects/${member.project.slug}`)
 
@@ -364,11 +352,11 @@ export async function getProjectMembers(
     }
 }>>> {
     try {
-        const members = await prisma.projectV2Member.findMany({
-            where: { projectId },
-            include: {
+        const members = await db.query.projectV2Members.findMany({
+            where: eq(projectV2Members.projectId, projectId),
+            with: {
                 user: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         username: true,
@@ -377,12 +365,12 @@ export async function getProjectMembers(
                     }
                 }
             },
-            orderBy: { joinedAt: 'asc' }
-        })
+            orderBy: (members: any, { asc }: any) => [asc(members.joinedAt)]
+        });
 
         return {
             success: true,
-            data: members.map(m => ({
+            data: members.map((m: any) => ({
                 id: m.id,
                 userId: m.userId,
                 role: m.role as 'ADMIN' | 'MEMBER',
@@ -417,9 +405,9 @@ export async function getProjectInvitations(
     try {
         const user = await getCurrentUser()
 
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId }
-        })
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId)
+        });
 
         if (!project) {
             return { success: false, error: 'Project not found' }
@@ -429,14 +417,14 @@ export async function getProjectInvitations(
             return { success: false, error: 'Only the project creator can view invitations' }
         }
 
-        const invitations = await prisma.projectV2Invitation.findMany({
-            where: {
-                projectId,
-                status: 'PENDING'
-            },
-            include: {
+        const invitations = await db.query.projectV2Invitations.findMany({
+            where: and(
+                eq(projectV2Invitations.projectId, projectId),
+                eq(projectV2Invitations.status, 'PENDING')
+            ),
+            with: {
                 invitedUser: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         username: true,
@@ -444,12 +432,12 @@ export async function getProjectInvitations(
                     }
                 }
             },
-            orderBy: { createdAt: 'desc' }
-        })
+            orderBy: (invitations: any, { desc }: any) => [desc(invitations.createdAt)]
+        });
 
         return {
             success: true,
-            data: invitations.map(i => ({
+            data: invitations.map((i: any) => ({
                 id: i.id,
                 invitedEmail: i.invitedEmail,
                 role: i.role as 'ADMIN' | 'MEMBER',
@@ -488,17 +476,17 @@ export async function getMyInvitations(): Promise<ActionResult<Array<{
     try {
         const user = await getCurrentUser()
 
-        const invitations = await prisma.projectV2Invitation.findMany({
-            where: {
-                OR: [
-                    { invitedUserId: user.id },
-                    { invitedEmail: user.email?.toLowerCase() }
-                ],
-                status: 'PENDING'
-            },
-            include: {
+        const invitations = await db.query.projectV2Invitations.findMany({
+            where: and(
+                eq(projectV2Invitations.status, 'PENDING'),
+                or(
+                    eq(projectV2Invitations.invitedUserId, user.id),
+                    eq(projectV2Invitations.invitedEmail, user.email?.toLowerCase() || '')
+                )
+            ),
+            with: {
                 project: {
-                    select: {
+                    columns: {
                         id: true,
                         title: true,
                         slug: true,
@@ -506,7 +494,7 @@ export async function getMyInvitations(): Promise<ActionResult<Array<{
                     }
                 },
                 invitedBy: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         username: true,
@@ -514,12 +502,12 @@ export async function getMyInvitations(): Promise<ActionResult<Array<{
                     }
                 }
             },
-            orderBy: { createdAt: 'desc' }
-        })
+            orderBy: (invitations: any, { desc }: any) => [desc(invitations.createdAt)]
+        });
 
         return {
             success: true,
-            data: invitations.map(i => ({
+            data: invitations.map((i: any) => ({
                 id: i.id,
                 role: i.role as 'ADMIN' | 'MEMBER',
                 status: 'PENDING' as const,
@@ -544,9 +532,9 @@ export async function updateProjectVisibility(
     try {
         const user = await getCurrentUser()
 
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId }
-        })
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId)
+        });
 
         if (!project) {
             return { success: false, error: 'Project not found' }
@@ -556,10 +544,9 @@ export async function updateProjectVisibility(
             return { success: false, error: 'Only the project creator can update visibility' }
         }
 
-        await prisma.projectV2.update({
-            where: { id: projectId },
-            data: { visibility }
-        })
+        await db.update(projectsV2)
+            .set({ visibility })
+            .where(eq(projectsV2.id, projectId));
 
         revalidatePath(`/projects/${project.slug}`)
 

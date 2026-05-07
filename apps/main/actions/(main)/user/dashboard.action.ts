@@ -1,7 +1,9 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import prisma from "@repo/prisma"
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, creditRequests } from "@repo/db"
+import { eq, and } from "drizzle-orm"
 
 // ==================== CREDIT REQUEST ACTIONS ====================
 
@@ -14,40 +16,38 @@ export async function submitCreditRequest(data: {
     twitterPostUrl?: string
 }) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
         // Check if user already has a pending request
-        const pendingRequest = await prisma.creditRequest.findFirst({
-            where: {
-                userId: session.user.id,
-                status: 'PENDING'
-            }
+        const pendingRequest = await db.query.creditRequests.findFirst({
+            where: and(
+                eq(creditRequests.userId, session.user.id),
+                eq(creditRequests.status, 'PENDING')
+            )
         })
 
         if (pendingRequest) {
-            return { 
-                success: false, 
-                error: "You already have a pending credit request. Please wait for it to be processed." 
+            return {
+                success: false,
+                error: "You already have a pending credit request. Please wait for it to be processed."
             }
         }
 
         // Create the credit request
-        const creditRequest = await prisma.creditRequest.create({
-            data: {
-                userId: session.user.id,
-                requestedCredits: data.requestedCredits,
-                linkedinPostUrl: data.linkedinPostUrl,
-                twitterPostUrl: data.twitterPostUrl
-            }
-        })
+        const [creditRequest] = await db.insert(creditRequests).values({
+            userId: session.user.id,
+            requestedCredits: data.requestedCredits,
+            linkedinPostUrl: data.linkedinPostUrl,
+            twitterPostUrl: data.twitterPostUrl
+        }).returning()
 
-        return { 
-            success: true, 
+        return {
+            success: true,
             data: creditRequest,
-            message: "Credit request submitted successfully!" 
+            message: "Credit request submitted successfully!"
         }
     } catch (error) {
         console.error("Error submitting credit request:", error)
@@ -60,15 +60,15 @@ export async function submitCreditRequest(data: {
  */
 export async function getUserCreditRequests() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const requests = await prisma.creditRequest.findMany({
-            where: { userId: session.user.id },
-            orderBy: { createdAt: 'desc' },
-            take: 10
+        const requests = await db.query.creditRequests.findMany({
+            where: eq(creditRequests.userId, session.user.id),
+            orderBy: (creditRequests, { desc }) => [desc(creditRequests.createdAt)],
+            limit: 10
         })
 
         return { success: true, data: requests }

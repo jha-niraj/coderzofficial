@@ -1,11 +1,13 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, memberInvitations } from "@repo/db"
+import { eq, and, desc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { randomBytes } from "crypto"
 import type {
-    InviteTeamMemberPayload, CompanyMemberRole, PendingInvite, 
+    InviteTeamMemberPayload, CompanyMemberRole, PendingInvite,
     CompanyMemberJobTitle
 } from "@/types"
 
@@ -14,12 +16,12 @@ import type {
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
     return member
 }
@@ -36,16 +38,16 @@ function generateInviteCode(): string {
  * Invite a team member to the company
  */
 export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
-            where: { userId: session.user.id },
-            select: { id: true, companyId: true, role: true },
+        const currentMember = await db.query.companyMembers.findFirst({
+            where: eq(companyMembers.userId, session.user.id),
+            columns: { id: true, companyId: true, role: true }
         })
 
         if (!currentMember) {
@@ -57,11 +59,11 @@ export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
         }
 
         // Check if user with this email already exists in the company
-        const existingMember = await prisma.companyMember.findFirst({
-            where: {
-                companyId: currentMember.companyId,
-                email: payload.email
-            }
+        const existingMember = await db.query.companyMembers.findFirst({
+            where: and(
+                eq(companyMembers.companyId, currentMember.companyId),
+                eq(companyMembers.email, payload.email)
+            )
         })
 
         if (existingMember) {
@@ -69,12 +71,12 @@ export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
         }
 
         // Check for existing pending invitation
-        const existingInvitation = await prisma.memberInvitation.findFirst({
-            where: {
-                companyId: currentMember.companyId,
-                email: payload.email,
-                status: "PENDING"
-            }
+        const existingInvitation = await db.query.memberInvitations.findFirst({
+            where: and(
+                eq(memberInvitations.companyId, currentMember.companyId),
+                eq(memberInvitations.email, payload.email),
+                eq(memberInvitations.status, "PENDING")
+            )
         })
 
         if (existingInvitation) {
@@ -82,17 +84,15 @@ export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
         }
 
         // Create invitation
-        await prisma.memberInvitation.create({
-            data: {
-                companyId: currentMember.companyId,
-                email: payload.email,
-                role: payload.role || "RECRUITER",
-                jobTitle: payload.jobTitle || "RECRUITER",
-                inviteCode: generateInviteCode(),
-                invitedById: currentMember.id,
-                message: payload.message,
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-            }
+        await db.insert(memberInvitations).values({
+            companyId: currentMember.companyId,
+            email: payload.email,
+            role: payload.role || "RECRUITER",
+            jobTitle: payload.jobTitle || "RECRUITER",
+            inviteCode: generateInviteCode(),
+            invitedById: currentMember.id,
+            message: payload.message,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
         })
 
         // TODO: Send invitation email
@@ -120,27 +120,36 @@ export async function getPendingInvites(): Promise<{ success: boolean; data?: Pe
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const invites = await prisma.memberInvitation.findMany({
-            where: {
-                companyId: member.companyId,
-                status: "PENDING"
-            },
-            include: {
-                invitedBy: {
-                    select: {
-                        id: true,
-                        displayName: true,
-                        user: {
-                            select: {
-                                name: true,
-                                email: true
-                            }
-                        }
-                    }
-                }
-            },
-            orderBy: { createdAt: "desc" }
+        const invites = await db.query.memberInvitations.findMany({
+            where: and(
+                eq(memberInvitations.companyId, member.companyId),
+                eq(memberInvitations.status, "PENDING")
+            ),
+            orderBy: [desc(memberInvitations.createdAt)]
         })
+
+        // Fetch invitedBy member info separately
+        const invitedByIds = [...new Set(invites.map(i => i.invitedById).filter(Boolean))] as string[]
+        const invitedByMembers = invitedByIds.length > 0
+            ? await db.query.companyMembers.findMany({
+                where: (m, { inArray }) => inArray(m.id, invitedByIds),
+                columns: { id: true, displayName: true, userId: true }
+              })
+            : []
+        const { inArray: inArrayFn } = await import("drizzle-orm")
+        const { users } = await import("@repo/db")
+        const inviterUserIds = [...new Set(invitedByMembers.map(m => m.userId))]
+        const inviterUsers = inviterUserIds.length > 0
+            ? await db.select({ id: users.id, name: users.name, email: users.email })
+                .from(users)
+                .where(inArrayFn(users.id, inviterUserIds))
+            : []
+        const inviterUserMap = new Map(inviterUsers.map(u => [u.id, u]))
+        const invitedByMap = new Map(invitedByMembers.map(m => [m.id, {
+            id: m.id,
+            displayName: m.displayName,
+            user: inviterUserMap.get(m.userId) ?? { name: null, email: "" }
+        }]))
 
         const pendingInvites: PendingInvite[] = invites.map(inv => ({
             id: inv.id,
@@ -153,7 +162,7 @@ export async function getPendingInvites(): Promise<{ success: boolean; data?: Pe
             message: inv.message,
             invitedAt: inv.createdAt,
             expiresAt: inv.expiresAt,
-            invitedBy: inv.invitedBy
+            invitedBy: invitedByMap.get(inv.invitedById) ?? { id: inv.invitedById, displayName: null, user: { name: null, email: "" } }
         }))
 
         return { success: true, data: pendingInvites }
@@ -167,43 +176,52 @@ export async function getPendingInvites(): Promise<{ success: boolean; data?: Pe
  * Get pending invitations with extended info
  */
 export async function getPendingInvitations() {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
-            where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+        const currentMember = await db.query.companyMembers.findFirst({
+            where: eq(companyMembers.userId, session.user.id),
+            columns: { companyId: true, role: true }
         })
 
         if (!currentMember) {
             return { success: false, error: "Not a member of any company" }
         }
 
-        const invitations = await prisma.memberInvitation.findMany({
-            where: {
-                companyId: currentMember.companyId,
-                status: "PENDING",
-            },
-            include: {
-                invitedBy: {
-                    select: {
-                        id: true,
-                        displayName: true,
-                        user: {
-                            select: {
-                                name: true,
-                                email: true
-                            }
-                        }
-                    }
-                }
-            },
-            orderBy: { createdAt: "desc" },
+        const invitations = await db.query.memberInvitations.findMany({
+            where: and(
+                eq(memberInvitations.companyId, currentMember.companyId),
+                eq(memberInvitations.status, "PENDING")
+            ),
+            orderBy: [desc(memberInvitations.createdAt)]
         })
+
+        // Fetch invitedBy member info separately
+        const invitedByIds2 = [...new Set(invitations.map(i => i.invitedById).filter(Boolean))] as string[]
+        const invitedByMembers2 = invitedByIds2.length > 0
+            ? await db.query.companyMembers.findMany({
+                where: (m, { inArray }) => inArray(m.id, invitedByIds2),
+                columns: { id: true, displayName: true, userId: true }
+              })
+            : []
+        const { inArray: inArrayFn2 } = await import("drizzle-orm")
+        const { users: usersTable } = await import("@repo/db")
+        const inviterUserIds2 = [...new Set(invitedByMembers2.map(m => m.userId))]
+        const inviterUsers2 = inviterUserIds2.length > 0
+            ? await db.select({ id: usersTable.id, name: usersTable.name, email: usersTable.email })
+                .from(usersTable)
+                .where(inArrayFn2(usersTable.id, inviterUserIds2))
+            : []
+        const inviterUserMap2 = new Map(inviterUsers2.map(u => [u.id, u]))
+        const invitedByMap2 = new Map(invitedByMembers2.map(m => [m.id, {
+            id: m.id,
+            displayName: m.displayName,
+            user: inviterUserMap2.get(m.userId) ?? { name: null, email: "" }
+        }]))
 
         return {
             success: true,
@@ -218,9 +236,9 @@ export async function getPendingInvitations() {
                 message: inv.message,
                 invitedAt: inv.createdAt,
                 expiresAt: inv.expiresAt,
-                invitedBy: inv.invitedBy
+                invitedBy: invitedByMap2.get(inv.invitedById) ?? { id: inv.invitedById, displayName: null, user: { name: null, email: "" } }
             })),
-            isHead: currentMember.role === "FOUNDER",
+            isHead: currentMember.role === "FOUNDER"
         }
     } catch (error) {
         console.error("Get pending invitations error:", error)
@@ -240,18 +258,20 @@ export async function cancelInvitation(invitationId: string) {
             return { success: false, error: "Only team heads can cancel invitations" }
         }
 
-        const invitation = await prisma.memberInvitation.findFirst({
-            where: { id: invitationId, companyId: member.companyId }
+        const invitation = await db.query.memberInvitations.findFirst({
+            where: and(
+                eq(memberInvitations.id, invitationId),
+                eq(memberInvitations.companyId, member.companyId)
+            )
         })
 
         if (!invitation) {
             return { success: false, error: "Invitation not found" }
         }
 
-        await prisma.memberInvitation.update({
-            where: { id: invitationId },
-            data: { status: "REVOKED" }
-        })
+        await db.update(memberInvitations)
+            .set({ status: "REVOKED" })
+            .where(eq(memberInvitations.id, invitationId))
 
         revalidatePath("/team")
         return { success: true }
@@ -280,8 +300,11 @@ export async function resendInvitation(invitationId: string) {
             return { success: false, error: "Only team heads can resend invitations" }
         }
 
-        const invitation = await prisma.memberInvitation.findFirst({
-            where: { id: invitationId, companyId: member.companyId }
+        const invitation = await db.query.memberInvitations.findFirst({
+            where: and(
+                eq(memberInvitations.id, invitationId),
+                eq(memberInvitations.companyId, member.companyId)
+            )
         })
 
         if (!invitation) {
@@ -289,12 +312,9 @@ export async function resendInvitation(invitationId: string) {
         }
 
         // Update expiration date
-        await prisma.memberInvitation.update({
-            where: { id: invitationId },
-            data: {
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-            }
-        })
+        await db.update(memberInvitations)
+            .set({ expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) })
+            .where(eq(memberInvitations.id, invitationId))
 
         // TODO: Send invitation email
 

@@ -3,16 +3,20 @@
 import Exa from "exa-js";
 import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
-import { prisma } from "@repo/prisma";
-import { auth } from "@repo/auth";
-import { PracticeModule, PracticeDifficulty } from "@repo/prisma/client";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import { db, practiceProblem } from "@repo/db";
+import { eq, and, desc, sql } from "drizzle-orm";
+
+type PracticeModule = 'DSA' | 'SYSTEM_DESIGN' | 'WEB_FRONTEND' | 'WEB_BACKEND'
+type PracticeDifficulty = 'EASY' | 'MEDIUM' | 'HARD'
 
 let _exa: Exa | null = null
 const exa = new Proxy({} as Exa, {
-    get(_, prop) {
-        if (!_exa) _exa = new Exa(process.env.EXA_API_KEY!)
-        return Reflect.get(_exa, prop)
-    }
+	get(_, prop) {
+		if (!_exa) _exa = new Exa(process.env.EXA_API_KEY!)
+		return Reflect.get(_exa, prop)
+	}
 })
 
 // ─────────────────────────────────────────────
@@ -123,7 +127,7 @@ export async function generateProblemFromURL(
 	error?: string;
 }> {
 	try {
-		const session = await auth();
+		const session = await getSession(await headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Unauthorized" };
 		}
@@ -178,7 +182,7 @@ export async function generateProblemFromName(
 	error?: string;
 }> {
 	try {
-		const session = await auth();
+		const session = await getSession(await headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Unauthorized" };
 		}
@@ -229,10 +233,11 @@ async function generateUniqueProblemSlug(title: string): Promise<string> {
 	let counter = 0;
 
 	while (true) {
-		const existing = await prisma.practiceProblem.findUnique({
-			where: { slug },
-			select: { id: true },
-		});
+		const [existing] = await db
+			.select({ id: practiceProblem.id })
+			.from(practiceProblem)
+			.where(eq(practiceProblem.slug, slug))
+			.limit(1);
 
 		if (!existing) break;
 
@@ -259,7 +264,7 @@ export async function createUserPracticeProblem(data: {
 	error?: string;
 }> {
 	try {
-		const session = await auth();
+		const session = await getSession(await headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Unauthorized" };
 		}
@@ -281,14 +286,21 @@ export async function createUserPracticeProblem(data: {
 
 		const slug = await generateUniqueProblemSlug(data.title);
 
-		const maxSort = await prisma.practiceProblem.findFirst({
-			where: { module: data.module, category: data.category },
-			orderBy: { sortOrder: "desc" },
-			select: { sortOrder: true },
-		});
+		const [maxSortRow] = await db
+			.select({ sortOrder: practiceProblem.sortOrder })
+			.from(practiceProblem)
+			.where(
+				and(
+					eq(practiceProblem.module, data.module),
+					eq(practiceProblem.category, data.category)
+				)
+			)
+			.orderBy(desc(practiceProblem.sortOrder))
+			.limit(1);
 
-		const problem = await prisma.practiceProblem.create({
-			data: {
+		const [problem] = await db
+			.insert(practiceProblem)
+			.values({
 				slug,
 				title: data.title,
 				description: data.description,
@@ -299,11 +311,14 @@ export async function createUserPracticeProblem(data: {
 				hints: data.hints,
 				starterCode: data.starterCode ?? null,
 				tags: data.tags,
-				sortOrder: (maxSort?.sortOrder ?? 0) + 1,
+				sortOrder: (maxSortRow?.sortOrder ?? 0) + 1,
 				isActive: true,
-			},
-			select: { id: true, slug: true, title: true },
-		});
+			})
+			.returning({
+				id: practiceProblem.id,
+				slug: practiceProblem.slug,
+				title: practiceProblem.title,
+			});
 
 		return { success: true, problem };
 	} catch (error) {

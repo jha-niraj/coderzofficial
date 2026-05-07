@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { db, resumeDraft } from '@repo/db'
+import { and, eq, or } from 'drizzle-orm'
 import { generateResumePDF } from '@/lib/resume-pdf'
 import { ResumeDraftContent } from '@/types/resume-draft'
 
@@ -10,24 +11,42 @@ export async function GET(
 ) {
     try {
         const { draftId } = await params
-        const session = await auth()
+        const session = await getSession(req.headers)
 
         // Allow public access for public drafts, otherwise require auth
-        const draft = await prisma.resumeDraft.findFirst({
-            where: session?.user?.id
-                ? { id: draftId, OR: [{ userId: session.user.id }, { isPublic: true }] }
-                : { id: draftId, isPublic: true },
-        })
+        const [draft] = session?.user?.id
+            ? await db
+                .select()
+                .from(resumeDraft)
+                .where(
+                    and(
+                        eq(resumeDraft.id, draftId),
+                        or(
+                            eq(resumeDraft.userId, session.user.id),
+                            eq(resumeDraft.isPublic, true)
+                        )
+                    )
+                )
+                .limit(1)
+            : await db
+                .select()
+                .from(resumeDraft)
+                .where(
+                    and(
+                        eq(resumeDraft.id, draftId),
+                        eq(resumeDraft.isPublic, true)
+                    )
+                )
+                .limit(1)
 
         if (!draft) {
             return NextResponse.json({ error: 'Not found or access denied' }, { status: 404 })
         }
 
         const content = draft.content as unknown as ResumeDraftContent
-        const draftRecord = draft as { templateSlug?: string; name?: string }
-        const templateSlug = draftRecord.templateSlug ?? 'clean-minimal'
+        const templateSlug = draft.templateSlug ?? 'clean-minimal'
         const buffer = await generateResumePDF(content, templateSlug)
-        const safeName = (draftRecord.name ?? 'resume').replace(/[^a-z0-9]/gi, '_').toLowerCase()
+        const safeName = (draft.name ?? 'resume').replace(/[^a-z0-9]/gi, '_').toLowerCase()
 
         return new NextResponse(new Uint8Array(buffer), {
             status: 200,

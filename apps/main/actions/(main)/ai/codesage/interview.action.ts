@@ -1,7 +1,14 @@
 "use server"
 
-import { auth } from "@repo/auth"
-import { prisma } from "@repo/prisma"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db,
+    codebaseProject,
+    codebaseFile,
+    codebaseInterview,
+} from "@repo/db"
+import { eq, and, desc } from "drizzle-orm"
 import { openai } from "@/lib/openai-client"
 import { zodResponseFormat } from "openai/helpers/zod"
 import { z } from "zod"
@@ -81,14 +88,14 @@ export async function createInterview(input: {
     difficulty: "junior" | "mid" | "senior"
     focusArea?: string | null
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: "Unauthorized" }
 
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug: input.projectSlug, userId: session.user.id },
-        include: {
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, input.projectSlug), eq(codebaseProject.userId, session.user.id)),
+        with: {
             files: {
-                select: { filePath: true, content: true, extension: true },
+                columns: { filePath: true, content: true, extension: true },
             },
         },
     })
@@ -146,20 +153,18 @@ REQUIREMENTS:
 
     if (questions.length === 0) return { success: false, error: "Failed to generate questions" }
 
-    const interview = await prisma.codebaseInterview.create({
-        data: {
-            projectId: project.id,
-            userId: session.user.id,
-            mode: input.mode,
-            difficulty: input.difficulty,
-            focusArea: input.focusArea ?? null,
-            status: "in_progress",
-            questions: questions as never,
-        },
-    })
+    const [interview] = await db.insert(codebaseInterview).values({
+        projectId: project.id,
+        userId: session.user.id,
+        mode: input.mode,
+        difficulty: input.difficulty,
+        focusArea: input.focusArea ?? null,
+        status: "in_progress",
+        questions: questions as any,
+    }).returning()
 
     revalidatePath(`/ai/codesage/c/${input.projectSlug}/interview`)
-    return { success: true, interviewId: interview.id, questions }
+    return { success: true, interviewId: interview!.id, questions }
 }
 
 // ── Evaluate one answer ───────────────────────────────────────────────────────
@@ -168,11 +173,11 @@ export async function evaluateAnswer(input: {
     questionId: string
     userAnswer: string
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: "Unauthorized" }
 
-    const interview = await prisma.codebaseInterview.findUnique({
-        where: { id: input.interviewId, userId: session.user.id },
+    const interview = await db.query.codebaseInterview.findFirst({
+        where: and(eq(codebaseInterview.id, input.interviewId), eq(codebaseInterview.userId, session.user.id)),
     })
     if (!interview) return { success: false, error: "Interview not found" }
 
@@ -228,21 +233,20 @@ Evaluate this answer.`,
             : q
     )
 
-    await prisma.codebaseInterview.update({
-        where: { id: input.interviewId },
-        data: { questions: updatedQuestions as never },
-    })
+    await db.update(codebaseInterview)
+        .set({ questions: updatedQuestions as any })
+        .where(eq(codebaseInterview.id, input.interviewId))
 
     return { success: true, evaluation }
 }
 
 // ── Complete interview ────────────────────────────────────────────────────────
 export async function completeInterview(interviewId: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false }
 
-    const interview = await prisma.codebaseInterview.findUnique({
-        where: { id: interviewId, userId: session.user.id },
+    const interview = await db.query.codebaseInterview.findFirst({
+        where: and(eq(codebaseInterview.id, interviewId), eq(codebaseInterview.userId, session.user.id)),
     })
     if (!interview) return { success: false }
 
@@ -252,41 +256,40 @@ export async function completeInterview(interviewId: string) {
         ? Math.round(scored.reduce((s, q) => s + (q.score ?? 0), 0) / scored.length)
         : 0
 
-    await prisma.codebaseInterview.update({
-        where: { id: interviewId },
-        data: { status: "completed", score: avgScore, completedAt: new Date() },
-    })
+    await db.update(codebaseInterview)
+        .set({ status: "completed", score: avgScore, completedAt: new Date() })
+        .where(eq(codebaseInterview.id, interviewId))
 
     return { success: true, score: avgScore }
 }
 
 // ── Get interviews ────────────────────────────────────────────────────────────
 export async function getInterviews(slug: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, interviews: [] }
 
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: session.user.id },
-        select: { id: true },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, session.user.id)),
+        columns: { id: true },
     })
     if (!project) return { success: false, interviews: [] }
 
-    const interviews = await prisma.codebaseInterview.findMany({
-        where: { projectId: project.id, userId: session.user.id },
-        orderBy: { createdAt: "desc" },
-        select: { id: true, mode: true, difficulty: true, score: true, status: true, createdAt: true, completedAt: true },
-        take: 10,
+    const interviews = await db.query.codebaseInterview.findMany({
+        where: and(eq(codebaseInterview.projectId, project.id), eq(codebaseInterview.userId, session.user.id)),
+        orderBy: [desc(codebaseInterview.createdAt)],
+        columns: { id: true, mode: true, difficulty: true, score: true, status: true, createdAt: true, completedAt: true },
+        limit: 10,
     })
 
     return { success: true, interviews }
 }
 
 export async function getInterview(interviewId: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, interview: null }
 
-    const interview = await prisma.codebaseInterview.findUnique({
-        where: { id: interviewId, userId: session.user.id },
+    const interview = await db.query.codebaseInterview.findFirst({
+        where: and(eq(codebaseInterview.id, interviewId), eq(codebaseInterview.userId, session.user.id)),
     })
     if (!interview) return { success: false, interview: null }
 
@@ -294,18 +297,18 @@ export async function getInterview(interviewId: string) {
 }
 
 export async function getFolders(slug: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, folders: [] }
 
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: session.user.id },
-        select: { id: true },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, session.user.id)),
+        columns: { id: true },
     })
     if (!project) return { success: false, folders: [] }
 
-    const files = await prisma.codebaseFile.findMany({
-        where: { projectId: project.id },
-        select: { filePath: true },
+    const files = await db.query.codebaseFile.findMany({
+        where: eq(codebaseFile.projectId, project.id),
+        columns: { filePath: true },
     })
 
     const topFolders = new Set<string>()

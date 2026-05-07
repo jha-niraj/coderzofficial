@@ -1,5 +1,4 @@
-import { NextAuth, authOptions } from "@repo/auth"
+import { auth } from "@repo/auth";
+import { toNextJsHandler } from "better-auth/next-js";
 
-const handler = NextAuth(authOptions)
-
-export { handler as GET, handler as POST }
+export const { GET, POST } = toNextJsHandler(auth.handler);

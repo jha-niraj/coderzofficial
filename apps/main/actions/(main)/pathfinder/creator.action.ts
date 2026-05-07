@@ -1,9 +1,10 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, pathfinderGoals, pathfinderGoalPurchases, earnings } from '@repo/db'
+import { eq, and, desc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { Module } from '@repo/prisma/client'
 
 // ================================================================================
 // SET CREDIT PRICE (creator only)
@@ -11,13 +12,17 @@ import { Module } from '@repo/prisma/client'
 
 export async function setGoalCreditPrice(goalId: string, creditPrice: number | null) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id, isPublic: true },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(
+                eq(pathfinderGoals.id, goalId),
+                eq(pathfinderGoals.userId, session.user.id),
+                eq(pathfinderGoals.isPublic, true)
+            ),
         })
 
         if (!goal) {
@@ -28,10 +33,9 @@ export async function setGoalCreditPrice(goalId: string, creditPrice: number | n
             return { success: false, error: 'Price must be between 0 and 9999 credits' }
         }
 
-        await prisma.pathfinderGoal.update({
-            where: { id: goalId },
-            data: { creditPrice },
-        })
+        await db.update(pathfinderGoals)
+            .set({ creditPrice })
+            .where(eq(pathfinderGoals.id, goalId))
 
         revalidatePath('/pathfinder')
         revalidatePath('/pathfinder/explore')
@@ -49,33 +53,33 @@ export async function setGoalCreditPrice(goalId: string, creditPrice: number | n
 
 export async function getGoalEarnings(goalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', earnings: [], totalEarned: 0 }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
         })
 
         if (!goal) {
             return { success: false, error: 'Goal not found', earnings: [], totalEarned: 0 }
         }
 
-        const earnings = await prisma.earning.findMany({
-            where: {
-                userId: session.user.id,
-                module: Module.PATHFINDER,
-                referenceId: goalId,
-            },
-            orderBy: { createdAt: 'desc' },
+        const earningRows = await db.query.earnings.findMany({
+            where: and(
+                eq(earnings.userId, session.user.id),
+                eq(earnings.module, 'PATHFINDER'),
+                eq(earnings.referenceId, goalId)
+            ),
+            orderBy: [desc(earnings.createdAt)],
         })
 
-        const totalEarned = earnings.reduce((s, e) => s + e.amount, 0)
+        const totalEarned = earningRows.reduce((s, e) => s + e.amount, 0)
 
         return {
             success: true,
-            earnings,
+            earnings: earningRows,
             totalEarned,
             creditPrice: goal.creditPrice,
         }
@@ -91,25 +95,25 @@ export async function getGoalEarnings(goalId: string) {
 
 export async function getGoalPurchases(goalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', purchases: [] }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
         })
 
         if (!goal) {
             return { success: false, error: 'Goal not found', purchases: [] }
         }
 
-        const purchases = await prisma.pathfinderGoalPurchase.findMany({
-            where: { goalId },
-            orderBy: { createdAt: 'desc' },
-            include: {
+        const purchases = await db.query.pathfinderGoalPurchases.findMany({
+            where: eq(pathfinderGoalPurchases.goalId, goalId),
+            orderBy: [desc(pathfinderGoalPurchases.createdAt)],
+            with: {
                 buyer: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         username: true,

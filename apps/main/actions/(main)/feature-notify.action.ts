@@ -1,18 +1,19 @@
 "use server";
 
-import prisma from "@repo/prisma";
-import { auth } from "@repo/auth";
-import { FeatureNotifySection } from "@repo/prisma/client";
+import { db, featureNotifyInterests } from "@repo/db";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import { and, eq } from "drizzle-orm";
 
 export type NotifyInterestInput = {
-    section: FeatureNotifySection;
+    section: "AI_TOOLS" | "MOCK_VIDEO" | "MOCK_COMPANYWISE" | "MOCK_PEERTOPEER" | "MOCK_CONNECT" | "AI_PORTFOLIO_AUDIT" | "AI_SYSTEM_ARCHITECT" | "AI_PROJECT_SCOPER" | "AI_OSS_SCOUT" | "AI_DOCUSMITH" | "AI_CODE_SENTINEL" | "AI_TEST_FORGE";
     title: string;
     description?: string | null;
 };
 
 export async function saveFeatureNotifyInterest(input: NotifyInterestInput) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Please sign in to get notified" };
         }
@@ -22,22 +23,15 @@ export async function saveFeatureNotifyInterest(input: NotifyInterestInput) {
             return { success: false, error: "No email found for your account" };
         }
 
-        await prisma.featureNotifyInterest.upsert({
-            where: {
-                userId_section_title: {
-                    userId: session.user.id,
-                    section: input.section,
-                    title: input.title,
-                },
-            },
-            create: {
-                userId: session.user.id,
-                email,
-                section: input.section,
-                title: input.title,
-                description: input.description ?? null,
-            },
-            update: {
+        await db.insert(featureNotifyInterests).values({
+            userId: session.user.id,
+            email,
+            section: input.section,
+            title: input.title,
+            description: input.description ?? null,
+        }).onConflictDoUpdate({
+            target: [featureNotifyInterests.userId, featureNotifyInterests.section, featureNotifyInterests.title],
+            set: {
                 email,
                 description: input.description ?? null,
             },

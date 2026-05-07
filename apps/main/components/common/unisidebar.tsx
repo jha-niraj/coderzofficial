@@ -27,7 +27,7 @@ interface UniSidebarProps {
 
 function UniSidebarContent({ universityName, credits }: UniSidebarProps) {
     const { isCollapsed, setIsCollapsed } = useSidebar()
-    const { data: session, status } = useSession()
+    const { data: session } = useSession()
     const { theme, setTheme } = useTheme()
     const pathname = usePathname()
     const router = useRouter()
@@ -256,7 +256,7 @@ function UniSidebarContent({ universityName, credits }: UniSidebarProps) {
                 </button>
 
                 {/* Profile Section */}
-                {status === "authenticated" && session?.user && (
+                {session?.user && (
                     <div
                         className="relative mt-3"
                         onMouseEnter={handleProfileMouseEnter}

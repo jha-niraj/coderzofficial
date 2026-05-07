@@ -1,7 +1,9 @@
 "use server";
 
-import { auth } from "@repo/auth";
-import { prisma } from "@repo/prisma";
+import { db, universityMembers, universities, universitySubscriptions, studentUniversityLinks, departments, universityClasses } from "@repo/db"
+import { eq, and, inArray, count } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -15,55 +17,51 @@ import {
 // ============================================================================
 
 export async function getSubscription() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         return null;
     }
 
-    const member = await prisma.universityMember.findFirst({
-        where: {
-            userId: session.user.id,
-        },
-        include: {
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
+        with: {
             university: {
-                include: {
+                with: {
                     subscription: true,
                 },
             },
         },
     });
 
-    if (!member?.university?.subscription) {
+    const subscription = member?.university?.subscription?.[0] ?? null;
+    if (!subscription) {
         return null;
     }
 
-    return member.university.subscription;
+    return subscription;
 }
 
 export async function getSubscriptionDetails() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         return null;
     }
 
-    const member = await prisma.universityMember.findFirst({
-        where: {
-            userId: session.user.id,
-        },
-        include: {
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
+        with: {
             university: {
-                include: {
+                with: {
                     subscription: true,
                 },
             },
         },
     });
 
-    if (!member?.university?.subscription) {
+    const subscription = member?.university?.subscription?.[0] ?? null;
+    if (!subscription) {
         return null;
     }
-
-    const subscription = member.university.subscription;
 
     return {
         id: subscription.id,
@@ -76,13 +74,11 @@ export async function getSubscriptionDetails() {
         billingCycle: subscription.billingCycle,
         amount: subscription.amount,
         currency: subscription.currency,
-        // Limits
         maxStudents: subscription.maxStudents,
         maxFaculty: subscription.maxFaculty,
         maxDepartments: subscription.maxDepartments,
         maxClassesPerFaculty: subscription.maxClassesPerFaculty,
         maxCreditsPerMonth: subscription.maxCreditsPerMonth,
-        // Features
         hasAnalytics: subscription.hasAnalytics,
         hasAdvancedReports: subscription.hasAdvancedReports,
         hasPlacementModule: subscription.hasPlacementModule,
@@ -97,19 +93,19 @@ export async function getSubscriptionDetails() {
 export async function updateSubscriptionPlan(
     plan: "FREE" | "STARTER" | "GROWTH" | "ENTERPRISE"
 ) {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         throw new Error("Unauthorized");
     }
 
-    const member = await prisma.universityMember.findFirst({
-        where: {
-            userId: session.user.id,
-            role: "HEAD",
-        },
-        include: {
+    const member = await db.query.universityMembers.findFirst({
+        where: and(
+            eq(universityMembers.userId, session.user.id),
+            eq(universityMembers.role, "HEAD"),
+        ),
+        with: {
             university: {
-                include: {
+                with: {
                     subscription: true,
                 },
             },
@@ -122,32 +118,24 @@ export async function updateSubscriptionPlan(
 
     const limits = getPlanLimits(plan);
     const features = getPlanFeatures(plan);
+    const existingSub = member.university.subscription?.[0] ?? null;
 
-    if (!member.university.subscription) {
-        // Create new subscription
-        await prisma.universitySubscription.create({
-            data: {
-                universityId: member.universityId,
-                plan,
-                status: "ACTIVE",
-                currentPeriodStart: new Date(),
-                currentPeriodEnd: new Date(
-                    Date.now() + 30 * 24 * 60 * 60 * 1000
-                ),
-                ...limits,
-                ...features,
-            },
+    if (!existingSub) {
+        await db.insert(universitySubscriptions).values({
+            universityId: member.universityId,
+            plan,
+            status: "ACTIVE",
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            ...limits,
+            ...features,
         });
     } else {
-        // Update existing subscription
-        await prisma.universitySubscription.update({
-            where: { id: member.university.subscription.id },
-            data: {
-                plan,
-                ...limits,
-                ...features,
-            },
-        });
+        await db.update(universitySubscriptions).set({
+            plan,
+            ...limits,
+            ...features,
+        }).where(eq(universitySubscriptions.id, existingSub.id));
     }
 
     revalidatePath("/dashboard/billing");
@@ -155,71 +143,66 @@ export async function updateSubscriptionPlan(
 }
 
 export async function cancelSubscription() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         throw new Error("Unauthorized");
     }
 
-    const member = await prisma.universityMember.findFirst({
-        where: {
-            userId: session.user.id,
-            role: "HEAD",
-        },
-        include: {
+    const member = await db.query.universityMembers.findFirst({
+        where: and(
+            eq(universityMembers.userId, session.user.id),
+            eq(universityMembers.role, "HEAD"),
+        ),
+        with: {
             university: {
-                include: {
+                with: {
                     subscription: true,
                 },
             },
         },
     });
 
-    if (!member?.university?.subscription) {
+    const cancelSub = member?.university?.subscription?.[0] ?? null;
+    if (!cancelSub) {
         throw new Error("No subscription to cancel");
     }
 
-    // Mark subscription as cancelled (will remain active until period ends)
-    await prisma.universitySubscription.update({
-        where: { id: member.university.subscription.id },
-        data: {
-            status: "CANCELLED",
-        },
-    });
+    await db.update(universitySubscriptions).set({
+        status: "CANCELLED",
+    }).where(eq(universitySubscriptions.id, cancelSub.id));
 
     revalidatePath("/dashboard/billing");
     return { success: true };
 }
 
 export async function reactivateSubscription() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         throw new Error("Unauthorized");
     }
 
-    const member = await prisma.universityMember.findFirst({
-        where: {
-            userId: session.user.id,
-            role: "HEAD",
-        },
-        include: {
+    const member = await db.query.universityMembers.findFirst({
+        where: and(
+            eq(universityMembers.userId, session.user.id),
+            eq(universityMembers.role, "HEAD"),
+        ),
+        with: {
             university: {
-                include: {
+                with: {
                     subscription: true,
                 },
             },
         },
     });
 
-    if (!member?.university?.subscription) {
+    const reactivateSub = member?.university?.subscription?.[0] ?? null;
+    if (!reactivateSub) {
         throw new Error("No subscription to reactivate");
     }
 
-    await prisma.universitySubscription.update({
-        where: { id: member.university.subscription.id },
-        data: {
-            status: "ACTIVE",
-        },
-    });
+    await db.update(universitySubscriptions).set({
+        status: "ACTIVE",
+    }).where(eq(universitySubscriptions.id, reactivateSub.id));
 
     revalidatePath("/dashboard/billing");
     return { success: true };
@@ -230,18 +213,16 @@ export async function reactivateSubscription() {
 // ============================================================================
 
 export async function getUsageStats() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         return null;
     }
 
-    const member = await prisma.universityMember.findFirst({
-        where: {
-            userId: session.user.id,
-        },
-        include: {
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
+        with: {
             university: {
-                include: {
+                with: {
                     subscription: true,
                 },
             },
@@ -254,27 +235,24 @@ export async function getUsageStats() {
 
     const universityId = member.universityId;
 
-    // Get counts
-    const [studentCount, facultyCount, departmentCount, classCount] =
-        await Promise.all([
-            prisma.studentUniversityLink.count({
-                where: { universityId },
-            }),
-            prisma.universityMember.count({
-                where: {
-                    universityId,
-                    role: { in: ["FACULTY", "HEAD", "DEPARTMENT_HEAD"] },
-                },
-            }),
-            prisma.department.count({
-                where: { universityId },
-            }),
-            prisma.universityClass.count({
-                where: { universityId },
-            }),
-        ]);
+    const [studentCountResult, facultyCountResult, departmentCountResult, classCountResult] = await Promise.all([
+        db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.universityId, universityId)),
+        db.select({ count: count() }).from(universityMembers).where(
+            and(
+                eq(universityMembers.universityId, universityId),
+                inArray(universityMembers.role, ["FACULTY", "HEAD", "DEPARTMENT_HEAD"]),
+            )
+        ),
+        db.select({ count: count() }).from(departments).where(eq(departments.universityId, universityId)),
+        db.select({ count: count() }).from(universityClasses).where(eq(universityClasses.universityId, universityId)),
+    ]);
 
-    const subscription = member.university.subscription;
+    const studentCount = studentCountResult[0]?.count ?? 0;
+    const facultyCount = facultyCountResult[0]?.count ?? 0;
+    const departmentCount = departmentCountResult[0]?.count ?? 0;
+    const classCount = classCountResult[0]?.count ?? 0;
+
+    const subscription = member.university.subscription?.[0] ?? null;
     const limits = subscription
         ? {
             maxStudents: subscription.maxStudents,
@@ -306,13 +284,11 @@ export async function getUsageStats() {
             limit: limits.maxClassesPerFaculty * facultyCount,
             percentage:
                 facultyCount > 0
-                    ? Math.round(
-                        (classCount / (limits.maxClassesPerFaculty * facultyCount)) * 100
-                    )
+                    ? Math.round((classCount / (limits.maxClassesPerFaculty * facultyCount)) * 100)
                     : 0,
         },
         credits: {
-            current: 0, // TODO: Implement credit tracking
+            current: 0,
             limit: limits.maxCreditsPerMonth,
             percentage: 0,
         },
@@ -337,12 +313,11 @@ export async function hasFeature(
     const subscription = await getSubscription();
 
     if (!subscription) {
-        // Return free plan feature defaults
-        const freeFeatures = getPlanFeatures("FREE");
+        const freeFeatures = getPlanFeatures("FREE") as Record<string, boolean>;
         return freeFeatures[feature] ?? false;
     }
 
-    return subscription[feature] ?? false;
+    return (subscription as Record<string, unknown>)[feature] as boolean ?? false;
 }
 
 export async function checkSubscriptionLimit(
@@ -353,23 +328,16 @@ export async function checkSubscriptionLimit(
     limit: number;
     message?: string;
 }> {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
-        return {
-            allowed: false,
-            current: 0,
-            limit: 0,
-            message: "Unauthorized",
-        };
+        return { allowed: false, current: 0, limit: 0, message: "Unauthorized" };
     }
 
-    const member = await prisma.universityMember.findFirst({
-        where: {
-            userId: session.user.id,
-        },
-        include: {
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
+        with: {
             university: {
-                include: {
+                with: {
                     subscription: true,
                 },
             },
@@ -377,16 +345,11 @@ export async function checkSubscriptionLimit(
     });
 
     if (!member?.university) {
-        return {
-            allowed: false,
-            current: 0,
-            limit: 0,
-            message: "University not found",
-        };
+        return { allowed: false, current: 0, limit: 0, message: "University not found" };
     }
 
     const universityId = member.universityId;
-    const subscription = member.university.subscription;
+    const subscription = member.university.subscription?.[0] ?? null;
     const limits = subscription
         ? {
             maxStudents: subscription.maxStudents,
@@ -401,38 +364,27 @@ export async function checkSubscriptionLimit(
 
     switch (type) {
         case "students":
-            current = await prisma.studentUniversityLink.count({
-                where: { universityId },
-            });
+            current = (await db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.universityId, universityId)))[0]?.count ?? 0;
             limit = limits.maxStudents;
             break;
         case "faculty":
-            current = await prisma.universityMember.count({
-                where: {
-                    universityId,
-                    role: { in: ["FACULTY", "HEAD", "DEPARTMENT_HEAD"] },
-                },
-            });
+            current = (await db.select({ count: count() }).from(universityMembers).where(
+                and(eq(universityMembers.universityId, universityId), inArray(universityMembers.role, ["FACULTY", "HEAD", "DEPARTMENT_HEAD"]))
+            ))[0]?.count ?? 0;
             limit = limits.maxFaculty;
             break;
         case "departments":
-            current = await prisma.department.count({
-                where: { universityId },
-            });
+            current = (await db.select({ count: count() }).from(departments).where(eq(departments.universityId, universityId)))[0]?.count ?? 0;
             limit = limits.maxDepartments;
             break;
-        case "classes":
-            const facultyCount = await prisma.universityMember.count({
-                where: {
-                    universityId,
-                    role: { in: ["FACULTY", "HEAD", "DEPARTMENT_HEAD"] },
-                },
-            });
-            current = await prisma.universityClass.count({
-                where: { universityId },
-            });
+        case "classes": {
+            const facultyCount = (await db.select({ count: count() }).from(universityMembers).where(
+                and(eq(universityMembers.universityId, universityId), inArray(universityMembers.role, ["FACULTY", "HEAD", "DEPARTMENT_HEAD"]))
+            ))[0]?.count ?? 0;
+            current = (await db.select({ count: count() }).from(universityClasses).where(eq(universityClasses.universityId, universityId)))[0]?.count ?? 0;
             limit = limits.maxClassesPerFaculty * facultyCount;
             break;
+        }
     }
 
     const allowed = current < limit;
@@ -452,27 +404,23 @@ export async function checkSubscriptionLimit(
 // ============================================================================
 
 export async function canManageBilling(): Promise<boolean> {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
         return false;
     }
 
-    const member = await prisma.universityMember.findFirst({
-        where: {
-            userId: session.user.id,
-        },
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
     });
 
     if (!member) {
         return false;
     }
 
-    // HEAD and FINANCE_OFFICER can manage billing
     if (member.role === "HEAD" || member.role === "FINANCE_OFFICER") {
         return true;
     }
 
-    // Check if user has billing permission
     const permissions = member.permissions as string[] | null;
     return permissions?.includes("MANAGE_BILLING") ?? false;
 }
@@ -542,43 +490,38 @@ export async function syncSubscriptionFromPayment(
     const limits = getPlanLimits(paymentData.plan);
     const features = getPlanFeatures(paymentData.plan);
 
-    const existingSubscription = await prisma.universitySubscription.findUnique({
-        where: { universityId },
+    const existingSubscription = await db.query.universitySubscriptions.findFirst({
+        where: eq(universitySubscriptions.universityId, universityId),
     });
 
     if (existingSubscription) {
-        await prisma.universitySubscription.update({
-            where: { universityId },
-            data: {
-                plan: paymentData.plan,
-                status: paymentData.status,
-                dodoSubscriptionId: paymentData.dodoSubscriptionId,
-                dodoCustomerId: paymentData.dodoCustomerId,
-                currentPeriodStart: paymentData.periodStart,
-                currentPeriodEnd: paymentData.periodEnd,
-                amount: paymentData.amount ?? 0,
-                currency: paymentData.currency ?? "INR",
-                billingCycle: paymentData.billingCycle ?? "monthly",
-                ...limits,
-                ...features,
-            },
-        });
+        await db.update(universitySubscriptions).set({
+            plan: paymentData.plan,
+            status: paymentData.status,
+            dodoSubscriptionId: paymentData.dodoSubscriptionId,
+            dodoCustomerId: paymentData.dodoCustomerId,
+            currentPeriodStart: paymentData.periodStart,
+            currentPeriodEnd: paymentData.periodEnd,
+            amount: paymentData.amount ?? 0,
+            currency: paymentData.currency ?? "INR",
+            billingCycle: paymentData.billingCycle ?? "monthly",
+            ...limits,
+            ...features,
+        }).where(eq(universitySubscriptions.universityId, universityId));
     } else {
-        await prisma.universitySubscription.create({
-            data: {
-                universityId,
-                plan: paymentData.plan,
-                status: paymentData.status,
-                dodoSubscriptionId: paymentData.dodoSubscriptionId,
-                dodoCustomerId: paymentData.dodoCustomerId,
-                currentPeriodStart: paymentData.periodStart,
-                currentPeriodEnd: paymentData.periodEnd,
-                amount: paymentData.amount ?? 0,
-                currency: paymentData.currency ?? "INR",
-                billingCycle: paymentData.billingCycle ?? "monthly",
-                ...limits,
-                ...features,
-            },
+        await db.insert(universitySubscriptions).values({
+            universityId,
+            plan: paymentData.plan,
+            status: paymentData.status,
+            dodoSubscriptionId: paymentData.dodoSubscriptionId,
+            dodoCustomerId: paymentData.dodoCustomerId,
+            currentPeriodStart: paymentData.periodStart,
+            currentPeriodEnd: paymentData.periodEnd,
+            amount: paymentData.amount ?? 0,
+            currency: paymentData.currency ?? "INR",
+            billingCycle: paymentData.billingCycle ?? "monthly",
+            ...limits,
+            ...features,
         });
     }
 

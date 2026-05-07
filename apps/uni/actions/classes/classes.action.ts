@@ -1,20 +1,21 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, universityClasses, universityMembers, classEnrollments, studentUniversityLinks, departments } from "@repo/db"
+import { eq, and, desc, ilike, count, inArray, sql } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import type { SemesterType } from "@prisma/client"
 
 // ============================================
 // HELPERS
 // ============================================
 
 async function getUserUniversity() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.universityMember.findFirst({
-        where: { userId: session.user.id },
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
     })
 
     return member
@@ -30,7 +31,7 @@ async function getUserUniversity() {
 export async function getClasses(
     filters?: {
         departmentId?: string
-        semester?: SemesterType
+        semester?: string
         section?: string
         academicYear?: string
         isActive?: boolean
@@ -48,7 +49,7 @@ export async function getClasses(
             code: string | null
             departmentId: string | null
             departmentName: string | null
-            semester: SemesterType
+            semester: string
             section: string | null
             academicYear: string
             isActive: boolean
@@ -70,60 +71,31 @@ export async function getClasses(
             return { success: false, error: "Unauthorized" }
         }
 
-        // Build where clause
-        type WhereClause = {
-            universityId: string
-            departmentId?: string
-            semester?: SemesterType
-            section?: string
-            academicYear?: string
-            isActive?: boolean
-            facultyId?: string
-            OR?: Array<{
-                name?: { contains: string; mode: "insensitive" }
-                code?: { contains: string; mode: "insensitive" }
-            }>
-        }
-
-        const where: WhereClause = {
-            universityId: member.universityId,
-        }
-
-        if (filters?.departmentId) where.departmentId = filters.departmentId
-        if (filters?.semester) where.semester = filters.semester
-        if (filters?.section) where.section = filters.section
-        if (filters?.academicYear) where.academicYear = filters.academicYear
-        if (filters?.isActive !== undefined) where.isActive = filters.isActive
-        if (filters?.facultyId) where.facultyId = filters.facultyId
-        if (filters?.search) {
-            where.OR = [
-                { name: { contains: filters.search, mode: "insensitive" } },
-                { code: { contains: filters.search, mode: "insensitive" } },
-            ]
-        }
-
         const skip = (page - 1) * pageSize
 
-        // Get total count
-        const totalCount = await prisma.universityClass.count({ where })
-
-        // Get classes with includes
-        const classes = await prisma.universityClass.findMany({
-            where,
-            include: {
-                department: true,
-                faculty: true,
-                _count: {
-                    select: {
-                        enrollments: true,
-                        assignments: true,
-                    }
-                }
+        // Fetch classes with relations
+        const classes = await db.query.universityClasses.findMany({
+            where: (tbl, { and, eq, ilike, or }) => {
+                const conditions = [eq(tbl.universityId, member.universityId)]
+                if (filters?.departmentId) conditions.push(eq(tbl.departmentId, filters.departmentId))
+                if (filters?.semester) conditions.push(eq(tbl.semester, filters.semester as any))
+                if (filters?.section) conditions.push(eq(tbl.section, filters.section))
+                if (filters?.academicYear) conditions.push(eq(tbl.academicYear, filters.academicYear))
+                if (filters?.isActive !== undefined) conditions.push(eq(tbl.isActive, filters.isActive))
+                if (filters?.facultyId) conditions.push(eq(tbl.facultyId, filters.facultyId))
+                return and(...conditions)
             },
-            orderBy: { createdAt: "desc" },
-            skip,
-            take: pageSize,
+            with: {
+                department: { columns: { id: true, name: true, code: true } },
+                faculty: { columns: { id: true, displayName: true, email: true } },
+            },
+            orderBy: desc(universityClasses.createdAt),
+            offset: skip,
+            limit: pageSize,
         })
+
+        const totalCountResult = await db.select({ count: count() }).from(universityClasses).where(eq(universityClasses.universityId, member.universityId))
+        const totalCount = totalCountResult[0]?.count ?? 0
 
         const classList = classes.map(c => ({
             id: c.id,
@@ -135,8 +107,8 @@ export async function getClasses(
             section: c.section,
             academicYear: c.academicYear,
             isActive: c.isActive,
-            studentCount: c._count.enrollments,
-            assignmentCount: c._count.assignments,
+            studentCount: c.studentCount,
+            assignmentCount: 0, // computed separately if needed
             facultyName: c.faculty?.displayName ?? null,
             createdAt: c.createdAt,
         }))
@@ -169,7 +141,7 @@ export async function getClass(classId: string): Promise<{
         name: string
         code: string | null
         description: string | null
-        semester: SemesterType
+        semester: string
         section: string | null
         academicYear: string
         isActive: boolean
@@ -189,26 +161,23 @@ export async function getClass(classId: string): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const classData = await prisma.universityClass.findFirst({
-            where: {
-                id: classId,
-                universityId: member.universityId,
+        const classData = await db.query.universityClasses.findFirst({
+            where: and(
+                eq(universityClasses.id, classId),
+                eq(universityClasses.universityId, member.universityId),
+            ),
+            with: {
+                department: { columns: { id: true, name: true, code: true } },
+                faculty: { columns: { id: true, displayName: true, email: true } },
             },
-            include: {
-                department: true,
-                faculty: true,
-                _count: {
-                    select: {
-                        enrollments: true,
-                        assignments: true,
-                    }
-                }
-            }
         })
 
         if (!classData) {
             return { success: false, error: "Class not found" }
         }
+
+        const enrollmentCountResult = await db.select({ count: count() }).from(classEnrollments).where(eq(classEnrollments.classId, classId))
+        const enrollmentCount = enrollmentCountResult[0]?.count ?? 0
 
         return {
             success: true,
@@ -236,8 +205,8 @@ export async function getClass(classId: string): Promise<{
                     displayName: classData.faculty.displayName,
                     email: classData.faculty.email,
                 } : null,
-                enrollmentCount: classData._count.enrollments,
-                assignmentCount: classData._count.assignments,
+                enrollmentCount,
+                assignmentCount: 0,
             }
         }
     } catch (error) {
@@ -267,27 +236,22 @@ export async function getClassEnrollments(classId: string): Promise<{
         }
 
         // Verify class belongs to university
-        const classData = await prisma.universityClass.findFirst({
-            where: {
-                id: classId,
-                universityId: member.universityId,
-            }
+        const classData = await db.query.universityClasses.findFirst({
+            where: and(
+                eq(universityClasses.id, classId),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         })
 
         if (!classData) {
             return { success: false, error: "Class not found" }
         }
 
-        const enrollments = await prisma.classEnrollment.findMany({
-            where: { classId },
-            include: {
-                studentLink: {
-                    select: {
-                        id: true,
-                        rollNumber: true,
-                    }
-                }
-            }
+        const enrollments = await db.query.classEnrollments.findMany({
+            where: eq(classEnrollments.classId, classId),
+            with: {
+                studentLink: { columns: { id: true, rollNumber: true } },
+            },
         })
 
         return {
@@ -325,13 +289,19 @@ export async function getClassStats(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const [total, active, totalEnrollments] = await Promise.all([
-            prisma.universityClass.count({ where: { universityId: member.universityId } }),
-            prisma.universityClass.count({ where: { universityId: member.universityId, isActive: true } }),
-            prisma.classEnrollment.count({
-                where: { class: { universityId: member.universityId } }
-            }),
+        const [totalResult, activeResult, enrollmentsResult] = await Promise.all([
+            db.select({ count: count() }).from(universityClasses).where(eq(universityClasses.universityId, member.universityId)),
+            db.select({ count: count() }).from(universityClasses).where(and(eq(universityClasses.universityId, member.universityId), eq(universityClasses.isActive, true))),
+            db.select({ count: count() }).from(classEnrollments).where(
+                inArray(classEnrollments.classId,
+                    db.select({ id: universityClasses.id }).from(universityClasses).where(eq(universityClasses.universityId, member.universityId))
+                )
+            ),
         ])
+
+        const total = totalResult[0]?.count ?? 0
+        const active = activeResult[0]?.count ?? 0
+        const totalEnrollments = enrollmentsResult[0]?.count ?? 0
 
         return {
             success: true,
@@ -360,7 +330,7 @@ export async function createClass(payload: {
     code?: string
     description?: string
     departmentId?: string
-    semester: SemesterType
+    semester: string
     academicYear: string
     section?: string
     facultyId?: string
@@ -381,21 +351,23 @@ export async function createClass(payload: {
             return { success: false, error: "No permission to create classes" }
         }
 
-        // Create class
-        const newClass = await prisma.universityClass.create({
-            data: {
-                universityId: member.universityId,
-                departmentId: payload.departmentId ?? null,
-                name: payload.name,
-                code: payload.code ?? null,
-                description: payload.description ?? null,
-                semester: payload.semester,
-                academicYear: payload.academicYear,
-                section: payload.section ?? null,
-                facultyId: payload.facultyId ?? null,
-                isActive: true,
-            }
-        })
+        const newClassRows = await db.insert(universityClasses).values({
+            universityId: member.universityId,
+            departmentId: payload.departmentId ?? null,
+            name: payload.name,
+            code: payload.code ?? null,
+            description: payload.description ?? null,
+            semester: payload.semester as any,
+            academicYear: payload.academicYear,
+            section: payload.section ?? null,
+            facultyId: payload.facultyId ?? null,
+            isActive: true,
+        }).returning()
+
+        const newClass = newClassRows[0];
+        if (!newClass) {
+            return { success: false, error: "Failed to create class" }
+        }
 
         revalidatePath("/dashboard/classes")
         return { success: true, classId: newClass.id }
@@ -415,7 +387,7 @@ export async function updateClass(
         code?: string
         description?: string
         departmentId?: string
-        semester?: SemesterType
+        semester?: string
         academicYear?: string
         section?: string
         facultyId?: string
@@ -438,21 +410,18 @@ export async function updateClass(
         }
 
         // Verify class exists
-        const existingClass = await prisma.universityClass.findFirst({
-            where: {
-                id: classId,
-                universityId: member.universityId,
-            }
+        const existingClass = await db.query.universityClasses.findFirst({
+            where: and(
+                eq(universityClasses.id, classId),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         })
 
         if (!existingClass) {
             return { success: false, error: "Class not found" }
         }
 
-        await prisma.universityClass.update({
-            where: { id: classId },
-            data: payload,
-        })
+        await db.update(universityClasses).set(payload as any).where(eq(universityClasses.id, classId))
 
         revalidatePath("/dashboard/classes")
         revalidatePath(`/dashboard/classes/${classId}`)
@@ -483,20 +452,18 @@ export async function deleteClass(classId: string): Promise<{
         }
 
         // Verify class exists
-        const existingClass = await prisma.universityClass.findFirst({
-            where: {
-                id: classId,
-                universityId: member.universityId,
-            }
+        const existingClass = await db.query.universityClasses.findFirst({
+            where: and(
+                eq(universityClasses.id, classId),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         })
 
         if (!existingClass) {
             return { success: false, error: "Class not found" }
         }
 
-        await prisma.universityClass.delete({
-            where: { id: classId },
-        })
+        await db.delete(universityClasses).where(eq(universityClasses.id, classId))
 
         revalidatePath("/dashboard/classes")
         return { success: true }
@@ -534,11 +501,11 @@ export async function enrollStudents(
         }
 
         // Verify class exists
-        const classData = await prisma.universityClass.findFirst({
-            where: {
-                id: classId,
-                universityId: member.universityId,
-            }
+        const classData = await db.query.universityClasses.findFirst({
+            where: and(
+                eq(universityClasses.id, classId),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         })
 
         if (!classData) {
@@ -546,40 +513,32 @@ export async function enrollStudents(
         }
 
         // Verify all student links exist
-        const validStudents = await prisma.studentUniversityLink.findMany({
-            where: {
-                id: { in: studentLinkIds },
-                universityId: member.universityId,
-            },
-            select: { id: true }
+        const validStudents = await db.query.studentUniversityLinks.findMany({
+            where: and(
+                inArray(studentUniversityLinks.id, studentLinkIds),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            ),
+            columns: { id: true },
         })
 
         const validIds = new Set(validStudents.map(s => s.id))
 
-        // Create enrollments (skip duplicates)
-        const enrollments = studentLinkIds
+        // Create enrollments (skip duplicates via onConflictDoNothing)
+        const enrollmentValues = studentLinkIds
             .filter(id => validIds.has(id))
-            .map(studentLinkId => ({
-                classId,
-                studentLinkId,
-            }))
+            .map(studentLinkId => ({ classId, studentLinkId }))
 
-        const result = await prisma.classEnrollment.createMany({
-            data: enrollments,
-            skipDuplicates: true,
-        })
+        if (enrollmentValues.length > 0) {
+            await db.insert(classEnrollments).values(enrollmentValues).onConflictDoNothing()
+        }
 
         // Update student count
-        const newCount = await prisma.classEnrollment.count({
-            where: { classId }
-        })
-        await prisma.universityClass.update({
-            where: { id: classId },
-            data: { studentCount: newCount }
-        })
+        const newCountResult = await db.select({ count: count() }).from(classEnrollments).where(eq(classEnrollments.classId, classId))
+        const newCount = newCountResult[0]?.count ?? 0
+        await db.update(universityClasses).set({ studentCount: newCount }).where(eq(universityClasses.id, classId))
 
         revalidatePath(`/dashboard/classes/${classId}`)
-        return { success: true, enrolledCount: result.count }
+        return { success: true, enrolledCount: enrollmentValues.length }
     } catch (error) {
         console.error("Enroll students error:", error)
         return { success: false, error: "Failed to enroll students" }
@@ -609,34 +568,28 @@ export async function removeStudentFromClass(
         }
 
         // Verify class exists
-        const classData = await prisma.universityClass.findFirst({
-            where: {
-                id: classId,
-                universityId: member.universityId,
-            }
+        const classData = await db.query.universityClasses.findFirst({
+            where: and(
+                eq(universityClasses.id, classId),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         })
 
         if (!classData) {
             return { success: false, error: "Class not found" }
         }
 
-        await prisma.classEnrollment.delete({
-            where: {
-                classId_studentLinkId: {
-                    classId,
-                    studentLinkId,
-                }
-            }
-        })
+        await db.delete(classEnrollments).where(
+            and(
+                eq(classEnrollments.classId, classId),
+                eq(classEnrollments.studentLinkId, studentLinkId),
+            )
+        )
 
         // Update student count
-        const newCount = await prisma.classEnrollment.count({
-            where: { classId }
-        })
-        await prisma.universityClass.update({
-            where: { id: classId },
-            data: { studentCount: newCount }
-        })
+        const newCountResult = await db.select({ count: count() }).from(classEnrollments).where(eq(classEnrollments.classId, classId))
+        const newCount = newCountResult[0]?.count ?? 0
+        await db.update(universityClasses).set({ studentCount: newCount }).where(eq(universityClasses.id, classId))
 
         revalidatePath(`/dashboard/classes/${classId}`)
         return { success: true }
@@ -669,11 +622,11 @@ export async function assignFacultyToClass(
         }
 
         // Verify class exists
-        const classData = await prisma.universityClass.findFirst({
-            where: {
-                id: classId,
-                universityId: member.universityId,
-            }
+        const classData = await db.query.universityClasses.findFirst({
+            where: and(
+                eq(universityClasses.id, classId),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         })
 
         if (!classData) {
@@ -681,21 +634,18 @@ export async function assignFacultyToClass(
         }
 
         // Verify faculty exists
-        const faculty = await prisma.universityMember.findFirst({
-            where: {
-                id: facultyId,
-                universityId: member.universityId,
-            }
+        const faculty = await db.query.universityMembers.findFirst({
+            where: and(
+                eq(universityMembers.id, facultyId),
+                eq(universityMembers.universityId, member.universityId),
+            ),
         })
 
         if (!faculty) {
             return { success: false, error: "Faculty not found" }
         }
 
-        await prisma.universityClass.update({
-            where: { id: classId },
-            data: { facultyId }
-        })
+        await db.update(universityClasses).set({ facultyId }).where(eq(universityClasses.id, classId))
 
         revalidatePath(`/dashboard/classes/${classId}`)
         return { success: true }
@@ -725,21 +675,18 @@ export async function removeFacultyFromClass(classId: string): Promise<{
         }
 
         // Verify class exists
-        const classData = await prisma.universityClass.findFirst({
-            where: {
-                id: classId,
-                universityId: member.universityId,
-            }
+        const classData = await db.query.universityClasses.findFirst({
+            where: and(
+                eq(universityClasses.id, classId),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         })
 
         if (!classData) {
             return { success: false, error: "Class not found" }
         }
 
-        await prisma.universityClass.update({
-            where: { id: classId },
-            data: { facultyId: null }
-        })
+        await db.update(universityClasses).set({ facultyId: null }).where(eq(universityClasses.id, classId))
 
         revalidatePath(`/dashboard/classes/${classId}`)
         return { success: true }

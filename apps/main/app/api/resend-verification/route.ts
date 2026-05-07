@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
+import { eq } from "drizzle-orm";
 import { sendEmail } from "@/utils/mail";
 
 export async function POST(request: NextRequest) {
@@ -10,8 +11,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ message: "Email is required" }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email }
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email),
         });
 
         if (!user) {
@@ -28,13 +29,12 @@ export async function POST(request: NextRequest) {
         verifyTokenExpiry.setHours(verifyTokenExpiry.getHours() + 72);
 
         // Update user with new token
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
+        await db.update(users)
+            .set({
                 verifyToken,
-                verifyTokenExpiry
-            }
-        });
+                verifyTokenExpiry,
+            })
+            .where(eq(users.id, user.id));
 
         // Send verification email
         try {
@@ -54,4 +54,4 @@ export async function POST(request: NextRequest) {
         console.error("Resend verification error:", err);
         return NextResponse.json({ message: "Internal server error" }, { status: 500 });
     }
-} 
+}

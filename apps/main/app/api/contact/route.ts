@@ -1,4 +1,4 @@
-import prisma from '@repo/prisma';
+import { db, contactMessages } from '@repo/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -14,14 +14,12 @@ export async function POST(req: NextRequest) {
 
         console.log(name, email, subject, message);
 
-        const submission = await prisma.message.create({
-            data: {
-                name,
-                email,
-                subject,
-                message
-            },
-        })
+        const [submission] = await db.insert(contactMessages).values({
+            name,
+            email,
+            subject,
+            message,
+        }).returning();
 
         return NextResponse.json(
             { message: 'Message sent successfully', data: submission },

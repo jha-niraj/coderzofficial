@@ -1,8 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { getServerSession } from "@repo/auth"
-import { authOptions } from "@repo/auth"
+import { db, adminAccess, adminAuditLogs, mockInterviewVoice, mockVoiceSession, mockVoiceRating } from "@repo/db"
+import { eq, and, ilike, or, count, inArray, avg } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel } from "@/lib/navigation"
 
@@ -14,21 +15,21 @@ interface Response<T = unknown> {
 
 // Helper to check admin access
 async function checkAdminAccess(requiredModule: AdminPermission, requiredLevel: PermissionLevel) {
-    const session = await getServerSession(authOptions)
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return { authorized: false, error: "Not authenticated" }
     }
 
-    const adminAccess = await prisma.adminAccess.findUnique({
-        where: { userId: session.user.id },
-        include: { user: true }
+    const adminRecord = await db.query.adminAccess.findFirst({
+        where: eq(adminAccess.userId, session.user.id),
+        with: { user: true }
     })
 
-    if (!adminAccess || !hasPermission(adminAccess.permissions as AdminPermissions, requiredModule, requiredLevel)) {
+    if (!adminRecord || !hasPermission(adminRecord.permissions as AdminPermissions, requiredModule, requiredLevel)) {
         return { authorized: false, error: "Not authorized" }
     }
 
-    return { authorized: true, adminAccess }
+    return { authorized: true, adminAccess: adminRecord }
 }
 
 // Get all mock interviews with filters and pagination
@@ -39,47 +40,43 @@ export async function getAllMockInterviews(params?: {
     status?: string
 }): Promise<Response> {
     try {
-        const check = await checkAdminAccess('mocks', 'read')
+        const check = await checkAdminAccess("mocks", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
         const page = params?.page || 1
         const limit = params?.limit || 20
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where: any = {}
+        const whereConditions = []
 
         if (params?.search) {
-            where.OR = [
-                { role: { contains: params.search, mode: 'insensitive' } },
-                { company: { contains: params.search, mode: 'insensitive' } },
-            ]
+            whereConditions.push(
+                or(
+                    ilike(mockInterviewVoice.title, `%${params.search}%`),
+                    ilike(mockInterviewVoice.description, `%${params.search}%`)
+                )
+            )
         }
 
-        if (params?.status) {
-            where.status = params.status
-        }
+        const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
 
-        const [mocks, total] = await Promise.all([
-            prisma.mockInterviewVoice.findMany({
-                where,
-                skip,
-                take: limit,
-                select: {
+        const [mocks, totalResult] = await Promise.all([
+            db.query.mockInterviewVoice.findMany({
+                where: whereClause,
+                with: {
                     createdBy: {
-                        select: {
-                            id: true,
-                            name: true,
-                            username: true,
-                            image: true,
-                        }
+                        columns: { id: true, name: true, username: true, image: true }
                     }
                 },
-                orderBy: { createdAt: 'desc' }
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit,
+                offset
             }),
-            prisma.mockInterviewVoice.count({ where })
+            db.select({ total: count() }).from(mockInterviewVoice).where(whereClause)
         ])
+        const total = totalResult[0]?.total ?? 0
 
         return {
             success: true,
@@ -102,21 +99,16 @@ export async function getAllMockInterviews(params?: {
 // Get mock interview by ID
 export async function getMockInterviewById(id: string): Promise<Response> {
     try {
-        const check = await checkAdminAccess('mocks', 'read')
+        const check = await checkAdminAccess("mocks", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const mock = await prisma.mockInterviewVoice.findUnique({
-            where: { id },
-            include: {
+        const mock = await db.query.mockInterviewVoice.findFirst({
+            where: eq(mockInterviewVoice.id, id),
+            with: {
                 createdBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true,
-                    }
+                    columns: { id: true, name: true, username: true, image: true }
                 }
             }
         })
@@ -135,30 +127,28 @@ export async function getMockInterviewById(id: string): Promise<Response> {
 // Delete mock interview
 export async function deleteMockInterview(id: string): Promise<Response> {
     try {
-        const check = await checkAdminAccess('mocks', 'delete')
+        const check = await checkAdminAccess("mocks", "delete")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const mock = await prisma.mockInterviewVoice.findUnique({ where: { id } })
+        const mock = await db.query.mockInterviewVoice.findFirst({ where: eq(mockInterviewVoice.id, id) })
         if (!mock) {
             return { success: false, error: "Mock interview not found" }
         }
 
-        await prisma.mockInterviewVoice.delete({ where: { id } })
+        await db.delete(mockInterviewVoice).where(eq(mockInterviewVoice.id, id))
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: check.adminAccess!.id,
-                action: "DELETE",
-                module: "mocks",
-                resourceType: "MockInterview",
-                resourceId: id,
-                description: `Deleted mock interview: ${mock.title}`
-            }
+        await db.insert(adminAuditLogs).values({
+            adminId: check.adminAccess!.id,
+            action: "DELETE",
+            module: "mocks",
+            resourceType: "MockInterview",
+            resourceId: id,
+            description: `Deleted mock interview: ${mock.title}`
         })
 
-        revalidatePath('/mock')
+        revalidatePath("/mock")
 
         return { success: true, data: null }
     } catch (error) {
@@ -170,27 +160,23 @@ export async function deleteMockInterview(id: string): Promise<Response> {
 // Bulk delete mock interviews
 export async function bulkDeleteMockInterviews(ids: string[]): Promise<Response> {
     try {
-        const check = await checkAdminAccess('mocks', 'delete')
+        const check = await checkAdminAccess("mocks", "delete")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        await prisma.mockInterviewVoice.deleteMany({
-            where: { id: { in: ids } }
+        await db.delete(mockInterviewVoice).where(inArray(mockInterviewVoice.id, ids))
+
+        await db.insert(adminAuditLogs).values({
+            adminId: check.adminAccess!.id,
+            action: "DELETE",
+            module: "mocks",
+            resourceType: "MockInterview",
+            resourceId: ids.join(","),
+            description: `Bulk deleted ${ids.length} mock interviews`
         })
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: check.adminAccess!.id,
-                action: "DELETE",
-                module: "mocks",
-                resourceType: "MockInterview",
-                resourceId: ids.join(','),
-                description: `Bulk deleted ${ids.length} mock interviews`
-            }
-        })
-
-        revalidatePath('/mock')
+        revalidatePath("/mock")
 
         return { success: true, data: null }
     } catch (error) {
@@ -202,22 +188,28 @@ export async function bulkDeleteMockInterviews(ids: string[]): Promise<Response>
 // Get mock interview stats
 export async function getMockInterviewStats(): Promise<Response> {
     try {
-        const check = await checkAdminAccess('mocks', 'read')
+        const check = await checkAdminAccess("mocks", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const [total, completed, inProgress, cancelled] = await Promise.all([
-            prisma.mockInterviewVoice.count(),
-            prisma.mockInterviewVoice.count({ where: { sessions: { some: { status: 'COMPLETED' } } } }),
-            prisma.mockInterviewVoice.count({ where: { sessions: { some: { status: 'IN_PROGRESS' } } } }),
-            prisma.mockInterviewVoice.count({ where: { sessions: { some: { status: 'CANCELLED' } } } }),
+        const [
+            totalResult,
+            completedResult,
+            inProgressResult,
+            cancelledResult,
+            avgRatingResult,
+        ] = await Promise.all([
+            db.select({ total: count() }).from(mockInterviewVoice),
+            db.select({ completed: count() }).from(mockVoiceSession).where(eq(mockVoiceSession.status, "COMPLETED")),
+            db.select({ inProgress: count() }).from(mockVoiceSession).where(eq(mockVoiceSession.status, "IN_PROGRESS")),
+            db.select({ cancelled: count() }).from(mockVoiceSession).where(eq(mockVoiceSession.status, "CANCELLED")),
+            db.select({ avgRating: avg(mockVoiceRating.rating) }).from(mockVoiceRating),
         ])
-
-        // Average rating from all ratings
-        const avgRating = await prisma.mockVoiceRating.aggregate({
-            _avg: { rating: true }
-        })
+        const total = totalResult[0]?.total ?? 0
+        const completed = completedResult[0]?.completed ?? 0
+        const inProgress = inProgressResult[0]?.inProgress ?? 0
+        const cancelled = cancelledResult[0]?.cancelled ?? 0
 
         return {
             success: true,
@@ -226,7 +218,7 @@ export async function getMockInterviewStats(): Promise<Response> {
                 completed,
                 inProgress,
                 cancelled,
-                averageRating: avgRating._avg.rating || 0
+                averageRating: avgRatingResult[0]?.avgRating ? Number(avgRatingResult[0].avgRating) : 0
             }
         }
     } catch (error) {

@@ -1,7 +1,8 @@
 'use server';
 
 import { z } from "zod";
-import { prisma } from "@repo/prisma";
+import { db, newsletters } from "@repo/db";
+import { eq } from "drizzle-orm";
 
 const newsletterSchema = z.object({
     email: z.string().email("Please enter a valid email address"),
@@ -13,8 +14,8 @@ export async function subscribeToNewsletter(email: string) {
         const validatedData = newsletterSchema.parse({ email });
 
         // Check if email already exists
-        const existing = await prisma.newsletter.findUnique({
-            where: { email: validatedData.email },
+        const existing = await db.query.newsletters.findFirst({
+            where: eq(newsletters.email, validatedData.email),
         });
 
         if (existing) {
@@ -25,10 +26,10 @@ export async function subscribeToNewsletter(email: string) {
                 };
             } else {
                 // Reactivate subscription
-                await prisma.newsletter.update({
-                    where: { email: validatedData.email },
-                    data: { isActive: true, subscribedAt: new Date() },
-                });
+                await db.update(newsletters).set({
+                    isActive: true,
+                    subscribedAt: new Date()
+                }).where(eq(newsletters.email, validatedData.email));
                 return {
                     success: true,
                     message: "Welcome back! Your newsletter subscription has been reactivated.",
@@ -37,10 +38,8 @@ export async function subscribeToNewsletter(email: string) {
         }
 
         // Create new subscription
-        await prisma.newsletter.create({
-            data: {
-                email: validatedData.email,
-            },
+        await db.insert(newsletters).values({
+            email: validatedData.email,
         });
 
         return {
@@ -67,10 +66,9 @@ export async function unsubscribeFromNewsletter(email: string) {
     try {
         const validatedData = newsletterSchema.parse({ email });
 
-        await prisma.newsletter.update({
-            where: { email: validatedData.email },
-            data: { isActive: false },
-        });
+        await db.update(newsletters).set({
+            isActive: false
+        }).where(eq(newsletters.email, validatedData.email));
 
         return {
             success: true,

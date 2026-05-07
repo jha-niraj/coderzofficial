@@ -1,7 +1,12 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db, universities, universitySubscriptions, studentUniversityLinks,
+    classEnrollments, universityAssignments
+} from "@repo/db"
+import { eq, and, or, ilike, inArray, desc } from "drizzle-orm"
 
 // Types
 interface SearchUniversitiesResult {
@@ -38,28 +43,39 @@ export async function searchPartnerUniversities(query: string): Promise<SearchUn
             return { success: true, data: [] }
         }
 
-        const universities = await prisma.university.findMany({
-            where: {
-                OR: [
-                    { name: { contains: query, mode: "insensitive" } },
-                    { slug: { contains: query, mode: "insensitive" } },
-                ],
-                // Only show universities with active subscriptions
-                subscription: {
-                    status: { in: ["ACTIVE", "TRIALING"] },
-                },
-            },
-            select: {
-                id: true,
-                name: true,
-                logoUrl: true,
-            },
-            take: 10,
-        })
+        // Get active subscription university IDs
+        const activeSubRows = await db
+            .select({ universityId: universitySubscriptions.universityId })
+            .from(universitySubscriptions)
+            .where(inArray(universitySubscriptions.status, ['ACTIVE', 'TRIALING']))
+
+        const activeUniversityIds = activeSubRows.map(r => r.universityId)
+
+        if (activeUniversityIds.length === 0) {
+            return { success: true, data: [] }
+        }
+
+        const rows = await db
+            .select({
+                id: universities.id,
+                name: universities.name,
+                logoUrl: universities.logoUrl,
+            })
+            .from(universities)
+            .where(
+                and(
+                    or(
+                        ilike(universities.name, `%${query}%`),
+                        ilike(universities.slug, `%${query}%`)
+                    ),
+                    inArray(universities.id, activeUniversityIds)
+                )
+            )
+            .limit(10)
 
         return {
             success: true,
-            data: universities.map(uni => ({
+            data: rows.map(uni => ({
                 ...uni,
                 isPartner: true,
             })),
@@ -78,7 +94,7 @@ export async function submitUniversityVerificationRequest(
     enrollmentId: string,
     universityEmail: string
 ): Promise<SubmitVerificationResult> {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
@@ -86,29 +102,38 @@ export async function submitUniversityVerificationRequest(
 
     try {
         // Check if university exists and is a partner
-        const university = await prisma.university.findUnique({
-            where: { id: universityId },
-            include: {
-                subscription: true,
-            },
-        })
+        const [university] = await db
+            .select({ id: universities.id })
+            .from(universities)
+            .where(eq(universities.id, universityId))
+            .limit(1)
 
         if (!university) {
             return { success: false, error: "University not found" }
         }
 
-        if (!university.subscription || !["ACTIVE", "TRIALING"].includes(university.subscription.status)) {
+        const [sub] = await db
+            .select({ status: universitySubscriptions.status })
+            .from(universitySubscriptions)
+            .where(eq(universitySubscriptions.universityId, universityId))
+            .limit(1)
+
+        if (!sub || !["ACTIVE", "TRIALING"].includes(sub.status)) {
             return { success: false, error: "University is not a partner" }
         }
 
         // Check if user already has a pending or verified link
-        const existingLink = await prisma.studentUniversityLink.findFirst({
-            where: {
-                userId: session.user.id,
-                universityId,
-                verificationStatus: { in: ["PENDING", "VERIFIED"] },
-            },
-        })
+        const [existingLink] = await db
+            .select({ id: studentUniversityLinks.id, verificationStatus: studentUniversityLinks.verificationStatus })
+            .from(studentUniversityLinks)
+            .where(
+                and(
+                    eq(studentUniversityLinks.userId, session.user.id),
+                    eq(studentUniversityLinks.universityId, universityId),
+                    inArray(studentUniversityLinks.verificationStatus, ['PENDING', 'VERIFIED'])
+                )
+            )
+            .limit(1)
 
         if (existingLink) {
             if (existingLink.verificationStatus === "VERIFIED") {
@@ -117,22 +142,19 @@ export async function submitUniversityVerificationRequest(
             return { success: false, error: "You already have a pending verification request" }
         }
 
-        // Create the verification request
-        await prisma.studentUniversityLink.create({
-            data: {
-                userId: session.user.id,
-                universityId,
-                rollNumber: enrollmentId,
-                universityEmail,
-                verificationStatus: "PENDING",
-            },
+        await db.insert(studentUniversityLinks).values({
+            userId: session.user.id,
+            universityId,
+            rollNumber: enrollmentId,
+            universityEmail,
+            verificationStatus: "PENDING",
         })
 
         // TODO: Send verification email to universityEmail
 
-        return { 
-            success: true, 
-            message: "Verification request submitted successfully" 
+        return {
+            success: true,
+            message: "Verification request submitted successfully"
         }
     } catch (error) {
         console.error("Submit verification error:", error)
@@ -144,21 +166,21 @@ export async function submitUniversityVerificationRequest(
  * Get current user's university verification status
  */
 export async function getUniversityVerificationStatus(): Promise<VerificationStatusResult> {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const link = await prisma.studentUniversityLink.findFirst({
-            where: { userId: session.user.id },
-            include: {
+        const link = await db.query.studentUniversityLinks.findFirst({
+            where: eq(studentUniversityLinks.userId, session.user.id),
+            orderBy: [desc(studentUniversityLinks.createdAt)],
+            with: {
                 university: {
-                    select: { name: true },
-                },
-            },
-            orderBy: { createdAt: "desc" },
+                    columns: { name: true }
+                }
+            }
         })
 
         if (!link) {
@@ -181,19 +203,23 @@ export async function getUniversityVerificationStatus(): Promise<VerificationSta
  * Get student's allocated credits from university
  */
 export async function getUniversityCredits(): Promise<{ success: boolean; credits?: number; error?: string }> {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const link = await prisma.studentUniversityLink.findFirst({
-            where: {
-                userId: session.user.id,
-                verificationStatus: "VERIFIED",
-            },
-        })
+        const [link] = await db
+            .select({ creditsAllocated: studentUniversityLinks.creditsAllocated })
+            .from(studentUniversityLinks)
+            .where(
+                and(
+                    eq(studentUniversityLinks.userId, session.user.id),
+                    eq(studentUniversityLinks.verificationStatus, "VERIFIED")
+                )
+            )
+            .limit(1)
 
         if (!link) {
             return { success: true, credits: 0 }
@@ -213,37 +239,30 @@ export async function getUniversityCredits(): Promise<{ success: boolean; credit
  * Get complete student university link details
  */
 export async function getStudentUniversityLink() {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const link = await prisma.studentUniversityLink.findFirst({
-            where: {
-                userId: session.user.id,
-            },
-            include: {
+        const link = await db.query.studentUniversityLinks.findFirst({
+            where: eq(studentUniversityLinks.userId, session.user.id),
+            orderBy: [desc(studentUniversityLinks.createdAt)],
+            with: {
                 university: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         logoUrl: true,
                         slug: true,
-                    },
-                },
-            },
-            orderBy: {
-                createdAt: "desc",
-            },
+                    }
+                }
+            }
         })
 
         if (!link) {
-            return {
-                success: true,
-                data: null,
-            }
+            return { success: true, data: null }
         }
 
         return {
@@ -282,25 +301,32 @@ export async function searchUniversityByCode(code: string) {
             return { success: false, error: "Invalid university code" }
         }
 
-        const university = await prisma.university.findFirst({
-            where: {
-                slug: {
-                    equals: code,
-                    mode: "insensitive",
-                },
-                // Only show universities with active subscriptions
-                subscription: {
-                    status: { in: ["ACTIVE", "TRIALING"] },
-                },
-            },
-            select: {
-                id: true,
-                name: true,
-                logoUrl: true,
-                slug: true,
-                universityType: true,
-            },
-        })
+        // Get active subscription university IDs
+        const activeSubRows = await db
+            .select({ universityId: universitySubscriptions.universityId })
+            .from(universitySubscriptions)
+            .where(inArray(universitySubscriptions.status, ['ACTIVE', 'TRIALING']))
+
+        const activeUniversityIds = activeSubRows.map(r => r.universityId)
+
+        const [university] = await db
+            .select({
+                id: universities.id,
+                name: universities.name,
+                logoUrl: universities.logoUrl,
+                slug: universities.slug,
+                universityType: universities.universityType,
+            })
+            .from(universities)
+            .where(
+                and(
+                    ilike(universities.slug, code),
+                    activeUniversityIds.length > 0
+                        ? inArray(universities.id, activeUniversityIds)
+                        : undefined
+                )
+            )
+            .limit(1)
 
         if (!university) {
             return { success: false, error: "University not found" }
@@ -327,7 +353,7 @@ export async function requestUniversityVerification(data: {
     universityId: string
     rollNumber: string
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
@@ -337,28 +363,40 @@ export async function requestUniversityVerification(data: {
         const { universityId, rollNumber } = data
 
         // Check if university exists and is a partner
-        const university = await prisma.university.findUnique({
-            where: { id: universityId },
-            include: {
-                subscription: true,
-            },
-        })
+        const [university] = await db
+            .select({ id: universities.id })
+            .from(universities)
+            .where(eq(universities.id, universityId))
+            .limit(1)
 
         if (!university) {
             return { success: false, error: "University not found" }
         }
 
-        if (!university.subscription || !["ACTIVE", "TRIALING"].includes(university.subscription.status)) {
+        const [sub] = await db
+            .select({ status: universitySubscriptions.status })
+            .from(universitySubscriptions)
+            .where(eq(universitySubscriptions.universityId, universityId))
+            .limit(1)
+
+        if (!sub || !["ACTIVE", "TRIALING"].includes(sub.status)) {
             return { success: false, error: "University is not a partner" }
         }
 
         // Check if user already has any link with this university
-        const existingLink = await prisma.studentUniversityLink.findFirst({
-            where: {
-                userId: session.user.id,
-                universityId,
-            },
-        })
+        const [existingLink] = await db
+            .select({
+                id: studentUniversityLinks.id,
+                verificationStatus: studentUniversityLinks.verificationStatus,
+            })
+            .from(studentUniversityLinks)
+            .where(
+                and(
+                    eq(studentUniversityLinks.userId, session.user.id),
+                    eq(studentUniversityLinks.universityId, universityId)
+                )
+            )
+            .limit(1)
 
         if (existingLink) {
             if (existingLink.verificationStatus === "VERIFIED") {
@@ -368,29 +406,28 @@ export async function requestUniversityVerification(data: {
                 return { success: false, message: "You already have a pending verification request" }
             }
             // If rejected, update the existing link
-            await prisma.studentUniversityLink.update({
-                where: { id: existingLink.id },
-                data: {
+            await db
+                .update(studentUniversityLinks)
+                .set({
                     rollNumber,
                     verificationStatus: "PENDING",
                     verifiedAt: null,
-                },
-            })
+                })
+                .where(eq(studentUniversityLinks.id, existingLink.id))
+
             return {
                 success: true,
                 message: "Verification request resubmitted successfully",
             }
         }
 
-        // Create new verification request - use user's email as university email
-        await prisma.studentUniversityLink.create({
-            data: {
-                userId: session.user.id,
-                universityId,
-                rollNumber,
-                universityEmail: session.user.email || "", // Required field
-                verificationStatus: "PENDING",
-            },
+        // Create new verification request
+        await db.insert(studentUniversityLinks).values({
+            userId: session.user.id,
+            universityId,
+            rollNumber,
+            universityEmail: session.user.email || "",
+            verificationStatus: "PENDING",
         })
 
         return {
@@ -407,27 +444,27 @@ export async function requestUniversityVerification(data: {
  * Get student's university dashboard data
  */
 export async function getStudentUniversityDashboard() {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const link = await prisma.studentUniversityLink.findFirst({
-            where: {
-                userId: session.user.id,
-                verificationStatus: "VERIFIED",
-            },
-            include: {
+        const link = await db.query.studentUniversityLinks.findFirst({
+            where: and(
+                eq(studentUniversityLinks.userId, session.user.id),
+                eq(studentUniversityLinks.verificationStatus, "VERIFIED")
+            ),
+            with: {
                 university: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         logoUrl: true,
-                    },
-                },
-            },
+                    }
+                }
+            }
         })
 
         if (!link) {
@@ -438,45 +475,41 @@ export async function getStudentUniversityDashboard() {
         }
 
         // Get student's classes
-        const enrollments = await prisma.classEnrollment.findMany({
-            where: {
-                studentLinkId: link.id,
-            },
-            include: {
+        const enrollments = await db.query.classEnrollments.findMany({
+            where: eq(classEnrollments.studentLinkId, link.id),
+            with: {
                 class: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         code: true,
                         semester: true,
-                    },
-                },
-            },
+                    }
+                }
+            }
         })
 
-        // Get pending assignments for enrolled classes
         const classIds = enrollments.map(e => e.classId)
-        
-        const assignments = classIds.length > 0 ? await prisma.universityAssignment.findMany({
-            where: {
-                classId: { in: classIds },
-                status: "PUBLISHED",
-                deadline: {
-                    gte: new Date(),
-                },
-            },
-            select: {
-                id: true,
-                title: true,
-                type: true,
-                deadline: true,
-                creditsRequired: true,
-            },
-            orderBy: {
-                deadline: "asc",
-            },
-            take: 5,
-        }) : []
+
+        const assignments = classIds.length > 0
+            ? await db
+                .select({
+                    id: universityAssignments.id,
+                    title: universityAssignments.title,
+                    type: universityAssignments.type,
+                    deadline: universityAssignments.deadline,
+                    creditsRequired: universityAssignments.creditsRequired,
+                })
+                .from(universityAssignments)
+                .where(
+                    and(
+                        inArray(universityAssignments.classId, classIds),
+                        eq(universityAssignments.status, "PUBLISHED")
+                    )
+                )
+                .orderBy(universityAssignments.deadline)
+                .limit(5)
+            : []
 
         return {
             success: true,
@@ -509,4 +542,3 @@ export async function getStudentUniversityDashboard() {
         return { success: false, error: "Failed to get dashboard data" }
     }
 }
-

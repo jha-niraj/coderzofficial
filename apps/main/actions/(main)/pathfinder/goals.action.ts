@@ -1,16 +1,29 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db,
+    pathfinderGoals,
+    pathfinderGroups,
+    pathfinderVerifications,
+    pathfinderDailySessions,
+    pathfinderSubGoals,
+    studios,
+    users,
+    creditTransactions,
+} from '@repo/db'
+import { eq, and, desc, asc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { 
-    PathfinderCategory, PathfinderLevel, PathfinderStatus, Currency 
-} from '@repo/prisma/client'
 import { PATHFINDER_CREDITS } from '@/lib/constants/pricing'
 
 // ================================================================================
 // TYPES
 // ================================================================================
+
+export type PathfinderCategory = 'DSA' | 'WEB_DEVELOPMENT' | 'FRONTEND' | 'BACKEND' | 'DEVOPS' | 'AI_ML' | 'DATABASE' | 'SYSTEM_DESIGN' | 'MOBILE' | 'OTHER'
+export type PathfinderLevel = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT'
+export type PathfinderStatus = 'ACTIVE' | 'VERIFICATION' | 'COMPLETED' | 'FAILED' | 'ABANDONED'
 
 export interface CreateGoalInput {
     title: string
@@ -43,21 +56,21 @@ function generateSlug(title: string): string {
 }
 
 export async function checkSlugAvailability(slug: string, userId: string): Promise<{ available: boolean; suggestedSlug?: string }> {
-    const existing = await prisma.pathfinderGoal.findUnique({
-        where: { userId_slug: { userId, slug } },
+    const existing = await db.query.pathfinderGoals.findFirst({
+        where: and(eq(pathfinderGoals.userId, userId), eq(pathfinderGoals.slug, slug)),
     })
-    
+
     if (!existing) {
         return { available: true }
     }
-    
+
     // Generate alternative with number suffix
     let suffix = 1
     let newSlug = `${slug}-${suffix}`
-    
+
     while (suffix < 100) {
-        const exists = await prisma.pathfinderGoal.findUnique({
-            where: { userId_slug: { userId, slug: newSlug } },
+        const exists = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.userId, userId), eq(pathfinderGoals.slug, newSlug)),
         })
         if (!exists) {
             return { available: false, suggestedSlug: newSlug }
@@ -65,7 +78,7 @@ export async function checkSlugAvailability(slug: string, userId: string): Promi
         suffix++
         newSlug = `${slug}-${suffix}`
     }
-    
+
     return { available: false, suggestedSlug: `${slug}-${Date.now()}` }
 }
 
@@ -109,15 +122,15 @@ export interface GoalWithRelations {
 
 export async function createPathfinderGoal(input: CreateGoalInput) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
         // Verify group belongs to user if provided
         if (input.groupId) {
-            const group = await prisma.pathfinderGroup.findFirst({
-                where: { id: input.groupId, userId: session.user.id },
+            const group = await db.query.pathfinderGroups.findFirst({
+                where: and(eq(pathfinderGroups.id, input.groupId), eq(pathfinderGroups.userId, session.user.id)),
             })
             if (!group) {
                 return { success: false, error: 'Group not found' }
@@ -125,7 +138,7 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
         }
 
         // Generate or validate slug
-        const slug = input.slug 
+        const slug = input.slug
             ? await generateAndCheckSlug(input.slug, session.user.id)
             : await generateAndCheckSlug(input.title, session.user.id)
 
@@ -146,10 +159,7 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
 
         // Private goals cost 5 credits
         if (!isPublic) {
-            const user = await prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: { credits: true },
-            })
+            const [user] = await db.select({ credits: users.credits }).from(users).where(eq(users.id, session.user.id))
             const required = PATHFINDER_CREDITS.privateGoalCreation
             if (!user || user.credits < required) {
                 return {
@@ -162,58 +172,47 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
             }
         }
 
-        // Create the goal (no OpenAI assistant at creation - verification questions generated on demand)
-        const goal = await prisma.$transaction(async (tx) => {
-            const g = await tx.pathfinderGoal.create({
-                data: {
-                    userId: session.user.id,
-                    title: input.title,
-                    slug,
-                    category: input.category,
-                    level: input.level,
-                    focusAreas: input.focusAreas,
-                    targetDate: input.targetDate,
-                    duration: input.duration ?? null,
-                    estimatedDays,
-                    groupId: input.groupId || null,
-                    isPublic,
-                    status: 'ACTIVE',
-                    overview: `Learn ${input.title} - Add daily tasks and practice to build your skills.`,
-                    learningObjectives: [],
-                    prerequisites: [],
-                    startedAt: new Date(),
-                },
+        // Create the goal
+        const [goal] = await db.insert(pathfinderGoals).values({
+            userId: session.user.id,
+            title: input.title,
+            slug,
+            category: input.category,
+            level: input.level,
+            focusAreas: input.focusAreas,
+            targetDate: input.targetDate,
+            duration: input.duration ?? null,
+            estimatedDays,
+            groupId: input.groupId || null,
+            isPublic,
+            status: 'ACTIVE',
+            overview: `Learn ${input.title} - Add daily tasks and practice to build your skills.`,
+            learningObjectives: [],
+            prerequisites: [],
+            startedAt: new Date(),
+        }).returning()
+
+        if (!isPublic) {
+            const required = PATHFINDER_CREDITS.privateGoalCreation
+            await db.update(users)
+                .set({ credits: sql`${users.credits} - ${required}` })
+                .where(eq(users.id, session.user.id))
+            await db.insert(creditTransactions).values({
+                userId: session.user.id,
+                amount: -required,
+                type: 'SPEND',
+                description: `Pathfinder Private Goal: ${input.title}`,
+                currency: 'INR',
             })
+        }
 
-            if (!isPublic) {
-                const required = PATHFINDER_CREDITS.privateGoalCreation
-                await tx.user.update({
-                    where: { id: session.user.id },
-                    data: { credits: { decrement: required } },
-                })
-                await tx.creditTransaction.create({
-                    data: {
-                        userId: session.user.id,
-                        amount: -required,
-                        type: 'SPEND',
-                        description: `Pathfinder Private Goal: ${input.title}`,
-                        currency: Currency.INR,
-                    },
-                })
-            }
-
-            return g
-        })
-
-        // Create verification record (questions generated when user clicks Verify)
-        await prisma.pathfinderVerification.create({
-            data: {
-                goalId: goal.id,
-                quizStatus: 'PENDING',
-                codingStatus: 'LOCKED',
-                mockStatus: 'LOCKED',
-                projectStatus: 'PENDING',
-            },
+        // Create verification record
+        await db.insert(pathfinderVerifications).values({
+            goalId: goal.id,
+            quizStatus: 'PENDING',
+            codingStatus: 'LOCKED',
+            mockStatus: 'LOCKED',
+            projectStatus: 'PENDING',
         })
 
         // Generate AI study plan if requested (non-blocking)
@@ -242,40 +241,32 @@ export async function createPathfinderGoal(input: CreateGoalInput) {
 
 export async function getUserPathfinderGoals() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', goals: [], groups: [] }
         }
 
-        // Fetch goals
-        const goals = await prisma.pathfinderGoal.findMany({
-            where: { userId: session.user.id },
-            orderBy: { createdAt: 'desc' },
-            include: {
+        const goals = await db.query.pathfinderGoals.findMany({
+            where: eq(pathfinderGoals.userId, session.user.id),
+            orderBy: [desc(pathfinderGoals.createdAt)],
+            with: {
                 verification: true,
                 group: true,
                 dailySessions: {
-                    orderBy: { date: 'desc' },
-                    take: 7, // Last 7 days of sessions
-                    include: {
-                        _count: {
-                            select: {
-                                subGoals: true,
-                            },
-                        },
+                    orderBy: [desc(pathfinderDailySessions.date)],
+                    limit: 7,
+                    with: {
+                        subGoals: true,
                     },
                 },
             },
         })
 
-        // Fetch groups
-        const groups = await prisma.pathfinderGroup.findMany({
-            where: { userId: session.user.id },
-            orderBy: { order: 'asc' },
-            include: {
-                _count: {
-                    select: { goals: true },
-                },
+        const groups = await db.query.pathfinderGroups.findMany({
+            where: eq(pathfinderGroups.userId, session.user.id),
+            orderBy: [asc(pathfinderGroups.order)],
+            with: {
+                goals: true,
             },
         })
 
@@ -290,24 +281,24 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 export async function getPathfinderGoal(slugOrId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', goal: null }
         }
 
         const isUuid = UUID_REGEX.test(slugOrId)
-        const goal = await prisma.pathfinderGoal.findFirst({
+        const goal = await db.query.pathfinderGoals.findFirst({
             where: isUuid
-                ? { id: slugOrId, userId: session.user.id }
-                : { userId: session.user.id, slug: slugOrId },
-            include: {
+                ? and(eq(pathfinderGoals.id, slugOrId), eq(pathfinderGoals.userId, session.user.id))
+                : and(eq(pathfinderGoals.userId, session.user.id), eq(pathfinderGoals.slug, slugOrId)),
+            with: {
                 verification: true,
                 group: true,
                 dailySessions: {
-                    orderBy: { date: 'desc' },
-                    include: {
+                    orderBy: [desc(pathfinderDailySessions.date)],
+                    with: {
                         subGoals: {
-                            orderBy: { order: 'asc' },
+                            orderBy: [asc(pathfinderSubGoals.order)],
                         },
                     },
                 },
@@ -331,27 +322,26 @@ export async function getPathfinderGoal(slugOrId: string) {
 
 export async function updateGoalStatus(goalId: string, status: PathfinderStatus) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
         })
 
         if (!goal) {
             return { success: false, error: 'Goal not found' }
         }
 
-        await prisma.pathfinderGoal.update({
-            where: { id: goalId },
-            data: {
+        await db.update(pathfinderGoals)
+            .set({
                 status,
                 ...(status === 'VERIFICATION' ? { verificationStartedAt: new Date() } : {}),
                 ...(status === 'COMPLETED' ? { completedAt: new Date() } : {}),
-            },
-        })
+            })
+            .where(eq(pathfinderGoals.id, goalId))
 
         revalidatePath('/pathfinder')
         return { success: true }
@@ -367,22 +357,20 @@ export async function updateGoalStatus(goalId: string, status: PathfinderStatus)
 
 export async function deletePathfinderGoal(goalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
         })
 
         if (!goal) {
             return { success: false, error: 'Goal not found' }
         }
 
-        await prisma.pathfinderGoal.delete({
-            where: { id: goalId },
-        })
+        await db.delete(pathfinderGoals).where(eq(pathfinderGoals.id, goalId))
 
         revalidatePath('/pathfinder')
         return { success: true }
@@ -391,10 +379,6 @@ export async function deletePathfinderGoal(goalId: string) {
         return { success: false, error: 'Failed to delete goal' }
     }
 }
-
-// ================================================================================
-// HELPER FUNCTIONS
-// ================================================================================
 
 // ================================================================================
 // AI STUDY PLAN GENERATION
@@ -477,45 +461,44 @@ Return ONLY valid JSON, no markdown.`
         const today = new Date()
         today.setHours(0, 0, 0, 0)
 
-        let dailySession = await prisma.pathfinderDailySession.findUnique({
-            where: { goalId_date: { goalId, date: today } },
+        let dailySession = await db.query.pathfinderDailySessions.findFirst({
+            where: and(eq(pathfinderDailySessions.goalId, goalId), eq(pathfinderDailySessions.date, today)),
         })
 
         if (!dailySession) {
-            dailySession = await prisma.pathfinderDailySession.create({
-                data: { goalId, userId, date: today },
-            })
+            const [created] = await db.insert(pathfinderDailySessions).values({
+                goalId,
+                userId,
+                date: today,
+            }).returning()
+            dailySession = created
         }
 
         // Create sub-goals from AI topics
         for (const topic of parsed.topics) {
-            await prisma.pathfinderSubGoal.create({
-                data: {
-                    goalId,
-                    sessionId: dailySession.id,
-                    title: topic.title,
-                    description: topic.description,
-                    source: 'text',
-                    order: topic.order,
-                    isAIGenerated: true,
-                    isContentLoaded: false,
-                },
+            await db.insert(pathfinderSubGoals).values({
+                goalId,
+                sessionId: dailySession.id,
+                title: topic.title,
+                description: topic.description,
+                source: 'text',
+                order: topic.order,
+                isAIGenerated: true,
+                isContentLoaded: false,
             })
         }
 
         // Update session and goal stats
-        await prisma.pathfinderDailySession.update({
-            where: { id: dailySession.id },
-            data: { totalSubGoals: { increment: parsed.topics.length } },
-        })
+        await db.update(pathfinderDailySessions)
+            .set({ totalSubGoals: sql`${pathfinderDailySessions.totalSubGoals} + ${parsed.topics.length}` })
+            .where(eq(pathfinderDailySessions.id, dailySession.id))
 
-        await prisma.pathfinderGoal.update({
-            where: { id: goalId },
-            data: {
-                totalSubGoals: { increment: parsed.topics.length },
+        await db.update(pathfinderGoals)
+            .set({
+                totalSubGoals: sql`${pathfinderGoals.totalSubGoals} + ${parsed.topics.length}`,
                 lastActivityAt: new Date(),
-            },
-        })
+            })
+            .where(eq(pathfinderGoals.id, goalId))
 
         revalidatePath('/pathfinder')
     } catch (error) {
@@ -529,14 +512,14 @@ Return ONLY valid JSON, no markdown.`
  */
 export async function generateContentForAISubGoal(subGoalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const subGoal = await prisma.pathfinderSubGoal.findFirst({
-            where: { id: subGoalId },
-            include: { goal: { select: { id: true, userId: true, category: true, level: true, title: true } } },
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            with: { goal: { columns: { id: true, userId: true, category: true, level: true, title: true } } },
         })
 
         if (!subGoal || subGoal.goal.userId !== session.user.id) {
@@ -559,27 +542,23 @@ export async function generateContentForAISubGoal(subGoalId: string) {
         }
 
         const { generateExplanation, generateVideos, generateDocuments } = await import('@/actions/(main)/studios/ai-generation.actions')
-        const { StudioVisibility } = await import('@repo/prisma/client')
 
         // Create Studio for this sub-goal
         const studioSlug = `subgoal-${subGoalId}-${Date.now().toString(36)}`
-        const studio = await prisma.studio.create({
-            data: {
-                slug: studioSlug,
-                title: `📝 ${subGoal.title}`,
-                description: `Study notes for: ${subGoal.title}`,
-                source: 'PATHFINDER',
-                sourceId: subGoalId,
-                visibility: StudioVisibility.PRIVATE,
-                userId: session.user.id,
-                stepCount: 0,
-            },
-        })
+        const [studio] = await db.insert(studios).values({
+            slug: studioSlug,
+            title: `📝 ${subGoal.title}`,
+            description: `Study notes for: ${subGoal.title}`,
+            source: 'PATHFINDER',
+            sourceId: subGoalId,
+            visibility: 'PRIVATE',
+            userId: session.user.id,
+            stepCount: 0,
+        }).returning()
 
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoalId },
-            data: { studioId: studio.id },
-        })
+        await db.update(pathfinderSubGoals)
+            .set({ studioId: studio.id })
+            .where(eq(pathfinderSubGoals.id, subGoalId))
 
         await generateExplanation(
             studio.id,
@@ -593,10 +572,9 @@ export async function generateContentForAISubGoal(subGoalId: string) {
 
         await generateQuizAndCoding(subGoalId, subGoal.goalId, session.user.id, subGoal.title, subGoal.goal.category, subGoal.goal.level)
 
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoalId },
-            data: { isContentLoaded: true },
-        })
+        await db.update(pathfinderSubGoals)
+            .set({ isContentLoaded: true })
+            .where(eq(pathfinderSubGoals.id, subGoalId))
 
         const usageSummary = await getGoalUsageSummary(subGoal.goalId)
 
@@ -671,26 +649,22 @@ Rules: Vary difficulty. Return ONLY valid JSON, no markdown.`
                 : []
         const hasCoding = codingProblems.length > 0
 
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoalId },
-            data: {
+        await db.update(pathfinderSubGoals)
+            .set({
                 aiCodingProblem: hasCoding ? codingProblems : null,
                 hasCoding,
-            },
-        })
+            })
+            .where(eq(pathfinderSubGoals.id, subGoalId))
 
-        const subGoal = await prisma.pathfinderSubGoal.findUnique({
-            where: { id: subGoalId },
-            select: { sessionId: true },
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            columns: { sessionId: true },
         })
 
         if (subGoal) {
-            await prisma.pathfinderDailySession.update({
-                where: { id: subGoal.sessionId },
-                data: {
-                    totalCodingProblems: { increment: codingProblems.length },
-                },
-            })
+            await db.update(pathfinderDailySessions)
+                .set({ totalCodingProblems: sql`${pathfinderDailySessions.totalCodingProblems} + ${codingProblems.length}` })
+                .where(eq(pathfinderDailySessions.id, subGoal.sessionId))
         }
     } catch (error) {
         console.error('Error generating quiz/coding for AI sub-goal:', error)

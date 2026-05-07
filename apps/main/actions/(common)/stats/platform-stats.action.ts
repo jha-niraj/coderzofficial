@@ -1,6 +1,7 @@
 'use server'
 
-import { prisma } from '@repo/prisma'
+import { db, users, projectsV2, projectV2Tasks, projectV2Submissions, projectIdeas, openSourceProjects, mockVoiceSession, userProjectV2Progress } from '@repo/db'
+import { eq, sql, count } from 'drizzle-orm'
 
 /**
  * Get comprehensive platform statistics for the landing page
@@ -9,49 +10,53 @@ import { prisma } from '@repo/prisma'
 export async function getPlatformStats() {
     try {
         const [
-            totalUsers,
-            totalProjects,
-            totalTasks,
-            completedTasks,
-            totalProjectIdeas,
-            problemStatements,
-            technologyIdeas,
-            publicProjects,
-            totalOpenSourceProjects,
-            totalMockSessions,
+            [totalUsersRow],
+            [totalProjectsRow],
+            [totalTasksRow],
+            [completedTasksRow],
+            [totalProjectIdeasRow],
+            [problemStatementsRow],
+            [technologyIdeasRow],
+            [publicProjectsRow],
+            [totalOpenSourceProjectsRow],
+            [totalMockSessionsRow],
         ] = await Promise.all([
             // Total registered users
-            prisma.user.count(),
+            db.select({ value: count() }).from(users),
             // Total projects created
-            prisma.projectV2.count(),
+            db.select({ value: count() }).from(projectsV2),
             // Total tasks across all projects
-            prisma.projectV2Task.count(),
+            db.select({ value: count() }).from(projectV2Tasks),
             // Completed task submissions
-            prisma.projectV2Submission.count({
-                where: { status: 'APPROVED' }
-            }),
+            db.select({ value: count() }).from(projectV2Submissions).where(eq(projectV2Submissions.status, 'APPROVED')),
             // Total project ideas
-            prisma.projectIdea.count(),
+            db.select({ value: count() }).from(projectIdeas),
             // Problem statements
-            prisma.projectIdea.count({
-                where: { ideaType: 'PROBLEM_STATEMENT' }
-            }),
+            db.select({ value: count() }).from(projectIdeas).where(eq(projectIdeas.ideaType, 'PROBLEM_STATEMENT')),
             // Technology-specific ideas
-            prisma.projectIdea.count({
-                where: { ideaType: 'TECHNOLOGY_SPECIFIC' }
-            }),
+            db.select({ value: count() }).from(projectIdeas).where(eq(projectIdeas.ideaType, 'TECHNOLOGY_SPECIFIC')),
             // Public projects
-            prisma.projectV2.count({
-                where: { visibility: 'PUBLIC' }
-            }),
-            // Open source projects (assuming you have this model)
-            prisma.openSourceProject.count().catch(() => 0),
+            db.select({ value: count() }).from(projectsV2).where(eq(projectsV2.visibility, 'PUBLIC')),
+            // Open source projects
+            db.select({ value: count() }).from(openSourceProjects).catch(() => [{ value: 0 }]),
             // Mock interview sessions
-            prisma.mockVoiceSession.count().catch(() => 0),
+            db.select({ value: count() }).from(mockVoiceSession).catch(() => [{ value: 0 }]),
         ])
 
+        const totalUsers = Number(totalUsersRow?.value ?? 0)
+        const totalProjects = Number(totalProjectsRow?.value ?? 0)
+        const totalTasks = Number(totalTasksRow?.value ?? 0)
+        const completedTasks = Number(completedTasksRow?.value ?? 0)
+        const totalProjectIdeas = Number(totalProjectIdeasRow?.value ?? 0)
+        const problemStatements = Number(problemStatementsRow?.value ?? 0)
+        const technologyIdeas = Number(technologyIdeasRow?.value ?? 0)
+        const publicProjects = Number(publicProjectsRow?.value ?? 0)
+        const totalOpenSourceProjectsCount = Number(totalOpenSourceProjectsRow?.value ?? 0)
+        const totalMockSessions = Number(totalMockSessionsRow?.value ?? 0)
+
         // Calculate success rate (completed vs total task submissions)
-        const totalSubmissions = await prisma.projectV2Submission.count()
+        const [totalSubmissionsRow] = await db.select({ value: count() }).from(projectV2Submissions)
+        const totalSubmissions = Number(totalSubmissionsRow?.value ?? 0)
         const successRate = totalSubmissions > 0
             ? Math.round((completedTasks / totalSubmissions) * 100)
             : 95 // Default fallback
@@ -78,7 +83,7 @@ export async function getPlatformStats() {
                 technologyIdeas,
 
                 // Other stats
-                totalOpenSourceProjects,
+                totalOpenSourceProjects: totalOpenSourceProjectsCount,
                 totalMockSessions,
             }
         }
@@ -98,38 +103,36 @@ export async function getPlatformStats() {
 export async function getProjectStatsByTechnology() {
     try {
         // Get project ideas grouped by technology
-        const projectIdeas = await prisma.projectIdea.groupBy({
-            by: ['technology'],
-            _count: {
-                id: true
-            },
-            orderBy: {
-                _count: {
-                    id: 'desc'
-                }
-            },
-            take: 10
-        })
+        const byTechnologyRows = await db
+            .select({
+                technology: projectIdeas.technology,
+                count: count(),
+            })
+            .from(projectIdeas)
+            .groupBy(projectIdeas.technology)
+            .orderBy(sql`count(*) desc`)
+            .limit(10)
 
         // Get actual projects created, grouped by generationType
-        const projectsByType = await prisma.projectV2.groupBy({
-            by: ['generationType'],
-            _count: {
-                id: true
-            }
-        })
+        const byTypeRows = await db
+            .select({
+                type: projectsV2.generationType,
+                count: count(),
+            })
+            .from(projectsV2)
+            .groupBy(projectsV2.generationType)
 
         return {
             success: true,
             data: {
-                byTechnology: projectIdeas.map(item => ({
+                byTechnology: byTechnologyRows.map(item => ({
                     technology: item.technology || 'Unknown',
-                    count: item._count.id
+                    count: Number(item.count),
                 })),
-                byType: projectsByType.map(item => ({
-                    type: item.generationType,
-                    count: item._count.id
-                }))
+                byType: byTypeRows.map(item => ({
+                    type: item.type,
+                    count: Number(item.count),
+                })),
             }
         }
     } catch (error) {
@@ -148,40 +151,51 @@ export async function getProjectStatsByTechnology() {
 export async function getProjectsPageStats() {
     try {
         const [
-            totalProjects,
-            totalProjectIdeas,
-            problemStatements,
-            technologyIdeas,
-            frontendProjects,
-            fullStackProjects,
-            backendProjects,
-            aiAgentProjects,
-            totalTasks,
-            completedTaskSubmissions,
-            activeUsers
+            [totalProjectsRow],
+            [totalProjectIdeasRow],
+            [problemStatementsRow],
+            [technologyIdeasRow],
+            [frontendProjectsRow],
+            [fullStackProjectsRow],
+            [backendProjectsRow],
+            [aiAgentProjectsRow],
+            [totalTasksRow],
+            [completedTaskSubmissionsRow],
+            activeUsersRows,
         ] = await Promise.all([
-            prisma.projectV2.count(),
-            prisma.projectIdea.count({ where: { status: 'APPROVED' } }),
-            prisma.projectIdea.count({
-                where: { ideaType: 'PROBLEM_STATEMENT', status: 'APPROVED' }
-            }),
-            prisma.projectIdea.count({
-                where: { ideaType: 'TECHNOLOGY_SPECIFIC', status: 'APPROVED' }
-            }),
-            prisma.projectV2.count({ where: { generationType: 'FRONTEND' } }),
-            prisma.projectV2.count({ where: { generationType: 'FULL_STACK' } }),
-            prisma.projectV2.count({ where: { generationType: 'BACKEND' } }),
-            prisma.projectV2.count({ where: { generationType: 'AI_AGENT' } }),
-            prisma.projectV2Task.count(),
-            prisma.projectV2Submission.count({ where: { status: 'APPROVED' } }),
-            // Active users - users with at least one project progress (using ProjectV2)
-            prisma.userProjectV2Progress.groupBy({
-                by: ['userId']
-            }).then(results => results.length).catch(() => 0)
+            db.select({ value: count() }).from(projectsV2),
+            db.select({ value: count() }).from(projectIdeas).where(eq(projectIdeas.status, 'APPROVED')),
+            db.select({ value: count() }).from(projectIdeas).where(
+                sql`${projectIdeas.ideaType} = 'PROBLEM_STATEMENT' AND ${projectIdeas.status} = 'APPROVED'`
+            ),
+            db.select({ value: count() }).from(projectIdeas).where(
+                sql`${projectIdeas.ideaType} = 'TECHNOLOGY_SPECIFIC' AND ${projectIdeas.status} = 'APPROVED'`
+            ),
+            db.select({ value: count() }).from(projectsV2).where(eq(projectsV2.generationType, 'FRONTEND')),
+            db.select({ value: count() }).from(projectsV2).where(eq(projectsV2.generationType, 'FULL_STACK')),
+            db.select({ value: count() }).from(projectsV2).where(eq(projectsV2.generationType, 'BACKEND')),
+            db.select({ value: count() }).from(projectsV2).where(eq(projectsV2.generationType, 'AI_AGENT')),
+            db.select({ value: count() }).from(projectV2Tasks),
+            db.select({ value: count() }).from(projectV2Submissions).where(eq(projectV2Submissions.status, 'APPROVED')),
+            // Active users — distinct userId count from userProjectV2Progress
+            db.selectDistinct({ userId: userProjectV2Progress.userId }).from(userProjectV2Progress).catch(() => []),
         ])
 
+        const totalProjects = Number(totalProjectsRow?.value ?? 0)
+        const totalProjectIdeas = Number(totalProjectIdeasRow?.value ?? 0)
+        const problemStatements = Number(problemStatementsRow?.value ?? 0)
+        const technologyIdeas = Number(technologyIdeasRow?.value ?? 0)
+        const frontendProjects = Number(frontendProjectsRow?.value ?? 0)
+        const fullStackProjects = Number(fullStackProjectsRow?.value ?? 0)
+        const backendProjects = Number(backendProjectsRow?.value ?? 0)
+        const aiAgentProjects = Number(aiAgentProjectsRow?.value ?? 0)
+        const totalTasks = Number(totalTasksRow?.value ?? 0)
+        const completedTaskSubmissions = Number(completedTaskSubmissionsRow?.value ?? 0)
+        const activeUsers = Array.isArray(activeUsersRows) ? activeUsersRows.length : 0
+
         // Calculate success rate
-        const totalSubmissions = await prisma.projectV2Submission.count()
+        const [totalSubmissionsRow] = await db.select({ value: count() }).from(projectV2Submissions)
+        const totalSubmissions = Number(totalSubmissionsRow?.value ?? 0)
         const successRate = totalSubmissions > 0
             ? Math.round((completedTaskSubmissions / totalSubmissions) * 100)
             : 94

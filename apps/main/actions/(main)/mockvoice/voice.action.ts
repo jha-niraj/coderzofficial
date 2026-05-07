@@ -1,12 +1,12 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { db, users, mockInterviewVoice, mockVoiceSession, learnStep, creditTransactions } from "@repo/db"
+import { eq, and, or, ilike, desc, count, avg } from "drizzle-orm"
 import { revalidatePath } from 'next/cache'
-import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
-import { MockCategory, MockLevel } from '@repo/prisma/client'
-
+import { MOCK_CATEGORIES, MOCK_LEVELS } from '@/app/(main)/mock/voice/_constants/mock-categories'
 
 // ==========================================
 // TYPES
@@ -15,43 +15,40 @@ import { MockCategory, MockLevel } from '@repo/prisma/client'
 interface CreateCustomMockInput {
     title: string
     description: string
-    category: MockCategory
+    category: string
     level: string
     duration: number
     questionsCount: number
     includeResume: boolean
     isPublic: boolean
     knowledgeBase?: string
-    learnStepId?: string // Link to Learn step
+    learnStepId?: string
 }
-
-// ==========================================
-import { MOCK_CATEGORIES, MOCK_LEVELS } from '@/app/(main)/mock/voice/_constants/mock-categories'
 
 // ==========================================
 // FETCH ADMIN MOCKS (by category for tabs)
 // ==========================================
 
-export async function getAdminMocksByCategory(category?: MockCategory | 'ALL', limit: number = 6) {
+export async function getAdminMocksByCategory(category?: string, limit: number = 6) {
     try {
-        const where: any = {
-            byAdmin: true,
-            isPublic: true
-        }
+        const conditions: any[] = [
+            eq(mockInterviewVoice.byAdmin, true),
+            eq(mockInterviewVoice.isPublic, true),
+        ]
 
         if (category && category !== 'ALL') {
-            where.category = category
+            conditions.push(eq(mockInterviewVoice.category, category as any))
         }
 
-        const mocks = await prisma.mockInterviewVoice.findMany({
-            where,
-            take: limit,
+        const mocks = await db.query.mockInterviewVoice.findMany({
+            where: and(...conditions),
+            limit,
             orderBy: [
-                { isFeatured: 'desc' },
-                { popularity: 'desc' },
-                { createdAt: 'desc' }
+                desc(mockInterviewVoice.isFeatured),
+                desc(mockInterviewVoice.popularity),
+                desc(mockInterviewVoice.createdAt),
             ],
-            select: {
+            columns: {
                 id: true,
                 title: true,
                 description: true,
@@ -66,37 +63,26 @@ export async function getAdminMocksByCategory(category?: MockCategory | 'ALL', l
                 popularity: true,
                 totalSessions: true,
                 averageRating: true,
-                createdAt: true
-            }
+                createdAt: true,
+            },
         })
 
-        return {
-            success: true,
-            mocks
-        }
+        return { success: true, mocks }
     } catch (error) {
         console.error('Error fetching admin mocks:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch mocks',
-            mocks: []
-        }
+        return { success: false, error: 'Failed to fetch mocks', mocks: [] }
     }
 }
 
-// Get all admin mocks grouped by category
 export async function getAllAdminMocksGrouped() {
     try {
-        const mocks = await prisma.mockInterviewVoice.findMany({
-            where: {
-                byAdmin: true,
-                isPublic: true
-            },
-            orderBy: [
-                { isFeatured: 'desc' },
-                { popularity: 'desc' }
-            ],
-            select: {
+        const mocks = await db.query.mockInterviewVoice.findMany({
+            where: and(
+                eq(mockInterviewVoice.byAdmin, true),
+                eq(mockInterviewVoice.isPublic, true)
+            ),
+            orderBy: [desc(mockInterviewVoice.isFeatured), desc(mockInterviewVoice.popularity)],
+            columns: {
                 id: true,
                 title: true,
                 description: true,
@@ -110,11 +96,10 @@ export async function getAllAdminMocksGrouped() {
                 byAdmin: true,
                 popularity: true,
                 totalSessions: true,
-                averageRating: true
-            }
+                averageRating: true,
+            },
         })
 
-        // Group by category
         const grouped = mocks.reduce((acc, mock) => {
             const cat = mock.category
             if (!acc[cat]) acc[cat] = []
@@ -122,36 +107,24 @@ export async function getAllAdminMocksGrouped() {
             return acc
         }, {} as Record<string, typeof mocks>)
 
-        return {
-            success: true,
-            mocks,
-            grouped
-        }
+        return { success: true, mocks, grouped }
     } catch (error) {
         console.error('Error fetching grouped admin mocks:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch mocks',
-            mocks: [],
-            grouped: {}
-        }
+        return { success: false, error: 'Failed to fetch mocks', mocks: [], grouped: {} }
     }
 }
 
-// Get featured mocks (for hero section)
 export async function getFeaturedAdminMocks(limit: number = 6) {
     try {
-        const mocks = await prisma.mockInterviewVoice.findMany({
-            where: {
-                byAdmin: true,
-                isFeatured: true,
-                isPublic: true
-            },
-            take: limit,
-            orderBy: [
-                { popularity: 'desc' }
-            ],
-            select: {
+        const mocks = await db.query.mockInterviewVoice.findMany({
+            where: and(
+                eq(mockInterviewVoice.byAdmin, true),
+                eq(mockInterviewVoice.isFeatured, true),
+                eq(mockInterviewVoice.isPublic, true)
+            ),
+            limit,
+            orderBy: [desc(mockInterviewVoice.popularity)],
+            columns: {
                 id: true,
                 title: true,
                 description: true,
@@ -164,130 +137,90 @@ export async function getFeaturedAdminMocks(limit: number = 6) {
                 isFeatured: true,
                 byAdmin: true,
                 popularity: true,
-                averageRating: true
-            }
+                averageRating: true,
+            },
         })
 
-        return {
-            success: true,
-            mocks
-        }
+        return { success: true, mocks }
     } catch (error) {
         console.error('Error fetching featured mocks:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch featured mocks',
-            mocks: []
-        }
+        return { success: false, error: 'Failed to fetch featured mocks', mocks: [] }
     }
 }
 
-// Get a single mock by ID
 export async function getMockById(mockId: string) {
     try {
-        const mock = await prisma.mockInterviewVoice.findUnique({
-            where: { id: mockId },
-            include: {
-                createdBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true
-                    }
-                }
-            }
+        const mock = await db.query.mockInterviewVoice.findFirst({
+            where: eq(mockInterviewVoice.id, mockId),
+            with: { createdBy: true },
         })
 
         if (!mock) {
-            return {
-                success: false,
-                error: 'Mock not found'
-            }
+            return { success: false, error: 'Mock not found' }
         }
 
-        return {
-            success: true,
-            mock
-        }
+        return { success: true, mock }
     } catch (error) {
         console.error('Error fetching mock:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch mock'
-        }
+        return { success: false, error: 'Failed to fetch mock' }
     }
 }
 
-// Create a custom mock interview
 export async function createCustomMockVoice(input: CreateCustomMockInput) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
 
         if (!session?.user?.id) {
-            return {
-                success: false,
-                error: 'You must be logged in to create a mock interview'
-            }
+            return { success: false, error: 'You must be logged in to create a mock interview' }
         }
 
-        // Validate input
         if (!input.title.trim() || !input.description.trim()) {
-            return {
-                success: false,
-                error: 'Title and description are required'
-            }
+            return { success: false, error: 'Title and description are required' }
         }
 
-        // Calculate credits
         const baseCredits = input.duration
         const questionCredits = input.questionsCount * 2
         const subtotal = (baseCredits + questionCredits) * (input.isPublic ? 0.5 : 1)
         const resumeCredits = input.includeResume ? 5 : 0
         const creditsRequired = Math.ceil(subtotal + resumeCredits)
 
-        // Check user credits
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { credits: true, resume: true }
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: { credits: true, resume: true },
         })
 
         if (!user) {
-            return {
-                success: false,
-                error: 'User not found'
-            }
+            return { success: false, error: 'User not found' }
         }
 
         if (user.credits < creditsRequired) {
             return {
                 success: false,
-                error: `Insufficient credits. You need ${creditsRequired} credits but have ${user.credits}`
+                error: `Insufficient credits. You need ${creditsRequired} credits but have ${user.credits}`,
             }
         }
 
         if (input.includeResume && !user.resume) {
             return {
                 success: false,
-                error: 'Resume is required but not found. Please upload your resume first.'
+                error: 'Resume is required but not found. Please upload your resume first.',
             }
         }
 
         // Generate or use provided knowledge base
         let knowledgeBase: string
 
-        // If user provided their own knowledge base/syllabus, use it with enhancements
         if (input.knowledgeBase && input.knowledgeBase.trim().length > 50) {
             try {
                 const completion = await openai.chat.completions.create({
-                    model: "gpt-4o-mini",
+                    model: 'gpt-4o-mini',
                     messages: [
                         {
-                            role: "system",
-                            content: "You are an expert interviewer. Enhance the provided syllabus/study materials into a structured interview knowledge base while preserving all the original content and topics."
+                            role: 'system',
+                            content: 'You are an expert interviewer. Enhance the provided syllabus/study materials into a structured interview knowledge base while preserving all the original content and topics.',
                         },
                         {
-                            role: "user",
+                            role: 'user',
                             content: `Create an interview knowledge base for: "${input.title}" (${input.level} level)
 
                                 The user has provided their syllabus/study materials:
@@ -307,17 +240,16 @@ export async function createCustomMockVoice(input: CreateCustomMockInput) {
                                 3. Defines expected answer depth for ${input.level} level
                                 4. Adds follow-up question strategies
 
-                                Preserve the user's content structure and priorities.`
-                        }
+                                Preserve the user's content structure and priorities.`,
+                        },
                     ],
                     temperature: 0.5,
-                    max_tokens: 2500
+                    max_tokens: 2500,
                 })
 
                 knowledgeBase = completion.choices[0]?.message?.content || input.knowledgeBase
             } catch (error) {
                 console.error('Error enhancing knowledge base:', error)
-                // Use the user's content directly as fallback
                 knowledgeBase = `You are conducting a ${input.level.toLowerCase()} level interview for: ${input.title}
 
                     STUDY MATERIALS/SYLLABUS PROVIDED BY USER:
@@ -332,17 +264,16 @@ export async function createCustomMockVoice(input: CreateCustomMockInput) {
                     ${input.includeResume ? 'Also personalize questions based on their resume.' : ''}`
             }
         } else {
-            // Generate knowledge base from scratch using AI
             try {
                 const completion = await openai.chat.completions.create({
-                    model: "gpt-4o-mini",
+                    model: 'gpt-4o-mini',
                     messages: [
                         {
-                            role: "system",
-                            content: "You are an expert technical interviewer and career coach. Generate comprehensive, detailed knowledge bases for mock interviews that will guide an AI interviewer."
+                            role: 'system',
+                            content: 'You are an expert technical interviewer and career coach. Generate comprehensive, detailed knowledge bases for mock interviews that will guide an AI interviewer.',
                         },
                         {
-                            role: "user",
+                            role: 'user',
                             content: `Generate a comprehensive knowledge base for conducting a ${input.level.toLowerCase()} level interview for the position: "${input.title}".
 
                             Job Description/Focus Areas:
@@ -363,17 +294,18 @@ export async function createCustomMockVoice(input: CreateCustomMockInput) {
                             6. Follow-up question strategies
                             7. Industry-specific best practices
 
-                            Make it specific, actionable, and comprehensive enough for an AI to conduct a professional interview.`
-                        }
+                            Make it specific, actionable, and comprehensive enough for an AI to conduct a professional interview.`,
+                        },
                     ],
                     temperature: 0.7,
-                    max_tokens: 2000
+                    max_tokens: 2000,
                 })
 
-                knowledgeBase = completion.choices[0]?.message?.content || `You are conducting a ${input.level.toLowerCase()} level interview for ${input.title}. ${input.description}`
+                knowledgeBase =
+                    completion.choices[0]?.message?.content ||
+                    `You are conducting a ${input.level.toLowerCase()} level interview for ${input.title}. ${input.description}`
             } catch (error) {
                 console.error('Error generating knowledge base:', error)
-                // Fallback to basic knowledge base if OpenAI fails
                 knowledgeBase = `You are conducting a ${input.level.toLowerCase()} level interview for the position of ${input.title}.
 
                     Description: ${input.description}
@@ -395,161 +327,102 @@ export async function createCustomMockVoice(input: CreateCustomMockInput) {
             }
         }
 
-        // Create mock in transaction (AFTER successful knowledge base generation)
-        const result = await prisma.$transaction(async (tx) => {
-            const mock = await tx.mockInterviewVoice.create({
-                data: {
-                    title: input.title.trim(),
-                    description: input.description.trim(),
-                    category: input.category || 'TECHNICAL',
-                    level: input.level as MockLevel,
-                    duration: input.duration,
-                    questionsCount: input.questionsCount,
-                    isPublic: input.isPublic,
-                    isPredefined: false,
-                    byAdmin: false,
-                    knowledgeBase,
-                    createdById: session.user.id,
-                    includesResume: input.includeResume,
-                    baseCredits: baseCredits + questionCredits,
-                    creditsRequired,
-                    tags: []
-                },
-                select: {
-                    id: true
-                }
+        // Create mock and deduct credits
+        const [mock] = await db
+            .insert(mockInterviewVoice)
+            .values({
+                title: input.title.trim(),
+                description: input.description.trim(),
+                category: (input.category || 'TECHNICAL') as any,
+                level: input.level as any,
+                duration: input.duration,
+                questionsCount: input.questionsCount,
+                isPublic: input.isPublic,
+                isPredefined: false,
+                byAdmin: false,
+                knowledgeBase,
+                createdById: session.user.id,
+                includesResume: input.includeResume,
+                baseCredits: baseCredits + questionCredits,
+                creditsRequired,
+                tags: [],
             })
+            .returning({ id: mockInterviewVoice.id })
 
-            // If Learn step ID provided, link the mock to the step
-            if (input.learnStepId) {
-                await tx.learnStep.update({
-                    where: {
-                        id: input.learnStepId
-                    },
-                    data: {
-                        mockInterviewId: mock.id
-                    }
-                })
-            }
+        if (input.learnStepId) {
+            await db
+                .update(learnStep)
+                .set({ mockInterviewId: mock.id })
+                .where(eq(learnStep.id, input.learnStepId))
+        }
 
-            // Deduct credits ONLY AFTER successful mock creation
-            await tx.user.update({
-                where: { 
-                    id: session.user.id 
-                },
-                data: {
-                    credits: {
-                        decrement: creditsRequired
-                    }
-                }
-            })
+        await db
+            .update(users)
+            .set({ credits: user.credits - creditsRequired })
+            .where(eq(users.id, session.user.id))
 
-            // Record credit transaction
-            await tx.creditTransaction.create({
-                data: {
-                    userId: session.user.id,
-                    amount: -creditsRequired,
-                    type: 'SPEND',
-                    description: `Custom Mock Interview: ${input.title}`,
-                    currency: 'INR'
-                }
-            })
-
-            return mock
+        await db.insert(creditTransactions).values({
+            userId: session.user.id,
+            amount: -creditsRequired,
+            type: 'SPEND',
+            description: `Custom Mock Interview: ${input.title}`,
+            currency: 'INR',
         })
 
         revalidatePath('/mockinterview/voice')
         revalidatePath('/mockinterview/voice/publicmocks')
         revalidatePath('/mockinterview/voice/mymocks')
 
-        return {
-            success: true,
-            mockId: result.id
-        }
+        return { success: true, mockId: mock.id }
     } catch (error) {
         console.error('Error creating custom mock:', error)
-        return {
-            success: false,
-            error: 'Failed to create mock interview. Please try again.'
-        }
+        return { success: false, error: 'Failed to create mock interview. Please try again.' }
     }
 }
 
-// Get featured public voice mocks for the main page (4+ stars)
 export async function getFeaturedPublicMocks(limit: number = 6) {
     try {
-        const mocks = await prisma.mockInterviewVoice.findMany({
-            where: {
-                isPublic: true,
-                isPredefined: false,
-                averageRating: {
-                    gte: 4.0
-                }
+        const mocks = await db.query.mockInterviewVoice.findMany({
+            where: and(
+                eq(mockInterviewVoice.isPublic, true),
+                eq(mockInterviewVoice.isPredefined, false),
+            ),
+            limit,
+            orderBy: [desc(mockInterviewVoice.averageRating), desc(mockInterviewVoice.totalSessions)],
+            with: {
+                createdBy: true,
+                sessions: true,
             },
-            take: limit,
-            orderBy: [
-                { averageRating: 'desc' },
-                { totalSessions: 'desc' }
-            ],
-            include: {
-                createdBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true
-                    }
-                },
-                _count: {
-                    select: {
-                        sessions: true
-                    }
-                }
-            }
         })
 
-        return {
-            success: true,
-            mocks
-        }
+        // filter averageRating >= 4.0 in JS since drizzle where on real can be tricky
+        const filtered = mocks.filter(m => (m.averageRating || 0) >= 4.0)
+
+        return { success: true, mocks: filtered }
     } catch (error) {
         console.error('Error fetching featured mocks:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch featured mocks',
-            mocks: []
-        }
+        return { success: false, error: 'Failed to fetch featured mocks', mocks: [] }
     }
 }
 
-// Get user's created mocks
-export async function getCreatedVoiceMocks(category?: MockCategory, limit: number = 50) {
+export async function getCreatedVoiceMocks(category?: string, limit: number = 50) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
 
         if (!session?.user?.id) {
-            return {
-                success: false,
-                error: 'You must be logged in',
-                mocks: []
-            }
+            return { success: false, error: 'You must be logged in', mocks: [] }
         }
 
-        const where: any = {
-            createdById: session.user.id
-        }
-
+        const conditions: any[] = [eq(mockInterviewVoice.createdById, session.user.id)]
         if (category) {
-            where.category = category
+            conditions.push(eq(mockInterviewVoice.category, category as any))
         }
 
-        const mocks = await prisma.mockInterviewVoice.findMany({
-            where,
-            take: limit,
-            orderBy: [
-                { createdAt: 'desc' }
-            ],
-            select: {
+        const mocks = await db.query.mockInterviewVoice.findMany({
+            where: and(...conditions),
+            limit,
+            orderBy: [desc(mockInterviewVoice.createdAt)],
+            columns: {
                 id: true,
                 title: true,
                 description: true,
@@ -564,25 +437,17 @@ export async function getCreatedVoiceMocks(category?: MockCategory, limit: numbe
                 popularity: true,
                 totalSessions: true,
                 averageRating: true,
-                createdAt: true
-            }
+                createdAt: true,
+            },
         })
 
-        return {
-            success: true,
-            mocks
-        }
+        return { success: true, mocks }
     } catch (error) {
         console.error('Error fetching user mocks:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch mocks',
-            mocks: []
-        }
+        return { success: false, error: 'Failed to fetch mocks', mocks: [] }
     }
 }
 
-// Get public voice mocks with pagination and filtering
 export async function getPublicVoiceMocks(params?: {
     page?: number
     limit?: number
@@ -594,73 +459,61 @@ export async function getPublicVoiceMocks(params?: {
     try {
         const page = params?.page || 1
         const limit = params?.limit || 20
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where: any = {
-            isPublic: true
-        }
+        const conditions: any[] = [eq(mockInterviewVoice.isPublic, true)]
 
-        // By default, exclude admin mocks unless specifically requested
         if (!params?.includeAdmin) {
-            where.byAdmin = false
+            conditions.push(eq(mockInterviewVoice.byAdmin, false))
         }
-
         if (params?.level && params.level !== 'ALL') {
-            where.level = params.level
+            conditions.push(eq(mockInterviewVoice.level, params.level as any))
         }
-
         if (params?.category && params.category !== 'ALL') {
-            where.category = params.category
+            conditions.push(eq(mockInterviewVoice.category, params.category as any))
         }
-
         if (params?.search) {
-            where.OR = [
-                { title: { contains: params.search, mode: 'insensitive' } },
-                { description: { contains: params.search, mode: 'insensitive' } }
-            ]
+            conditions.push(
+                or(
+                    ilike(mockInterviewVoice.title, `%${params.search}%`),
+                    ilike(mockInterviewVoice.description, `%${params.search}%`)
+                )
+            )
         }
 
-        const [mocks, total] = await Promise.all([
-            prisma.mockInterviewVoice.findMany({
-                where,
-                skip,
-                take: limit,
+        const whereClause = and(...conditions)
+
+        const [mocks, [{ total }]] = await Promise.all([
+            db.query.mockInterviewVoice.findMany({
+                where: whereClause,
+                offset,
+                limit,
                 orderBy: [
-                    { byAdmin: 'desc' },
-                    { popularity: 'desc' },
-                    { createdAt: 'desc' }
+                    desc(mockInterviewVoice.byAdmin),
+                    desc(mockInterviewVoice.popularity),
+                    desc(mockInterviewVoice.createdAt),
                 ],
-                include: {
-                    createdBy: {
-                        select: {
-                            id: true,
-                            name: true,
-                            username: true,
-                            image: true
-                        }
-                    }
-                }
+                with: { createdBy: true },
             }),
-            prisma.mockInterviewVoice.count({ where })
+            db
+                .select({ total: count() })
+                .from(mockInterviewVoice)
+                .where(whereClause),
         ])
 
         return {
             success: true,
             mocks,
-            total,
-            totalPages: Math.ceil(total / limit),
-            currentPage: page
+            total: Number(total),
+            totalPages: Math.ceil(Number(total) / limit),
+            currentPage: page,
         }
     } catch (error) {
         console.error('Error fetching public mocks:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch public mocks'
-        }
+        return { success: false, error: 'Failed to fetch public mocks' }
     }
 }
 
-// Get all public mocks (admin + user) with category filter
 export async function getAllPublicMocks(params?: {
     page?: number
     limit?: number
@@ -671,250 +524,171 @@ export async function getAllPublicMocks(params?: {
     try {
         const page = params?.page || 1
         const limit = params?.limit || 20
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where: any = {
-            isPublic: true
-        }
+        const conditions: any[] = [eq(mockInterviewVoice.isPublic, true)]
 
         if (params?.level && params.level !== 'ALL') {
-            where.level = params.level
+            conditions.push(eq(mockInterviewVoice.level, params.level as any))
         }
-
         if (params?.category && params.category !== 'ALL') {
-            where.category = params.category
+            conditions.push(eq(mockInterviewVoice.category, params.category as any))
         }
-
         if (params?.search) {
-            where.OR = [
-                { title: { contains: params.search, mode: 'insensitive' } },
-                { description: { contains: params.search, mode: 'insensitive' } }
-            ]
+            conditions.push(
+                or(
+                    ilike(mockInterviewVoice.title, `%${params.search}%`),
+                    ilike(mockInterviewVoice.description, `%${params.search}%`)
+                )
+            )
         }
 
-        const [mocks, total] = await Promise.all([
-            prisma.mockInterviewVoice.findMany({
-                where,
-                skip,
-                take: limit,
+        const whereClause = and(...conditions)
+
+        const [mocks, [{ total }]] = await Promise.all([
+            db.query.mockInterviewVoice.findMany({
+                where: whereClause,
+                offset,
+                limit,
                 orderBy: [
-                    { byAdmin: 'desc' },
-                    { isFeatured: 'desc' },
-                    { popularity: 'desc' },
-                    { createdAt: 'desc' }
+                    desc(mockInterviewVoice.byAdmin),
+                    desc(mockInterviewVoice.isFeatured),
+                    desc(mockInterviewVoice.popularity),
+                    desc(mockInterviewVoice.createdAt),
                 ],
-                include: {
-                    createdBy: {
-                        select: {
-                            id: true,
-                            name: true,
-                            username: true,
-                            image: true
-                        }
-                    }
-                }
+                with: { createdBy: true },
             }),
-            prisma.mockInterviewVoice.count({ where })
+            db
+                .select({ total: count() })
+                .from(mockInterviewVoice)
+                .where(whereClause),
         ])
 
         return {
             success: true,
             mocks,
-            total,
-            totalPages: Math.ceil(total / limit),
-            currentPage: page
+            total: Number(total),
+            totalPages: Math.ceil(Number(total) / limit),
+            currentPage: page,
         }
     } catch (error) {
         console.error('Error fetching all public mocks:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch mocks'
-        }
+        return { success: false, error: 'Failed to fetch mocks' }
     }
 }
 
-// Get user's created mocks
 export async function getUserCreatedMocks(userId?: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
 
         if (!session?.user?.id) {
-            return {
-                success: false,
-                error: 'Authentication required'
-            }
+            return { success: false, error: 'Authentication required' }
         }
 
         const targetUserId = userId || session.user.id
 
-        const mocks = await prisma.mockInterviewVoice.findMany({
-            where: {
-                createdById: targetUserId,
-                isPredefined: false
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            include: {
-                _count: {
-                    select: {
-                        sessions: true
-                    }
-                }
-            }
+        const mocks = await db.query.mockInterviewVoice.findMany({
+            where: and(
+                eq(mockInterviewVoice.createdById, targetUserId),
+                eq(mockInterviewVoice.isPredefined, false)
+            ),
+            orderBy: desc(mockInterviewVoice.createdAt),
+            with: { sessions: true },
         })
 
-        return {
-            success: true,
-            mocks
-        }
+        return { success: true, mocks }
     } catch (error) {
         console.error('Error fetching user created mocks:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch your mocks'
-        }
+        return { success: false, error: 'Failed to fetch your mocks' }
     }
 }
 
-// Get user's taken mock sessions
 export async function getUserMockSessions(userId?: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
 
         if (!session?.user?.id) {
-            return {
-                success: false,
-                error: 'Authentication required'
-            }
+            return { success: false, error: 'Authentication required' }
         }
 
         const targetUserId = userId || session.user.id
 
-        const sessions = await prisma.mockVoiceSession.findMany({
-            where: {
-                userId: targetUserId
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            include: {
-                mock: {
-                    select: {
-                        id: true,
-                        title: true,
-                        description: true,
-                        level: true,
-                        category: true,
-                        duration: true,
-                        creditsRequired: true
-                    }
-                }
-            }
+        const sessions = await db.query.mockVoiceSession.findMany({
+            where: eq(mockVoiceSession.userId, targetUserId),
+            orderBy: desc(mockVoiceSession.createdAt),
+            with: { mock: true },
         })
 
-        return {
-            success: true,
-            sessions
-        }
+        return { success: true, sessions }
     } catch (error) {
         console.error('Error fetching user sessions:', error)
-        return {
-            success: false,
-            error: 'Failed to fetch your sessions'
-        }
+        return { success: false, error: 'Failed to fetch your sessions' }
     }
 }
 
-// Delete a user's custom mock
 export async function deleteCustomMock(mockId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
 
         if (!session?.user?.id) {
-            return {
-                success: false,
-                error: 'Authentication required'
-            }
+            return { success: false, error: 'Authentication required' }
         }
 
-        // Verify ownership
-        const mock = await prisma.mockInterviewVoice.findUnique({
-            where: { id: mockId },
-            select: { createdById: true, isPredefined: true }
+        const mock = await db.query.mockInterviewVoice.findFirst({
+            where: eq(mockInterviewVoice.id, mockId),
+            columns: { createdById: true, isPredefined: true },
         })
 
         if (!mock) {
-            return {
-                success: false,
-                error: 'Mock not found'
-            }
+            return { success: false, error: 'Mock not found' }
         }
 
         if (mock.isPredefined) {
-            return {
-                success: false,
-                error: 'Cannot delete predefined mocks'
-            }
+            return { success: false, error: 'Cannot delete predefined mocks' }
         }
 
         if (mock.createdById !== session.user.id) {
-            return {
-                success: false,
-                error: 'You can only delete your own mocks'
-            }
+            return { success: false, error: 'You can only delete your own mocks' }
         }
 
-        await prisma.mockInterviewVoice.delete({
-            where: { id: mockId }
-        })
+        await db.delete(mockInterviewVoice).where(eq(mockInterviewVoice.id, mockId))
 
         revalidatePath('/mockinterview/voice/mymocks')
         revalidatePath('/mockinterview/voice/publicmocks')
 
-        return {
-            success: true
-        }
+        return { success: true }
     } catch (error) {
         console.error('Error deleting mock:', error)
-        return {
-            success: false,
-            error: 'Failed to delete mock'
-        }
+        return { success: false, error: 'Failed to delete mock' }
     }
 }
 
-// Get platform stats for voice mocks
 export async function getVoiceMockStats() {
     try {
-        const [totalMocks, totalSessions, avgRatingAgg] = await Promise.all([
-            prisma.mockInterviewVoice.count({
-                where: { isPublic: true }
-            }),
-            prisma.mockVoiceSession.count(),
-            prisma.mockInterviewVoice.aggregate({
-                where: { isPublic: true },
-                _avg: {
-                    averageRating: true
-                }
-            })
+        const [totalMocksRow, totalSessionsRow, avgRatingRow] = await Promise.all([
+            db
+                .select({ cnt: count() })
+                .from(mockInterviewVoice)
+                .where(eq(mockInterviewVoice.isPublic, true))
+                .then(([r]) => r),
+            db.select({ cnt: count() }).from(mockVoiceSession).then(([r]) => r),
+            db
+                .select({ avg: avg(mockInterviewVoice.averageRating) })
+                .from(mockInterviewVoice)
+                .where(eq(mockInterviewVoice.isPublic, true))
+                .then(([r]) => r),
         ])
 
         return {
             success: true,
             stats: {
-                totalMocks,
-                totalSessions,
-                avgRating: avgRatingAgg._avg.averageRating || 0
-            }
+                totalMocks: Number(totalMocksRow?.cnt ?? 0),
+                totalSessions: Number(totalSessionsRow?.cnt ?? 0),
+                avgRating: avgRatingRow?.avg ? Number(avgRatingRow.avg) : 0,
+            },
         }
     } catch (error) {
         console.error('Error fetching voice mock stats:', error)
-        return {
-            success: false,
-            stats: null
-        }
+        return { success: false, stats: null }
     }
 }
-
-

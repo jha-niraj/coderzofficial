@@ -1,4 +1,5 @@
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
+import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import bcryptjs from "bcryptjs";
 import { RequestBody } from "@/types";
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
         console.log('Received registration data:', { name, email, referralCode: !!referralCode });
 
         if (!name || !email || !password) {
-            console.log('❌ Missing required fields');
+            console.log('Missing required fields');
             return NextResponse.json(
                 { message: "Missing required fields" },
                 { status: 400 }
@@ -23,14 +24,13 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('Checking for existing user...');
-        const existingUser = await prisma.user.findUnique({
-            where: {
-                email
-            }
-        })
+        const existingUser = await db.query.users.findFirst({
+            where: eq(users.email, email),
+            columns: { id: true },
+        });
 
         if (existingUser) {
-            console.log('❌ User already exists');
+            console.log('User already exists');
             return NextResponse.json({ message: "User already exists with this email" }, { status: 501 });
         }
 
@@ -44,18 +44,17 @@ export async function POST(request: NextRequest) {
 
         console.log('Generated referral code:', newUserReferralCode);
 
-        const user = await prisma.user.create({
-            data: {
-                name,
-                email,
-                hashedPassword,
-                referralCode: newUserReferralCode,
-                verifyOTP,
-                verifyOTPExpiry,
-                onboardingCompleted: false // User needs to complete onboarding
-            }
-        })
-        console.log('✅ User created successfully:', user.id);
+        const [user] = await db.insert(users).values({
+            name,
+            email,
+            hashedPassword,
+            referralCode: newUserReferralCode,
+            verifyOTP,
+            verifyOTPExpiry,
+            onboardingCompleted: false,
+        }).returning();
+
+        console.log('User created successfully:', user.id);
 
         if (referralCode) {
             console.log('Processing referral...');
@@ -74,13 +73,13 @@ export async function POST(request: NextRequest) {
                 emailType: "VERIFY_OTP",
                 otp: verifyOTP
             });
-            console.log('✅ Verification email sent successfully');
+            console.log('Verification email sent successfully');
         } catch (emailError) {
-            console.error("❌ Failed to send verification email:", emailError);
+            console.error("Failed to send verification email:", emailError);
             // Don't fail the registration if email fails
         }
 
-        console.log('✅ Registration completed successfully');
+        console.log('Registration completed successfully');
         return NextResponse.json(
             {
                 message: "User created successfully. Please check your email for the verification code.",
@@ -93,9 +92,9 @@ export async function POST(request: NextRequest) {
             }
         );
     } catch (err: unknown) {
-        const error = err instanceof Error ? err : new Error('Unknown error')
-        console.error("❌ Registration API error:", error);
-        console.error("❌ Error stack:", error.stack);
+        const error = err instanceof Error ? err : new Error('Unknown error');
+        console.error("Registration API error:", error);
+        console.error("Error stack:", error.stack);
         return NextResponse.json(
             { message: "Internal server error" },
             { status: 500 }

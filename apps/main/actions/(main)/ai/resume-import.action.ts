@@ -1,6 +1,7 @@
 'use server'
 
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import Exa from 'exa-js'
 import { openai } from '@/lib/openai-client'
 import { ResumeDraftContent } from '@/types/resume-draft'
@@ -110,7 +111,7 @@ All nullable fields should be null if not found, never undefined.`,
 // IMPORT from LinkedIn URL
 // ─────────────────────────────────────────────────────────────────────────────
 export async function importFromLinkedIn(url: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     try {
@@ -128,7 +129,7 @@ export async function importFromLinkedIn(url: string) {
 // IMPORT from GitHub profile URL
 // ─────────────────────────────────────────────────────────────────────────────
 export async function importFromGitHub(url: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     try {
@@ -154,7 +155,7 @@ export async function importFromGitHub(url: string) {
 // IMPORT from pasted resume text / PDF text
 // ─────────────────────────────────────────────────────────────────────────────
 export async function importFromText(text: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     if (text.trim().length < 50) return { success: false, error: 'Text is too short to extract resume data.' }
@@ -171,7 +172,7 @@ export async function importFromText(text: string) {
 // IMPORT from any URL (generic: company page, portfolio, etc.)
 // ─────────────────────────────────────────────────────────────────────────────
 export async function importFromUrl(url: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     try {
@@ -195,7 +196,7 @@ export async function importAndCreateDraft(input: {
     githubUrl?: string
     pastedText?: string
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     try {

@@ -1,46 +1,53 @@
 "use server"
 
-import { auth } from "@repo/auth"
-import prisma from "@repo/prisma"
-import { revalidatePath } from "next/cache"
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db,
+    resumeTemplate,
+    resumeTemplateGeneration,
+    templatePurchase,
+    users,
+    creditTransactions,
+    earnings,
+} from '@repo/db'
+import { eq, and, desc, sql } from 'drizzle-orm'
+import { revalidatePath } from 'next/cache'
 
 // ========================================
 // HELPERS
 // ========================================
 
 async function getCurrentUser() {
-    const session = await auth()
-    if (!session?.user?.email) throw new Error("Not authenticated")
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    const session = await getSession(headers())
+    if (!session?.user?.id) throw new Error("Not authenticated")
+    const user = await db.query.users.findFirst({ where: eq(users.id, session.user.id) })
     if (!user) throw new Error("User not found")
     return user
 }
 
 async function deductCredits(userId: string, amount: number, description: string) {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { credits: true },
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
+        columns: { credits: true },
     })
 
-    if (!user || user.credits < amount) {
+    if (!user || (user.credits ?? 0) < amount) {
         throw new Error("Insufficient credits")
     }
 
-    await prisma.$transaction([
-        prisma.user.update({
-            where: { id: userId },
-            data: { credits: { decrement: amount } },
-        }),
-        prisma.creditTransaction.create({
-            data: {
-                userId,
-                amount: -amount,
-                type: "SPEND",
-                currency: "NA",
-                description,
-            },
-        }),
-    ])
+    await db.transaction(async (tx) => {
+        await tx.update(users)
+            .set({ credits: sql`${users.credits} - ${amount}` })
+            .where(eq(users.id, userId));
+        await tx.insert(creditTransactions).values({
+            userId,
+            amount: -amount,
+            type: "SPEND",
+            currency: "NA",
+            description,
+        });
+    })
 }
 
 // ========================================
@@ -48,11 +55,11 @@ async function deductCredits(userId: string, amount: number, description: string
 // ========================================
 export async function getResumeTemplates() {
     try {
-        const templates = await prisma.resumeTemplate.findMany({
-            orderBy: { createdAt: "asc" },
-            include: {
-                _count: {
-                    select: { generations: true },
+        const templates = await db.query.resumeTemplate.findMany({
+            orderBy: [resumeTemplate.createdAt],
+            with: {
+                generations: {
+                    columns: { id: true },
                 },
             },
         })
@@ -71,12 +78,12 @@ export async function getUserTemplateGenerations() {
     try {
         const user = await getCurrentUser()
 
-        const generations = await prisma.resumeTemplateGeneration.findMany({
-            where: { userId: user.id },
-            include: {
+        const generations = await db.query.resumeTemplateGeneration.findMany({
+            where: eq(resumeTemplateGeneration.userId, user.id),
+            with: {
                 template: true,
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: [desc(resumeTemplateGeneration.createdAt)],
         })
 
         return { success: true, data: generations }
@@ -93,8 +100,11 @@ export async function hasUserPurchasedTemplate(templateId: string) {
     try {
         const user = await getCurrentUser()
 
-        const generation = await prisma.resumeTemplateGeneration.findFirst({
-            where: { userId: user.id, templateId },
+        const generation = await db.query.resumeTemplateGeneration.findFirst({
+            where: and(
+                eq(resumeTemplateGeneration.userId, user.id),
+                eq(resumeTemplateGeneration.templateId, templateId)
+            ),
         })
 
         return { success: true, purchased: !!generation }
@@ -112,16 +122,19 @@ export async function purchaseResumeTemplate(templateId: string) {
         const user = await getCurrentUser()
 
         // Check if already purchased
-        const existing = await prisma.resumeTemplateGeneration.findFirst({
-            where: { userId: user.id, templateId },
+        const existing = await db.query.resumeTemplateGeneration.findFirst({
+            where: and(
+                eq(resumeTemplateGeneration.userId, user.id),
+                eq(resumeTemplateGeneration.templateId, templateId)
+            ),
         })
         if (existing) {
             return { success: true, alreadyOwned: true, data: existing }
         }
 
         // Get template to know the cost
-        const template = await prisma.resumeTemplate.findUnique({
-            where: { id: templateId },
+        const template = await db.query.resumeTemplate.findFirst({
+            where: eq(resumeTemplate.id, templateId),
         })
         if (!template) {
             return { success: false, error: "Template not found" }
@@ -135,26 +148,19 @@ export async function purchaseResumeTemplate(templateId: string) {
         )
 
         // Create generation record
-        const generation = await prisma.resumeTemplateGeneration.create({
-            data: {
-                userId: user.id,
-                templateId: template.id,
-            },
-            include: { template: true },
-        })
+        const [generation] = await db.insert(resumeTemplateGeneration).values({
+            userId: user.id,
+            templateId: template.id,
+        }).returning()
 
-        // Log recent activity
-        await prisma.recentActivity.create({
-            data: {
-                userId: user.id,
-                activityType: "AI_TOOL_USED",
-                description: `Unlocked resume template: ${template.name}`,
-            },
+        const generationWithTemplate = await db.query.resumeTemplateGeneration.findFirst({
+            where: eq(resumeTemplateGeneration.id, generation!.id),
+            with: { template: true },
         })
 
         revalidatePath("/ai/resume")
 
-        return { success: true, alreadyOwned: false, data: generation }
+        return { success: true, alreadyOwned: false, data: generationWithTemplate }
     } catch (error: any) {
         console.error("Error purchasing template:", error)
         if (error.message === "Insufficient credits") {
@@ -171,32 +177,27 @@ export async function getResumeHubStats() {
     try {
         const user = await getCurrentUser()
 
-        const [
-            resumeCount,
-            coverLetterCount,
-            templateGenerationCount,
-            totalTemplates,
-        ] = await Promise.all([
-            // Count resumes created — users who have experiences/projects filled via resume creator
-            prisma.workExperience.count({
-                where: { userId: user.id },
-            }),
-            prisma.coverLetter.count({
-                where: { userId: user.id },
-            }),
-            prisma.resumeTemplateGeneration.count({
-                where: { userId: user.id },
-            }),
-            prisma.resumeTemplate.count(),
+        const [workExpCount, coverLetterCount, templateGenCount, totalTemplateCount] = await Promise.all([
+            db.select({ count: sql<number>`count(*)` })
+                .from(await import('@repo/db').then(m => m.workExperiences ?? m.experiences))
+                .where(sql`"userId" = ${user.id}`).catch(() => [{ count: 0 }]),
+            db.select({ count: sql<number>`count(*)` })
+                .from(await import('@repo/db').then(m => m.coverLetter ?? m.coverLetters))
+                .where(sql`"userId" = ${user.id}`).catch(() => [{ count: 0 }]),
+            db.select({ count: sql<number>`count(*)` })
+                .from(resumeTemplateGeneration)
+                .where(eq(resumeTemplateGeneration.userId, user.id)),
+            db.select({ count: sql<number>`count(*)` })
+                .from(resumeTemplate),
         ])
 
         return {
             success: true,
             data: {
-                resumeSections: resumeCount,
-                coverLetters: coverLetterCount,
-                templatesUsed: templateGenerationCount,
-                totalTemplates,
+                resumeSections: Number((workExpCount[0] as any)?.count ?? 0),
+                coverLetters: Number((coverLetterCount[0] as any)?.count ?? 0),
+                templatesUsed: Number((templateGenCount[0] as any)?.count ?? 0),
+                totalTemplates: Number((totalTemplateCount[0] as any)?.count ?? 0),
             },
         }
     } catch (error) {

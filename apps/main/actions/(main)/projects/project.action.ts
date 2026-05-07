@@ -1,7 +1,25 @@
 "use server";
 
-import { auth } from "@repo/auth";
-import prisma from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    users,
+    creditTransactions,
+    projectsV2,
+    projectV2Sprints,
+    projectV2Tasks,
+    userProjectV2Progress,
+    userTaskV2Statuses,
+    projectV2Quizzes,
+    projectV2QuizQuestions,
+    projectV2QuizAttempts,
+    projectV2QuizAnswers,
+    projectV2Submissions,
+    projectV2Pages,
+    projectV2KnowledgeBases,
+} from "@repo/db";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 interface ActionResponse {
@@ -11,59 +29,44 @@ interface ActionResponse {
 }
 
 async function getCurrentUser() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.email) throw new Error("Not authenticated");
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    const [user] = await db.select().from(users).where(eq(users.email, session.user.email));
     if (!user) throw new Error("User not found");
     return user;
 }
 
 // Helper functions for credits and XP
 async function deductCredits(userId: string, amount: number, description: string) {
-    // Check if user has enough credits
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { credits: true },
-    });
+    const [user] = await db.select({ credits: users.credits }).from(users).where(eq(users.id, userId));
 
     if (!user || user.credits < amount) {
         throw new Error("Insufficient credits");
     }
 
-    // Deduct credits and create transaction
-    await prisma.$transaction([
-        prisma.user.update({
-            where: { id: userId },
-            data: { credits: { decrement: amount } },
-        }),
-        prisma.creditTransaction.create({
-            data: {
-                userId,
-                amount: -amount,
-                type: "SPEND",
-                currency: "NA",
-                description,
-            },
-        }),
-    ]);
+    await db.transaction(async (tx) => {
+        await tx.update(users).set({ credits: sql`${users.credits} - ${amount}` }).where(eq(users.id, userId));
+        await tx.insert(creditTransactions).values({
+            userId,
+            amount: -amount,
+            type: "SPEND",
+            currency: "NA",
+            description,
+        });
+    });
 }
 
 async function refundCredits(userId: string, amount: number, description: string) {
-    await prisma.$transaction([
-        prisma.user.update({
-            where: { id: userId },
-            data: { credits: { increment: amount } },
-        }),
-        prisma.creditTransaction.create({
-            data: {
-                userId,
-                amount,
-                type: "REWARD",
-                currency: "NA",
-                description,
-            },
-        }),
-    ]);
+    await db.transaction(async (tx) => {
+        await tx.update(users).set({ credits: sql`${users.credits} + ${amount}` }).where(eq(users.id, userId));
+        await tx.insert(creditTransactions).values({
+            userId,
+            amount,
+            type: "REWARD",
+            currency: "NA",
+            description,
+        });
+    });
 }
 
 function generateSlug(title: string): string {
@@ -78,11 +81,11 @@ export async function getProjectBySlug(slug: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        const project = await prisma.projectV2.findUnique({
-            where: { slug },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, slug),
+            with: {
                 creator: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         username: true,
@@ -90,25 +93,24 @@ export async function getProjectBySlug(slug: string): Promise<ActionResponse> {
                     },
                 },
                 pages: {
-                    orderBy: { orderIndex: 'asc' },
+                    orderBy: (pages: any, { asc }: any) => [asc(pages.orderIndex)],
                 },
-                // Tasks are now fetched THROUGH sprints
                 sprints: {
-                    orderBy: { orderIndex: 'asc' },
-                    include: {
+                    orderBy: (sprints: any, { asc }: any) => [asc(sprints.orderIndex)],
+                    with: {
                         tasks: {
-                            orderBy: { orderIndex: 'asc' },
-                            include: {
-                                taskDetail: true, // Include task details for resources/links
+                            orderBy: (tasks: any, { asc }: any) => [asc(tasks.orderIndex)],
+                            with: {
+                                taskDetail: true,
                             },
                         },
                     },
                 },
                 quiz: {
-                    include: {
+                    with: {
                         questions: {
-                            orderBy: { orderIndex: 'asc' },
-                            select: {
+                            orderBy: (questions: any, { asc }: any) => [asc(questions.orderIndex)],
+                            columns: {
                                 id: true,
                                 difficulty: true,
                             },
@@ -117,10 +119,10 @@ export async function getProjectBySlug(slug: string): Promise<ActionResponse> {
                 },
                 knowledge: true,
                 progress: {
-                    where: { userId: user.id },
-                    include: {
+                    where: eq(userProjectV2Progress.userId, user.id),
+                    with: {
                         taskStatuses: {
-                            select: {
+                            columns: {
                                 taskId: true,
                                 status: true,
                             },
@@ -145,12 +147,11 @@ export async function startProject(projectId: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        // Fetch project with sprints and their tasks
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId),
+            with: {
                 sprints: {
-                    include: {
+                    with: {
                         tasks: true,
                     },
                 },
@@ -162,8 +163,8 @@ export async function startProject(projectId: string): Promise<ActionResponse> {
         }
 
         // Check if already started
-        const existing = await prisma.userProjectV2Progress.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } }
+        const existing = await db.query.userProjectV2Progress.findFirst({
+            where: and(eq(userProjectV2Progress.userId, user.id), eq(userProjectV2Progress.projectId, projectId)),
         });
 
         if (existing) {
@@ -171,39 +172,32 @@ export async function startProject(projectId: string): Promise<ActionResponse> {
         }
 
         // Flatten tasks from all sprints
-        const allTasks = project.sprints.flatMap(sprint => sprint.tasks);
+        const allTasks = project.sprints.flatMap((sprint: any) => sprint.tasks);
 
         // Create progress record
-        const progress = await prisma.userProjectV2Progress.create({
-            data: {
-                userId: user.id,
-                projectId,
-                status: "IN_PROGRESS",
-                totalTasks: allTasks.length,
-                startedAt: new Date(),
-            }
-        });
+        const [progress] = await db.insert(userProjectV2Progress).values({
+            userId: user.id,
+            projectId,
+            status: "IN_PROGRESS",
+            totalTasks: allTasks.length,
+            startedAt: new Date(),
+        }).returning();
 
         // Create task statuses (all TO_DO initially)
         if (allTasks.length > 0) {
-            const taskStatuses = allTasks.map((task) => ({
+            const taskStatuses = allTasks.map((task: any) => ({
                 userId: user.id,
                 projectId,
                 taskId: task.id,
-                progressId: progress.id,
+                progressId: progress!.id,
                 status: "TO_DO" as const,
             }));
 
-            await prisma.userTaskV2Status.createMany({
-                data: taskStatuses,
-            });
+            await db.insert(userTaskV2Statuses).values(taskStatuses);
         }
 
         // Increment project started count
-        await prisma.projectV2.update({
-            where: { id: projectId },
-            data: { totalStarted: { increment: 1 } }
-        });
+        await db.update(projectsV2).set({ totalStarted: sql`${projectsV2.totalStarted} + 1` }).where(eq(projectsV2.id, projectId));
 
         revalidatePath(`/projects/${project.slug}`);
 
@@ -222,20 +216,21 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        // Get project with sprints and tasks
-        const project = await prisma.projectV2.findUnique({
-            where: { slug },
-            select: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, slug),
+            columns: {
                 id: true,
                 title: true,
+            },
+            with: {
                 sprints: {
-                    orderBy: { orderIndex: 'asc' },
-                    include: {
+                    orderBy: (sprints: any, { asc }: any) => [asc(sprints.orderIndex)],
+                    with: {
                         tasks: {
-                            orderBy: { orderIndex: 'asc' },
-                            include: {
-                                UserTaskV2Status: {
-                                    where: { userId: user.id },
+                            orderBy: (tasks: any, { asc }: any) => [asc(tasks.orderIndex)],
+                            with: {
+                                userTaskStatuses: {
+                                    where: eq(userTaskV2Statuses.userId, user.id),
                                 },
                                 taskDetail: true,
                             },
@@ -250,8 +245,8 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
         }
 
         // Get progress
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId: project.id } }
+        const progress = await db.query.userProjectV2Progress.findFirst({
+            where: and(eq(userProjectV2Progress.userId, user.id), eq(userProjectV2Progress.projectId, project.id)),
         });
 
         if (!progress) {
@@ -259,8 +254,8 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
         }
 
         // Flatten tasks from all sprints and add status
-        const allTasksWithStatus = project.sprints.flatMap(sprint =>
-            sprint.tasks.map((task) => ({
+        const allTasksWithStatus = project.sprints.flatMap((sprint: any) =>
+            sprint.tasks.map((task: any) => ({
                 id: task.id,
                 title: task.title,
                 description: task.description,
@@ -279,27 +274,27 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
                 sprintName: sprint.name,
                 sprintNumber: sprint.sprintNumber,
                 taskDetail: task.taskDetail,
-                status: task.UserTaskV2Status[0]?.status || "TO_DO",
-                completedAt: task.UserTaskV2Status[0]?.completedAt,
-                notes: task.UserTaskV2Status[0]?.notes,
+                status: task.userTaskStatuses[0]?.status || "TO_DO",
+                completedAt: task.userTaskStatuses[0]?.completedAt,
+                notes: task.userTaskStatuses[0]?.notes,
             }))
         );
 
         // Group by status for kanban
         const columns = {
-            todo: allTasksWithStatus.filter((t) => t.status === "TO_DO"),
-            inProgress: allTasksWithStatus.filter((t) => t.status === "IN_PROGRESS"),
-            completed: allTasksWithStatus.filter((t) => t.status === "COMPLETED"),
+            todo: allTasksWithStatus.filter((t: any) => t.status === "TO_DO"),
+            inProgress: allTasksWithStatus.filter((t: any) => t.status === "IN_PROGRESS"),
+            completed: allTasksWithStatus.filter((t: any) => t.status === "COMPLETED"),
         };
 
         // Also return sprint-organized structure
-        const sprintsWithTasks = project.sprints.map(sprint => ({
+        const sprintsWithTasks = project.sprints.map((sprint: any) => ({
             id: sprint.id,
             sprintNumber: sprint.sprintNumber,
             name: sprint.name,
             goal: sprint.goal,
             duration: sprint.duration,
-            tasks: sprint.tasks.map(task => ({
+            tasks: sprint.tasks.map((task: any) => ({
                 id: task.id,
                 title: task.title,
                 description: task.description,
@@ -315,10 +310,10 @@ export async function getProjectTasks(slug: string): Promise<ActionResponse> {
                 relatedPages: task.relatedPages,
                 dependencies: task.dependencies,
                 taskDetail: task.taskDetail,
-                status: task.UserTaskV2Status[0]?.status || "TO_DO",
-                completedAt: task.UserTaskV2Status[0]?.completedAt,
+                status: task.userTaskStatuses[0]?.status || "TO_DO",
+                completedAt: task.userTaskStatuses[0]?.completedAt,
             })),
-            completedTasks: sprint.tasks.filter(t => t.UserTaskV2Status[0]?.status === "COMPLETED").length,
+            completedTasks: sprint.tasks.filter((t: any) => t.userTaskStatuses[0]?.status === "COMPLETED").length,
             totalTasks: sprint.tasks.length,
         }));
 
@@ -348,12 +343,11 @@ export async function updateTaskStatus(
     try {
         const user = await getCurrentUser();
 
-        // Task now belongs to Sprint, so we get projectId through sprint
-        const task = await prisma.projectV2Task.findUnique({
-            where: { id: taskId },
-            include: {
+        const task = await db.query.projectV2Tasks.findFirst({
+            where: eq(projectV2Tasks.id, taskId),
+            with: {
                 sprint: {
-                    select: { projectId: true },
+                    columns: { projectId: true },
                 },
             },
         });
@@ -364,73 +358,79 @@ export async function updateTaskStatus(
 
         const projectId = task.sprint.projectId;
 
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } }
+        const progress = await db.query.userProjectV2Progress.findFirst({
+            where: and(eq(userProjectV2Progress.userId, user.id), eq(userProjectV2Progress.projectId, projectId)),
         });
 
         if (!progress) {
             return { success: false, error: "Progress not found" };
         }
 
-        // Update or create task status
-        await prisma.userTaskV2Status.upsert({
-            where: { userId_taskId: { userId: user.id, taskId } },
-            update: {
-                status: newStatus,
-                completedAt: newStatus === "COMPLETED" ? new Date() : null,
-            },
-            create: {
+        // Update or create task status (upsert)
+        const existingStatus = await db.query.userTaskV2Statuses.findFirst({
+            where: and(eq(userTaskV2Statuses.userId, user.id), eq(userTaskV2Statuses.taskId, taskId)),
+        });
+
+        if (existingStatus) {
+            await db.update(userTaskV2Statuses)
+                .set({
+                    status: newStatus,
+                    completedAt: newStatus === "COMPLETED" ? new Date() : null,
+                })
+                .where(eq(userTaskV2Statuses.id, existingStatus.id));
+        } else {
+            await db.insert(userTaskV2Statuses).values({
                 userId: user.id,
                 projectId,
                 taskId,
                 progressId: progress.id,
                 status: newStatus,
                 completedAt: newStatus === "COMPLETED" ? new Date() : null,
-            },
-        });
+            });
+        }
 
         // Recalculate progress - count completed tasks for this user in this project
-        const completedCount = await prisma.userTaskV2Status.count({
-            where: {
-                userId: user.id,
-                projectId,
-                status: "COMPLETED",
-            },
-        });
+        const completedStatuses = await db.select().from(userTaskV2Statuses)
+            .where(and(
+                eq(userTaskV2Statuses.userId, user.id),
+                eq(userTaskV2Statuses.projectId, projectId),
+                eq(userTaskV2Statuses.status, "COMPLETED"),
+            ));
+        const completedCount = completedStatuses.length;
 
         // Get total tasks through sprints
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId),
+            with: {
                 sprints: {
-                    include: {
-                        tasks: { select: { id: true } },
+                    with: {
+                        tasks: {
+                            columns: { id: true },
+                        },
                     },
                 },
             },
         });
 
-        const totalTasks = project?.sprints.reduce((acc, sprint) => acc + sprint.tasks.length, 0) || 0;
+        const totalTasks = project?.sprints.reduce((acc: number, sprint: any) => acc + sprint.tasks.length, 0) || 0;
         const progressPercentage = totalTasks > 0 ? (completedCount / totalTasks) * 100 : 0;
 
         // Update progress
-        await prisma.userProjectV2Progress.update({
-            where: { id: progress.id },
-            data: {
+        await db.update(userProjectV2Progress)
+            .set({
                 tasksCompleted: completedCount,
                 totalTasks,
                 progressPercentage,
                 status: completedCount === totalTasks ? "COMPLETED" : "IN_PROGRESS",
                 completedAt: completedCount === totalTasks ? new Date() : null,
-            },
-        });
+            })
+            .where(eq(userProjectV2Progress.id, progress.id));
 
         // If project completed, increment counter
         if (completedCount === totalTasks && totalTasks > 0) {
-            await prisma.projectV2.update({
-                where: { id: projectId },
-                data: { totalCompleted: { increment: 1 } },
-            });
+            await db.update(projectsV2)
+                .set({ totalCompleted: sql`${projectsV2.totalCompleted} + 1` })
+                .where(eq(projectsV2.id, projectId));
         }
 
         // Update score if task was completed
@@ -450,18 +450,17 @@ export async function updateTaskNotes(taskId: string, notes: string): Promise<Ac
     try {
         const user = await getCurrentUser();
 
-        const taskStatus = await prisma.userTaskV2Status.findUnique({
-            where: { userId_taskId: { userId: user.id, taskId } },
+        const taskStatus = await db.query.userTaskV2Statuses.findFirst({
+            where: and(eq(userTaskV2Statuses.userId, user.id), eq(userTaskV2Statuses.taskId, taskId)),
         });
 
         if (!taskStatus) {
             return { success: false, error: "Task status not found" };
         }
 
-        await prisma.userTaskV2Status.update({
-            where: { id: taskStatus.id },
-            data: { notes },
-        });
+        await db.update(userTaskV2Statuses)
+            .set({ notes })
+            .where(eq(userTaskV2Statuses.id, taskStatus.id));
 
         return { success: true };
     } catch (error: any) {
@@ -477,12 +476,12 @@ export async function startQuiz(projectId: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        const quiz = await prisma.projectV2Quiz.findUnique({
-            where: { projectId },
-            include: {
+        const quiz = await db.query.projectV2Quizzes.findFirst({
+            where: eq(projectV2Quizzes.projectId, projectId),
+            with: {
                 questions: {
-                    orderBy: { orderIndex: 'asc' },
-                    select: {
+                    orderBy: (questions: any, { asc }: any) => [asc(questions.orderIndex)],
+                    columns: {
                         id: true,
                         prompt: true,
                         options: true,
@@ -498,8 +497,8 @@ export async function startQuiz(projectId: string): Promise<ActionResponse> {
         }
 
         // Check if already attempted
-        const existingAttempt = await prisma.projectV2QuizAttempt.findUnique({
-            where: { userId_quizId: { userId: user.id, quizId: quiz.id } },
+        const existingAttempt = await db.query.projectV2QuizAttempts.findFirst({
+            where: and(eq(projectV2QuizAttempts.userId, user.id), eq(projectV2QuizAttempts.quizId, quiz.id)),
         });
 
         if (existingAttempt && existingAttempt.isCompleted) {
@@ -511,16 +510,14 @@ export async function startQuiz(projectId: string): Promise<ActionResponse> {
         }
 
         // Create new attempt
-        const attempt = await prisma.projectV2QuizAttempt.create({
-            data: {
-                userId: user.id,
-                projectId,
-                quizId: quiz.id,
-                totalQuestions: quiz.questions.length,
-            },
-        });
+        const [attempt] = await db.insert(projectV2QuizAttempts).values({
+            userId: user.id,
+            projectId,
+            quizId: quiz.id,
+            totalQuestions: quiz.questions.length,
+        }).returning();
 
-        return { success: true, data: { attemptId: attempt.id, questions: quiz.questions } };
+        return { success: true, data: { attemptId: attempt!.id, questions: quiz.questions } };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
@@ -534,8 +531,8 @@ export async function submitQuizAnswer(
     try {
         const user = await getCurrentUser();
 
-        const attempt = await prisma.projectV2QuizAttempt.findUnique({
-            where: { id: attemptId },
+        const attempt = await db.query.projectV2QuizAttempts.findFirst({
+            where: eq(projectV2QuizAttempts.id, attemptId),
         });
 
         if (!attempt || attempt.userId !== user.id) {
@@ -546,8 +543,8 @@ export async function submitQuizAnswer(
             return { success: false, error: "Quiz already completed" };
         }
 
-        const question = await prisma.projectV2QuizQuestion.findUnique({
-            where: { id: questionId },
+        const question = await db.query.projectV2QuizQuestions.findFirst({
+            where: eq(projectV2QuizQuestions.id, questionId),
         });
 
         if (!question) {
@@ -557,19 +554,22 @@ export async function submitQuizAnswer(
         const isCorrect = question.correctAnswer === selectedAnswer;
 
         // Upsert answer
-        await prisma.projectV2QuizAnswer.upsert({
-            where: { attemptId_questionId: { attemptId, questionId } },
-            update: {
-                selectedAnswer,
-                isCorrect,
-            },
-            create: {
+        const existingAnswer = await db.query.projectV2QuizAnswers.findFirst({
+            where: and(eq(projectV2QuizAnswers.attemptId, attemptId), eq(projectV2QuizAnswers.questionId, questionId)),
+        });
+
+        if (existingAnswer) {
+            await db.update(projectV2QuizAnswers)
+                .set({ selectedAnswer, isCorrect })
+                .where(eq(projectV2QuizAnswers.id, existingAnswer.id));
+        } else {
+            await db.insert(projectV2QuizAnswers).values({
                 attemptId,
                 questionId,
                 selectedAnswer,
                 isCorrect,
-            },
-        });
+            });
+        }
 
         return { success: true, data: { isCorrect, explanation: question.explanation } };
     } catch (error: any) {
@@ -581,9 +581,9 @@ export async function completeQuiz(attemptId: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        const attempt = await prisma.projectV2QuizAttempt.findUnique({
-            where: { id: attemptId },
-            include: {
+        const attempt = await db.query.projectV2QuizAttempts.findFirst({
+            where: eq(projectV2QuizAttempts.id, attemptId),
+            with: {
                 answers: true,
             },
         });
@@ -596,15 +596,14 @@ export async function completeQuiz(attemptId: string): Promise<ActionResponse> {
         const totalQuestions = attempt.totalQuestions;
         const score = Math.round((correctAnswers / totalQuestions) * 100);
 
-        await prisma.projectV2QuizAttempt.update({
-            where: { id: attemptId },
-            data: {
+        await db.update(projectV2QuizAttempts)
+            .set({
                 correctAnswers,
                 score,
                 isCompleted: true,
                 completedAt: new Date(),
-            },
-        });
+            })
+            .where(eq(projectV2QuizAttempts.id, attemptId));
 
         return { success: true, data: { score, correctAnswers, totalQuestions } };
     } catch (error: any) {
@@ -623,9 +622,8 @@ export async function submitProject(
     try {
         const user = await getCurrentUser();
 
-        // Check if project is completed
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } },
+        const progress = await db.query.userProjectV2Progress.findFirst({
+            where: and(eq(userProjectV2Progress.userId, user.id), eq(userProjectV2Progress.projectId, projectId)),
         });
 
         if (!progress) {
@@ -637,30 +635,26 @@ export async function submitProject(
         }
 
         // Create submission
-        const submission = await prisma.projectV2Submission.create({
-            data: {
-                userId: user.id,
-                projectId,
-                githubUrl: data.githubUrl,
-                liveUrl: data.liveUrl,
-                notes: data.notes,
-            },
-        });
+        const [submission] = await db.insert(projectV2Submissions).values({
+            userId: user.id,
+            projectId,
+            githubUrl: data.githubUrl,
+            liveUrl: data.liveUrl,
+            notes: data.notes,
+        }).returning();
 
         // Update progress
-        await prisma.userProjectV2Progress.update({
-            where: { id: progress.id },
-            data: {
+        await db.update(userProjectV2Progress)
+            .set({
                 status: "SUBMITTED",
                 submittedAt: new Date(),
-            },
-        });
+            })
+            .where(eq(userProjectV2Progress.id, progress.id));
 
         // Increment project submissions
-        await prisma.projectV2.update({
-            where: { id: projectId },
-            data: { totalSubmissions: { increment: 1 } },
-        });
+        await db.update(projectsV2)
+            .set({ totalSubmissions: sql`${projectsV2.totalSubmissions} + 1` })
+            .where(eq(projectsV2.id, projectId));
 
         return { success: true, data: submission };
     } catch (error: any) {
@@ -676,13 +670,13 @@ export async function getUserProjects(page: number = 1, limit: number = 20): Pro
     try {
         const user = await getCurrentUser();
 
-        const [projects, total] = await Promise.all([
-            prisma.projectV2.findMany({
-                where: { createdBy: user.id },
-                include: {
+        const [projects, totalArr] = await Promise.all([
+            db.query.projectsV2.findMany({
+                where: eq(projectsV2.createdBy, user.id),
+                with: {
                     progress: {
-                        where: { userId: user.id },
-                        select: {
+                        where: eq(userProjectV2Progress.userId, user.id),
+                        columns: {
                             status: true,
                             progressPercentage: true,
                             tasksCompleted: true,
@@ -690,23 +684,20 @@ export async function getUserProjects(page: number = 1, limit: number = 20): Pro
                         },
                     },
                     submissions: {
-                        where: { userId: user.id },
-                        take: 1,
-                        orderBy: { createdAt: 'desc' },
+                        where: eq(projectV2Submissions.userId, user.id),
+                        orderBy: (submissions: any, { desc }: any) => [desc(submissions.createdAt)],
+                        limit: 1,
                     },
                 },
-                orderBy: { createdAt: 'desc' },
-                skip: (page - 1) * limit,
-                take: limit,
+                orderBy: (projects: any, { desc }: any) => [desc(projects.createdAt)],
+                offset: (page - 1) * limit,
+                limit,
             }),
-            prisma.projectV2.count({
-                where: { createdBy: user.id },
-            }),
+            db.select({ count: sql<number>`count(*)` }).from(projectsV2).where(eq(projectsV2.createdBy, user.id)),
         ]);
 
+        const total = Number(totalArr[0]?.count ?? 0);
         const totalPages = Math.ceil(total / limit);
-        const hasNext = page < totalPages;
-        const hasPrevious = page > 1;
 
         return {
             success: true,
@@ -717,8 +708,8 @@ export async function getUserProjects(page: number = 1, limit: number = 20): Pro
                     limit,
                     total,
                     totalPages,
-                    hasNext,
-                    hasPrevious,
+                    hasNext: page < totalPages,
+                    hasPrevious: page > 1,
                 },
             },
         };
@@ -731,8 +722,8 @@ export async function deleteProject(projectId: string): Promise<ActionResponse> 
     try {
         const user = await getCurrentUser();
 
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId),
         });
 
         if (!project) {
@@ -743,9 +734,7 @@ export async function deleteProject(projectId: string): Promise<ActionResponse> 
             return { success: false, error: "Unauthorized" };
         }
 
-        await prisma.projectV2.delete({
-            where: { id: projectId },
-        });
+        await db.delete(projectsV2).where(eq(projectsV2.id, projectId));
 
         revalidatePath('/projects/myprojects');
 
@@ -757,11 +746,9 @@ export async function deleteProject(projectId: string): Promise<ActionResponse> 
 
 export async function getPublicProjects(limit: number = 9): Promise<ActionResponse> {
     try {
-        const projects = await prisma.projectV2.findMany({
-            where: {
-                visibility: 'PUBLIC',
-            },
-            select: {
+        const projects = await db.query.projectsV2.findMany({
+            where: eq(projectsV2.visibility, 'PUBLIC'),
+            columns: {
                 id: true,
                 slug: true,
                 title: true,
@@ -773,24 +760,18 @@ export async function getPublicProjects(limit: number = 9): Promise<ActionRespon
                 totalViews: true,
                 includeAssessment: true,
                 createdAt: true,
+            },
+            with: {
                 creator: {
-                    select: {
+                    columns: {
                         name: true,
                         username: true,
                         image: true,
                     },
                 },
-                _count: {
-                    select: {
-                        submissions: true,
-                        progress: true,
-                    },
-                },
             },
-            orderBy: {
-                createdAt: 'desc',
-            },
-            take: limit,
+            orderBy: (projects: any, { desc }: any) => [desc(projects.createdAt)],
+            limit,
         });
 
         return { success: true, data: projects };
@@ -819,40 +800,34 @@ export async function getAllPublicProjects(options?: {
 
         const skip = (page - 1) * limit;
 
-        const where: any = {
-            visibility: 'PUBLIC',
-        };
+        const conditions: any[] = [eq(projectsV2.visibility, 'PUBLIC')];
 
         if (difficulty && difficulty !== 'ALL') {
-            where.difficulty = difficulty;
+            conditions.push(eq(projectsV2.difficulty, difficulty));
         }
 
         if (technologies && technologies.length > 0) {
-            where.technologies = {
-                hasSome: technologies,
-            };
+            conditions.push(sql`${projectsV2.technologies} && ARRAY[${sql.join(technologies.map(t => sql`${t}`), sql`, `)}]::text[]`);
         }
 
         if (search) {
-            where.OR = [
-                { title: { contains: search, mode: 'insensitive' } },
-                { description: { contains: search, mode: 'insensitive' } },
-                { shortDescription: { contains: search, mode: 'insensitive' } },
-            ];
+            conditions.push(
+                sql`(${projectsV2.title} ILIKE ${'%' + search + '%'} OR ${projectsV2.description} ILIKE ${'%' + search + '%'} OR ${projectsV2.shortDescription} ILIKE ${'%' + search + '%'})`
+            );
         }
 
-        let orderBy: any = { createdAt: 'desc' };
+        const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
 
-        if (sortBy === 'popular') {
-            orderBy = { totalViews: 'desc' };
-        } else if (sortBy === 'rating') {
-            orderBy = { totalSubmissions: 'desc' };
-        }
+        const orderByMap: any = {
+            popular: (p: any, { desc }: any) => [desc(p.totalViews)],
+            rating: (p: any, { desc }: any) => [desc(p.totalSubmissions)],
+            recent: (p: any, { desc }: any) => [desc(p.createdAt)],
+        };
 
-        const [projects, total] = await Promise.all([
-            prisma.projectV2.findMany({
-                where,
-                select: {
+        const [projects, totalArr] = await Promise.all([
+            db.query.projectsV2.findMany({
+                where: whereClause,
+                columns: {
                     id: true,
                     slug: true,
                     title: true,
@@ -864,30 +839,25 @@ export async function getAllPublicProjects(options?: {
                     totalViews: true,
                     includeAssessment: true,
                     createdAt: true,
+                },
+                with: {
                     creator: {
-                        select: {
+                        columns: {
                             name: true,
                             username: true,
                             image: true,
                         },
                     },
-                    _count: {
-                        select: {
-                            submissions: true,
-                            progress: true,
-                        },
-                    },
                 },
-                orderBy,
-                skip,
-                take: limit,
+                orderBy: orderByMap[sortBy] || orderByMap.recent,
+                offset: skip,
+                limit,
             }),
-            prisma.projectV2.count({ where }),
+            db.select({ count: sql<number>`count(*)` }).from(projectsV2).where(whereClause),
         ]);
 
+        const total = Number(totalArr[0]?.count ?? 0);
         const totalPages = Math.ceil(total / limit);
-        const hasNext = page < totalPages;
-        const hasPrevious = page > 1;
 
         return {
             success: true,
@@ -898,8 +868,8 @@ export async function getAllPublicProjects(options?: {
                     limit,
                     total,
                     totalPages,
-                    hasNext,
-                    hasPrevious,
+                    hasNext: page < totalPages,
+                    hasPrevious: page > 1,
                 },
             },
         };
@@ -910,41 +880,34 @@ export async function getAllPublicProjects(options?: {
 
 export async function getRecentSubmissions(limit: number = 9): Promise<ActionResponse> {
     try {
-        const submissions = await prisma.projectV2Submission.findMany({
-            where: {
+        const submissions = await db.query.projectV2Submissions.findMany({
+            with: {
                 project: {
-                    visibility: 'PUBLIC',
-                },
-            },
-            select: {
-                id: true,
-                githubUrl: true,
-                liveUrl: true,
-                createdAt: true,
-                project: {
-                    select: {
+                    columns: {
                         id: true,
                         slug: true,
                         title: true,
                         technologies: true,
                         difficulty: true,
+                        visibility: true,
                     },
                 },
                 user: {
-                    select: {
+                    columns: {
                         name: true,
                         username: true,
                         image: true,
                     },
                 },
             },
-            orderBy: {
-                createdAt: 'desc',
-            },
-            take: limit,
+            orderBy: (submissions: any, { desc }: any) => [desc(submissions.createdAt)],
+            limit,
         });
 
-        return { success: true, data: submissions };
+        // Filter only PUBLIC project submissions
+        const publicSubmissions = submissions.filter((s: any) => s.project?.visibility === 'PUBLIC');
+
+        return { success: true, data: publicSubmissions };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
@@ -954,9 +917,6 @@ export async function getRecentSubmissions(limit: number = 9): Promise<ActionRes
 // SEARCH SIMILAR PROJECTS
 // ========================================
 
-/**
- * Search for similar public projects based on title and technologies
- */
 export async function searchSimilarProjects({
     title,
     technologies,
@@ -974,8 +934,7 @@ export async function searchSimilarProjects({
             };
         }
 
-        // Get all public projects using the existing function
-        const result = await getAllPublicProjects({ limit: 100 }); // Get more projects for better matching
+        const result = await getAllPublicProjects({ limit: 100 });
 
         if (!result.success || !result.data) {
             return {
@@ -986,28 +945,25 @@ export async function searchSimilarProjects({
 
         const projects = result.data.projects || [];
 
-        // Search and score projects based on similarity
         const scoredProjects = projects.map((project: any) => {
             let score = 0;
 
-            // Title similarity (case insensitive, partial matches)
             const titleWords = title.toLowerCase().split(' ');
             const projectTitleWords = project.title.toLowerCase().split(' ');
 
-            titleWords.forEach(word => {
-                if (word.length > 2) { // Ignore very short words
+            titleWords.forEach((word: string) => {
+                if (word.length > 2) {
                     projectTitleWords.forEach((projectWord: string) => {
                         if (projectWord.includes(word) || word.includes(projectWord)) {
-                            score += 3; // Higher weight for title matches
+                            score += 3;
                         }
                     });
                 }
             });
 
-            // Description similarity
             if (project.description) {
                 const descWords = project.description.toLowerCase().split(' ');
-                titleWords.forEach(word => {
+                titleWords.forEach((word: string) => {
                     if (word.length > 2) {
                         descWords.forEach((descWord: string) => {
                             if (descWord.includes(word) || word.includes(descWord)) {
@@ -1018,14 +974,13 @@ export async function searchSimilarProjects({
                 });
             }
 
-            // Technology overlap
             const projectTechs = Array.isArray(project.technologies) ? project.technologies : [];
             const commonTechs = technologies.filter(tech =>
                 projectTechs.some((projectTech: string) =>
                     projectTech.toLowerCase() === tech.toLowerCase()
                 )
             );
-            score += commonTechs.length * 2; // Weight for each matching technology
+            score += commonTechs.length * 2;
 
             return {
                 ...project,
@@ -1033,7 +988,6 @@ export async function searchSimilarProjects({
             };
         });
 
-        // Filter projects with score > 0 and sort by score
         const similarProjects = scoredProjects
             .filter((project: any) => project.similarityScore > 0)
             .sort((a: any, b: any) => b.similarityScore - a.similarityScore)
@@ -1051,7 +1005,6 @@ export async function searchSimilarProjects({
                 includeAssessment: project.includeAssessment || false,
                 createdAt: project.createdAt,
                 creator: project.creator || { name: 'Anonymous', username: null, image: null },
-                _count: project._count || { submissions: 0, progress: 0 },
                 similarityScore: project.similarityScore
             }));
 
@@ -1072,66 +1025,48 @@ export async function searchSimilarProjects({
 // PROJECT ENROLLMENT (PURCHASE)
 // ========================================
 
-/**
- * Enroll a user in a public project (purchase/enroll)
- * - Deducts credits
- * - Creates user progress
- * - Creates task progress for all tasks
- * - Tracks activity
- */
 export async function enrollInProject(projectId: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        // Get the project with tasks
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId),
+            with: {
                 sprints: {
-                    select: {
+                    with: {
                         tasks: {
-                            orderBy: { orderIndex: 'asc' }
+                            orderBy: (tasks: any, { asc }: any) => [asc(tasks.orderIndex)],
                         },
-                    }
+                    },
                 },
                 creator: {
-                    select: { id: true, name: true }
-                }
-            }
+                    columns: { id: true, name: true },
+                },
+            },
         });
 
         if (!project) {
             return { success: false, error: "Project not found" };
         }
 
-        // Check if user is the creator
         if (project.createdBy === user.id) {
             return { success: false, error: "You cannot enroll in your own project" };
         }
 
-        // Check if already enrolled
-        const existingProgress = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: user.id,
-                    projectId
-                }
-            }
+        const existingProgress = await db.query.userProjectV2Progress.findFirst({
+            where: and(eq(userProjectV2Progress.userId, user.id), eq(userProjectV2Progress.projectId, projectId)),
         });
 
         if (existingProgress) {
             return { success: false, error: "You are already enrolled in this project" };
         }
 
-        // Check if project is public
         if (project.visibility !== 'PUBLIC') {
             return { success: false, error: "This project is not available for enrollment" };
         }
 
-        // Calculate cost (13 credits for public projects)
         const enrollmentCost = 13;
 
-        // Check user credits
         if (user.credits < enrollmentCost) {
             return {
                 success: false,
@@ -1139,61 +1074,46 @@ export async function enrollInProject(projectId: string): Promise<ActionResponse
             };
         }
 
-        // Perform enrollment in a transaction
-        const result = await prisma.$transaction(async (tx: any) => {
+        const allTasks = project.sprints.flatMap((s: any) => s.tasks);
+
+        const result = await db.transaction(async (tx) => {
             // 1. Deduct credits
-            await tx.user.update({
-                where: { id: user.id },
-                data: { credits: { decrement: enrollmentCost } }
-            });
+            await tx.update(users).set({ credits: sql`${users.credits} - ${enrollmentCost}` }).where(eq(users.id, user.id));
 
             // 2. Create credit transaction
-            await tx.creditTransaction.create({
-                data: {
-                    userId: user.id,
-                    amount: -enrollmentCost,
-                    type: "SPEND",
-                    currency: "NA",
-                    description: `Enrolled in: ${project.title}`,
-                }
+            await tx.insert(creditTransactions).values({
+                userId: user.id,
+                amount: -enrollmentCost,
+                type: "SPEND",
+                currency: "NA",
+                description: `Enrolled in: ${project.title}`,
             });
-
-            // Flatten tasks from all sprints
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const allTasks = project.sprints.flatMap((s: any) => s.tasks)
 
             // 3. Create user progress
-            const progress = await tx.userProjectV2Progress.create({
-                data: {
-                    userId: user.id,
-                    projectId,
-                    status: "IN_PROGRESS",
-                    totalTasks: allTasks.length,
-                    startedAt: new Date(),
-                }
-            });
-
-            // 4. Create task progress for all tasks (snapshot)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const taskStatuses = allTasks.map((task: any) => ({
+            const [progress] = await tx.insert(userProjectV2Progress).values({
                 userId: user.id,
                 projectId,
-                taskId: task.id,
-                progressId: progress.id,
-                status: "TO_DO" as const,
-            }));
+                status: "IN_PROGRESS",
+                totalTasks: allTasks.length,
+                startedAt: new Date(),
+            }).returning();
 
-            await tx.userTaskV2Status.createMany({
-                data: taskStatuses,
-            });
+            // 4. Create task progress for all tasks
+            if (allTasks.length > 0) {
+                const taskStatuses = allTasks.map((task: any) => ({
+                    userId: user.id,
+                    projectId,
+                    taskId: task.id,
+                    progressId: progress!.id,
+                    status: "TO_DO" as const,
+                }));
+                await tx.insert(userTaskV2Statuses).values(taskStatuses);
+            }
 
             // 5. Increment project started count
-            await tx.projectV2.update({
-                where: { id: projectId },
-                data: { totalStarted: { increment: 1 } }
-            });
+            await tx.update(projectsV2).set({ totalStarted: sql`${projectsV2.totalStarted} + 1` }).where(eq(projectsV2.id, projectId));
 
-            return progress;
+            return progress!;
         });
 
         revalidatePath('/projects');
@@ -1205,8 +1125,6 @@ export async function enrollInProject(projectId: string): Promise<ActionResponse
             data: {
                 progress: result,
                 creditsSpent: enrollmentCost,
-                // We don't have allTasks here in scope but we can get it from result if we return it or just use similar logic
-                // But for simplicity, we assume result is the progress object which has totalTasks
                 tasksCount: result.totalTasks,
                 projectTitle: project.title,
                 projectSlug: project.slug

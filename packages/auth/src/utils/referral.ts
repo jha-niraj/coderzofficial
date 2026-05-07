@@ -1,101 +1,97 @@
-import { prisma } from "@repo/prisma";
-import { ActivityType } from "@repo/prisma/client";
+import { db, users, referrals, activityEntries } from "@repo/db";
+import { eq, sql } from "drizzle-orm";
+import { createId } from "@paralleldrive/cuid2";
 
-export async function processReferral(referralCode: string | null, newUserId: string, userName: string) {
+export async function processReferral(
+    referralCode: string | null,
+    newUserId: string,
+    userName: string,
+) {
     if (!referralCode) return;
 
-    const referrer = await prisma.user.findFirst({
-        where: { referralCode },
-    });
+    const [referrer] = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.referralCode, referralCode))
+        .limit(1);
 
     if (!referrer) return;
 
-    await prisma.referral.create({
-        data: {
-            referrerId: referrer.id,
-            referredUserId: newUserId,
-            referralCode,
-        },
+    await db.insert(referrals).values({
+        referrerId: referrer.id,
+        referredUserId: newUserId,
+        referralCode,
     });
 
-    await prisma.user.update({
-        where:
+    await db
+        .update(users)
+        .set({ totalXp: sql`${users.totalXp} + 300` })
+        .where(eq(users.id, referrer.id));
+
+    const now = new Date();
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Note: activityEntries needs a dailyActivityId — for now we create a minimal entry.
+    // Full activity tracking will be wired in the main app's activity service.
+    // Here we just record the raw entry for the referrer and the new user.
+    await db.insert(activityEntries).values([
         {
-            id: referrer.id
-        },
-        data: {
-            currentXp: {
-                increment: 300
-            },
-            totalXp: {
-                increment: 300
-            },
-            referralCount: {
-                increment: 1
-            },
-        },
-    });
-
-    await prisma.recentActivity.create({
-        data: {
+            id: createId(),
             userId: referrer.id,
-            activityType: ActivityType.REFERRAL_BONUS,
+            dailyActivityId: `signup-${referrer.id}-${todayDate.getTime()}`,
+            activityType: "REFERRAL_BONUS",
+            title: "Referral Bonus",
             description: `Earned 300 XP by referring ${userName}`,
+            xpEarned: 300,
         },
-    });
-
-    await prisma.recentActivity.create({
-        data: {
+        {
+            id: createId(),
             userId: newUserId,
-            activityType: ActivityType.SIGNUP,
-            description: `Joined through a referral and earned 250 XP`,
+            dailyActivityId: `signup-${newUserId}-${todayDate.getTime()}`,
+            activityType: "SIGNUP",
+            title: "Joined BuildrHQ",
+            description: "Joined through a referral and earned 250 XP",
+            xpEarned: 250,
         },
-    });
+    ]);
 }
 
 export async function generateReferralCode(name: string): Promise<string> {
-    const normalized = name.replace(/\s+/g, '').toLowerCase();
-    const suffixes = ['coderz', 'pro123', 'devhub', 'bytez', 'zone', 'stacker', 'wizkid'];
-    
-    // Try up to 10 times to generate a unique code
+    const normalized = name.replace(/\s+/g, "").toLowerCase().slice(0, 12);
+    const suffixes = ["coderz", "pro123", "devhub", "bytez", "zone", "stacker", "wizkid"];
+
     for (let attempt = 0; attempt < 10; attempt++) {
-        const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-        const referralCode = normalized + randomSuffix;
-        
-        // Check if this referral code already exists
-        const existingUser = await prisma.user.findUnique({
-            where: { referralCode },
-            select: { id: true }
-        });
-        
-        if (!existingUser) {
-            return referralCode;
-        }
-        
-        // If code exists, try with a random number
-        const referralCodeWithNumber = referralCode + Math.floor(Math.random() * 1000);
-        const existingUserWithNumber = await prisma.user.findUnique({
-            where: { referralCode: referralCodeWithNumber },
-            select: { id: true }
-        });
-        
-        if (!existingUserWithNumber) {
-            return referralCodeWithNumber;
-        }
+        const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+        const code =
+            attempt < 5
+                ? normalized + suffix
+                : normalized + suffix + Math.floor(Math.random() * 1000);
+
+        const [existing] = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.referralCode, code))
+            .limit(1);
+
+        if (!existing) return code;
     }
-    
-    // If all attempts fail, generate a completely random code
+
     const timestamp = Date.now().toString(36);
-    const randomPart = Math.random().toString(36).substring(2, 8);
-    return `ref${timestamp}${randomPart}`;
+    const rand = Math.random().toString(36).slice(2, 8);
+    return `ref${timestamp}${rand}`;
 }
 
 export async function createSignupActivity(userId: string) {
-    await prisma.recentActivity.create({
-        data: {
-            userId,
-            activityType: ActivityType.SIGNUP,
-            description: `Joined and earned 250 XP`,
-        },
+    const now = new Date();
+    const todayDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    await db.insert(activityEntries).values({
+        id: createId(),
+        userId,
+        dailyActivityId: `signup-${userId}-${todayDate.getTime()}`,
+        activityType: "SIGNUP",
+        title: "Joined BuildrHQ",
+        description: "Joined and earned 250 XP",
+        xpEarned: 250,
     });
 }

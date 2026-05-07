@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest'
-import { prisma } from '@repo/prisma'
+import { db, openSourceProjects, osIssues, osContributions } from "@repo/db"
+import { eq, and } from "drizzle-orm"
 
 // Create Octokit instance with the organization token
 const getOctokit = () => {
@@ -118,7 +119,7 @@ export async function getRepository(owner: string, repo: string): Promise<GitHub
     try {
         const octokit = getOctokit()
         const { data } = await octokit.repos.get({ owner, repo })
-        
+
         return {
             id: data.id,
             name: data.name,
@@ -153,7 +154,7 @@ export async function getReadmeContent(owner: string, repo: string): Promise<str
             repo,
             mediaType: { format: 'raw' }
         })
-        
+
         return typeof data === 'string' ? data : null
     } catch (error) {
         console.error('Error fetching README:', error)
@@ -173,7 +174,7 @@ export async function getContributingGuide(owner: string, repo: string): Promise
             path: 'CONTRIBUTING.md',
             mediaType: { format: 'raw' }
         })
-        
+
         return typeof data === 'string' ? data : null
     } catch {
         // CONTRIBUTING.md might not exist
@@ -189,8 +190,8 @@ export async function getContributingGuide(owner: string, repo: string): Promise
  * Get all issues for a repository
  */
 export async function getIssues(
-    owner: string, 
-    repo: string, 
+    owner: string,
+    repo: string,
     options?: {
         state?: 'open' | 'closed' | 'all'
         labels?: string
@@ -208,7 +209,7 @@ export async function getIssues(
             per_page: options?.per_page || 100,
             page: options?.page || 1,
         })
-        
+
         // Filter out pull requests (GitHub API includes them in issues)
         return data
             .filter(issue => !issue.pull_request)
@@ -219,9 +220,9 @@ export async function getIssues(
                 body: issue.body,
                 html_url: issue.html_url,
                 state: issue.state as 'open' | 'closed',
-                labels: issue.labels.map(l => 
-                    typeof l === 'string' 
-                        ? { name: l, color: '000000' } 
+                labels: issue.labels.map(l =>
+                    typeof l === 'string'
+                        ? { name: l, color: '000000' }
                         : { name: l.name || '', color: l.color || '000000' }
                 ),
                 assignee: issue.assignee ? {
@@ -257,7 +258,7 @@ export async function getIssue(owner: string, repo: string, issueNumber: number)
             repo,
             issue_number: issueNumber,
         })
-        
+
         return {
             id: issue.id,
             number: issue.number,
@@ -265,9 +266,9 @@ export async function getIssue(owner: string, repo: string, issueNumber: number)
             body: issue.body,
             html_url: issue.html_url,
             state: issue.state as 'open' | 'closed',
-            labels: issue.labels.map(l => 
-                typeof l === 'string' 
-                    ? { name: l, color: '000000' } 
+            labels: issue.labels.map(l =>
+                typeof l === 'string'
+                    ? { name: l, color: '000000' }
                     : { name: l.name || '', color: l.color || '000000' }
             ),
             assignee: issue.assignee ? {
@@ -296,9 +297,9 @@ export async function getIssue(owner: string, repo: string, issueNumber: number)
  * Assign a user to an issue
  */
 export async function assignIssue(
-    owner: string, 
-    repo: string, 
-    issueNumber: number, 
+    owner: string,
+    repo: string,
+    issueNumber: number,
     assignee: string
 ): Promise<boolean> {
     try {
@@ -320,9 +321,9 @@ export async function assignIssue(
  * Unassign a user from an issue
  */
 export async function unassignIssue(
-    owner: string, 
-    repo: string, 
-    issueNumber: number, 
+    owner: string,
+    repo: string,
+    issueNumber: number,
     assignee: string
 ): Promise<boolean> {
     try {
@@ -344,9 +345,9 @@ export async function unassignIssue(
  * Add a comment to an issue
  */
 export async function addIssueComment(
-    owner: string, 
-    repo: string, 
-    issueNumber: number, 
+    owner: string,
+    repo: string,
+    issueNumber: number,
     body: string
 ): Promise<boolean> {
     try {
@@ -372,7 +373,7 @@ export async function addIssueComment(
  * Get all pull requests for a repository
  */
 export async function getPullRequests(
-    owner: string, 
+    owner: string,
     repo: string,
     options?: {
         state?: 'open' | 'closed' | 'all'
@@ -389,7 +390,7 @@ export async function getPullRequests(
             per_page: options?.per_page || 100,
             page: options?.page || 1,
         })
-        
+
         return data.map(pr => ({
             id: pr.id,
             number: pr.number,
@@ -399,44 +400,44 @@ export async function getPullRequests(
             state: pr.state as 'open' | 'closed',
             merged: pr.merged_at !== null,
             merged_at: pr.merged_at,
-            merged_by: (pr as { 
-                merged_by?: { 
-                    id: number; 
-                    login: string; 
-                    avatar_url: string; 
-                    html_url: string 
+            merged_by: (pr as {
+                merged_by?: {
+                    id: number;
+                    login: string;
+                    avatar_url: string;
+                    html_url: string
                 } | null }).merged_by ? {
-                id: (pr as { 
-                    merged_by?: { 
-                        id: number; 
-                        login: string; 
-                        avatar_url: string; 
-                        html_url: string 
-                    } | null 
+                id: (pr as {
+                    merged_by?: {
+                        id: number;
+                        login: string;
+                        avatar_url: string;
+                        html_url: string
+                    } | null
                 }).merged_by?.id || 0,
-                login: (pr as { 
-                    merged_by?: { 
-                        id: number; 
-                        login: string; 
-                        avatar_url: string; 
-                        html_url: string 
-                    } | null 
+                login: (pr as {
+                    merged_by?: {
+                        id: number;
+                        login: string;
+                        avatar_url: string;
+                        html_url: string
+                    } | null
                 }).merged_by?.login || '',
-                avatar_url: (pr as { 
-                    merged_by?: { 
-                        id: number; 
-                        login: string; 
-                        avatar_url: string; 
-                        html_url: string 
-                    } | null 
+                avatar_url: (pr as {
+                    merged_by?: {
+                        id: number;
+                        login: string;
+                        avatar_url: string;
+                        html_url: string
+                    } | null
                 }).merged_by?.avatar_url || '',
-                html_url: (pr as { 
-                    merged_by?: { 
-                        id: number; 
-                        login: string; 
-                        avatar_url: string; 
-                        html_url: string 
-                    } | null 
+                html_url: (pr as {
+                    merged_by?: {
+                        id: number;
+                        login: string;
+                        avatar_url: string;
+                        html_url: string
+                    } | null
                 }).merged_by?.html_url || '',
             } : null,
             created_at: pr.created_at,
@@ -472,8 +473,8 @@ export async function getPullRequests(
  * Get a single pull request with full details
  */
 export async function getPullRequest(
-    owner: string, 
-    repo: string, 
+    owner: string,
+    repo: string,
     prNumber: number
 ): Promise<GitHubPullRequest | null> {
     try {
@@ -483,7 +484,7 @@ export async function getPullRequest(
             repo,
             pull_number: prNumber,
         })
-        
+
         return {
             id: pr.id,
             number: pr.number,
@@ -556,7 +557,7 @@ export async function getUser(username: string): Promise<GitHubUser | null> {
     try {
         const octokit = getOctokit()
         const { data } = await octokit.users.getByUsername({ username })
-        
+
         return {
             id: data.id,
             login: data.login,
@@ -590,7 +591,7 @@ export async function getContributors(owner: string, repo: string): Promise<GitH
             repo,
             per_page: 100,
         })
-        
+
         return data.map(c => ({
             id: c.id || 0,
             login: c.login || '',
@@ -615,72 +616,73 @@ export async function syncProjectFromGitHub(projectId: string): Promise<{
     error?: string
 }> {
     try {
-        const project = await prisma.openSourceProject.findUnique({
-            where: { id: projectId }
-        })
-        
-        if (!project) {
+        const project = await db
+            .select()
+            .from(openSourceProjects)
+            .where(eq(openSourceProjects.id, projectId))
+            .limit(1)
+
+        if (!project[0]) {
             return { success: false, error: 'Project not found' }
         }
-        
-        const { githubOwner, githubRepo } = project
-        
+
+        const { githubOwner, githubRepo } = project[0]
+
         // Get repository info
         const repoData = await getRepository(githubOwner, githubRepo)
         if (!repoData) {
             return { success: false, error: 'Failed to fetch repository data' }
         }
-        
+
         // Get issues
-        const [openIssues, closedIssues] = await Promise.all([
+        const [openIssuesList, closedIssuesList] = await Promise.all([
             getIssues(githubOwner, githubRepo, { state: 'open' }),
             getIssues(githubOwner, githubRepo, { state: 'closed' }),
         ])
-        
+
         // Get README
         const readmeContent = await getReadmeContent(githubOwner, githubRepo)
-        
+
         // Get CONTRIBUTING guide
         const contributingGuide = await getContributingGuide(githubOwner, githubRepo)
-        
+
         // Get contributors
         const contributors = await getContributors(githubOwner, githubRepo)
-        
+
         // Update project in database
-        await prisma.openSourceProject.update({
-            where: { id: projectId },
-            data: {
+        await db
+            .update(openSourceProjects)
+            .set({
                 stars: repoData.stargazers_count,
                 forks: repoData.forks_count,
                 watchers: repoData.watchers_count,
-                totalIssues: openIssues.length + closedIssues.length,
-                openIssues: openIssues.length,
-                closedIssues: closedIssues.length,
+                totalIssues: openIssuesList.length + closedIssuesList.length,
+                openIssues: openIssuesList.length,
+                closedIssues: closedIssuesList.length,
                 totalContributors: contributors.length,
                 defaultBranch: repoData.default_branch,
                 readmeContent,
                 contributingGuide,
                 lastSyncedAt: new Date(),
                 syncError: null,
-            }
-        })
-        
-        // Sync issues to database
-        for (const issue of openIssues) {
-            // Find existing issue by githubIssueId or create new one
-            const existingIssue = await prisma.oSIssue.findFirst({
-                where: {
-                    projectId,
-                    githubIssueId: String(issue.id)
-                }
-            });
+            })
+            .where(eq(openSourceProjects.id, projectId))
 
-            if (existingIssue) {
-                await prisma.oSIssue.update({
-                    where: {
-                        id: existingIssue.id
-                    },
-                    data: {
+        // Sync issues to database
+        for (const issue of openIssuesList) {
+            const existingIssue = await db
+                .select({ id: osIssues.id })
+                .from(osIssues)
+                .where(and(
+                    eq(osIssues.projectId, projectId),
+                    eq(osIssues.githubIssueId, String(issue.id))
+                ))
+                .limit(1)
+
+            if (existingIssue[0]) {
+                await db
+                    .update(osIssues)
+                    .set({
                         title: issue.title,
                         description: issue.body || '',
                         githubIssueUrl: issue.html_url,
@@ -688,45 +690,42 @@ export async function syncProjectFromGitHub(projectId: string): Promise<{
                         labels: issue.labels.map(l => l.name),
                         status: issue.state === 'open' ? 'OPEN' : 'COMPLETED',
                         lastSyncedAt: new Date(),
-                    }
-                });
+                    })
+                    .where(eq(osIssues.id, existingIssue[0].id))
             } else {
-                await prisma.oSIssue.create({
-                    data: {
-                        projectId,
-                        githubIssueNumber: issue.number,
-                        githubIssueUrl: issue.html_url,
-                        githubIssueId: String(issue.id),
-                        title: issue.title,
-                        description: issue.body || '',
-                        labels: issue.labels.map(l => l.name),
-                        status: 'OPEN',
-                        difficulty: 'EASY', // Default, should be set manually
-                        requirements: [],
-                        acceptanceCriteria: [],
-                        hints: [],
-                        lastSyncedAt: new Date(),
-                    }
-                });
+                await db.insert(osIssues).values({
+                    projectId,
+                    githubIssueNumber: issue.number,
+                    githubIssueUrl: issue.html_url,
+                    githubIssueId: String(issue.id),
+                    title: issue.title,
+                    description: issue.body || '',
+                    labels: issue.labels.map(l => l.name),
+                    status: 'OPEN',
+                    difficulty: 'EASY',
+                    requirements: [],
+                    acceptanceCriteria: [],
+                    hints: [],
+                    lastSyncedAt: new Date(),
+                })
             }
         }
-        
+
         return { success: true }
     } catch (error) {
         console.error('Error syncing project:', error)
-        
-        // Update project with error
-        await prisma.openSourceProject.update({
-            where: { id: projectId },
-            data: {
+
+        await db
+            .update(openSourceProjects)
+            .set({
                 syncError: error instanceof Error ? error.message : 'Unknown sync error',
                 lastSyncedAt: new Date(),
-            }
-        })
-        
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Sync failed' 
+            })
+            .where(eq(openSourceProjects.id, projectId))
+
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Sync failed'
         }
     }
 }
@@ -739,29 +738,43 @@ export async function syncContributionFromGitHub(contributionId: string): Promis
     error?: string
 }> {
     try {
-        const contribution = await prisma.oSContribution.findUnique({
-            where: { id: contributionId },
-            include: { project: true }
-        })
-        
-        if (!contribution || !contribution.githubPrNumber) {
+        const contribution = await db
+            .select({
+                id: osContributions.id,
+                githubPrNumber: osContributions.githubPrNumber,
+                projectId: osContributions.projectId,
+            })
+            .from(osContributions)
+            .where(eq(osContributions.id, contributionId))
+            .limit(1)
+
+        if (!contribution[0] || !contribution[0].githubPrNumber) {
             return { success: false, error: 'Contribution or PR not found' }
         }
-        
+
+        const project = await db
+            .select({ githubOwner: openSourceProjects.githubOwner, githubRepo: openSourceProjects.githubRepo })
+            .from(openSourceProjects)
+            .where(eq(openSourceProjects.id, contribution[0].projectId))
+            .limit(1)
+
+        if (!project[0]) {
+            return { success: false, error: 'Project not found' }
+        }
+
         const pr = await getPullRequest(
-            contribution.project.githubOwner,
-            contribution.project.githubRepo,
-            contribution.githubPrNumber
+            project[0].githubOwner,
+            project[0].githubRepo,
+            contribution[0].githubPrNumber
         )
-        
+
         if (!pr) {
             return { success: false, error: 'PR not found on GitHub' }
         }
-        
-        // Update contribution
-        await prisma.oSContribution.update({
-            where: { id: contributionId },
-            data: {
+
+        await db
+            .update(osContributions)
+            .set({
                 linesAdded: pr.additions,
                 linesRemoved: pr.deletions,
                 filesChanged: pr.changed_files,
@@ -772,15 +785,15 @@ export async function syncContributionFromGitHub(contributionId: string): Promis
                 closedAt: pr.closed_at ? new Date(pr.closed_at) : null,
                 status: pr.merged ? 'MERGED' : (pr.state === 'closed' ? 'REJECTED' : 'IN_REVIEW'),
                 lastSyncedAt: new Date(),
-            }
-        })
-        
+            })
+            .where(eq(osContributions.id, contributionId))
+
         return { success: true }
     } catch (error) {
         console.error('Error syncing contribution:', error)
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Sync failed' 
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Sync failed'
         }
     }
 }
@@ -802,8 +815,3 @@ export default {
     syncProjectFromGitHub,
     syncContributionFromGitHub,
 }
-
-
-
-
-

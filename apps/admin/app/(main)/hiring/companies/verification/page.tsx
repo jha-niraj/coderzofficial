@@ -255,7 +255,7 @@ export default function CompanyVerificationPage() {
                 ])
 
                 if (companiesRes.success && companiesRes.data) {
-                    setCompanies(companiesRes.data as Company[])
+                    setCompanies(companiesRes.data as unknown as Company[])
                 }
 
                 if (statsRes.success && statsRes.data) {

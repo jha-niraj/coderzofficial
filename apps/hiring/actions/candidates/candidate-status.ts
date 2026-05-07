@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, jobs, jobApplications } from "@repo/db"
+import { eq, and, inArray } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 
 // ============================================
@@ -9,14 +11,14 @@ import { revalidatePath } from "next/cache"
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return null
     }
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     return member
@@ -28,8 +30,8 @@ async function getUserCompany() {
 
 // Update candidate status
 export async function updateCandidateStatus(
-    applicationId: string, 
-    newStatus: "INTERESTED" | "PREPARING" | "APPLIED" | "UNDER_REVIEW" | "SHORTLISTED" | "ASSIGNMENT_SENT" | "ASSIGNMENT_SUBMITTED" | "INTERVIEW_SCHEDULED" | "INTERVIEWED" | "OFFER_EXTENDED" | "HIRED" | "REJECTED" | "WITHDRAWN", 
+    applicationId: string,
+    newStatus: "INTERESTED" | "PREPARING" | "APPLIED" | "UNDER_REVIEW" | "SHORTLISTED" | "ASSIGNMENT_SENT" | "ASSIGNMENT_SUBMITTED" | "INTERVIEW_SCHEDULED" | "INTERVIEWED" | "OFFER_EXTENDED" | "HIRED" | "REJECTED" | "WITHDRAWN",
     notes?: string
 ) {
     try {
@@ -39,13 +41,17 @@ export async function updateCandidateStatus(
         }
 
         // Verify this application belongs to our company
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: {
-                    companyId: member.companyId
-                }
-            }
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            )
         })
 
         if (!application) {
@@ -53,15 +59,15 @@ export async function updateCandidateStatus(
         }
 
         // Update application status
-        const updated = await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        const [updated] = await db.update(jobApplications)
+            .set({
                 status: newStatus,
                 reviewedById: member.id,
                 reviewedAt: new Date(),
-                hrNotes: notes || undefined
-            }
-        })
+                ...(notes ? { hrNotes: notes } : {})
+            })
+            .where(eq(jobApplications.id, applicationId))
+            .returning()
 
         revalidatePath("/candidates")
         revalidatePath("/applications")
@@ -82,13 +88,17 @@ export async function addCandidateNote(applicationId: string, note: string) {
         }
 
         // Verify this application belongs to our company
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: {
-                    companyId: member.companyId
-                }
-            }
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            )
         })
 
         if (!application) {
@@ -99,14 +109,13 @@ export async function addCandidateNote(applicationId: string, note: string) {
         const existingNotes = application.hrNotes || ""
         const timestamp = new Date().toISOString()
         const newNoteEntry = `[${timestamp}] ${note}`
-        const updatedNotes = existingNotes 
-            ? `${existingNotes}\n${newNoteEntry}` 
+        const updatedNotes = existingNotes
+            ? `${existingNotes}\n${newNoteEntry}`
             : newNoteEntry
 
-        await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: { hrNotes: updatedNotes }
-        })
+        await db.update(jobApplications)
+            .set({ hrNotes: updatedNotes })
+            .where(eq(jobApplications.id, applicationId))
 
         revalidatePath("/candidates")
 
@@ -130,13 +139,17 @@ export async function rejectCandidate(applicationId: string, feedback: string, r
         }
 
         // Verify this application belongs to our company
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: {
-                    companyId: member.companyId
-                }
-            }
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            )
         })
 
         if (!application) {
@@ -144,24 +157,23 @@ export async function rejectCandidate(applicationId: string, feedback: string, r
         }
 
         // Update application with rejection
-        // Store feedback in hrNotes and reason in rejectionReason
         const existingNotes = application.hrNotes || ""
         const timestamp = new Date().toISOString()
         const rejectionNote = `[${timestamp}] REJECTED - Reason: ${reason}\nFeedback: ${feedback}`
-        const updatedNotes = existingNotes 
-            ? `${existingNotes}\n${rejectionNote}` 
+        const updatedNotes = existingNotes
+            ? `${existingNotes}\n${rejectionNote}`
             : rejectionNote
 
-        const updated = await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        const [updated] = await db.update(jobApplications)
+            .set({
                 status: "REJECTED",
                 rejectionReason: reason,
                 hrNotes: updatedNotes,
                 reviewedById: member.id,
                 reviewedAt: new Date()
-            }
-        })
+            })
+            .where(eq(jobApplications.id, applicationId))
+            .returning()
 
         revalidatePath("/candidates")
         revalidatePath("/applications")

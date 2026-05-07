@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
+import { eq, and, gt } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
     try {
@@ -12,14 +13,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const user = await prisma.user.findFirst({
-            where: {
-                email,
-                verifyOTP: otp,
-                verifyOTPExpiry: {
-                    gt: new Date()
-                }
-            }
+        const user = await db.query.users.findFirst({
+            where: and(
+                eq(users.email, email),
+                eq(users.verifyOTP, otp),
+                gt(users.verifyOTPExpiry, new Date()),
+            ),
         });
 
         if (!user) {
@@ -30,14 +29,11 @@ export async function POST(request: NextRequest) {
         }
 
         // Mark email as verified
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                emailVerified: true,
-                verifyOTP: null,
-                verifyOTPExpiry: null
-            }
-        });
+        await db.update(users).set({
+            emailVerified: true,
+            verifyOTP: null,
+            verifyOTPExpiry: null,
+        }).where(eq(users.id, user.id));
 
         return NextResponse.json({
             success: true,

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@repo/prisma';
+import { db, users } from '@repo/db';
+import { and, eq } from 'drizzle-orm';
 
 export async function GET(
     req: NextRequest,
@@ -12,19 +13,22 @@ export async function GET(
             return NextResponse.json({ message: 'Email is required' }, { status: 400 });
         }
 
-        const user = await prisma.user.findUnique({
-            where: { 
-                email,
-                emailVerified: true
-            },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                emailVerified: true,
-                verifyTokenExpiry: true
-            }
-        });
+        const [user] = await db
+            .select({
+                id: users.id,
+                email: users.email,
+                name: users.name,
+                emailVerified: users.emailVerified,
+                verifyTokenExpiry: users.verifyTokenExpiry,
+            })
+            .from(users)
+            .where(
+                and(
+                    eq(users.email, email),
+                    eq(users.emailVerified, true)
+                )
+            )
+            .limit(1);
 
         if (!user) {
             return NextResponse.json({ message: 'User not found' }, { status: 404 });
@@ -35,4 +39,4 @@ export async function GET(
         console.error('Error checking verification status:', error);
         return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
     }
-} 
+}

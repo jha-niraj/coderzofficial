@@ -1,5 +1,6 @@
 import { Suspense } from "react"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { getCandidateStats } from "@/actions/candidates"
 import { getInterviewProcesses } from "@/actions/interview-config"
 import HomeContent from "./home-content"
@@ -7,7 +8,7 @@ import HomeContent from "./home-content"
 export const dynamic = "force-dynamic"
 
 export default async function HomePage() {
-    const session = await auth()
+    const session = await getSession(headers())
 
     // Fetch real stats
     const [candidateStatsResult, interviewProcessesResult] = await Promise.all([

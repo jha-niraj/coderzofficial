@@ -3,7 +3,6 @@
 import Exa from 'exa-js'
 import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
-import { prisma } from '@repo/prisma'
 import { logPathfinderUsage } from './usage.action'
 
 

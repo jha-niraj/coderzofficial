@@ -1,6 +1,7 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
+import { db, companies, companyMembers, memberInvitations, jobs, jobApplications } from "@repo/db"
+import { eq, and, count } from "drizzle-orm"
 
 // ============================================
 // HIRING PLATFORM ADMIN SERVER ACTIONS
@@ -12,26 +13,35 @@ import { prisma } from "@repo/prisma"
 export async function getHiringDashboardStats() {
     try {
         const [
-            totalCompanies,
-            verifiedCompanies,
-            pendingVerifications,
-            rejectedVerifications,
-            totalMembers,
-            totalJobs,
-            activeJobs,
-            totalApplications,
-            pendingInvitations,
+            totalCompaniesResult,
+            verifiedCompaniesResult,
+            pendingVerificationsResult,
+            rejectedVerificationsResult,
+            totalMembersResult,
+            totalJobsResult,
+            activeJobsResult,
+            totalApplicationsResult,
+            pendingInvitationsResult,
         ] = await Promise.all([
-            prisma.company.count(),
-            prisma.company.count({ where: { verificationStatus: "VERIFIED" } }),
-            prisma.company.count({ where: { verificationStatus: "PENDING" } }),
-            prisma.company.count({ where: { verificationStatus: "REJECTED" } }),
-            prisma.companyMember.count(),
-            prisma.job.count(),
-            prisma.job.count({ where: { status: "ACTIVE" } }),
-            prisma.jobApplication.count(),
-            prisma.memberInvitation.count({ where: { status: "PENDING" } }),
+            db.select({ totalCompanies: count() }).from(companies),
+            db.select({ verifiedCompanies: count() }).from(companies).where(eq(companies.verificationStatus, "VERIFIED")),
+            db.select({ pendingVerifications: count() }).from(companies).where(eq(companies.verificationStatus, "PENDING")),
+            db.select({ rejectedVerifications: count() }).from(companies).where(eq(companies.verificationStatus, "REJECTED")),
+            db.select({ totalMembers: count() }).from(companyMembers),
+            db.select({ totalJobs: count() }).from(jobs),
+            db.select({ activeJobs: count() }).from(jobs).where(eq(jobs.status, "ACTIVE")),
+            db.select({ totalApplications: count() }).from(jobApplications),
+            db.select({ pendingInvitations: count() }).from(memberInvitations).where(eq(memberInvitations.status, "PENDING")),
         ])
+        const totalCompanies = totalCompaniesResult[0]?.totalCompanies ?? 0
+        const verifiedCompanies = verifiedCompaniesResult[0]?.verifiedCompanies ?? 0
+        const pendingVerifications = pendingVerificationsResult[0]?.pendingVerifications ?? 0
+        const rejectedVerifications = rejectedVerificationsResult[0]?.rejectedVerifications ?? 0
+        const totalMembers = totalMembersResult[0]?.totalMembers ?? 0
+        const totalJobs = totalJobsResult[0]?.totalJobs ?? 0
+        const activeJobs = activeJobsResult[0]?.activeJobs ?? 0
+        const totalApplications = totalApplicationsResult[0]?.totalApplications ?? 0
+        const pendingInvitations = pendingInvitationsResult[0]?.pendingInvitations ?? 0
 
         return {
             success: true,
@@ -58,33 +68,29 @@ export async function getHiringDashboardStats() {
  */
 export async function getCompanies(page = 1, limit = 20, status?: string) {
     try {
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where = status && status !== "all"
-            ? { verificationStatus: status as "PENDING" | "VERIFIED" | "REJECTED" }
-            : {}
+        const whereClause = status && status !== "all"
+            ? eq(companies.verificationStatus, status as "PENDING" | "VERIFIED" | "REJECTED")
+            : undefined
 
-        const [companies, total] = await Promise.all([
-            prisma.company.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { createdAt: "desc" },
-                include: {
-                    _count: {
-                        select: {
-                            members: true,
-                            jobs: true,
-                        },
-                    },
-                },
+        const [companyList, totalResult] = await Promise.all([
+            db.query.companies.findMany({
+                where: whereClause,
+                offset,
+                limit,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                with: {
+                    members: true,
+                }
             }),
-            prisma.company.count({ where }),
+            db.select({ total: count() }).from(companies).where(whereClause)
         ])
+        const total = totalResult[0]?.total ?? 0
 
         return {
             success: true,
-            data: companies,
+            data: companyList,
             pagination: {
                 page,
                 limit,
@@ -103,22 +109,15 @@ export async function getCompanies(page = 1, limit = 20, status?: string) {
  */
 export async function getPendingCompanyVerifications() {
     try {
-        const companies = await prisma.company.findMany({
-            where: {
-                verificationStatus: "PENDING",
-            },
-            orderBy: { createdAt: "asc" },
-            include: {
-                _count: {
-                    select: {
-                        members: true,
-                        jobs: true,
-                    },
-                },
-            },
+        const pendingCompanies = await db.query.companies.findMany({
+            where: eq(companies.verificationStatus, "PENDING"),
+            orderBy: (t, { asc }) => [asc(t.createdAt)],
+            with: {
+                members: true,
+            }
         })
 
-        return { success: true, data: companies }
+        return { success: true, data: pendingCompanies }
     } catch (error) {
         console.error("Error fetching pending verifications:", error)
         return { success: false, error: "Failed to fetch pending verifications" }
@@ -130,14 +129,14 @@ export async function getPendingCompanyVerifications() {
  */
 export async function verifyCompany(companyId: string, adminUserId: string) {
     try {
-        const company = await prisma.company.update({
-            where: { id: companyId },
-            data: {
+        const [company] = await db.update(companies)
+            .set({
                 verificationStatus: "VERIFIED",
                 verifiedAt: new Date(),
                 verifiedBy: adminUserId,
-            },
-        })
+            })
+            .where(eq(companies.id, companyId))
+            .returning()
 
         return { success: true, data: company }
     } catch (error) {
@@ -151,13 +150,13 @@ export async function verifyCompany(companyId: string, adminUserId: string) {
  */
 export async function rejectCompanyVerification(companyId: string, adminUserId: string) {
     try {
-        const company = await prisma.company.update({
-            where: { id: companyId },
-            data: {
+        const [company] = await db.update(companies)
+            .set({
                 verificationStatus: "REJECTED",
                 verifiedBy: adminUserId,
-            },
-        })
+            })
+            .where(eq(companies.id, companyId))
+            .returning()
 
         return { success: true, data: company }
     } catch (error) {
@@ -171,31 +170,11 @@ export async function rejectCompanyVerification(companyId: string, adminUserId: 
  */
 export async function getCompanyById(companyId: string) {
     try {
-        const company = await prisma.company.findUnique({
-            where: { id: companyId },
-            include: {
-                members: {
-                    include: {
-                        postedJobs: {
-                            select: {
-                                id: true,
-                                title: true,
-                                status: true,
-                            },
-                        },
-                    },
-                },
-                jobs: {
-                    take: 10,
-                    orderBy: { createdAt: "desc" },
-                },
-                _count: {
-                    select: {
-                        members: true,
-                        jobs: true,
-                    },
-                },
-            },
+        const company = await db.query.companies.findFirst({
+            where: eq(companies.id, companyId),
+            with: {
+                members: true,
+            }
         })
 
         if (!company) {
@@ -214,9 +193,9 @@ export async function getCompanyById(companyId: string) {
  */
 export async function getCompanyMembers(companyId: string) {
     try {
-        const members = await prisma.companyMember.findMany({
-            where: { companyId },
-            orderBy: { createdAt: "desc" },
+        const members = await db.query.companyMembers.findMany({
+            where: eq(companyMembers.companyId, companyId),
+            orderBy: (t, { desc }) => [desc(t.createdAt)]
         })
 
         return { success: true, data: members }
@@ -231,39 +210,32 @@ export async function getCompanyMembers(companyId: string) {
  */
 export async function getJobs(page = 1, limit = 20, status?: string) {
     try {
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where = status && status !== "all"
-            ? { status: status as "ACTIVE" | "CLOSED" | "DRAFT" | "PAUSED" | "FILLED" }
-            : {}
+        const whereClause = status && status !== "all"
+            ? eq(jobs.status, status as "ACTIVE" | "CLOSED" | "DRAFT" | "PAUSED" | "FILLED")
+            : undefined
 
-        const [jobs, total] = await Promise.all([
-            prisma.job.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { createdAt: "desc" },
-                include: {
+        const [jobList, jobTotalResult] = await Promise.all([
+            db.query.jobs.findMany({
+                where: whereClause,
+                offset,
+                limit,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                with: {
                     company: {
-                        select: {
-                            id: true,
-                            name: true,
-                            logoUrl: true,
-                        },
+                        columns: { id: true, name: true, logoUrl: true }
                     },
-                    _count: {
-                        select: {
-                            applications: true,
-                        },
-                    },
-                },
+                    applications: true,
+                }
             }),
-            prisma.job.count({ where }),
+            db.select({ total: count() }).from(jobs).where(whereClause)
         ])
+        const total = jobTotalResult[0]?.total ?? 0
 
         return {
             success: true,
-            data: jobs,
+            data: jobList,
             pagination: {
                 page,
                 limit,
@@ -282,30 +254,25 @@ export async function getJobs(page = 1, limit = 20, status?: string) {
  */
 export async function getJobApplications(page = 1, limit = 20) {
     try {
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const [applications, total] = await Promise.all([
-            prisma.jobApplication.findMany({
-                skip,
-                take: limit,
-                orderBy: { appliedAt: "desc" },
-                include: {
+        const [applications, appTotalResult] = await Promise.all([
+            db.query.jobApplications.findMany({
+                offset,
+                limit,
+                orderBy: (t, { desc }) => [desc(t.appliedAt)],
+                with: {
                     job: {
-                        select: {
-                            id: true,
-                            title: true,
-                            company: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                },
-                            },
-                        },
-                    },
-                },
+                        columns: { id: true, title: true },
+                        with: {
+                            company: { columns: { id: true, name: true } }
+                        }
+                    }
+                }
             }),
-            prisma.jobApplication.count(),
+            db.select({ total: count() }).from(jobApplications)
         ])
+        const total = appTotalResult[0]?.total ?? 0
 
         return {
             success: true,
@@ -328,21 +295,18 @@ export async function getJobApplications(page = 1, limit = 20) {
  */
 export async function getMemberInvitations(status?: string) {
     try {
-        const where = status && status !== "all"
-            ? { status: status as "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED" }
-            : {}
+        const whereClause = status && status !== "all"
+            ? eq(memberInvitations.status, status as "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED")
+            : undefined
 
-        const invitations = await prisma.memberInvitation.findMany({
-            where,
-            orderBy: { createdAt: "desc" },
-            include: {
+        const invitations = await db.query.memberInvitations.findMany({
+            where: whereClause,
+            orderBy: (t, { desc }) => [desc(t.createdAt)],
+            with: {
                 company: {
-                    select: {
-                        id: true,
-                        name: true,
-                    },
-                },
-            },
+                    columns: { id: true, name: true }
+                }
+            }
         })
 
         return { success: true, data: invitations }
@@ -358,49 +322,31 @@ export async function getMemberInvitations(status?: string) {
 export async function getHiringRecentActivity(limit = 10) {
     try {
         const [recentCompanies, recentJobs, recentApplications] = await Promise.all([
-            prisma.company.findMany({
-                take: limit,
-                orderBy: { createdAt: "desc" },
-                select: {
-                    id: true,
-                    name: true,
-                    verificationStatus: true,
-                    createdAt: true,
-                },
+            db.query.companies.findMany({
+                limit,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                columns: { id: true, name: true, verificationStatus: true, createdAt: true }
             }),
-            prisma.job.findMany({
-                take: limit,
-                orderBy: { createdAt: "desc" },
-                select: {
-                    id: true,
-                    title: true,
-                    status: true,
-                    createdAt: true,
-                    company: {
-                        select: {
-                            name: true,
-                        },
-                    },
-                },
+            db.query.jobs.findMany({
+                limit,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                columns: { id: true, title: true, status: true, createdAt: true },
+                with: {
+                    company: { columns: { name: true } }
+                }
             }),
-            prisma.jobApplication.findMany({
-                take: limit,
-                orderBy: { appliedAt: "desc" },
-                select: {
-                    id: true,
-                    status: true,
-                    appliedAt: true,
+            db.query.jobApplications.findMany({
+                limit,
+                orderBy: (t, { desc }) => [desc(t.appliedAt)],
+                columns: { id: true, status: true, appliedAt: true },
+                with: {
                     job: {
-                        select: {
-                            title: true,
-                            company: {
-                                select: {
-                                    name: true,
-                                },
-                            },
-                        },
-                    },
-                },
+                        columns: { title: true },
+                        with: {
+                            company: { columns: { name: true } }
+                        }
+                    }
+                }
             }),
         ])
 

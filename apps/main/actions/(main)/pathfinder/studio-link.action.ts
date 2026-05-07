@@ -1,8 +1,9 @@
 "use server";
 
-import { auth } from '@repo/auth';
-import { prisma } from "@repo/prisma";
-import { StudioVisibility } from "@repo/prisma/client";
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, pathfinderGoals, pathfinderSubGoals, studios, studioSteps } from '@repo/db'
+import { eq, and, desc } from 'drizzle-orm'
 import { revalidatePath } from "next/cache";
 
 // ==========================================
@@ -12,14 +13,14 @@ import { revalidatePath } from "next/cache";
 
 export async function createOrGetStudioForGoal(goalId: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { error: "Unauthorized" };
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
-            select: { id: true, title: true, slug: true, category: true },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
+            columns: { id: true, title: true, slug: true, category: true },
         });
 
         if (!goal) {
@@ -27,13 +28,13 @@ export async function createOrGetStudioForGoal(goalId: string) {
         }
 
         // Find existing studio by sourceId (goal-level studio)
-        const existing = await prisma.studio.findFirst({
-            where: {
-                userId: session.user.id,
-                source: "PATHFINDER",
-                sourceId: goalId,
-            },
-            select: { id: true, slug: true },
+        const existing = await db.query.studios.findFirst({
+            where: and(
+                eq(studios.userId, session.user.id),
+                eq(studios.source, 'PATHFINDER'),
+                eq(studios.sourceId, goalId)
+            ),
+            columns: { id: true, slug: true },
         });
 
         if (existing) {
@@ -58,19 +59,17 @@ export async function createOrGetStudioForGoal(goalId: string) {
         };
 
         const studioSlug = `notes-${goal.slug}-${Date.now().toString(36)}`;
-        const studio = await prisma.studio.create({
-            data: {
-                slug: studioSlug,
-                title: `📝 Notes: ${goal.title}`,
-                description: `Personal notes for Pathfinder goal: ${goal.title}`,
-                category: (categoryMap[goal.category] || "GENERAL") as any,
-                tags: ["pathfinder", "notes"],
-                visibility: StudioVisibility.PRIVATE,
-                userId: session.user.id,
-                source: "PATHFINDER",
-                sourceId: goalId,
-            },
-        });
+        const [studio] = await db.insert(studios).values({
+            slug: studioSlug,
+            title: `📝 Notes: ${goal.title}`,
+            description: `Personal notes for Pathfinder goal: ${goal.title}`,
+            category: (categoryMap[goal.category] || "GENERAL") as any,
+            tags: ["pathfinder", "notes"],
+            visibility: 'PRIVATE',
+            userId: session.user.id,
+            source: 'PATHFINDER',
+            sourceId: goalId,
+        }).returning();
 
         revalidatePath(`/pathfinder/${goal.slug}`);
 
@@ -91,14 +90,14 @@ export async function createOrGetStudioForGoal(goalId: string) {
 
 export async function createOrGetStudioForSubGoal(subGoalId: string, subGoalTitle: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { error: "Unauthorized" };
         }
 
-        const subGoal = await prisma.pathfinderSubGoal.findFirst({
-            where: { id: subGoalId },
-            include: { goal: { select: { userId: true } } },
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            with: { goal: { columns: { userId: true } } },
         });
 
         if (!subGoal || subGoal.goal.userId !== session.user.id) {
@@ -110,23 +109,20 @@ export async function createOrGetStudioForSubGoal(subGoalId: string, subGoalTitl
         }
 
         const studioSlug = `subgoal-${subGoalId}-${Date.now().toString(36)}`;
-        const studio = await prisma.studio.create({
-            data: {
-                slug: studioSlug,
-                title: `📝 ${subGoalTitle}`,
-                description: `Study notes for: ${subGoalTitle}`,
-                source: "PATHFINDER",
-                sourceId: subGoalId,
-                visibility: StudioVisibility.PRIVATE,
-                userId: session.user.id,
-                stepCount: 0,
-            },
-        });
+        const [studio] = await db.insert(studios).values({
+            slug: studioSlug,
+            title: `📝 ${subGoalTitle}`,
+            description: `Study notes for: ${subGoalTitle}`,
+            source: 'PATHFINDER',
+            sourceId: subGoalId,
+            visibility: 'PRIVATE',
+            userId: session.user.id,
+            stepCount: 0,
+        }).returning();
 
-        await prisma.pathfinderSubGoal.update({
-            where: { id: subGoalId },
-            data: { studioId: studio.id },
-        });
+        await db.update(pathfinderSubGoals)
+            .set({ studioId: studio.id })
+            .where(eq(pathfinderSubGoals.id, subGoalId));
 
         revalidatePath(`/pathfinder`);
         return { studioId: studio.id, isNew: true };
@@ -143,23 +139,25 @@ export async function createOrGetStudioForSubGoal(subGoalId: string, subGoalTitl
 
 export async function getGoalStudioContent(goalId: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { error: "Unauthorized" };
         }
 
-        const studio = await prisma.studio.findFirst({
-            where: {
-                userId: session.user.id,
-                source: "PATHFINDER",
-                sourceId: goalId,
-            },
-            select: {
+        const studio = await db.query.studios.findFirst({
+            where: and(
+                eq(studios.userId, session.user.id),
+                eq(studios.source, 'PATHFINDER'),
+                eq(studios.sourceId, goalId)
+            ),
+            columns: {
                 id: true,
                 slug: true,
                 title: true,
+            },
+            with: {
                 quizzes: {
-                    select: {
+                    columns: {
                         id: true,
                         blockId: true,
                         title: true,
@@ -173,7 +171,7 @@ export async function getGoalStudioContent(goalId: string) {
                     },
                 },
                 flashcardDecks: {
-                    select: {
+                    columns: {
                         id: true,
                         blockId: true,
                         title: true,
@@ -206,7 +204,7 @@ export async function generateNotesContent(
     customPrompt?: string
 ) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { error: "Unauthorized" };
         }
@@ -234,7 +232,6 @@ export async function generateNotesContent(
                 break;
         }
 
-        // Import OpenAI
         const OpenAI = (await import("openai")).default;
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 

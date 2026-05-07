@@ -118,7 +118,7 @@ function CandidateCard({
             <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                     {
-                        application.user.image ? (
+                        application.user?.image ? (
                             <Image
                                 src={application.user.image}
                                 alt={application.user.name || "User"}
@@ -127,15 +127,15 @@ function CandidateCard({
                             />
                         ) : (
                             <div className="h-10 w-10 rounded-full bg-[#0F172A] flex items-center justify-center text-white font-medium">
-                                {application.user.name?.charAt(0) || application.user.email.charAt(0).toUpperCase()}
+                                {application.user?.name?.charAt(0) || application.user?.email?.charAt(0)?.toUpperCase() || "?"}
                             </div>
                         )
                     }
                     <div>
                         <h4 className="font-medium text-[#0F172A]">
-                            {application.user.name || "Unknown"}
+                            {application.user?.name || "Unknown"}
                         </h4>
-                        <p className="text-sm text-[#64748B]">{application.user.email}</p>
+                        <p className="text-sm text-[#64748B]">{application.user?.email}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ function ScoreDialog({
                 <DialogHeader>
                     <DialogTitle>Score Assignment</DialogTitle>
                     <DialogDescription>
-                        Evaluate the submission from {application?.user.name || application?.user.email}
+                        Evaluate the submission from {application?.user?.name || application?.user?.email}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
@@ -486,7 +486,7 @@ export default function AssignmentDetailContent({ job, submissions }: Assignment
                                                 <div className="flex items-start justify-between">
                                                     <div className="flex items-center gap-3">
                                                         {
-                                                            submission.user.image ? (
+                                                            submission.user?.image ? (
                                                                 <Image
                                                                     src={submission.user.image}
                                                                     alt={submission.user.name || "User"}
@@ -495,15 +495,15 @@ export default function AssignmentDetailContent({ job, submissions }: Assignment
                                                                 />
                                                             ) : (
                                                                 <div className="h-10 w-10 rounded-full bg-[#0F172A] flex items-center justify-center text-white font-medium">
-                                                                    {submission.user.name?.charAt(0) || submission.user.email.charAt(0).toUpperCase()}
+                                                                    {submission.user?.name?.charAt(0) || submission.user?.email?.charAt(0)?.toUpperCase() || "?"}
                                                                 </div>
                                                             )
                                                         }
                                                         <div>
                                                             <h4 className="font-medium text-[#0F172A]">
-                                                                {submission.user.name || "Unknown"}
+                                                                {submission.user?.name || "Unknown"}
                                                             </h4>
-                                                            <p className="text-sm text-[#64748B]">{submission.user.email}</p>
+                                                            <p className="text-sm text-[#64748B]">{submission.user?.email}</p>
                                                         </div>
                                                     </div>
 

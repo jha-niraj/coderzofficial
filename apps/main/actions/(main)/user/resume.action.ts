@@ -1,8 +1,10 @@
 "use server"
 
-import { auth } from '@repo/auth'
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import prisma from "@repo/prisma"
+import { db, users } from "@repo/db"
+import { eq } from "drizzle-orm"
 import {
     S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand
 } from '@aws-sdk/client-s3'
@@ -22,7 +24,7 @@ const s3Client = new S3Client({
 const BUCKET_NAME = 'userresume'
 
 export async function uploadResume(file: File, resumeText?: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         throw new Error("You must be logged in to upload a resume")
     }
@@ -37,13 +39,10 @@ export async function uploadResume(file: File, resumeText?: string) {
 
         // Save resume text to database without file upload
         if (resumeText) {
-            await prisma.user.update({
-                where: { id: userId },
-                data: {
-                    hasResume: true,
-                    resumeText: resumeText,
-                },
-            })
+            await db.update(users).set({
+                hasResume: true,
+                resumeText: resumeText,
+            }).where(eq(users.id, userId))
             revalidatePath("/profile")
             return { success: true, url: undefined, message: "Resume text saved (file upload disabled)" }
         }
@@ -79,14 +78,11 @@ export async function uploadResume(file: File, resumeText?: string) {
 
         // Update user record in database with FILE PATH (not signed URL)
         // We'll generate signed URLs on-demand when needed
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                hasResume: true,
-                resume: fileName, // Store the file path, not the URL
-                ...(resumeText && { resumeText }), // Only update if text is provided
-            },
-        })
+        await db.update(users).set({
+            hasResume: true,
+            resume: fileName, // Store the file path, not the URL
+            ...(resumeText && { resumeText }), // Only update if text is provided
+        }).where(eq(users.id, userId))
 
         // Generate a signed URL for immediate use (7 days expiration)
         const signedUrl = await generateSignedUrl(fileName, 7 * 24 * 60 * 60) // 7 days in seconds
@@ -100,13 +96,10 @@ export async function uploadResume(file: File, resumeText?: string) {
         // If upload fails but we have resume text, save that at least
         if (resumeText) {
             try {
-                await prisma.user.update({
-                    where: { id: userId },
-                    data: {
-                        hasResume: true,
-                        resumeText: resumeText,
-                    },
-                })
+                await db.update(users).set({
+                    hasResume: true,
+                    resumeText: resumeText,
+                }).where(eq(users.id, userId))
                 revalidatePath("/profile")
                 return {
                     success: true,
@@ -139,7 +132,7 @@ async function generateSignedUrl(fileName: string, expiresIn: number = 7 * 24 * 
 }
 
 export async function deleteResume() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         throw new Error("You must be logged in to delete your resume")
     }
@@ -148,9 +141,9 @@ export async function deleteResume() {
 
     try {
         // Get current user to find the resume file
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: {
                 hasResume: true,
                 resume: true,
             },
@@ -176,14 +169,11 @@ export async function deleteResume() {
         }
 
         // Update user record and clear resume text
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                hasResume: false,
-                resume: null,
-                resumeText: null,
-            },
-        })
+        await db.update(users).set({
+            hasResume: false,
+            resume: null,
+            resumeText: null,
+        }).where(eq(users.id, userId))
 
         revalidatePath("/profile")
         return { success: true }
@@ -195,7 +185,7 @@ export async function deleteResume() {
 }
 
 export async function getResume() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return null
     }
@@ -203,9 +193,9 @@ export async function getResume() {
     const userId = session.user.id
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: {
                 hasResume: true,
                 resume: true,
             },
@@ -234,7 +224,7 @@ export async function getResume() {
 
 // Public function to get a fresh signed URL (can be called from components)
 export async function getResumeSignedUrl(expiresIn: number = 7 * 24 * 60 * 60) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return null
     }
@@ -242,9 +232,9 @@ export async function getResumeSignedUrl(expiresIn: number = 7 * 24 * 60 * 60) {
     const userId = session.user.id
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: {
                 hasResume: true,
                 resume: true,
             },

@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
 
 export async function GET() {
     try {
-        const result = await prisma.user.updateMany({
-            data: {
-                creditsShared: 0,
-            },
-        });
+        const result = await db.update(users)
+            .set({ creditsShared: 0 });
 
-        console.log(`Reset creditsShared for ${result.count} users.`);
-        return NextResponse.json({ success: true, count: result.count });
+        // Drizzle update does not return a count by default; use a raw count query if needed
+        console.log(`Reset creditsShared for all users.`);
+        return NextResponse.json({ success: true });
     } catch (err) {
         const error = err as Error;
         console.log("Error resetting creditsShared:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-    } finally {
-        await prisma.$disconnect();
     }
 }

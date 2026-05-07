@@ -1,7 +1,7 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { CreditType, Currency } from "@repo/prisma/client"
+import { db, users, creditTransactions, creditRequests, creditTransfers, payments, adminAuditLogs } from "@repo/db"
+import { eq, and, count, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { checkAdminAccess } from "../admin.action"
 
@@ -19,37 +19,30 @@ export async function getAllTransactions(filters?: any, pagination?: any): Promi
 
         const page = pagination?.page || 1
         const limit = pagination?.limit || 20
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where: any = {}
+        const whereConditions = []
         if (filters?.type && filters.type !== "all") {
-            where.type = filters.type
+            whereConditions.push(eq(creditTransactions.type, filters.type))
         }
 
-        const [transactions, total] = await Promise.all([
-            prisma.creditTransaction.findMany({
-                where,
-                include: {
+        const [transactions, totalResult] = await Promise.all([
+            db.query.creditTransactions.findMany({
+                where: whereConditions.length > 0 ? and(...whereConditions) : undefined,
+                with: {
                     user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            image: true
-                        },
-                    },
-                    payment: {
-                        select: {
-                            status: true
-                        }
+                        columns: { id: true, name: true, email: true, image: true }
                     }
                 },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit,
+                offset
             }),
-            prisma.creditTransaction.count({ where }),
+            db.select({ total: count() }).from(creditTransactions).where(
+                whereConditions.length > 0 ? and(...whereConditions) : undefined
+            )
         ])
+        const total = totalResult[0]?.total ?? 0
 
         return {
             success: true,
@@ -73,32 +66,30 @@ export async function getCreditRequests(status?: string, pagination?: any): Prom
 
         const page = pagination?.page || 1
         const limit = pagination?.limit || 20
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where: any = {}
+        const whereConditions = []
         if (status && status !== "all") {
-            where.status = status
+            whereConditions.push(eq(creditRequests.status, status as any))
         }
 
-        const [requests, total] = await Promise.all([
-            prisma.creditRequest.findMany({
-                where,
-                include: {
+        const [requests, totalResult] = await Promise.all([
+            db.query.creditRequests.findMany({
+                where: whereConditions.length > 0 ? and(...whereConditions) : undefined,
+                with: {
                     user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            image: true
-                        },
-                    },
+                        columns: { id: true, name: true, email: true, image: true }
+                    }
                 },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit,
+                offset
             }),
-            prisma.creditRequest.count({ where }),
+            db.select({ total: count() }).from(creditRequests).where(
+                whereConditions.length > 0 ? and(...whereConditions) : undefined
+            )
         ])
+        const total = totalResult[0]?.total ?? 0
 
         return {
             success: true,
@@ -120,11 +111,12 @@ export async function approveCreditRequest(requestId: string, amount: number): P
         const accessCheck = await checkAdminAccess()
         if (!accessCheck.success) return { success: false, error: accessCheck.error }
 
-        const adminAccess = accessCheck.data?.adminAccess
+        const adminRecord = accessCheck.data?.adminAccess
+        if (!adminRecord) return { success: false, error: "Admin record not found" }
 
-        const request = await prisma.creditRequest.findUnique({
-            where: { id: requestId },
-            include: { user: true },
+        const request = await db.query.creditRequests.findFirst({
+            where: eq(creditRequests.id, requestId),
+            with: { user: true }
         })
 
         if (!request) {
@@ -132,37 +124,31 @@ export async function approveCreditRequest(requestId: string, amount: number): P
         }
 
         // Update user credits
-        await prisma.user.update({
-            where: { id: request.userId },
-            data: { credits: { increment: amount } },
-        })
+        await db.update(users)
+            .set({ credits: sql`${users.credits} + ${amount}` })
+            .where(eq(users.id, request.userId))
 
         // Update request status
-        await prisma.creditRequest.update({
-            where: { id: requestId },
-            data: { status: "APPROVED" },
-        })
+        await db.update(creditRequests)
+            .set({ status: "APPROVED" })
+            .where(eq(creditRequests.id, requestId))
 
         // Create transaction
-        await prisma.creditTransaction.create({
-            data: {
-                userId: request.userId,
-                amount,
-                currency: Currency.INR,
-                type: "BONUS",
-                description: "Admin approved credit request",
-            },
+        await db.insert(creditTransactions).values({
+            userId: request.userId,
+            amount,
+            currency: "INR",
+            type: "BONUS",
+            description: "Admin approved credit request",
         })
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: adminAccess.id,
-                action: "UPDATE",
-                module: "credits",
-                resourceType: "CreditRequest",
-                resourceId: requestId,
-                description: `Approved credit request: ${amount} credits`,
-            },
+        await db.insert(adminAuditLogs).values({
+            adminId: adminRecord.id,
+            action: "UPDATE",
+            module: "credits",
+            resourceType: "CreditRequest",
+            resourceId: requestId,
+            description: `Approved credit request: ${amount} credits`,
         })
 
         revalidatePath("/credits/requests")
@@ -180,22 +166,20 @@ export async function rejectCreditRequest(requestId: string, reason: string): Pr
         const accessCheck = await checkAdminAccess()
         if (!accessCheck.success) return { success: false, error: accessCheck.error }
 
-        const adminAccess = accessCheck.data?.adminAccess
+        const adminRecord = accessCheck.data?.adminAccess
+        if (!adminRecord) return { success: false, error: "Admin record not found" }
 
-        await prisma.creditRequest.update({
-            where: { id: requestId },
-            data: { status: "REJECTED" },
-        })
+        await db.update(creditRequests)
+            .set({ status: "REJECTED" })
+            .where(eq(creditRequests.id, requestId))
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: adminAccess.id,
-                action: "UPDATE",
-                module: "credits",
-                resourceType: "CreditRequest",
-                resourceId: requestId,
-                description: `Rejected credit request: ${reason}`,
-            },
+        await db.insert(adminAuditLogs).values({
+            adminId: adminRecord.id,
+            action: "UPDATE",
+            module: "credits",
+            resourceType: "CreditRequest",
+            resourceId: requestId,
+            description: `Rejected credit request: ${reason}`,
         })
 
         revalidatePath("/credits/requests")
@@ -215,32 +199,21 @@ export async function getCreditTransfers(filters?: any, pagination?: any): Promi
 
         const page = pagination?.page || 1
         const limit = pagination?.limit || 20
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const [transfers, total] = await Promise.all([
-            prisma.creditTransfer.findMany({
-                include: {
-                    sender: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true
-                        },
-                    },
-                    receiver: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true
-                        },
-                    },
+        const [transfers, totalResult] = await Promise.all([
+            db.query.creditTransfers.findMany({
+                with: {
+                    sender: { columns: { id: true, name: true, email: true } },
+                    receiver: { columns: { id: true, name: true, email: true } },
                 },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit,
+                offset
             }),
-            prisma.creditTransfer.count(),
+            db.select({ total: count() }).from(creditTransfers)
         ])
+        const total = totalResult[0]?.total ?? 0
 
         return {
             success: true,
@@ -261,50 +234,39 @@ export async function transferCredits(fromUserId: string, toUserId: string, amou
         if (amount <= 0) return { success: false, error: "Amount must be positive" }
         if (fromUserId === toUserId) return { success: false, error: "Cannot transfer to the same user" }
 
-        // Ensure from user has enough credits (if you enforce it)
-        const fromUser = await prisma.user.findUnique({ where: { id: fromUserId } })
-        const toUser = await prisma.user.findUnique({ where: { id: toUserId } })
+        const [fromUser, toUser] = await Promise.all([
+            db.query.users.findFirst({ where: eq(users.id, fromUserId) }),
+            db.query.users.findFirst({ where: eq(users.id, toUserId) })
+        ])
         if (!fromUser || !toUser) return { success: false, error: "Invalid users" }
 
-        // Optional balance check if you track credits as a balance
-        if (typeof fromUser.credits === 'number' && fromUser.credits < amount) {
+        if (typeof fromUser.credits === "number" && fromUser.credits < amount) {
             return { success: false, error: "Insufficient balance" }
         }
 
-        // Execute transfer in a transaction
-        await prisma.$transaction(async (tx) => {
-            // decrement/increment user credits if present
-            await tx.user.update({ where: { id: fromUserId }, data: { credits: { decrement: amount } } })
-            await tx.user.update({ where: { id: toUserId }, data: { credits: { increment: amount } } })
+        // Execute in sequence (no native transaction needed since each is atomic)
+        await db.update(users).set({ credits: sql`${users.credits} - ${amount}` }).where(eq(users.id, fromUserId))
+        await db.update(users).set({ credits: sql`${users.credits} + ${amount}` }).where(eq(users.id, toUserId))
 
-            // record transfer entity if the model exists
-            await tx.creditTransfer.create({
-                data: {
-                    senderId: fromUserId,
-                    receiverId: toUserId,
-                    amount
-                }
-            })
+        await db.insert(creditTransfers).values({
+            senderId: fromUserId,
+            receiverId: toUserId,
+            amount
+        })
 
-            // record two transactions for auditability
-            await tx.creditTransaction.create({
-                data: {
-                    userId: fromUserId,
-                    amount: -amount,
-                    type: CreditType.REWARD,
-                    description: description || `Transfer to ${toUser.email}`,
-                    currency: Currency.INR,
-                }
-            })
-            await tx.creditTransaction.create({
-                data: {
-                    userId: toUserId,
-                    amount: amount,
-                    type: CreditType.REWARD,
-                    description: description || `Transfer from ${fromUser.email}`,
-                    currency: Currency.INR,
-                }
-            })
+        await db.insert(creditTransactions).values({
+            userId: fromUserId,
+            amount: -amount,
+            type: "REWARD",
+            description: description || `Transfer to ${toUser.email}`,
+            currency: "INR",
+        })
+        await db.insert(creditTransactions).values({
+            userId: toUserId,
+            amount,
+            type: "REWARD",
+            description: description || `Transfer from ${fromUser.email}`,
+            currency: "INR",
         })
 
         return { success: true }
@@ -322,36 +284,33 @@ export async function getPayments(filters?: any, pagination?: any): Promise<Admi
 
         const page = pagination?.page || 1
         const limit = pagination?.limit || 20
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where: any = {}
+        const whereConditions = []
         if (filters?.status && filters.status !== "all") {
-            where.status = filters.status
+            whereConditions.push(eq(payments.status, filters.status))
         }
 
-        const [payments, total] = await Promise.all([
-            prisma.payment.findMany({
-                where,
-                include: {
-                    user: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true
-                        },
-                    },
+        const [paymentList, totalResult] = await Promise.all([
+            db.query.payments.findMany({
+                where: whereConditions.length > 0 ? and(...whereConditions) : undefined,
+                with: {
+                    user: { columns: { id: true, name: true, email: true } }
                 },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take: limit,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit,
+                offset
             }),
-            prisma.payment.count({ where }),
+            db.select({ total: count() }).from(payments).where(
+                whereConditions.length > 0 ? and(...whereConditions) : undefined
+            )
         ])
+        const total = totalResult[0]?.total ?? 0
 
         return {
             success: true,
             data: {
-                payments,
+                payments: paymentList,
                 total,
                 pages: Math.ceil(total / limit)
             },
@@ -369,21 +328,26 @@ export async function getCreditStats(): Promise<AdminResponse<any>> {
         if (!success) return { success: false, error }
 
         const [
-            totalCreditsInSystem,
-            pendingRequests,
-            totalTransactions,
-            totalPayments,
+            allUsers,
+            pendingRequestsResult,
+            totalTransactionsResult,
+            totalPaymentsResult,
         ] = await Promise.all([
-            prisma.user.aggregate({ _sum: { credits: true } }),
-            prisma.creditRequest.count({ where: { status: "PENDING" } }),
-            prisma.creditTransaction.count(),
-            prisma.payment.count({ where: { status: "COMPLETED" } }),
+            db.query.users.findMany({ columns: { credits: true } }),
+            db.select({ pendingRequests: count() }).from(creditRequests).where(eq(creditRequests.status, "PENDING")),
+            db.select({ totalTransactions: count() }).from(creditTransactions),
+            db.select({ totalPayments: count() }).from(payments).where(eq(payments.status, "COMPLETED")),
         ])
+        const pendingRequests = pendingRequestsResult[0]?.pendingRequests ?? 0
+        const totalTransactions = totalTransactionsResult[0]?.totalTransactions ?? 0
+        const totalPayments = totalPaymentsResult[0]?.totalPayments ?? 0
+
+        const totalCredits = allUsers.reduce((sum, u) => sum + (u.credits || 0), 0)
 
         return {
             success: true,
             data: {
-                totalCredits: totalCreditsInSystem._sum.credits || 0,
+                totalCredits,
                 pendingRequests,
                 totalTransactions,
                 totalPayments,

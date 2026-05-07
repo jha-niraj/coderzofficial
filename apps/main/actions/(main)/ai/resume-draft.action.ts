@@ -1,7 +1,14 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db,
+    resumeDraft,
+    resumeTemplate,
+    users,
+} from '@repo/db'
+import { eq, and, desc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { ResumeDraftContent, emptyResumeDraftContent, PLATFORM_TEMPLATES } from '@/types/resume-draft'
 import { openai } from '@/lib/openai-client'
@@ -11,21 +18,27 @@ import { openai } from '@/lib/openai-client'
 // ─────────────────────────────────────────────────────────────────────────────
 export async function ensurePlatformTemplates() {
     for (const tpl of PLATFORM_TEMPLATES) {
-        await prisma.resumeTemplate.upsert({
-            where: { slug: tpl.slug },
-            update: {
-                name: tpl.name,
-                description: tpl.description,
-                tags: tpl.tags,
-                sectionOrder: tpl.sectionOrder,
-                config: tpl.config as any,
-                isPlatform: true,
-                isDefault: tpl.slug === 'clean-minimal',
-                creditsCost: 0,
-                isMarketplace: false,
-                previewImageUrl: '',
-            },
-            create: {
+        const existing = await db.query.resumeTemplate.findFirst({
+            where: eq(resumeTemplate.slug, tpl.slug),
+        });
+
+        if (existing) {
+            await db.update(resumeTemplate)
+                .set({
+                    name: tpl.name,
+                    description: tpl.description,
+                    tags: tpl.tags,
+                    sectionOrder: tpl.sectionOrder,
+                    config: tpl.config as any,
+                    isPlatform: true,
+                    isDefault: tpl.slug === 'clean-minimal',
+                    creditsCost: 0,
+                    isMarketplace: false,
+                    previewImageUrl: '',
+                })
+                .where(eq(resumeTemplate.slug, tpl.slug));
+        } else {
+            await db.insert(resumeTemplate).values({
                 slug: tpl.slug,
                 name: tpl.name,
                 description: tpl.description,
@@ -37,8 +50,8 @@ export async function ensurePlatformTemplates() {
                 creditsCost: 0,
                 isMarketplace: false,
                 previewImageUrl: '',
-            },
-        })
+            });
+        }
     }
     return { success: true }
 }
@@ -48,9 +61,9 @@ export async function ensurePlatformTemplates() {
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getResumeTemplates() {
     await ensurePlatformTemplates()
-    const templates = await prisma.resumeTemplate.findMany({
-        orderBy: [{ isPlatform: 'desc' }, { totalSales: 'desc' }, { createdAt: 'asc' }],
-        include: { createdBy: { select: { name: true, username: true, image: true } } },
+    const templates = await db.query.resumeTemplate.findMany({
+        orderBy: [desc(resumeTemplate.isPlatform), desc(resumeTemplate.totalSales), resumeTemplate.createdAt],
+        with: { createdBy: { columns: { name: true, username: true, image: true } } },
     })
     return { success: true, templates }
 }
@@ -59,12 +72,12 @@ export async function getResumeTemplates() {
 // GET all resume drafts for current user
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getResumeDrafts() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const drafts = await prisma.resumeDraft.findMany({
-        where: { userId: session.user.id },
-        orderBy: { updatedAt: 'desc' },
+    const drafts = await db.query.resumeDraft.findMany({
+        where: eq(resumeDraft.userId, session.user.id),
+        orderBy: [desc(resumeDraft.updatedAt)],
     })
     return { success: true, drafts }
 }
@@ -73,11 +86,11 @@ export async function getResumeDrafts() {
 // GET single draft
 // ─────────────────────────────────────────────────────────────────────────────
 export async function getResumeDraft(id: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const draft = await prisma.resumeDraft.findFirst({
-        where: { id, userId: session.user.id },
+    const draft = await db.query.resumeDraft.findFirst({
+        where: and(eq(resumeDraft.id, id), eq(resumeDraft.userId, session.user.id)),
     })
     if (!draft) return { success: false, error: 'Not found' }
     return { success: true, draft }
@@ -85,13 +98,15 @@ export async function getResumeDraft(id: string) {
 
 // GET by share slug (public)
 export async function getResumeDraftBySlug(slug: string) {
-    const draft = await prisma.resumeDraft.findUnique({
-        where: { shareSlug: slug, isPublic: true },
-        include: { user: { select: { name: true, username: true, image: true } } },
+    const draft = await db.query.resumeDraft.findFirst({
+        where: and(eq(resumeDraft.shareSlug, slug), eq(resumeDraft.isPublic, true)),
+        with: { user: { columns: { name: true, username: true, image: true } } },
     })
     if (!draft) return { success: false, error: 'Not found or private' }
     // Increment view count
-    await prisma.resumeDraft.update({ where: { id: draft.id }, data: { viewCount: { increment: 1 } } })
+    await db.update(resumeDraft)
+        .set({ viewCount: sql`${resumeDraft.viewCount} + 1` })
+        .where(eq(resumeDraft.id, draft.id))
     return { success: true, draft }
 }
 
@@ -105,19 +120,17 @@ export async function createResumeDraft(input: {
     importedFrom?: string
     importedUrl?: string
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const draft = await prisma.resumeDraft.create({
-        data: {
-            userId: session.user.id,
-            name: input.name,
-            templateSlug: input.templateSlug ?? 'clean-minimal',
-            content: (input.content ?? emptyResumeDraftContent()) as any,
-            importedFrom: input.importedFrom,
-            importedUrl: input.importedUrl,
-        },
-    })
+    const [draft] = await db.insert(resumeDraft).values({
+        userId: session.user.id,
+        name: input.name,
+        templateSlug: input.templateSlug ?? 'clean-minimal',
+        content: (input.content ?? emptyResumeDraftContent()) as any,
+        importedFrom: input.importedFrom,
+        importedUrl: input.importedUrl,
+    }).returning()
     revalidatePath('/ai/resume')
     return { success: true, draft }
 }
@@ -126,15 +139,18 @@ export async function createResumeDraft(input: {
 // CREATE draft from current user profile
 // ─────────────────────────────────────────────────────────────────────────────
 export async function createDraftFromProfile(name: string, templateSlug = 'clean-minimal') {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        include: {
-            experiences: { orderBy: { startDate: 'desc' } },
-            portfolioProjects: { orderBy: { startDate: 'desc' }, include: { projectLinks: true } },
-            educations: { orderBy: { startDate: 'desc' } },
+    const user = await db.query.users.findFirst({
+        where: eq(users.id, session.user.id),
+        with: {
+            experiences: { orderBy: (e: any, { desc }: any) => [desc(e.startDate)] },
+            portfolioProjects: {
+                orderBy: (p: any, { desc }: any) => [desc(p.startDate)],
+                with: { projectLinks: true },
+            },
+            educations: { orderBy: (e: any, { desc }: any) => [desc(e.startDate)] },
             skills: true,
             socialLinks: true,
         },
@@ -148,12 +164,12 @@ export async function createDraftFromProfile(name: string, templateSlug = 'clean
             title: user.occupation ?? '',
             location: user.location ?? '',
             summary: user.bio ?? '',
-            github: user.socialLinks.find(s => s.platform === 'GITHUB')?.url,
-            linkedin: user.socialLinks.find(s => s.platform === 'LINKEDIN')?.url,
-            portfolio: user.socialLinks.find(s => s.platform === 'PORTFOLIO')?.url,
-            website: user.socialLinks.find(s => s.platform === 'WEBSITE')?.url,
+            github: user.socialLinks.find((s: any) => s.platform === 'GITHUB')?.url,
+            linkedin: user.socialLinks.find((s: any) => s.platform === 'LINKEDIN')?.url,
+            portfolio: user.socialLinks.find((s: any) => s.platform === 'PORTFOLIO')?.url,
+            website: user.socialLinks.find((s: any) => s.platform === 'WEBSITE')?.url,
         },
-        experience: user.experiences.map(e => ({
+        experience: user.experiences.map((e: any) => ({
             id: e.id,
             company: e.companyName,
             role: e.roleTitle,
@@ -162,16 +178,16 @@ export async function createDraftFromProfile(name: string, templateSlug = 'clean
             current: e.isCurrentlyWorking,
             bullets: e.bulletPoints ?? [],
         })),
-        projects: user.portfolioProjects.map(p => ({
+        projects: user.portfolioProjects.map((p: any) => ({
             id: p.id,
             name: p.projectName,
             description: p.description ?? '',
             technologies: p.technologies ?? [],
-            github: p.projectLinks.find(l => l.linkType === 'GITHUB')?.url,
-            liveUrl: p.projectLinks.find(l => l.linkType === 'LIVE_SITE' || l.linkType === 'DEMO')?.url,
+            github: p.projectLinks.find((l: any) => l.linkType === 'GITHUB')?.url,
+            liveUrl: p.projectLinks.find((l: any) => l.linkType === 'LIVE_SITE' || l.linkType === 'DEMO')?.url,
             bullets: p.bulletPoints ?? [],
         })),
-        education: user.educations.map(e => ({
+        education: user.educations.map((e: any) => ({
             id: e.id,
             institution: e.institution,
             degree: e.degree ?? '',
@@ -218,12 +234,11 @@ export async function updateResumeDraft(id: string, data: {
     jdSnapshot?: string
     atsScore?: number
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const draft = await prisma.resumeDraft.updateMany({
-        where: { id, userId: session.user.id },
-        data: {
+    const result = await db.update(resumeDraft)
+        .set({
             ...(data.name !== undefined && { name: data.name }),
             ...(data.templateSlug !== undefined && { templateSlug: data.templateSlug }),
             ...(data.content !== undefined && { content: data.content as any }),
@@ -231,20 +246,21 @@ export async function updateResumeDraft(id: string, data: {
             ...(data.tailoredFor !== undefined && { tailoredFor: data.tailoredFor }),
             ...(data.jdSnapshot !== undefined && { jdSnapshot: data.jdSnapshot }),
             ...(data.atsScore !== undefined && { atsScore: data.atsScore }),
-        },
-    })
+        })
+        .where(and(eq(resumeDraft.id, id), eq(resumeDraft.userId, session.user.id)))
     revalidatePath('/ai/resume')
-    return { success: true, updated: draft.count > 0 }
+    return { success: true, updated: true }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE a draft
 // ─────────────────────────────────────────────────────────────────────────────
 export async function deleteResumeDraft(id: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    await prisma.resumeDraft.deleteMany({ where: { id, userId: session.user.id } })
+    await db.delete(resumeDraft)
+        .where(and(eq(resumeDraft.id, id), eq(resumeDraft.userId, session.user.id)))
     revalidatePath('/ai/resume')
     return { success: true }
 }
@@ -253,21 +269,21 @@ export async function deleteResumeDraft(id: string) {
 // DUPLICATE a draft
 // ─────────────────────────────────────────────────────────────────────────────
 export async function duplicateResumeDraft(id: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const original = await prisma.resumeDraft.findFirst({ where: { id, userId: session.user.id } })
+    const original = await db.query.resumeDraft.findFirst({
+        where: and(eq(resumeDraft.id, id), eq(resumeDraft.userId, session.user.id)),
+    })
     if (!original) return { success: false, error: 'Not found' }
 
-    const copy = await prisma.resumeDraft.create({
-        data: {
-            userId: session.user.id,
-            name: `${original.name} (Copy)`,
-            templateSlug: original.templateSlug,
-            content: original.content ?? {},
-            tailoredFor: original.tailoredFor,
-        },
-    })
+    const [copy] = await db.insert(resumeDraft).values({
+        userId: session.user.id,
+        name: `${original.name} (Copy)`,
+        templateSlug: original.templateSlug,
+        content: original.content ?? {} as any,
+        tailoredFor: original.tailoredFor,
+    }).returning()
     revalidatePath('/ai/resume')
     return { success: true, draft: copy }
 }
@@ -276,10 +292,12 @@ export async function duplicateResumeDraft(id: string) {
 // AI: Score resume against a job description
 // ─────────────────────────────────────────────────────────────────────────────
 export async function scoreResumeAgainstJD(draftId: string, jobDescription: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const draft = await prisma.resumeDraft.findFirst({ where: { id: draftId, userId: session.user.id } })
+    const draft = await db.query.resumeDraft.findFirst({
+        where: and(eq(resumeDraft.id, draftId), eq(resumeDraft.userId, session.user.id)),
+    })
     if (!draft) return { success: false, error: 'Draft not found' }
 
     const content = draft.content as unknown as ResumeDraftContent
@@ -301,7 +319,9 @@ export async function scoreResumeAgainstJD(draftId: string, jobDescription: stri
     })
 
     const result = JSON.parse(res.choices[0]?.message?.content ?? '{}')
-    await prisma.resumeDraft.update({ where: { id: draftId }, data: { atsScore: result.score, jdSnapshot: jobDescription } })
+    await db.update(resumeDraft)
+        .set({ atsScore: result.score, jdSnapshot: jobDescription })
+        .where(eq(resumeDraft.id, draftId))
     revalidatePath('/ai/resume')
     return { success: true, ...result }
 }
@@ -310,10 +330,12 @@ export async function scoreResumeAgainstJD(draftId: string, jobDescription: stri
 // AI: Tailor resume bullets for a specific JD
 // ─────────────────────────────────────────────────────────────────────────────
 export async function tailorResumeForJD(draftId: string, jobDescription: string, jobTitle: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const draft = await prisma.resumeDraft.findFirst({ where: { id: draftId, userId: session.user.id } })
+    const draft = await db.query.resumeDraft.findFirst({
+        where: and(eq(resumeDraft.id, draftId), eq(resumeDraft.userId, session.user.id)),
+    })
     if (!draft) return { success: false, error: 'Draft not found' }
 
     const content = draft.content as unknown as ResumeDraftContent
@@ -347,14 +369,13 @@ Return JSON in this exact format:
     const updated = result.updatedContent as ResumeDraftContent
 
     // Update THIS draft in place — do not create a new one
-    await prisma.resumeDraft.update({
-        where: { id: draftId },
-        data: {
+    await db.update(resumeDraft)
+        .set({
             content: updated as any,
             tailoredFor: jobTitle,
             jdSnapshot: jobDescription,
-        },
-    })
+        })
+        .where(eq(resumeDraft.id, draftId))
     revalidatePath('/ai/resume')
     return {
         success: true,
@@ -376,26 +397,24 @@ export async function uploadUserTemplate(input: {
     tags: string[]
     marketplacePrice?: number
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
     const slug = `user-${session.user.id.slice(0, 8)}-${Date.now()}`
-    const template = await prisma.resumeTemplate.create({
-        data: {
-            slug,
-            name: input.name,
-            description: input.description,
-            previewImageUrl: '',
-            sectionOrder: input.sectionOrder,
-            config: input.config as any,
-            tags: input.tags,
-            isPlatform: false,
-            isMarketplace: (input.marketplacePrice ?? 0) > 0,
-            marketplacePrice: input.marketplacePrice ?? 0,
-            creditsCost: 0,
-            createdById: session.user.id,
-        },
-    })
+    const [template] = await db.insert(resumeTemplate).values({
+        slug,
+        name: input.name,
+        description: input.description,
+        previewImageUrl: '',
+        sectionOrder: input.sectionOrder,
+        config: input.config as any,
+        tags: input.tags,
+        isPlatform: false,
+        isMarketplace: (input.marketplacePrice ?? 0) > 0,
+        marketplacePrice: input.marketplacePrice ?? 0,
+        creditsCost: 0,
+        createdById: session.user.id,
+    }).returning()
     revalidatePath('/ai/resume')
     revalidatePath('/blueprint/resume')
     return { success: true, template }

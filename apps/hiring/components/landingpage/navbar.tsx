@@ -16,7 +16,7 @@ import { ThemeToggle } from "@repo/ui/components/themetoggle";
 import Image from "next/image";
 
 export default function Navbar() {
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
     const [scrolled, setScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const pathname = usePathname();
@@ -90,7 +90,7 @@ export default function Navbar() {
                 <div className="flex items-center justify-center space-x-3">
                     <ThemeToggle />
                     {
-                        status === "authenticated" ? (
+                        session ? (
                             <button className="rounded-full relative group" onClick={() => setIsMobileMenuOpen(true)}>
                                 {
                                     session?.user?.image ? (
@@ -150,7 +150,7 @@ export default function Navbar() {
                                         </div>
                                         <hr className="border-neutral-200 dark:border-neutral-800 my-4" />
                                         {
-                                            status === "authenticated" ? (
+                                            session ? (
                                                 <div className="flex items-center gap-3 px-4 py-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg">
                                                     {
                                                         session?.user?.image ? (

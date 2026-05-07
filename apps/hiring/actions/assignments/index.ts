@@ -1,13 +1,15 @@
 // Assessments Actions - Server actions for assessment/assignment management
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, jobs, jobApplications, users } from "@repo/db"
+import { eq, and, count, avg, isNull, inArray, desc, asc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import type { 
-    AssignmentStats, 
+import type {
+    AssignmentStats,
     AssignmentDetails,
-    ScoreAssignmentInput 
+    ScoreAssignmentInput
 } from "@/types"
 
 // Re-export types for consumers
@@ -18,14 +20,14 @@ export type { AssignmentStats, AssignmentDetails, ScoreAssignmentInput }
 // ============================================
 
 async function getCompanyMember() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         throw new Error("Unauthorized")
     }
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     if (!member) {
@@ -44,55 +46,73 @@ export async function getAssessmentStats() {
         const member = await getCompanyMember()
 
         // Jobs with assignments enabled
-        const jobsWithAssessments = await prisma.job.count({
-            where: {
-                companyId: member.companyId,
-                hasAssignment: true
-            }
-        })
+        const jobsWithAssessmentsRows = await db
+            .select({ count: count() })
+            .from(jobs)
+            .where(and(
+                eq(jobs.companyId, member.companyId),
+                eq(jobs.hasAssignment, true)
+            ))
+        const jobsWithAssessmentsResult = jobsWithAssessmentsRows[0]
 
-        // Applications with assignments sent
-        const assignmentsSent = await prisma.jobApplication.count({
-            where: {
-                job: { companyId: member.companyId },
-                status: { in: ["ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED"] }
-            }
-        })
+        // Get company job IDs
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
 
-        // Submitted assignments
-        const submissions = await prisma.jobApplication.count({
-            where: {
-                job: { companyId: member.companyId },
-                status: "ASSIGNMENT_SUBMITTED"
-            }
-        })
+        let assignmentsSent = 0
+        let submissions = 0
+        let pendingReview = 0
+        let averageScore = 0
 
-        // Pending review (submitted but not scored)
-        const pendingReview = await prisma.jobApplication.count({
-            where: {
-                job: { companyId: member.companyId },
-                status: "ASSIGNMENT_SUBMITTED",
-                assignmentScore: null
-            }
-        })
+        if (jobIds.length > 0) {
+            const assignmentsSentRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.jobId, jobIds),
+                    inArray(jobApplications.status, ["ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED"])
+                ))
 
-        // Average score
-        const avgScore = await prisma.jobApplication.aggregate({
-            where: {
-                job: { companyId: member.companyId },
-                assignmentScore: { not: null }
-            },
-            _avg: { assignmentScore: true }
-        })
+            const submissionsRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.jobId, jobIds),
+                    eq(jobApplications.status, "ASSIGNMENT_SUBMITTED")
+                ))
+
+            const pendingReviewRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.jobId, jobIds),
+                    eq(jobApplications.status, "ASSIGNMENT_SUBMITTED"),
+                    isNull(jobApplications.assignmentScore)
+                ))
+
+            // Get avg of non-null scores
+            const avgScoreResultFixed = await db
+                .select({ avg: avg(jobApplications.assignmentScore) })
+                .from(jobApplications)
+                .where(inArray(jobApplications.jobId, jobIds))
+
+            assignmentsSent = assignmentsSentRows[0]?.count ?? 0
+            submissions = submissionsRows[0]?.count ?? 0
+            pendingReview = pendingReviewRows[0]?.count ?? 0
+            averageScore = Number(avgScoreResultFixed[0]?.avg) || 0
+        }
 
         return {
             success: true,
             data: {
-                totalJobsWithAssignments: jobsWithAssessments,
+                totalJobsWithAssignments: jobsWithAssessmentsResult?.count ?? 0,
                 totalAssignmentsSent: assignmentsSent,
                 totalSubmissions: submissions,
                 pendingReview,
-                averageScore: avgScore._avg.assignmentScore || 0
+                averageScore
             } as AssignmentStats
         }
     } catch (error) {
@@ -109,52 +129,39 @@ export async function getJobsWithAssessments() {
     try {
         const member = await getCompanyMember()
 
-        const jobs = await prisma.job.findMany({
-            where: {
-                companyId: member.companyId,
-                hasAssignment: true
-            },
-            select: {
+        const jobList = await db.query.jobs.findMany({
+            where: and(
+                eq(jobs.companyId, member.companyId),
+                eq(jobs.hasAssignment, true)
+            ),
+            columns: {
                 id: true,
                 title: true,
                 slug: true,
                 status: true,
                 assignmentDetails: true,
                 assignmentDeadlineDays: true,
-                assignmentInstructions: true,
-                _count: {
-                    select: {
-                        applications: {
-                            where: {
-                                status: { in: ["ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED"] }
-                            }
-                        }
-                    }
+                assignmentInstructions: true
+            },
+            with: {
+                applications: {
+                    where: (apps, { inArray }) => inArray(apps.status, ["ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED"]),
+                    columns: { id: true, status: true }
                 }
             },
-            orderBy: { createdAt: "desc" }
+            orderBy: [desc(jobs.createdAt)]
         })
 
         // Get submission stats for each job
-        const jobsWithStats = await Promise.all(jobs.map(async (job) => {
-            const submissions = await prisma.jobApplication.count({
-                where: {
-                    jobId: job.id,
-                    status: "ASSIGNMENT_SUBMITTED"
-                }
-            })
-
-            const pending = await prisma.jobApplication.count({
-                where: {
-                    jobId: job.id,
-                    status: "ASSIGNMENT_SENT"
-                }
-            })
+        const jobsWithStats = await Promise.all(jobList.map(async (job) => {
+            const sent = job.applications.length
+            const submitted = job.applications.filter(a => a.status === "ASSIGNMENT_SUBMITTED").length
+            const pending = job.applications.filter(a => a.status === "ASSIGNMENT_SENT").length
 
             return {
                 ...job,
-                assignmentsSent: job._count.applications,
-                submissionsReceived: submissions,
+                assignmentsSent: sent,
+                submissionsReceived: submitted,
                 pendingSubmissions: pending
             }
         }))
@@ -174,27 +181,15 @@ export async function getJobAssessmentDetails(jobSlug: string) {
     try {
         const member = await getCompanyMember()
 
-        const job = await prisma.job.findFirst({
-            where: {
-                slug: jobSlug,
-                companyId: member.companyId
-            },
-            include: {
+        const job = await db.query.jobs.findFirst({
+            where: and(
+                eq(jobs.slug, jobSlug),
+                eq(jobs.companyId, member.companyId)
+            ),
+            with: {
                 applications: {
-                    where: {
-                        status: { in: ["ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED", "SHORTLISTED"] }
-                    },
-                    include: {
-                        user: {
-                            select: {
-                                id: true,
-                                name: true,
-                                email: true,
-                                image: true
-                            }
-                        }
-                    },
-                    orderBy: { createdAt: "desc" }
+                    where: (apps, { inArray }) => inArray(apps.status, ["ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED", "SHORTLISTED"]),
+                    orderBy: [desc(jobApplications.createdAt)]
                 }
             }
         })
@@ -203,7 +198,22 @@ export async function getJobAssessmentDetails(jobSlug: string) {
             return { success: false, error: "Job not found" }
         }
 
-        return { success: true, data: job }
+        // Fetch user info for each application
+        const userIds = job.applications.map(a => a.userId)
+        const userList = userIds.length > 0
+            ? await db
+                .select({ id: users.id, name: users.name, email: users.email, image: users.image })
+                .from(users)
+                .where(inArray(users.id, userIds))
+            : []
+        const userMap = new Map(userList.map(u => [u.id, u]))
+
+        const enrichedApplications = job.applications.map((app) => ({
+            ...app,
+            user: userMap.get(app.userId) ?? null
+        }))
+
+        return { success: true, data: { ...job, applications: enrichedApplications } }
     } catch (error) {
         console.error("Error fetching job assessment details:", error)
         return { success: false, error: "Failed to fetch job details" }
@@ -226,23 +236,28 @@ export async function updateJobAssignment(
         const member = await getCompanyMember()
 
         // Verify job belongs to company
-        const existingJob = await prisma.job.findFirst({
-            where: { id: jobId, companyId: member.companyId }
+        const existingJob = await db.query.jobs.findFirst({
+            where: and(eq(jobs.id, jobId), eq(jobs.companyId, member.companyId))
         })
 
         if (!existingJob) {
             return { success: false, error: "Job not found" }
         }
 
-        const job = await prisma.job.update({
-            where: { id: jobId },
-            data: {
+        const updatedJobs = await db.update(jobs)
+            .set({
                 hasAssignment: true,
                 assignmentDetails: data.assignmentDetails as unknown as undefined,
                 assignmentInstructions: data.assignmentInstructions,
                 assignmentDeadlineDays: data.assignmentDeadlineDays
-            }
-        })
+            })
+            .where(eq(jobs.id, jobId))
+            .returning()
+
+        const job = updatedJobs[0]
+        if (!job) {
+            return { success: false, error: "Failed to update job" }
+        }
 
         revalidatePath("/assignments")
         revalidatePath(`/assignments/${job.slug}`)
@@ -261,15 +276,20 @@ export async function sendAssignmentToCandidate(applicationId: string) {
     try {
         const member = await getCompanyMember()
 
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
         // Verify application belongs to company's job
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: { companyId: member.companyId }
-            },
-            include: {
-                job: true,
-                user: true
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            ),
+            with: {
+                job: { columns: { hasAssignment: true } }
             }
         })
 
@@ -282,13 +302,13 @@ export async function sendAssignmentToCandidate(applicationId: string) {
         }
 
         // Update application status
-        const updated = await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        const [updated] = await db.update(jobApplications)
+            .set({
                 status: "ASSIGNMENT_SENT",
                 assignmentStartedAt: new Date()
-            }
-        })
+            })
+            .where(eq(jobApplications.id, applicationId))
+            .returning()
 
         // TODO: Send email notification to candidate
 
@@ -315,26 +335,32 @@ export async function scoreAssignment(
     try {
         const member = await getCompanyMember()
 
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
         // Verify application belongs to company's job
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: { companyId: member.companyId },
-                status: "ASSIGNMENT_SUBMITTED"
-            }
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"]),
+                eq(jobApplications.status, "ASSIGNMENT_SUBMITTED")
+            )
         })
 
         if (!application) {
             return { success: false, error: "Application not found or not submitted" }
         }
 
-        const updated = await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        const [updated] = await db.update(jobApplications)
+            .set({
                 assignmentScore: data.score,
                 assignmentFeedback: data.feedback
-            }
-        })
+            })
+            .where(eq(jobApplications.id, applicationId))
+            .returning()
 
         // TODO: Send email notification to candidate with results
 
@@ -355,43 +381,58 @@ export async function getAssignmentSubmissions(jobSlug?: string) {
     try {
         const member = await getCompanyMember()
 
-        const where: Record<string, unknown> = {
-            job: { companyId: member.companyId },
-            status: "ASSIGNMENT_SUBMITTED"
+        const companyJobsQuery = db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(
+                jobSlug
+                    ? and(eq(jobs.companyId, member.companyId), eq(jobs.slug, jobSlug))
+                    : eq(jobs.companyId, member.companyId)
+            )
+        const companyJobs = await companyJobsQuery
+        const jobIds = companyJobs.map(j => j.id)
+
+        if (jobIds.length === 0) {
+            return { success: true, data: [] }
         }
 
-        if (jobSlug) {
-            where.job = { ...where.job as object, slug: jobSlug }
-        }
-
-        const submissions = await prisma.jobApplication.findMany({
-            where,
-            include: {
+        const submissions = await db.query.jobApplications.findMany({
+            where: and(
+                inArray(jobApplications.jobId, jobIds),
+                eq(jobApplications.status, "ASSIGNMENT_SUBMITTED")
+            ),
+            with: {
                 job: {
-                    select: {
+                    columns: {
                         id: true,
                         title: true,
                         slug: true,
                         assignmentDetails: true,
                         assignmentDeadlineDays: true
                     }
-                },
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        image: true
-                    }
                 }
             },
-            orderBy: { assignmentSubmittedAt: "desc" }
+            orderBy: [desc(jobApplications.assignmentSubmittedAt)]
         })
 
-        return { success: true, data: submissions }
+        // Fetch user info for each submission
+        const userIds = submissions.map(s => s.userId)
+        const userList = userIds.length > 0
+            ? await db
+                .select({ id: users.id, name: users.name, email: users.email, image: users.image })
+                .from(users)
+                .where(inArray(users.id, userIds))
+            : []
+        const userMap = new Map(userList.map(u => [u.id, u]))
+
+        const enriched = submissions.map(s => ({
+            ...s,
+            user: userMap.get(s.userId) || null
+        }))
+
+        return { success: true, data: enriched }
     } catch (error) {
         console.error("Error fetching submissions:", error)
         return { success: false, error: "Failed to fetch submissions" }
     }
 }
-

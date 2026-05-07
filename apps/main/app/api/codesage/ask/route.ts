@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server"
-import { auth } from "@repo/auth"
-import { prisma } from "@repo/prisma"
+import { getSession } from "@repo/auth"
+import { db, codebaseProject, codebaseFile } from "@repo/db"
+import { eq, and } from "drizzle-orm"
 import { openai } from "@/lib/openai-client"
 
 // ── Keyword extractor ─────────────────────────────────────────────────────────
@@ -35,7 +36,7 @@ function scoreFile(content: string, filePath: string, keywords: string[]): numbe
 }
 
 export async function POST(req: NextRequest) {
-    const session = await auth()
+    const session = await getSession(req.headers)
     if (!session?.user?.id) return new Response("Unauthorized", { status: 401 })
 
     const body = await req.json() as {
@@ -49,18 +50,21 @@ export async function POST(req: NextRequest) {
         return new Response("Bad request", { status: 400 })
     }
 
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug: body.projectSlug, userId: session.user.id },
-        select: { id: true, name: true, detectedStack: true, indexStatus: true },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(
+            eq(codebaseProject.slug, body.projectSlug),
+            eq(codebaseProject.userId, session.user.id),
+        ),
+        columns: { id: true, name: true, detectedStack: true, indexStatus: true },
     })
 
     if (!project) return new Response("Not found", { status: 404 })
     if (project.indexStatus !== "ready") return new Response("Project still indexing", { status: 400 })
 
     // Fetch all files (path + content) for search
-    const allFiles = await prisma.codebaseFile.findMany({
-        where: { projectId: project.id },
-        select: { filePath: true, content: true, language: true, lineCount: true },
+    const allFiles = await db.query.codebaseFile.findMany({
+        where: eq(codebaseFile.projectId, project.id),
+        columns: { filePath: true, content: true, language: true, lineCount: true },
     })
 
     // Find relevant files using keyword scoring

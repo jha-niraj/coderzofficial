@@ -1,10 +1,8 @@
 'use server'
 
-import { prisma } from '@repo/prisma'
-import { Prisma } from '@repo/prisma/client'
-import type {
-    BadgeRequirements, BadgeProgress
-} from '@/types/achievements'
+import { db, badges, userBadges, achievementNotifications } from '@repo/db'
+import { eq, and } from 'drizzle-orm'
+import type { BadgeRequirements, BadgeProgress } from '@/types/achievements'
 
 // ================================================================================
 // BADGE PROGRESS UTILITIES
@@ -71,40 +69,39 @@ interface ProgressUpdate {
 
 export async function updateBadgeProgress({ userId, target, increment = 1, value, itemId }: ProgressUpdate) {
     try {
-        // Find all badges that track this target
-        const badges = await prisma.badge.findMany({
-            where: {
-                isActive: true,
-                requirements: {
-                    path: ['target'],
-                    equals: target,
-                },
-            },
+        // Find all badges that track this target using Drizzle's JSON path filter via raw sql
+        // We fetch all active badges and filter in-memory since JSON path operators vary by DB
+        const allActiveBadges = await db.query.badges.findMany({
+            where: eq(badges.isActive, true),
         })
 
-        if (badges.length === 0) return { success: true, updated: 0 }
+        const matchingBadges = allActiveBadges.filter(badge => {
+            const req = badge.requirements as unknown as BadgeRequirements
+            return req?.target === target
+        })
 
-        const updates: Prisma.PrismaPromise<unknown>[] = []
+        if (matchingBadges.length === 0) return { success: true, updated: 0 }
 
-        for (const badge of badges) {
+        let updateCount = 0
+
+        for (const badge of matchingBadges) {
             const req = badge.requirements as unknown as BadgeRequirements
 
             // Get or create user badge entry
-            let userBadge = await prisma.userBadge.findUnique({
-                where: { userId_badgeId: { userId, badgeId: badge.id } },
+            let userBadge = await db.query.userBadges.findFirst({
+                where: and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badge.id)),
             })
 
             if (!userBadge) {
-                userBadge = await prisma.userBadge.create({
-                    data: {
-                        userId,
-                        badgeId: badge.id,
-                        status: 'IN_PROGRESS',
-                        progress: { current: 0, items: [] },
-                        progressPercent: 0,
-                        unlockedAt: new Date(),
-                    },
-                })
+                const [created] = await db.insert(userBadges).values({
+                    userId,
+                    badgeId: badge.id,
+                    status: 'IN_PROGRESS',
+                    progress: { current: 0, items: [] },
+                    progressPercent: 0,
+                    unlockedAt: new Date(),
+                }).returning()
+                userBadge = created
             }
 
             // Skip if already claimed
@@ -130,43 +127,35 @@ export async function updateBadgeProgress({ userId, target, increment = 1, value
 
             const progressPercent = Math.min(100, Math.round((progress.current / targetCount) * 100))
             const isComplete = progress.current >= targetCount
+            const wasAlreadyComplete = userBadge.status === 'READY_TO_CLAIM'
 
-            updates.push(
-                prisma.userBadge.update({
-                    where: { id: userBadge.id },
-                    data: {
-                        progress: progress as unknown as Prisma.InputJsonValue,
-                        progressPercent,
-                        status: isComplete ? 'READY_TO_CLAIM' : 'IN_PROGRESS',
-                        completedAt: isComplete && !userBadge.completedAt ? new Date() : userBadge.completedAt,
-                    },
+            await db.update(userBadges)
+                .set({
+                    progress: progress as unknown as Record<string, unknown>,
+                    progressPercent,
+                    status: isComplete ? 'READY_TO_CLAIM' : 'IN_PROGRESS',
+                    completedAt: isComplete && !userBadge.completedAt ? new Date() : userBadge.completedAt,
                 })
-            )
+                .where(eq(userBadges.id, userBadge.id))
+
+            updateCount++
 
             // Create notification if badge is ready to claim
-            if (isComplete && userBadge.status !== 'READY_TO_CLAIM') {
-                updates.push(
-                    prisma.achievementNotification.create({
-                        data: {
-                            userId,
-                            type: 'badge_ready',
-                            title: 'Badge Ready to Claim!',
-                            message: `You've completed the requirements for "${badge.name}". Claim your reward!`,
-                            referenceType: 'badge',
-                            referenceId: badge.id,
-                            icon: badge.icon,
-                            color: badge.color,
-                        },
-                    })
-                )
+            if (isComplete && !wasAlreadyComplete) {
+                await db.insert(achievementNotifications).values({
+                    userId,
+                    type: 'badge_ready',
+                    title: 'Badge Ready to Claim!',
+                    message: `You've completed the requirements for "${badge.name}". Claim your reward!`,
+                    referenceType: 'badge',
+                    referenceId: badge.id,
+                    icon: badge.icon,
+                    color: badge.color,
+                })
             }
         }
 
-        if (updates.length > 0) {
-            await prisma.$transaction(updates)
-        }
-
-        return { success: true, updated: updates.length }
+        return { success: true, updated: updateCount }
     } catch (error) {
         console.error('Error updating badge progress:', error)
         return { success: false, error: 'Failed to update badge progress' }
@@ -204,60 +193,54 @@ export async function checkXpMilestones(userId: string, totalXp: number) {
 
 export async function checkLevelMilestones(userId: string, level: number) {
     try {
-        // Find level-based badges
-        const badges = await prisma.badge.findMany({
-            where: {
-                isActive: true,
-                requirements: {
-                    path: ['type'],
-                    equals: 'level',
-                },
-            },
+        // Find level-based badges in-memory (filter by type === 'level')
+        const allActiveBadges = await db.query.badges.findMany({
+            where: eq(badges.isActive, true),
         })
 
-        for (const badge of badges) {
+        const levelBadges = allActiveBadges.filter(badge => {
+            const req = badge.requirements as unknown as BadgeRequirements
+            return req?.type === 'level'
+        })
+
+        for (const badge of levelBadges) {
             const req = badge.requirements as unknown as BadgeRequirements
             if (level >= (req.level ?? 0)) {
-                let userBadge = await prisma.userBadge.findUnique({
-                    where: { userId_badgeId: { userId, badgeId: badge.id } },
+                let userBadge = await db.query.userBadges.findFirst({
+                    where: and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badge.id)),
                 })
 
                 if (!userBadge) {
-                    userBadge = await prisma.userBadge.create({
-                        data: {
-                            userId,
-                            badgeId: badge.id,
-                            status: 'READY_TO_CLAIM',
-                            progress: { current: level },
-                            progressPercent: 100,
-                            unlockedAt: new Date(),
-                            completedAt: new Date(),
-                        },
+                    await db.insert(userBadges).values({
+                        userId,
+                        badgeId: badge.id,
+                        status: 'READY_TO_CLAIM',
+                        progress: { current: level },
+                        progressPercent: 100,
+                        unlockedAt: new Date(),
+                        completedAt: new Date(),
                     })
 
                     // Create notification
-                    await prisma.achievementNotification.create({
-                        data: {
-                            userId,
-                            type: 'badge_ready',
-                            title: 'Level Milestone Badge!',
-                            message: `You've reached level ${level}! Claim your "${badge.name}" badge.`,
-                            referenceType: 'badge',
-                            referenceId: badge.id,
-                            icon: badge.icon,
-                            color: badge.color,
-                        },
+                    await db.insert(achievementNotifications).values({
+                        userId,
+                        type: 'badge_ready',
+                        title: 'Level Milestone Badge!',
+                        message: `You've reached level ${level}! Claim your "${badge.name}" badge.`,
+                        referenceType: 'badge',
+                        referenceId: badge.id,
+                        icon: badge.icon,
+                        color: badge.color,
                     })
                 } else if (userBadge.status !== 'CLAIMED' && userBadge.status !== 'READY_TO_CLAIM') {
-                    await prisma.userBadge.update({
-                        where: { id: userBadge.id },
-                        data: {
+                    await db.update(userBadges)
+                        .set({
                             status: 'READY_TO_CLAIM',
                             progress: { current: level },
                             progressPercent: 100,
                             completedAt: new Date(),
-                        },
-                    })
+                        })
+                        .where(eq(userBadges.id, userBadge.id))
                 }
             }
         }

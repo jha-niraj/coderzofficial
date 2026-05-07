@@ -1,8 +1,7 @@
 // app/api/worker-token/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from '@repo/auth'
+import { getSession } from '@repo/auth'
 import crypto from 'crypto'
-import { authOptions } from '@repo/auth'
 
 // Secret only exists on server - NEVER expose as NEXT_PUBLIC_
 const WORKER_SECRET = process.env.WORKER_SECRET!
@@ -30,7 +29,7 @@ function signPayload(payload: TokenPayload): string {
 export async function POST(req: NextRequest) {
     try {
         // 1. Verify user is authenticated
-        const session = await getServerSession(authOptions)
+        const session = await getSession(req.headers)
         if (!session?.user?.id) {
             return NextResponse.json(
                 { error: 'Unauthorized' },

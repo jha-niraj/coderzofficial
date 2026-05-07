@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/utils/mail";
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: NextRequest) {
     try {
@@ -13,8 +14,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email },
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email),
         });
 
         if (!user) {
@@ -28,15 +29,12 @@ export async function POST(request: NextRequest) {
         // Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expiration = new Date();
-        expiration.setMinutes(expiration.getMinutes() + 10); // 10 minutes expiry
+        expiration.setMinutes(expiration.getMinutes() + 10);
 
-        await prisma.user.update({
-            where: { email },
-            data: {
-                resetOTP: otp,
-                resetOTPExpiry: expiration,
-            },
-        });
+        await db.update(users).set({
+            resetOTP: otp,
+            resetOTPExpiry: expiration,
+        }).where(eq(users.email, email));
 
         await sendEmail({
             name: user.name || "",

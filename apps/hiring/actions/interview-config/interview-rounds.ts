@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, interviewProcesses, interviewRounds } from "@repo/db"
+import { eq, and } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type { InterviewRoundInput } from "@/types"
 
@@ -13,14 +15,14 @@ export type { InterviewRoundInput } from "@/types"
 // ============================================
 
 async function getCompanyMember() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         throw new Error("Unauthorized")
     }
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     if (!member) {
@@ -48,37 +50,35 @@ export async function addInterviewRound(processId: string, round: InterviewRound
         }
 
         // Verify the process belongs to this company
-        const existingProcess = await prisma.interviewProcess.findFirst({
-            where: {
-                id: processId,
-                companyId: member.companyId
-            }
+        const existingProcess = await db.query.interviewProcesses.findFirst({
+            where: and(
+                eq(interviewProcesses.id, processId),
+                eq(interviewProcesses.companyId, member.companyId)
+            )
         })
 
         if (!existingProcess) {
             return { success: false, error: "Interview process not found" }
         }
 
-        const newRound = await prisma.interviewRound.create({
-            data: {
-                processId: processId,
-                roundNumber: round.roundNumber,
-                roundType: round.roundType,
-                title: round.title,
-                durationMinutes: round.durationMinutes,
-                format: round.format ?? "VIDEO",
-                description: round.description,
-                whatToExpect: round.whatToExpect ?? [],
-                sampleQuestions: round.sampleQuestions ?? [],
-                evaluationCriteria: round.evaluationCriteria ?? [],
-                topicsCovered: round.topicsCovered ?? [],
-                tipsForCandidates: round.tipsForCandidates ?? [],
-                passRatePercent: round.passRatePercent,
-                daysToNextRound: round.daysToNextRound,
-                hasMockInterview: round.hasMockInterview ?? true,
-                mockKnowledgeBase: round.mockKnowledgeBase
-            }
-        })
+        const [newRound] = await db.insert(interviewRounds).values({
+            processId,
+            roundNumber: round.roundNumber,
+            roundType: round.roundType,
+            title: round.title,
+            durationMinutes: round.durationMinutes,
+            format: round.format ?? "VIDEO",
+            description: round.description,
+            whatToExpect: round.whatToExpect ?? [],
+            sampleQuestions: round.sampleQuestions ?? [],
+            evaluationCriteria: round.evaluationCriteria ?? [],
+            topicsCovered: round.topicsCovered ?? [],
+            tipsForCandidates: round.tipsForCandidates ?? [],
+            passRatePercent: round.passRatePercent,
+            daysToNextRound: round.daysToNextRound,
+            hasMockInterview: round.hasMockInterview ?? true,
+            mockKnowledgeBase: round.mockKnowledgeBase
+        }).returning()
 
         revalidatePath("/interview-config")
         return { success: true, data: newRound }
@@ -98,11 +98,11 @@ export async function updateInterviewRound(roundId: string, input: Partial<Inter
         }
 
         // Verify the round belongs to this company
-        const existingRound = await prisma.interviewRound.findFirst({
-            where: { id: roundId },
-            include: {
+        const existingRound = await db.query.interviewRounds.findFirst({
+            where: eq(interviewRounds.id, roundId),
+            with: {
                 process: {
-                    select: { companyId: true }
+                    columns: { companyId: true }
                 }
             }
         })
@@ -111,26 +111,27 @@ export async function updateInterviewRound(roundId: string, input: Partial<Inter
             return { success: false, error: "Interview round not found" }
         }
 
-        const round = await prisma.interviewRound.update({
-            where: { id: roundId },
-            data: {
-                roundNumber: input.roundNumber,
-                roundType: input.roundType,
-                title: input.title,
-                durationMinutes: input.durationMinutes,
-                format: input.format,
-                description: input.description,
-                whatToExpect: input.whatToExpect,
-                sampleQuestions: input.sampleQuestions,
-                evaluationCriteria: input.evaluationCriteria,
-                topicsCovered: input.topicsCovered,
-                tipsForCandidates: input.tipsForCandidates,
-                passRatePercent: input.passRatePercent,
-                daysToNextRound: input.daysToNextRound,
-                hasMockInterview: input.hasMockInterview,
-                mockKnowledgeBase: input.mockKnowledgeBase
-            }
-        })
+        const updateData: Record<string, unknown> = {}
+        if (input.roundNumber !== undefined) updateData.roundNumber = input.roundNumber
+        if (input.roundType !== undefined) updateData.roundType = input.roundType
+        if (input.title !== undefined) updateData.title = input.title
+        if (input.durationMinutes !== undefined) updateData.durationMinutes = input.durationMinutes
+        if (input.format !== undefined) updateData.format = input.format
+        if (input.description !== undefined) updateData.description = input.description
+        if (input.whatToExpect !== undefined) updateData.whatToExpect = input.whatToExpect
+        if (input.sampleQuestions !== undefined) updateData.sampleQuestions = input.sampleQuestions
+        if (input.evaluationCriteria !== undefined) updateData.evaluationCriteria = input.evaluationCriteria
+        if (input.topicsCovered !== undefined) updateData.topicsCovered = input.topicsCovered
+        if (input.tipsForCandidates !== undefined) updateData.tipsForCandidates = input.tipsForCandidates
+        if (input.passRatePercent !== undefined) updateData.passRatePercent = input.passRatePercent
+        if (input.daysToNextRound !== undefined) updateData.daysToNextRound = input.daysToNextRound
+        if (input.hasMockInterview !== undefined) updateData.hasMockInterview = input.hasMockInterview
+        if (input.mockKnowledgeBase !== undefined) updateData.mockKnowledgeBase = input.mockKnowledgeBase
+
+        const [round] = await db.update(interviewRounds)
+            .set(updateData)
+            .where(eq(interviewRounds.id, roundId))
+            .returning()
 
         revalidatePath("/interview-config")
         return { success: true, data: round }
@@ -150,11 +151,11 @@ export async function deleteInterviewRound(roundId: string) {
         }
 
         // Verify the round belongs to this company
-        const existingRound = await prisma.interviewRound.findFirst({
-            where: { id: roundId },
-            include: {
+        const existingRound = await db.query.interviewRounds.findFirst({
+            where: eq(interviewRounds.id, roundId),
+            with: {
                 process: {
-                    select: { companyId: true }
+                    columns: { companyId: true }
                 }
             }
         })
@@ -163,9 +164,7 @@ export async function deleteInterviewRound(roundId: string) {
             return { success: false, error: "Interview round not found" }
         }
 
-        await prisma.interviewRound.delete({
-            where: { id: roundId }
-        })
+        await db.delete(interviewRounds).where(eq(interviewRounds.id, roundId))
 
         revalidatePath("/interview-config")
         return { success: true }
@@ -185,11 +184,11 @@ export async function reorderInterviewRounds(processId: string, roundIds: string
         }
 
         // Verify the process belongs to this company
-        const existingProcess = await prisma.interviewProcess.findFirst({
-            where: {
-                id: processId,
-                companyId: member.companyId
-            }
+        const existingProcess = await db.query.interviewProcesses.findFirst({
+            where: and(
+                eq(interviewProcesses.id, processId),
+                eq(interviewProcesses.companyId, member.companyId)
+            )
         })
 
         if (!existingProcess) {
@@ -199,10 +198,9 @@ export async function reorderInterviewRounds(processId: string, roundIds: string
         // Update each round with new order
         await Promise.all(
             roundIds.map((roundId, index) =>
-                prisma.interviewRound.update({
-                    where: { id: roundId },
-                    data: { roundNumber: index + 1 }
-                })
+                db.update(interviewRounds)
+                    .set({ roundNumber: index + 1 })
+                    .where(eq(interviewRounds.id, roundId))
             )
         )
 

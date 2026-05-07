@@ -22,21 +22,29 @@ import {
     publishJob, pauseJob, duplicateJob, deleteJob
 } from "@/actions/jobs"
 import { toast } from "@repo/ui/components/ui/sonner"
-import type { JobStats, InterviewRound, InterviewProcess, Job } from "@/types"
+import type { JobStats, Job } from "@/types"
 
 // View-specific types for job list display
-type InterviewRoundView = Pick<InterviewRound, 'id' | 'roundNumber' | 'roundType' | 'title'>
+type InterviewRoundView = {
+    id: string
+    roundNumber: number
+    roundType: string
+    title: string
+}
 
-type InterviewProcessView = Pick<InterviewProcess, 'id' | 'name'> & {
+type InterviewProcessView = {
+    id: string
+    name: string
     rounds: InterviewRoundView[]
 }
 
 type JobWithProcess = Pick<
     Job,
-    'id' | 'title' | 'slug' | 'status' | 'locationType' | 'employmentType' | 
+    'id' | 'title' | 'slug' | 'status' | 'locationType' | 'employmentType' |
     'location' | 'viewsCount' | 'applicationsCount' | 'createdAt' | 'publishedAt'
 > & {
     interviewProcess?: InterviewProcessView | null
+    [key: string]: unknown
 }
 
 interface JobsContentProps {
@@ -87,7 +95,7 @@ export function JobsContent({ initialJobs, stats, interviewProcesses: _interview
         startTransition(async () => {
             const result = await duplicateJob(jobId)
             if (result.success && result.data) {
-                setJobs(prev => [result.data, ...prev])
+                setJobs(prev => [result.data as unknown as JobWithProcess, ...prev])
                 toast.success("Job duplicated successfully")
             } else {
                 toast.error(result.error || "Failed to duplicate job")

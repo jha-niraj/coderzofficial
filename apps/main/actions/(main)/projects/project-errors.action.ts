@@ -1,7 +1,11 @@
 "use server";
 
-import { auth } from "@repo/auth";
-import prisma from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db, projectV2Errors, projectV2ErrorVotes, projectsV2, userProjectV2Progress, projectV2Tasks, users
+} from "@repo/db";
+import { eq, and, desc, asc, sql, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -12,11 +16,9 @@ interface ActionResponse {
 }
 
 async function getCurrentUser() {
-    const session = await auth();
-    if (!session?.user?.email) throw new Error("Not authenticated");
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-    if (!user) throw new Error("User not found");
-    return user;
+    const session = await getSession(headers());
+    if (!session?.user?.id) throw new Error("Not authenticated");
+    return { id: session.user.id, email: session.user.email, role: session.user.role };
 }
 
 // ========================================
@@ -66,7 +68,7 @@ export async function getProjectErrors(
         category?: string;
         severity?: string;
         sortBy?: "recent" | "helpful" | "encountered";
-        includeAll?: boolean; // For admins/owners to see pending errors
+        includeAll?: boolean;
     }
 ): Promise<ActionResponse> {
     try {
@@ -81,10 +83,11 @@ export async function getProjectErrors(
         } = options || {};
 
         // Check if user is owner or admin
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            select: { createdBy: true, slug: true }
-        });
+        const [project] = await db
+            .select({ createdBy: projectsV2.createdBy, slug: projectsV2.slug })
+            .from(projectsV2)
+            .where(eq(projectsV2.id, projectId))
+            .limit(1);
 
         if (!project) {
             return { success: false, error: "Project not found" };
@@ -92,72 +95,58 @@ export async function getProjectErrors(
 
         const isOwnerOrAdmin = project.createdBy === user.id || user.role === "Admin";
 
-        // Build where clause
-        const where: any = {
-            projectId,
-        };
+        const conditions: any[] = [eq(projectV2Errors.projectId, projectId)];
 
-        // Only show approved errors unless owner/admin wants all
         if (!includeAll || !isOwnerOrAdmin) {
-            where.status = "APPROVED";
+            conditions.push(eq(projectV2Errors.status, "APPROVED"));
         }
 
         if (category && category !== "ALL") {
-            where.category = category;
+            conditions.push(eq(projectV2Errors.category, category as any));
         }
 
         if (severity && severity !== "ALL") {
-            where.severity = severity;
+            conditions.push(eq(projectV2Errors.severity, severity as any));
         }
 
-        // Sorting
-        let orderBy: any = { helpfulCount: "desc" };
+        let orderByClause: any = desc(projectV2Errors.helpfulCount);
         if (sortBy === "recent") {
-            orderBy = { createdAt: "desc" };
+            orderByClause = desc(projectV2Errors.createdAt);
         } else if (sortBy === "encountered") {
-            orderBy = { encounteredCount: "desc" };
+            orderByClause = desc(projectV2Errors.encounteredCount);
         }
 
-        const skip = (page - 1) * limit;
+        const offset = (page - 1) * limit;
 
-        const [errors, total] = await Promise.all([
-            prisma.projectV2Error.findMany({
-                where,
-                orderBy,
-                skip,
-                take: limit,
-                include: {
+        const [errors, countResult] = await Promise.all([
+            db.query.projectV2Errors.findMany({
+                where: and(...conditions),
+                orderBy: orderByClause,
+                offset,
+                limit,
+                with: {
                     submittedBy: {
-                        select: {
-                            id: true,
-                            name: true,
-                            username: true,
-                            image: true,
-                        }
+                        columns: { id: true, name: true, image: true }
                     },
                     task: {
-                        select: {
-                            id: true,
-                            title: true,
-                        }
+                        columns: { id: true, title: true }
                     },
                     votes: {
-                        where: { userId: user.id },
-                        select: {
-                            voteType: true,
-                        }
+                        where: (votes, { eq }) => eq(votes.userId, user.id),
+                        columns: { voteType: true }
                     }
                 }
             }),
-            prisma.projectV2Error.count({ where })
+            db.select({ count: sql<number>`count(*)` }).from(projectV2Errors).where(and(...conditions))
         ]);
 
-        // Transform to include user's vote status
+        const total = Number(countResult[0]?.count ?? 0);
+
         const errorsWithVoteStatus = errors.map(error => ({
             ...error,
             hasVotedHelpful: error.votes.some(v => v.voteType === "helpful"),
             hasVotedEncountered: error.votes.some(v => v.voteType === "encountered"),
-            votes: undefined, // Remove raw votes from response
+            votes: undefined,
         }));
 
         const totalPages = Math.ceil(total / limit);
@@ -189,36 +178,21 @@ export async function getErrorById(errorId: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        const error = await prisma.projectV2Error.findUnique({
-            where: { id: errorId },
-            include: {
+        const error = await db.query.projectV2Errors.findFirst({
+            where: eq(projectV2Errors.id, errorId),
+            with: {
                 submittedBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true,
-                    }
+                    columns: { id: true, name: true, image: true }
                 },
                 task: {
-                    select: {
-                        id: true,
-                        title: true,
-                    }
+                    columns: { id: true, title: true }
                 },
                 project: {
-                    select: {
-                        id: true,
-                        slug: true,
-                        title: true,
-                        createdBy: true,
-                    }
+                    columns: { id: true, slug: true, title: true, createdBy: true }
                 },
                 votes: {
-                    where: { userId: user.id },
-                    select: {
-                        voteType: true,
-                    }
+                    where: (votes, { eq }) => eq(votes.userId, user.id),
+                    columns: { voteType: true }
                 }
             }
         });
@@ -227,7 +201,6 @@ export async function getErrorById(errorId: string): Promise<ActionResponse> {
             return { success: false, error: "Error not found" };
         }
 
-        // Check visibility - only approved or owner/admin can see
         const isOwnerOrAdmin = error.project.createdBy === user.id ||
             error.submittedById === user.id ||
             user.role === "Admin";
@@ -265,27 +238,28 @@ export async function createProjectError(
         const user = await getCurrentUser();
         const validated = CreateErrorSchema.parse(input);
 
-        // Check project exists and user has access
-        const project = await prisma.projectV2.findUnique({
-            where: { id: validated.projectId },
-            select: { id: true, slug: true, createdBy: true }
-        });
+        const [project] = await db
+            .select({ id: projectsV2.id, slug: projectsV2.slug, createdBy: projectsV2.createdBy })
+            .from(projectsV2)
+            .where(eq(projectsV2.id, validated.projectId))
+            .limit(1);
 
         if (!project) {
             return { success: false, error: "Project not found" };
         }
 
         // Check user progress - must be enrolled to submit errors
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: user.id,
-                    projectId: validated.projectId
-                }
-            }
-        });
+        const [progress] = await db
+            .select({ id: userProjectV2Progress.id })
+            .from(userProjectV2Progress)
+            .where(
+                and(
+                    eq(userProjectV2Progress.userId, user.id),
+                    eq(userProjectV2Progress.projectId, validated.projectId)
+                )
+            )
+            .limit(1);
 
-        // Owner or enrolled user can submit
         const isOwner = project.createdBy === user.id;
         if (!isOwner && !progress) {
             return {
@@ -296,25 +270,22 @@ export async function createProjectError(
 
         // Verify task belongs to project if taskId provided
         if (validated.taskId) {
-            const task = await prisma.projectV2Task.findFirst({
-                where: {
-                    id: validated.taskId,
-                    sprint: {
-                        projectId: validated.projectId
-                    }
-                }
-            });
+            const [task] = await db
+                .select({ id: projectV2Tasks.id })
+                .from(projectV2Tasks)
+                .where(eq(projectV2Tasks.id, validated.taskId))
+                .limit(1);
 
             if (!task) {
                 return { success: false, error: "Invalid task" };
             }
         }
 
-        // Create error - auto-approve for project owner/admin
         const autoApprove = isOwner || user.role === "Admin";
 
-        const error = await prisma.projectV2Error.create({
-            data: {
+        const [error] = await db
+            .insert(projectV2Errors)
+            .values({
                 projectId: validated.projectId,
                 title: validated.title,
                 description: validated.description,
@@ -328,18 +299,8 @@ export async function createProjectError(
                 submittedById: user.id,
                 status: autoApprove ? "APPROVED" : "PENDING",
                 approvedAt: autoApprove ? new Date() : null,
-            },
-            include: {
-                submittedBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true,
-                    }
-                }
-            }
-        });
+            })
+            .returning();
 
         revalidatePath(`/projects/${project.slug}`);
 
@@ -370,10 +331,12 @@ export async function updateProjectError(
         const user = await getCurrentUser();
         const validated = UpdateErrorSchema.parse(input);
 
-        const existingError = await prisma.projectV2Error.findUnique({
-            where: { id: validated.id },
-            include: {
-                project: { select: { slug: true, createdBy: true } }
+        const existingError = await db.query.projectV2Errors.findFirst({
+            where: eq(projectV2Errors.id, validated.id),
+            with: {
+                project: {
+                    columns: { slug: true, createdBy: true }
+                }
             }
         });
 
@@ -381,7 +344,6 @@ export async function updateProjectError(
             return { success: false, error: "Error not found" };
         }
 
-        // Only submitter, project owner, or admin can update
         const canUpdate = existingError.submittedById === user.id ||
             existingError.project.createdBy === user.id ||
             user.role === "Admin";
@@ -390,7 +352,6 @@ export async function updateProjectError(
             return { success: false, error: "Unauthorized" };
         }
 
-        // Build update data (only include provided fields)
         const updateData: any = {};
         if (validated.title) updateData.title = validated.title;
         if (validated.description) updateData.description = validated.description;
@@ -402,10 +363,11 @@ export async function updateProjectError(
         if (validated.fixedCode !== undefined) updateData.fixedCode = validated.fixedCode;
         if (validated.tags) updateData.tags = validated.tags;
 
-        const error = await prisma.projectV2Error.update({
-            where: { id: validated.id },
-            data: updateData,
-        });
+        const [error] = await db
+            .update(projectV2Errors)
+            .set(updateData)
+            .where(eq(projectV2Errors.id, validated.id))
+            .returning();
 
         revalidatePath(`/projects/${existingError.project.slug}`);
 
@@ -430,10 +392,12 @@ export async function deleteProjectError(errorId: string): Promise<ActionRespons
     try {
         const user = await getCurrentUser();
 
-        const error = await prisma.projectV2Error.findUnique({
-            where: { id: errorId },
-            include: {
-                project: { select: { slug: true, createdBy: true } }
+        const error = await db.query.projectV2Errors.findFirst({
+            where: eq(projectV2Errors.id, errorId),
+            with: {
+                project: {
+                    columns: { slug: true, createdBy: true }
+                }
             }
         });
 
@@ -441,7 +405,6 @@ export async function deleteProjectError(errorId: string): Promise<ActionRespons
             return { success: false, error: "Error not found" };
         }
 
-        // Only submitter, project owner, or admin can delete
         const canDelete = error.submittedById === user.id ||
             error.project.createdBy === user.id ||
             user.role === "Admin";
@@ -450,9 +413,7 @@ export async function deleteProjectError(errorId: string): Promise<ActionRespons
             return { success: false, error: "Unauthorized" };
         }
 
-        await prisma.projectV2Error.delete({
-            where: { id: errorId }
-        });
+        await db.delete(projectV2Errors).where(eq(projectV2Errors.id, errorId));
 
         revalidatePath(`/projects/${error.project.slug}`);
 
@@ -477,14 +438,18 @@ export async function voteOnError(
     try {
         const user = await getCurrentUser();
 
-        const error = await prisma.projectV2Error.findUnique({
-            where: { id: errorId },
-            select: {
+        const error = await db.query.projectV2Errors.findFirst({
+            where: eq(projectV2Errors.id, errorId),
+            columns: {
                 id: true,
                 status: true,
                 helpfulCount: true,
                 encounteredCount: true,
-                project: { select: { slug: true } }
+            },
+            with: {
+                project: {
+                    columns: { slug: true }
+                }
             }
         });
 
@@ -496,32 +461,30 @@ export async function voteOnError(
             return { success: false, error: "Cannot vote on unapproved errors" };
         }
 
-        // Check if already voted with this type
-        const existingVote = await prisma.projectV2ErrorVote.findUnique({
-            where: {
-                errorId_userId_voteType: {
-                    errorId,
-                    userId: user.id,
-                    voteType
-                }
-            }
-        });
+        const [existingVote] = await db
+            .select({ id: projectV2ErrorVotes.id })
+            .from(projectV2ErrorVotes)
+            .where(
+                and(
+                    eq(projectV2ErrorVotes.errorId, errorId),
+                    eq(projectV2ErrorVotes.userId, user.id),
+                    eq(projectV2ErrorVotes.voteType, voteType)
+                )
+            )
+            .limit(1);
 
         if (existingVote) {
             // Remove vote
-            await prisma.$transaction([
-                prisma.projectV2ErrorVote.delete({
-                    where: { id: existingVote.id }
-                }),
-                prisma.projectV2Error.update({
-                    where: { id: errorId },
-                    data: {
-                        [voteType === "helpful" ? "helpfulCount" : "encounteredCount"]: {
-                            decrement: 1
-                        }
-                    }
-                })
-            ]);
+            await db.transaction(async (tx) => {
+                await tx.delete(projectV2ErrorVotes).where(eq(projectV2ErrorVotes.id, existingVote.id));
+                await tx
+                    .update(projectV2Errors)
+                    .set({
+                        [voteType === "helpful" ? "helpfulCount" : "encounteredCount"]:
+                            sql`${voteType === "helpful" ? projectV2Errors.helpfulCount : projectV2Errors.encounteredCount} - 1`
+                    })
+                    .where(eq(projectV2Errors.id, errorId));
+            });
 
             revalidatePath(`/projects/${error.project.slug}`);
 
@@ -536,23 +499,20 @@ export async function voteOnError(
         }
 
         // Add vote
-        await prisma.$transaction([
-            prisma.projectV2ErrorVote.create({
-                data: {
-                    errorId,
-                    userId: user.id,
-                    voteType,
-                }
-            }),
-            prisma.projectV2Error.update({
-                where: { id: errorId },
-                data: {
-                    [voteType === "helpful" ? "helpfulCount" : "encounteredCount"]: {
-                        increment: 1
-                    }
-                }
-            })
-        ]);
+        await db.transaction(async (tx) => {
+            await tx.insert(projectV2ErrorVotes).values({
+                errorId,
+                userId: user.id,
+                voteType,
+            });
+            await tx
+                .update(projectV2Errors)
+                .set({
+                    [voteType === "helpful" ? "helpfulCount" : "encounteredCount"]:
+                        sql`${voteType === "helpful" ? projectV2Errors.helpfulCount : projectV2Errors.encounteredCount} + 1`
+                })
+                .where(eq(projectV2Errors.id, errorId));
+        });
 
         revalidatePath(`/projects/${error.project.slug}`);
 
@@ -584,10 +544,12 @@ export async function moderateError(
     try {
         const user = await getCurrentUser();
 
-        const error = await prisma.projectV2Error.findUnique({
-            where: { id: errorId },
-            include: {
-                project: { select: { slug: true, createdBy: true } }
+        const error = await db.query.projectV2Errors.findFirst({
+            where: eq(projectV2Errors.id, errorId),
+            with: {
+                project: {
+                    columns: { slug: true, createdBy: true }
+                }
             }
         });
 
@@ -595,7 +557,6 @@ export async function moderateError(
             return { success: false, error: "Error not found" };
         }
 
-        // Only project owner or admin can moderate
         const canModerate = error.project.createdBy === user.id || user.role === "Admin";
 
         if (!canModerate) {
@@ -604,13 +565,13 @@ export async function moderateError(
 
         const newStatus = action === "approve" ? "APPROVED" : "REJECTED";
 
-        await prisma.projectV2Error.update({
-            where: { id: errorId },
-            data: {
+        await db
+            .update(projectV2Errors)
+            .set({
                 status: newStatus,
                 approvedAt: action === "approve" ? new Date() : null,
-            }
-        });
+            })
+            .where(eq(projectV2Errors.id, errorId));
 
         revalidatePath(`/projects/${error.project.slug}`);
 
@@ -628,40 +589,32 @@ export async function getPendingErrors(projectId: string): Promise<ActionRespons
     try {
         const user = await getCurrentUser();
 
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            select: { createdBy: true }
-        });
+        const [project] = await db
+            .select({ createdBy: projectsV2.createdBy })
+            .from(projectsV2)
+            .where(eq(projectsV2.id, projectId))
+            .limit(1);
 
         if (!project) {
             return { success: false, error: "Project not found" };
         }
 
-        // Only project owner or admin can see pending
         if (project.createdBy !== user.id && user.role !== "Admin") {
             return { success: false, error: "Unauthorized" };
         }
 
-        const errors = await prisma.projectV2Error.findMany({
-            where: {
-                projectId,
-                status: "PENDING"
-            },
-            orderBy: { createdAt: "asc" },
-            include: {
+        const errors = await db.query.projectV2Errors.findMany({
+            where: and(
+                eq(projectV2Errors.projectId, projectId),
+                eq(projectV2Errors.status, "PENDING")
+            ),
+            orderBy: [asc(projectV2Errors.createdAt)],
+            with: {
                 submittedBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true,
-                    }
+                    columns: { id: true, name: true, image: true }
                 },
                 task: {
-                    select: {
-                        id: true,
-                        title: true,
-                    }
+                    columns: { id: true, title: true }
                 }
             }
         });
@@ -682,30 +635,20 @@ export async function getPendingErrors(projectId: string): Promise<ActionRespons
  */
 export async function getProjectErrorStats(projectId: string): Promise<ActionResponse> {
     try {
-        const [
-            totalErrors,
-            bySeverity,
-            byCategory,
-            topHelpful
-        ] = await Promise.all([
-            prisma.projectV2Error.count({
-                where: { projectId, status: "APPROVED" }
-            }),
-            prisma.projectV2Error.groupBy({
-                by: ["severity"],
-                where: { projectId, status: "APPROVED" },
-                _count: true
-            }),
-            prisma.projectV2Error.groupBy({
-                by: ["category"],
-                where: { projectId, status: "APPROVED" },
-                _count: true
-            }),
-            prisma.projectV2Error.findMany({
-                where: { projectId, status: "APPROVED" },
-                orderBy: { helpfulCount: "desc" },
-                take: 5,
-                select: {
+        const baseCondition = and(
+            eq(projectV2Errors.projectId, projectId),
+            eq(projectV2Errors.status, "APPROVED")
+        );
+
+        const [totalErrors, topHelpful] = await Promise.all([
+            db.select({ count: sql<number>`count(*)` })
+                .from(projectV2Errors)
+                .where(baseCondition),
+            db.query.projectV2Errors.findMany({
+                where: baseCondition,
+                orderBy: [desc(projectV2Errors.helpfulCount)],
+                limit: 5,
+                columns: {
                     id: true,
                     title: true,
                     helpfulCount: true,
@@ -717,15 +660,7 @@ export async function getProjectErrorStats(projectId: string): Promise<ActionRes
         return {
             success: true,
             data: {
-                totalErrors,
-                bySeverity: bySeverity.reduce((acc, item) => {
-                    acc[item.severity] = item._count;
-                    return acc;
-                }, {} as Record<string, number>),
-                byCategory: byCategory.reduce((acc, item) => {
-                    acc[item.category] = item._count;
-                    return acc;
-                }, {} as Record<string, number>),
+                totalErrors: Number(totalErrors[0]?.count ?? 0),
                 topHelpful
             }
         };
@@ -734,5 +669,3 @@ export async function getProjectErrorStats(projectId: string): Promise<ActionRes
         return { success: false, error: error.message };
     }
 }
-
-

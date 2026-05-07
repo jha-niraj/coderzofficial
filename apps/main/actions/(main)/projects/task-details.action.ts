@@ -1,7 +1,12 @@
 "use server";
 
-import { auth } from "@repo/auth";
-import prisma from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db, projectV2TaskDetails, userTaskV2DetailAccesses, projectV2Tasks, projectV2Sprints,
+    projectsV2, users, creditTransactions
+} from "@repo/db";
+import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import OpenAI from "openai";
 
@@ -12,38 +17,44 @@ interface ActionResponse {
 }
 
 async function getCurrentUser() {
-    const session = await auth();
-    if (!session?.user?.email) throw new Error("Not authenticated");
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    const session = await getSession(headers());
+    if (!session?.user?.id) throw new Error("Not authenticated");
+
+    const [user] = await db
+        .select({ id: users.id, credits: users.credits })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1);
+
     if (!user) throw new Error("User not found");
     return user;
 }
 
 async function deductCredits(userId: string, amount: number, description: string) {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { credits: true },
-    });
+    const [user] = await db
+        .select({ credits: users.credits })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
 
     if (!user || user.credits < amount) {
         throw new Error("Insufficient credits");
     }
 
-    await prisma.$transaction([
-        prisma.user.update({
-            where: { id: userId },
-            data: { credits: { decrement: amount } },
-        }),
-        prisma.creditTransaction.create({
-            data: {
-                userId,
-                amount: -amount,
-                type: "SPEND",
-                currency: "NA",
-                description,
-            },
-        }),
-    ]);
+    await db.transaction(async (tx) => {
+        await tx
+            .update(users)
+            .set({ credits: sql`${users.credits} - ${amount}` })
+            .where(eq(users.id, userId));
+
+        await tx.insert(creditTransactions).values({
+            userId,
+            amount: -amount,
+            type: "SPEND",
+            currency: "NA",
+            description,
+        });
+    });
 }
 
 // ========================================
@@ -54,17 +65,15 @@ export async function checkTaskDetailExists(taskId: string): Promise<ActionRespo
     try {
         const user = await getCurrentUser();
 
-        // Check if detail already exists
-        const existingDetail = await prisma.projectV2TaskDetail.findUnique({
-            where: { taskId },
-            select: {
-                id: true,
-                accessCount: true,
+        const existingDetail = await db.query.projectV2TaskDetails.findFirst({
+            where: eq(projectV2TaskDetails.taskId, taskId),
+            columns: { id: true, accessCount: true },
+            with: {
                 userAccess: {
-                    where: { userId: user.id },
-                    select: { id: true },
-                },
-            },
+                    where: (access, { eq }) => eq(access.userId, user.id),
+                    columns: { id: true },
+                }
+            }
         });
 
         if (!existingDetail) {
@@ -78,7 +87,6 @@ export async function checkTaskDetailExists(taskId: string): Promise<ActionRespo
             };
         }
 
-        // Detail exists - check if this user has already accessed it
         const userHasAccess = existingDetail.userAccess.length > 0;
 
         return {
@@ -107,19 +115,17 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
     try {
         const user = await getCurrentUser();
 
-        // Check user's credits
         if (user.credits < 1) {
             return { success: false, error: "Insufficient credits. You need 1 credit to generate task details." };
         }
 
-        // Get task and project details (task belongs to sprint, sprint belongs to project)
-        const task = await prisma.projectV2Task.findUnique({
-            where: { id: taskId },
-            include: {
+        const task = await db.query.projectV2Tasks.findFirst({
+            where: eq(projectV2Tasks.id, taskId),
+            with: {
                 sprint: {
-                    include: {
+                    with: {
                         project: {
-                            select: {
+                            columns: {
                                 id: true,
                                 title: true,
                                 description: true,
@@ -127,34 +133,31 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
                                 generationType: true,
                                 primaryLanguageOrFramework: true,
                                 keyOutcomes: true,
-                            },
-                        },
-                    },
-                },
-            },
+                            }
+                        }
+                    }
+                }
+            }
         });
 
         if (!task) {
             return { success: false, error: "Task not found" };
         }
 
-        // Get project from sprint (task belongs to sprint which belongs to project)
-        const project = (task as any).sprint?.project;
+        const project = task.sprint?.project;
         if (!project) {
             return { success: false, error: "Project not found for this task" };
         }
 
-        // Check if detail already exists (created by another user)
-        const existingDetail = await prisma.projectV2TaskDetail.findUnique({
-            where: { taskId },
-            include: {
+        const existingDetail = await db.query.projectV2TaskDetails.findFirst({
+            where: eq(projectV2TaskDetails.taskId, taskId),
+            with: {
                 userAccess: {
-                    where: { userId: user.id },
-                },
-            },
+                    where: (access, { eq }) => eq(access.userId, user.id),
+                }
+            }
         });
 
-        // If detail exists and user already has access, return it
         if (existingDetail && existingDetail.userAccess.length > 0) {
             return {
                 success: true,
@@ -163,37 +166,27 @@ export async function generateTaskDetail(taskId: string, projectSlug: string): P
             };
         }
 
-        // If detail exists but user doesn't have access, grant access and charge 1 credit
         if (existingDetail) {
             console.log('📦 [EXISTING_DETAIL] Granting access to existing detail');
 
-            // Deduct credits
             await deductCredits(user.id, 1, `Task Detail Access: ${task.title}`);
 
-            // Grant access
-            await prisma.userTaskV2DetailAccess.create({
-                data: {
-                    userId: user.id,
-                    taskDetailId: existingDetail.id,
-                    creditsPaid: 1,
-                },
+            await db.insert(userTaskV2DetailAccesses).values({
+                userId: user.id,
+                taskDetailId: existingDetail.id,
+                creditsPaid: 1,
             });
 
-            // Update access count
-            await prisma.projectV2TaskDetail.update({
-                where: { id: existingDetail.id },
-                data: { accessCount: { increment: 1 } },
-            });
+            await db
+                .update(projectV2TaskDetails)
+                .set({ accessCount: sql`${projectV2TaskDetails.accessCount} + 1` })
+                .where(eq(projectV2TaskDetails.id, existingDetail.id));
 
             revalidatePath(`/projects/${projectSlug}/tasks`);
 
-            return {
-                success: true,
-                data: existingDetail,
-            };
+            return { success: true, data: existingDetail };
         }
 
-        // Detail doesn't exist - generate with OpenAI
         console.log('🤖 [OPENAI] Generating new task detail');
 
         const openai = new OpenAI({
@@ -294,12 +287,11 @@ Remember: Guide their learning journey, don't give them the solution!`;
         const parsedContent = JSON.parse(generatedContent);
         console.log('✅ [OPENAI] Task detail generated successfully');
 
-        // Deduct credits BEFORE creating the detail
         await deductCredits(user.id, 1, `Task Detail Generation: ${task.title}`);
 
-        // Create the task detail
-        const taskDetail = await prisma.projectV2TaskDetail.create({
-            data: {
+        const [taskDetail] = await db
+            .insert(projectV2TaskDetails)
+            .values({
                 taskId,
                 subTasks: parsedContent.subTasks,
                 commonErrors: parsedContent.commonErrors || [],
@@ -308,13 +300,13 @@ Remember: Guide their learning journey, don't give them the solution!`;
                 generatedBy: user.id,
                 generationCost: 1,
                 accessCount: 1,
-                userAccess: {
-                    create: {
-                        userId: user.id,
-                        creditsPaid: 1,
-                    },
-                },
-            },
+            })
+            .returning();
+
+        await db.insert(userTaskV2DetailAccesses).values({
+            userId: user.id,
+            taskDetailId: taskDetail.id,
+            creditsPaid: 1,
         });
 
         const duration = Date.now() - startTime;
@@ -322,10 +314,7 @@ Remember: Guide their learning journey, don't give them the solution!`;
 
         revalidatePath(`/projects/${projectSlug}/tasks`);
 
-        return {
-            success: true,
-            data: taskDetail,
-        };
+        return { success: true, data: taskDetail };
 
     } catch (error: any) {
         const duration = Date.now() - startTime;
@@ -345,24 +334,20 @@ export async function getTaskDetail(taskId: string): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        const taskDetail = await prisma.projectV2TaskDetail.findUnique({
-            where: { taskId },
-            include: {
+        const taskDetail = await db.query.projectV2TaskDetails.findFirst({
+            where: eq(projectV2TaskDetails.taskId, taskId),
+            with: {
                 userAccess: {
-                    where: { userId: user.id },
-                    select: {
-                        id: true,
-                        accessedAt: true,
-                    },
-                },
-            },
+                    where: (access, { eq }) => eq(access.userId, user.id),
+                    columns: { id: true, accessedAt: true },
+                }
+            }
         });
 
         if (!taskDetail) {
             return { success: false, error: "Task detail not found" };
         }
 
-        // Check if user has access
         if (taskDetail.userAccess.length === 0) {
             return {
                 success: false,
@@ -370,15 +355,10 @@ export async function getTaskDetail(taskId: string): Promise<ActionResponse> {
             };
         }
 
-        return {
-            success: true,
-            data: taskDetail,
-        };
+        return { success: true, data: taskDetail };
 
     } catch (error: any) {
         console.error("[GET_TASK_DETAIL]", error);
         return { success: false, error: error.message };
     }
 }
-
-

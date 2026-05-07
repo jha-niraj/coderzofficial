@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
+import { eq } from "drizzle-orm";
 import { sendEmail } from "@/utils/mail";
 
 export async function POST(request: NextRequest) {
@@ -13,8 +14,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email }
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email),
         });
 
         if (!user) {
@@ -34,16 +35,12 @@ export async function POST(request: NextRequest) {
         // Generate new OTP
         const verifyOTP = Math.floor(100000 + Math.random() * 900000).toString();
         const verifyOTPExpiry = new Date();
-        verifyOTPExpiry.setMinutes(verifyOTPExpiry.getMinutes() + 10); // 10 minutes expiry
+        verifyOTPExpiry.setMinutes(verifyOTPExpiry.getMinutes() + 10);
 
-        // Update user with new OTP
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                verifyOTP,
-                verifyOTPExpiry
-            }
-        });
+        await db.update(users).set({
+            verifyOTP,
+            verifyOTPExpiry,
+        }).where(eq(users.id, user.id));
 
         // Send verification email
         try {

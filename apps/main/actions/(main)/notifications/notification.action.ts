@@ -1,13 +1,10 @@
 "use server"
 
-import { auth } from '@repo/auth'
-import prisma from "@repo/prisma"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { db, users, notifications } from "@repo/db"
+import { eq, and, desc, count } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
-import { z } from "zod"
-
-// Types matching Prisma Enum (or import from client if possible, but hard in server actions sometimes)
-type NotificationType = 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR'
-type Platform = 'MAIN' | 'HIRING' | 'UNI' | 'ADMIN'
 
 interface NotificationResponse {
     success: boolean
@@ -16,9 +13,9 @@ interface NotificationResponse {
 }
 
 async function getCurrentUser() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.email) throw new Error("Not authenticated")
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    const user = await db.query.users.findFirst({ where: eq(users.email, session.user.email) })
     if (!user) throw new Error("User not found")
     return user
 }
@@ -26,39 +23,33 @@ async function getCurrentUser() {
 export async function getNotifications(page = 1, limit = 20) {
     try {
         const user = await getCurrentUser()
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const notifications = await prisma.notification.findMany({
-            where: {
-                userId: user.id
-            },
-            orderBy: {
-                createdAt: 'desc'
-            },
-            take: limit,
-            skip: skip
+        const notificationList = await db.query.notifications.findMany({
+            where: eq(notifications.userId, user.id),
+            orderBy: desc(notifications.createdAt),
+            limit,
+            offset,
         })
 
-        const totalUnread = await prisma.notification.count({
-            where: {
-                userId: user.id,
-                read: false
-            }
-        })
+        const [{ totalUnread }] = await db
+            .select({ totalUnread: count() })
+            .from(notifications)
+            .where(and(eq(notifications.userId, user.id), eq(notifications.read, false)))
 
         return {
             success: true,
             data: {
-                notifications,
+                notifications: notificationList,
                 totalUnread,
-                hasMore: notifications.length === limit
-            }
+                hasMore: notificationList.length === limit,
+            },
         }
     } catch (error: any) {
         console.error("Failed to fetch notifications:", error)
         return {
             success: false,
-            error: error.message || "Failed to fetch notifications"
+            error: error.message || "Failed to fetch notifications",
         }
     }
 }
@@ -67,15 +58,10 @@ export async function markAsRead(notificationId: string) {
     try {
         const user = await getCurrentUser()
 
-        await prisma.notification.update({
-            where: {
-                id: notificationId,
-                userId: user.id // Ensure ownership
-            },
-            data: {
-                read: true
-            }
-        })
+        await db
+            .update(notifications)
+            .set({ read: true })
+            .where(and(eq(notifications.id, notificationId), eq(notifications.userId, user.id)))
 
         revalidatePath('/')
         return { success: true }
@@ -88,15 +74,10 @@ export async function markAllAsRead() {
     try {
         const user = await getCurrentUser()
 
-        await prisma.notification.updateMany({
-            where: {
-                userId: user.id,
-                read: false
-            },
-            data: {
-                read: true
-            }
-        })
+        await db
+            .update(notifications)
+            .set({ read: true })
+            .where(and(eq(notifications.userId, user.id), eq(notifications.read, false)))
 
         revalidatePath('/')
         return { success: true }

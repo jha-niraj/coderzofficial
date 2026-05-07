@@ -1,7 +1,9 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { db, mockVoiceSession, mockInterviewVoice } from "@repo/db"
+import { eq, and, isNotNull, avg } from "drizzle-orm"
 import { revalidatePath } from 'next/cache'
 
 interface SubmitReviewInput {
@@ -14,22 +16,20 @@ interface SubmitReviewInput {
 
 export async function submitReview(input: SubmitReviewInput) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         const userId = session?.user?.id
 
         if (!userId) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        // Validate rating
         if (input.rating < 1 || input.rating > 5) {
             return { success: false, error: 'Invalid rating. Must be between 1 and 5.' }
         }
 
-        // Fetch session to verify ownership
-        const mockSession = await prisma.mockVoiceSession.findUnique({
-            where: { id: input.sessionId },
-            include: { mock: true }
+        const mockSession = await db.query.mockVoiceSession.findFirst({
+            where: eq(mockVoiceSession.id, input.sessionId),
+            with: { mock: true },
         })
 
         if (!mockSession) {
@@ -40,38 +40,39 @@ export async function submitReview(input: SubmitReviewInput) {
             return { success: false, error: 'Unauthorized to review this session' }
         }
 
-        // Determine if there are issues
         const hasIssues = (input.issues && input.issues.length > 0) || false
 
-        // Update session with review
-        await prisma.mockVoiceSession.update({
-            where: { id: input.sessionId },
-            data: {
+        await db
+            .update(mockVoiceSession)
+            .set({
                 userRating: input.rating,
                 userFeedback: input.feedback || null,
                 reviewedAt: new Date(),
-                hasIssues: hasIssues,
+                hasIssues,
                 reportedIssues: input.issues || [],
                 issueDetails: input.issueDetails || null,
-                issueReportedAt: hasIssues ? new Date() : null
-            }
-        })
+                issueReportedAt: hasIssues ? new Date() : null,
+            })
+            .where(eq(mockVoiceSession.id, input.sessionId))
 
         // Update mock interview average rating
-        const allRatings = await prisma.mockVoiceSession.findMany({
-            where: {
-                mockId: mockSession.mockId,
-                userRating: { not: null }
-            },
-            select: { userRating: true }
-        })
+        const allRatings = await db
+            .select({ userRating: mockVoiceSession.userRating })
+            .from(mockVoiceSession)
+            .where(
+                and(
+                    eq(mockVoiceSession.mockId, mockSession.mockId),
+                    isNotNull(mockVoiceSession.userRating)
+                )
+            )
 
         if (allRatings.length > 0) {
-            const avgRating = allRatings.reduce((sum, r) => sum + (r.userRating || 0), 0) / allRatings.length
-            await prisma.mockInterviewVoice.update({
-                where: { id: mockSession.mockId },
-                data: { averageRating: avgRating }
-            })
+            const avgRating =
+                allRatings.reduce((sum, r) => sum + (r.userRating || 0), 0) / allRatings.length
+            await db
+                .update(mockInterviewVoice)
+                .set({ averageRating: avgRating })
+                .where(eq(mockInterviewVoice.id, mockSession.mockId))
         }
 
         revalidatePath('/mockinterview')
@@ -86,38 +87,20 @@ export async function submitReview(input: SubmitReviewInput) {
 
 export async function getSessionsWithIssues() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         const user = session?.user
 
-        if (!user || user.role !== 'Admin') {
+        if (!user || (user as any).role !== 'Admin') {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const sessionsWithIssues = await prisma.mockVoiceSession.findMany({
-            where: {
-                hasIssues: true
+        const sessionsWithIssues = await db.query.mockVoiceSession.findMany({
+            where: eq(mockVoiceSession.hasIssues, true),
+            with: {
+                user: true,
+                mock: true,
             },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        username: true
-                    }
-                },
-                mock: {
-                    select: {
-                        id: true,
-                        title: true,
-                        level: true,
-                        category: true
-                    }
-                }
-            },
-            orderBy: {
-                issueReportedAt: 'desc'
-            }
+            orderBy: (table, { desc }) => [desc(table.issueReportedAt)],
         })
 
         return { success: true, sessions: sessionsWithIssues }
@@ -129,19 +112,17 @@ export async function getSessionsWithIssues() {
 
 export async function markIssueResolved(sessionId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         const user = session?.user
 
-        if (!user || user.role !== 'Admin') {
+        if (!user || (user as any).role !== 'Admin') {
             return { success: false, error: 'Unauthorized' }
         }
 
-        await prisma.mockVoiceSession.update({
-            where: { id: sessionId },
-            data: {
-                hasIssues: false
-            }
-        })
+        await db
+            .update(mockVoiceSession)
+            .set({ hasIssues: false })
+            .where(eq(mockVoiceSession.id, sessionId))
 
         revalidatePath('/admin/mock-issues')
 
@@ -151,4 +132,3 @@ export async function markIssueResolved(sessionId: string) {
         return { success: false, error: 'Failed to mark issue as resolved' }
     }
 }
-

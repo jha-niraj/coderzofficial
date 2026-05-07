@@ -1,9 +1,11 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
-import type { 
-    InvoiceDetails, InvoiceStatus, InvoiceLineItem 
+import { db, universityMembers, universityInvoices, universityPayments, universities } from "@repo/db"
+import { eq, and, count } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import type {
+    InvoiceDetails, InvoiceStatus, InvoiceLineItem
 } from "@/types"
 
 // ============================================
@@ -11,12 +13,12 @@ import type {
 // ============================================
 
 async function getUserUniversity() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.universityMember.findFirst({
-        where: { userId: session.user.id },
-        include: { university: true }
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
+        with: { university: true },
     })
 
     return member
@@ -66,23 +68,14 @@ export async function getInvoices(options?: {
         const pageSize = options?.pageSize || 10
         const skip = (page - 1) * pageSize
 
-        // Build where clause
-        const where: { universityId: string; status?: string } = {
-            universityId: member.universityId,
-        }
-        if (options?.status) {
-            where.status = options.status
-        }
+        const totalCountResult = await db.select({ count: count() }).from(universityInvoices).where(eq(universityInvoices.universityId, member.universityId))
+        const totalCount = totalCountResult[0]?.count ?? 0
 
-        // Get total count
-        const totalCount = await prisma.universityInvoice.count({ where })
-
-        // Get invoices
-        const invoices = await prisma.universityInvoice.findMany({
-            where,
-            orderBy: { invoiceDate: "desc" },
-            skip,
-            take: pageSize,
+        const invoices = await db.query.universityInvoices.findMany({
+            where: eq(universityInvoices.universityId, member.universityId),
+            orderBy: (tbl, { desc }) => desc(tbl.invoiceDate),
+            offset: skip,
+            limit: pageSize,
         })
 
         return {
@@ -119,11 +112,11 @@ export async function getInvoice(invoiceId: string): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const invoice = await prisma.universityInvoice.findFirst({
-            where: {
-                id: invoiceId,
-                universityId: member.universityId,
-            },
+        const invoice = await db.query.universityInvoices.findFirst({
+            where: and(
+                eq(universityInvoices.id, invoiceId),
+                eq(universityInvoices.universityId, member.universityId),
+            ),
         })
 
         if (!invoice) {
@@ -139,16 +132,16 @@ export async function getInvoice(invoiceId: string): Promise<{
                 invoiceDate: invoice.invoiceDate,
                 dueDate: invoice.dueDate,
                 paidAt: invoice.paidAt,
-                
+
                 subtotal: invoice.subtotal,
                 taxAmount: invoice.taxAmount,
                 taxRate: invoice.taxRate,
                 discount: invoice.discount,
                 totalAmount: invoice.totalAmount,
                 currency: invoice.currency,
-                
+
                 lineItems: (invoice.lineItems as unknown as InvoiceLineItem[]) || [],
-                
+
                 billingName: invoice.billingName,
                 billingEmail: invoice.billingEmail,
                 billingAddress: invoice.billingAddress,
@@ -157,12 +150,11 @@ export async function getInvoice(invoiceId: string): Promise<{
                 billingCountry: invoice.billingCountry,
                 billingPincode: invoice.billingPincode,
                 gstNumber: invoice.gstNumber,
-                
+
                 pdfUrl: invoice.pdfUrl,
                 notes: invoice.notes,
-                
+
                 paymentId: invoice.paymentId,
-                // Payment status is derived from invoice status since we don't have a direct relation
                 paymentStatus: invoice.status === "PAID" ? "SUCCEEDED" : "PENDING",
             }
         }
@@ -199,12 +191,11 @@ export async function createInvoiceFromPayment(
             return { success: false, error: "Unauthorized" }
         }
 
-        // Get the payment
-        const payment = await prisma.universityPayment.findFirst({
-            where: {
-                id: paymentId,
-                universityId: member.universityId,
-            }
+        const payment = await db.query.universityPayments.findFirst({
+            where: and(
+                eq(universityPayments.id, paymentId),
+                eq(universityPayments.universityId, member.universityId),
+            ),
         })
 
         if (!payment) {
@@ -212,24 +203,22 @@ export async function createInvoiceFromPayment(
         }
 
         // Check if invoice already exists
-        const existingInvoice = await prisma.universityInvoice.findFirst({
-            where: { paymentId }
+        const existingInvoice = await db.query.universityInvoices.findFirst({
+            where: eq(universityInvoices.paymentId, paymentId),
         })
 
         if (existingInvoice) {
-            return { 
-                success: true, 
+            return {
+                success: true,
                 invoiceId: existingInvoice.id,
                 invoiceNumber: existingInvoice.invoiceNumber,
             }
         }
 
-        // Calculate tax (assuming 18% GST for Indian entities)
         const taxRate = 18
-        const subtotal = Math.round(payment.amount / 1.18) // Reverse calculate subtotal
+        const subtotal = Math.round(payment.amount / 1.18)
         const taxAmount = payment.amount - subtotal
 
-        // Create line items
         const metadata = payment.metadata as { plan?: string; billingCycle?: string } | null
         const lineItems: InvoiceLineItem[] = [
             {
@@ -240,43 +229,43 @@ export async function createInvoiceFromPayment(
             }
         ]
 
-        // Generate invoice number
         const invoiceNumber = generateInvoiceNumber()
 
-        // Create invoice
-        const invoice = await prisma.universityInvoice.create({
-            data: {
-                universityId: member.universityId,
-                paymentId,
-                invoiceNumber,
-                status: payment.status === "SUCCEEDED" ? "PAID" : "PENDING",
-                invoiceDate: new Date(),
-                dueDate: payment.status === "SUCCEEDED" ? null : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-                paidAt: payment.status === "SUCCEEDED" ? payment.paidAt : null,
-                
-                subtotal,
-                taxAmount,
-                taxRate,
-                discount: 0,
-                totalAmount: payment.amount,
-                currency: payment.currency,
-                
-                // Cast to JSON for Prisma storage
-                lineItems: lineItems as unknown as import("@prisma/client").Prisma.InputJsonValue,
-                
-                billingName: billingInfo?.billingName || member.university.name,
-                billingEmail: billingInfo?.billingEmail || member.university.email || member.email,
-                billingAddress: billingInfo?.billingAddress || member.university.address,
-                billingCity: billingInfo?.billingCity || member.university.city,
-                billingState: billingInfo?.billingState || member.university.state,
-                billingCountry: billingInfo?.billingCountry || member.university.country,
-                billingPincode: billingInfo?.billingPincode || member.university.pincode,
-                gstNumber: billingInfo?.gstNumber || null,
-            }
-        })
+        const invoiceRows = await db.insert(universityInvoices).values({
+            universityId: member.universityId,
+            paymentId,
+            invoiceNumber,
+            status: payment.status === "SUCCEEDED" ? "PAID" : "PENDING",
+            invoiceDate: new Date(),
+            dueDate: payment.status === "SUCCEEDED" ? null : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            paidAt: payment.status === "SUCCEEDED" ? payment.paidAt : null,
 
-        return { 
-            success: true, 
+            subtotal,
+            taxAmount,
+            taxRate,
+            discount: 0,
+            totalAmount: payment.amount,
+            currency: payment.currency,
+
+            lineItems: lineItems as any,
+
+            billingName: billingInfo?.billingName || member.university.name,
+            billingEmail: billingInfo?.billingEmail || member.university.email || member.email,
+            billingAddress: billingInfo?.billingAddress || member.university.address,
+            billingCity: billingInfo?.billingCity || member.university.city,
+            billingState: billingInfo?.billingState || member.university.state,
+            billingCountry: billingInfo?.billingCountry || member.university.country,
+            billingPincode: billingInfo?.billingPincode || member.university.pincode,
+            gstNumber: billingInfo?.gstNumber || null,
+        }).returning()
+
+        const invoice = invoiceRows[0];
+        if (!invoice) {
+            return { success: false, error: "Failed to create invoice record" }
+        }
+
+        return {
+            success: true,
             invoiceId: invoice.id,
             invoiceNumber: invoice.invoiceNumber,
         }
@@ -287,7 +276,7 @@ export async function createInvoiceFromPayment(
 }
 
 /**
- * Get invoice PDF URL (generate if needed)
+ * Get invoice PDF URL
  */
 export async function getInvoicePdf(invoiceId: string): Promise<{
     success: boolean
@@ -300,11 +289,11 @@ export async function getInvoicePdf(invoiceId: string): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const invoice = await prisma.universityInvoice.findFirst({
-            where: {
-                id: invoiceId,
-                universityId: member.universityId,
-            }
+        const invoice = await db.query.universityInvoices.findFirst({
+            where: and(
+                eq(universityInvoices.id, invoiceId),
+                eq(universityInvoices.universityId, member.universityId),
+            ),
         })
 
         if (!invoice) {
@@ -315,8 +304,6 @@ export async function getInvoicePdf(invoiceId: string): Promise<{
             return { success: true, pdfUrl: invoice.pdfUrl }
         }
 
-        // TODO: Generate PDF using a PDF generation service
-        // For now, return an error
         return { success: false, error: "PDF generation not yet implemented" }
     } catch (error) {
         console.error("Get invoice PDF error:", error)
@@ -345,14 +332,14 @@ export async function getInvoiceSummary(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const invoices = await prisma.universityInvoice.findMany({
-            where: { universityId: member.universityId }
+        const invoices = await db.query.universityInvoices.findMany({
+            where: eq(universityInvoices.universityId, member.universityId),
         })
 
         const now = new Date()
         const paidInvoices = invoices.filter(i => i.status === "PAID")
         const pendingInvoices = invoices.filter(i => i.status === "PENDING")
-        const overdueInvoices = invoices.filter(i => 
+        const overdueInvoices = invoices.filter(i =>
             i.status === "PENDING" && i.dueDate && i.dueDate < now
         )
 
@@ -400,20 +387,14 @@ export async function updateBillingInfo(info: {
             return { success: false, error: "No permission to manage billing" }
         }
 
-        // Update university with billing info
-        await prisma.university.update({
-            where: { id: member.universityId },
-            data: {
-                // Store billing info in university if fields exist
-                // Otherwise might need a separate billing info table
-                email: info.billingEmail || undefined,
-                address: info.billingAddress || undefined,
-                city: info.billingCity || undefined,
-                state: info.billingState || undefined,
-                country: info.billingCountry || undefined,
-                pincode: info.billingPincode || undefined,
-            }
-        })
+        await db.update(universities).set({
+            email: info.billingEmail || undefined,
+            address: info.billingAddress || undefined,
+            city: info.billingCity || undefined,
+            state: info.billingState || undefined,
+            country: info.billingCountry || undefined,
+            pincode: info.billingPincode || undefined,
+        }).where(eq(universities.id, member.universityId))
 
         return { success: true }
     } catch (error) {

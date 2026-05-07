@@ -1,17 +1,19 @@
 "use server"
 
-import { auth } from "@repo/auth"
-import prisma from "@repo/prisma"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db, projectV2FeatureSuggestions, projectsV2, projectV2Tasks, projectV2Sprints,
+    userProjectV2Progress, userTaskV2Statuses
+} from "@repo/db"
+import { eq, and, desc, asc, sql } from "drizzle-orm"
 import { uploadImageToCloudinary } from "@/actions/(common)/shared/upload.action"
 import { revalidatePath } from "next/cache"
-import type {
-    FeatureSuggestionWithUser
-} from "@/types/projectv2"
-import type { FeatureSuggestionType } from "@repo/prisma/client"
+import type { FeatureSuggestionWithUser } from "@/types/projectv2"
 
 export async function createFeatureSuggestion(formData: FormData) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" }
         }
@@ -23,7 +25,6 @@ export async function createFeatureSuggestion(formData: FormData) {
         const tagsString = formData.get("tags") as string
         const imageFile = formData.get("image") as File | null
 
-        // Validation
         if (!projectId || !title || !description) {
             return { success: false, message: "Missing required fields" }
         }
@@ -36,13 +37,13 @@ export async function createFeatureSuggestion(formData: FormData) {
             return { success: false, message: "Description must be between 20 and 1000 characters" }
         }
 
-        // Get the project to check user's role
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            include: {
+        // Get the project and check enrollment
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId),
+            with: {
                 progress: {
-                    where: { userId: session.user.id },
-                    select: { id: true }
+                    where: (progress, { eq }) => eq(progress.userId, session.user.id),
+                    columns: { id: true }
                 }
             }
         })
@@ -54,7 +55,6 @@ export async function createFeatureSuggestion(formData: FormData) {
         const isCreator = project.createdBy === session.user.id
         const isEnrolled = project.progress.length > 0
 
-        // Determine suggestion source
         let suggestedBy: "CREATOR" | "ENROLLED_USER" | "VISITOR"
         if (isCreator) {
             suggestedBy = "CREATOR"
@@ -64,10 +64,8 @@ export async function createFeatureSuggestion(formData: FormData) {
             suggestedBy = "VISITOR"
         }
 
-        // Parse tags
         const tags = tagsString ? tagsString.split(",").map(tag => tag.trim()).filter(Boolean) : []
 
-        // Upload image if provided
         let imageUrl: string | null = null
         if (imageFile && imageFile.size > 0) {
             const imageFormData = new FormData()
@@ -79,71 +77,76 @@ export async function createFeatureSuggestion(formData: FormData) {
             }
         }
 
-        // If creator or enrolled user, also create the task and add to their list
         if (isCreator || isEnrolled) {
-            // Get user's progress record (create if doesn't exist for creator)
-            let userProgress = await prisma.userProjectV2Progress.findUnique({
-                where: {
-                    userId_projectId: {
-                        userId: session.user.id,
-                        projectId
-                    }
-                }
+            let userProgress = await db.query.userProjectV2Progress.findFirst({
+                where: and(
+                    eq(userProjectV2Progress.userId, session.user.id),
+                    eq(userProjectV2Progress.projectId, projectId)
+                )
             })
 
-            // If creator doesn't have progress yet, create it
             if (!userProgress && isCreator) {
-                const taskCount = await prisma.projectV2Task.count({
-                    where: { sprint: { projectId } }
-                })
+                const [taskCount] = await db
+                    .select({ count: sql<number>`count(*)` })
+                    .from(projectV2Tasks)
+                    .where(
+                        sql`${projectV2Tasks.sprintId} IN (
+                            SELECT id FROM "ProjectV2Sprint" WHERE "projectId" = ${projectId}
+                        )`
+                    )
 
-                userProgress = await prisma.userProjectV2Progress.create({
-                    data: {
+                const [created] = await db
+                    .insert(userProjectV2Progress)
+                    .values({
                         userId: session.user.id,
                         projectId,
                         status: "IN_PROGRESS",
-                        totalTasks: taskCount,
+                        totalTasks: Number(taskCount?.count ?? 0),
                         startedAt: new Date()
-                    }
-                })
+                    })
+                    .returning()
+
+                userProgress = created
             }
 
             if (!userProgress) {
-                return {
-                    success: false,
-                    message: "Could not find or create progress record"
-                }
+                return { success: false, message: "Could not find or create progress record" }
             }
 
-            // Find a sprint to add the task to (use first sprint or create one)
-            const firstSprint = await prisma.projectV2Sprint.findFirst({
-                where: { projectId },
-                orderBy: { orderIndex: 'asc' }
+            // Find a sprint to add the task to
+            const firstSprint = await db.query.projectV2Sprints.findFirst({
+                where: eq(projectV2Sprints.projectId, projectId),
+                orderBy: [asc(projectV2Sprints.orderIndex)]
             })
 
-            let sprintId = firstSprint?.id;
+            let sprintId = firstSprint?.id
             if (!sprintId) {
-                const newSprint = await prisma.projectV2Sprint.create({
-                    data: {
+                const [newSprint] = await db
+                    .insert(projectV2Sprints)
+                    .values({
                         projectId,
                         name: "General",
                         sprintNumber: 1,
                         duration: "2 weeks",
                         goal: "General tasks",
                         orderIndex: 0
-                    }
-                })
-                sprintId = newSprint.id;
+                    })
+                    .returning()
+                sprintId = newSprint.id
             }
 
-            // Get the current task count for order index
-            const taskCount = await prisma.projectV2Task.count({
-                where: { sprint: { projectId } }
-            })
+            const [taskCount] = await db
+                .select({ count: sql<number>`count(*)` })
+                .from(projectV2Tasks)
+                .where(
+                    sql`${projectV2Tasks.sprintId} IN (
+                        SELECT id FROM "ProjectV2Sprint" WHERE "projectId" = ${projectId}
+                    )`
+                )
 
-            // Create the task
-            const task = await prisma.projectV2Task.create({
-                data: {
+            const [task] = await db
+                .insert(projectV2Tasks)
+                .values({
                     sprintId,
                     title,
                     description: [
@@ -160,46 +163,40 @@ export async function createFeatureSuggestion(formData: FormData) {
                     badges: [type],
                     tags,
                     difficulty: "INTERMEDIATE",
-                    orderIndex: taskCount
-                }
+                    orderIndex: Number(taskCount?.count ?? 0)
+                })
+                .returning()
+
+            await db.insert(userTaskV2Statuses).values({
+                userId: session.user.id,
+                projectId,
+                taskId: task.id,
+                status: "TO_DO",
+                progressId: userProgress.id
             })
 
-            // Create task status for the user who added it
-            await prisma.userTaskV2Status.create({
-                data: {
-                    userId: session.user.id,
-                    projectId,
-                    taskId: task.id,
-                    status: "TO_DO",
-                    progressId: userProgress.id
-                }
-            })
+            await db
+                .update(userProjectV2Progress)
+                .set({ totalTasks: sql`${userProjectV2Progress.totalTasks} + 1` })
+                .where(eq(userProjectV2Progress.id, userProgress.id))
 
-            // Update totalTasks count in progress
-            await prisma.userProjectV2Progress.update({
-                where: { id: userProgress.id },
-                data: {
-                    totalTasks: { increment: 1 }
-                }
-            })
-
-            // Create the suggestion with task reference
-            const suggestion = await prisma.projectV2FeatureSuggestion.create({
-                data: {
+            const [suggestion] = await db
+                .insert(projectV2FeatureSuggestions)
+                .values({
                     userId: session.user.id,
                     projectId,
                     title,
                     description,
-                    type: type as FeatureSuggestionType,
+                    type: type as any,
                     tags,
                     imageUrl,
                     status: isCreator ? "APPROVED" : "PENDING",
                     addedToTasks: true,
                     taskId: task.id,
                     suggestedBy,
-                    addedByUsers: [session.user.id] // Track who has this task
-                }
-            })
+                    addedByUsers: [session.user.id]
+                })
+                .returning()
 
             revalidatePath(`/projects/${project.slug}`)
             revalidatePath(`/projects/${project.slug}/tasks`)
@@ -212,20 +209,20 @@ export async function createFeatureSuggestion(formData: FormData) {
                 data: suggestion
             }
         } else {
-            // Visitor - only create suggestion
-            const suggestion = await prisma.projectV2FeatureSuggestion.create({
-                data: {
+            const [suggestion] = await db
+                .insert(projectV2FeatureSuggestions)
+                .values({
                     userId: session.user.id,
                     projectId,
                     title,
                     description,
-                    type: type as FeatureSuggestionType,
+                    type: type as any,
                     tags,
                     imageUrl,
                     status: "PENDING",
                     suggestedBy
-                }
-            })
+                })
+                .returning()
 
             revalidatePath(`/projects/${project.slug}`)
 
@@ -246,46 +243,39 @@ export async function createFeatureSuggestion(formData: FormData) {
 
 export async function getFeatureSuggestions(projectId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
 
-        const suggestions = await prisma.projectV2FeatureSuggestion.findMany({
-            where: { projectId },
-            include: {
+        const suggestions = await db.query.projectV2FeatureSuggestions.findMany({
+            where: eq(projectV2FeatureSuggestions.projectId, projectId),
+            orderBy: [desc(projectV2FeatureSuggestions.createdAt)],
+            with: {
                 user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true
-                    }
+                    columns: { id: true, name: true, image: true }
                 }
-            },
-            orderBy: {
-                createdAt: "desc"
             }
         })
 
-        // If user is logged in, check which tasks they've already added
         let userTaskIds: string[] = []
         if (session?.user?.id) {
-            const userTasks = await prisma.userTaskV2Status.findMany({
-                where: {
-                    userId: session.user.id,
-                    projectId
-                },
-                select: { taskId: true }
-            })
+            const userTasks = await db
+                .select({ taskId: userTaskV2Statuses.taskId })
+                .from(userTaskV2Statuses)
+                .where(
+                    and(
+                        eq(userTaskV2Statuses.userId, session.user.id),
+                        eq(userTaskV2Statuses.projectId, projectId)
+                    )
+                )
             userTaskIds = userTasks.map((t: { taskId: string }) => t.taskId)
         }
 
-        // Fetch tasks for suggestions that have them
         const suggestionsWithTasks: FeatureSuggestionWithUser[] = await Promise.all(
             suggestions.map(async (s: any): Promise<FeatureSuggestionWithUser> => {
                 let task = null
                 if (s.taskId) {
-                    task = await prisma.projectV2Task.findUnique({
-                        where: { id: s.taskId },
-                        select: { id: true, title: true }
+                    task = await db.query.projectV2Tasks.findFirst({
+                        where: eq(projectV2Tasks.id, s.taskId),
+                        columns: { id: true, title: true }
                     })
                 }
                 return {
@@ -305,15 +295,16 @@ export async function getFeatureSuggestions(projectId: string) {
 
 export async function adoptSuggestionToMyTasks(suggestionId: string, projectSlug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" }
         }
 
-        // Get the suggestion
-        const suggestion = await prisma.projectV2FeatureSuggestion.findUnique({
-            where: { id: suggestionId }
-        })
+        const [suggestion] = await db
+            .select()
+            .from(projectV2FeatureSuggestions)
+            .where(eq(projectV2FeatureSuggestions.id, suggestionId))
+            .limit(1)
 
         if (!suggestion) {
             return { success: false, message: "Suggestion not found" }
@@ -323,199 +314,180 @@ export async function adoptSuggestionToMyTasks(suggestionId: string, projectSlug
             return { success: false, message: "This suggestion hasn't been converted to a task yet" }
         }
 
-        // Get project details
-        const project = await prisma.projectV2.findUnique({
-            where: {
-                id: suggestion.projectId
-            },
-            select: {
-                id: true,
-                createdBy: true
-            }
-        })
+        const [project] = await db
+            .select({ id: projectsV2.id, createdBy: projectsV2.createdBy })
+            .from(projectsV2)
+            .where(eq(projectsV2.id, suggestion.projectId))
+            .limit(1)
 
         if (!project) {
             return { success: false, message: "Project not found" }
         }
 
-        // Check if user is enrolled in the project
-        const enrollment = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: session.user.id,
-                    projectId: project.id
-                }
-            }
+        const enrollment = await db.query.userProjectV2Progress.findFirst({
+            where: and(
+                eq(userProjectV2Progress.userId, session.user.id),
+                eq(userProjectV2Progress.projectId, project.id)
+            )
         })
 
         if (!enrollment && project.createdBy !== session.user.id) {
             return { success: false, message: "You must be enrolled in this project to adopt suggestions" }
         }
 
-        // If it's the creator without enrollment, return error
         if (!enrollment) {
             return { success: false, message: "Progress record not found" }
         }
 
-        // Check if user already has this task
-        const existingTask = await prisma.userTaskV2Status.findFirst({
-            where: {
-                userId: session.user.id,
-                taskId: suggestion.taskId,
-                projectId: project.id
-            }
-        })
+        const [existingTask] = await db
+            .select({ id: userTaskV2Statuses.id })
+            .from(userTaskV2Statuses)
+            .where(
+                and(
+                    eq(userTaskV2Statuses.userId, session.user.id),
+                    eq(userTaskV2Statuses.taskId, suggestion.taskId),
+                    eq(userTaskV2Statuses.projectId, project.id)
+                )
+            )
+            .limit(1)
 
         if (existingTask) {
             return { success: false, message: "You've already added this task to your list" }
         }
 
-        // Add task to user's list
-        await prisma.userTaskV2Status.create({
-            data: {
-                userId: session.user.id,
-                projectId: project.id,
-                taskId: suggestion.taskId,
-                status: "TO_DO",
-                progressId: enrollment.id
-            }
+        await db.insert(userTaskV2Statuses).values({
+            userId: session.user.id,
+            projectId: project.id,
+            taskId: suggestion.taskId,
+            status: "TO_DO",
+            progressId: enrollment.id
         })
 
-        // Update totalTasks count in progress
-        await prisma.userProjectV2Progress.update({
-            where: { id: enrollment.id },
-            data: {
-                totalTasks: { increment: 1 }
-            }
-        })
+        await db
+            .update(userProjectV2Progress)
+            .set({ totalTasks: sql`${userProjectV2Progress.totalTasks} + 1` })
+            .where(eq(userProjectV2Progress.id, enrollment.id))
 
-        // Update suggestion to track that this user adopted it
-        await prisma.projectV2FeatureSuggestion.update({
-            where: { id: suggestionId },
-            data: {
-                addedByUsers: {
-                    push: session.user.id
-                }
-            }
-        })
+        await db
+            .update(projectV2FeatureSuggestions)
+            .set({
+                addedByUsers: [...suggestion.addedByUsers, session.user.id]
+            })
+            .where(eq(projectV2FeatureSuggestions.id, suggestionId))
 
         revalidatePath(`/projects/${projectSlug}`)
         revalidatePath(`/projects/${projectSlug}/tasks`)
 
-        return {
-            success: true,
-            message: "Task added to your list successfully!"
-        }
+        return { success: true, message: "Task added to your list successfully!" }
     } catch (error) {
         console.error("Error adopting suggestion to tasks:", error)
-        return {
-            success: false,
-            message: "Failed to add task. Please try again."
-        }
+        return { success: false, message: "Failed to add task. Please try again." }
     }
 }
 
 export async function adoptVisitorSuggestionToTasks(suggestionId: string, projectSlug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" }
         }
 
-        // Get the suggestion
-        const suggestion = await prisma.projectV2FeatureSuggestion.findUnique({
-            where: { id: suggestionId }
-        })
+        const [suggestion] = await db
+            .select()
+            .from(projectV2FeatureSuggestions)
+            .where(eq(projectV2FeatureSuggestions.id, suggestionId))
+            .limit(1)
 
         if (!suggestion) {
             return { success: false, message: "Suggestion not found" }
         }
 
-        // Visitor suggestions shouldn't already have a task - we need to create it
         if (suggestion.suggestedBy !== "VISITOR") {
             return { success: false, message: "This is not a visitor suggestion" }
         }
 
-        // Get project details
-        const project = await prisma.projectV2.findUnique({
-            where: { id: suggestion.projectId },
-            select: { id: true, createdBy: true, slug: true }
-        })
+        const [project] = await db
+            .select({ id: projectsV2.id, createdBy: projectsV2.createdBy, slug: projectsV2.slug })
+            .from(projectsV2)
+            .where(eq(projectsV2.id, suggestion.projectId))
+            .limit(1)
 
         if (!project) {
             return { success: false, message: "Project not found" }
         }
 
-        // Check if user is enrolled or is the creator
-        const enrollment = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: session.user.id,
-                    projectId: project.id
-                }
-            }
+        const enrollment = await db.query.userProjectV2Progress.findFirst({
+            where: and(
+                eq(userProjectV2Progress.userId, session.user.id),
+                eq(userProjectV2Progress.projectId, project.id)
+            )
         })
 
         const isCreator = project.createdBy === session.user.id
 
-        // Must be enrolled or creator
         if (!enrollment && !isCreator) {
             return { success: false, message: "You must be enrolled in this project to add this suggestion" }
         }
 
-        // If it's the creator without enrollment, return error
         if (!enrollment) {
             return { success: false, message: "Progress record not found" }
         }
 
-        // Check if this suggestion has already been converted to a task
         let task
         if (suggestion.taskId) {
-            // Task already exists, check if user already has it
-            const existingTask = await prisma.userTaskV2Status.findFirst({
-                where: {
-                    userId: session.user.id,
-                    taskId: suggestion.taskId,
-                    projectId: project.id
-                }
-            })
+            const [existingTask] = await db
+                .select({ id: userTaskV2Statuses.id })
+                .from(userTaskV2Statuses)
+                .where(
+                    and(
+                        eq(userTaskV2Statuses.userId, session.user.id),
+                        eq(userTaskV2Statuses.taskId, suggestion.taskId),
+                        eq(userTaskV2Statuses.projectId, project.id)
+                    )
+                )
+                .limit(1)
 
             if (existingTask) {
                 return { success: false, message: "You've already added this task to your list" }
             }
 
-            task = await prisma.projectV2Task.findUnique({
-                where: { id: suggestion.taskId }
+            task = await db.query.projectV2Tasks.findFirst({
+                where: eq(projectV2Tasks.id, suggestion.taskId)
             })
         } else {
-            // Find a sprint to add the task to
-            const firstSprint = await prisma.projectV2Sprint.findFirst({
-                where: { projectId: project.id },
-                orderBy: { orderIndex: 'asc' }
+            const firstSprint = await db.query.projectV2Sprints.findFirst({
+                where: eq(projectV2Sprints.projectId, project.id),
+                orderBy: [asc(projectV2Sprints.orderIndex)]
             })
 
-            let sprintId = firstSprint?.id;
+            let sprintId = firstSprint?.id
             if (!sprintId) {
-                const newSprint = await prisma.projectV2Sprint.create({
-                    data: {
+                const [newSprint] = await db
+                    .insert(projectV2Sprints)
+                    .values({
                         projectId: project.id,
                         name: "General",
                         sprintNumber: 1,
                         duration: "2 weeks",
                         goal: "General tasks",
                         orderIndex: 0
-                    }
-                })
-                sprintId = newSprint.id;
+                    })
+                    .returning()
+                sprintId = newSprint.id
             }
 
-            // Create the task from the visitor suggestion
-            const taskCount = await prisma.projectV2Task.count({
-                where: { sprint: { projectId: project.id } }
-            })
+            const [taskCount] = await db
+                .select({ count: sql<number>`count(*)` })
+                .from(projectV2Tasks)
+                .where(
+                    sql`${projectV2Tasks.sprintId} IN (
+                        SELECT id FROM "ProjectV2Sprint" WHERE "projectId" = ${project.id}
+                    )`
+                )
 
-            task = await prisma.projectV2Task.create({
-                data: {
+            const [newTask] = await db
+                .insert(projectV2Tasks)
+                .values({
                     sprintId,
                     title: suggestion.title,
                     description: [
@@ -534,86 +506,62 @@ export async function adoptVisitorSuggestionToTasks(suggestionId: string, projec
                     badges: [suggestion.type],
                     tags: suggestion.tags,
                     difficulty: "INTERMEDIATE",
-                    orderIndex: taskCount
-                }
-            })
+                    orderIndex: Number(taskCount?.count ?? 0)
+                })
+                .returning()
 
-            // Update the suggestion with the task ID
-            await prisma.projectV2FeatureSuggestion.update({
-                where: { id: suggestionId },
-                data: {
-                    taskId: task.id,
-                    addedToTasks: true
-                }
-            })
+            task = newTask
+
+            await db
+                .update(projectV2FeatureSuggestions)
+                .set({ taskId: task.id, addedToTasks: true })
+                .where(eq(projectV2FeatureSuggestions.id, suggestionId))
         }
 
         if (!task) {
             return { success: false, message: "Failed to create or find task" }
         }
 
-        // Add task to user's list
-        await prisma.userTaskV2Status.create({
-            data: {
-                userId: session.user.id,
-                projectId: project.id,
-                taskId: task.id,
-                status: "TO_DO",
-                progressId: enrollment.id
-            }
+        await db.insert(userTaskV2Statuses).values({
+            userId: session.user.id,
+            projectId: project.id,
+            taskId: task.id,
+            status: "TO_DO",
+            progressId: enrollment.id
         })
 
-        // Update totalTasks count in progress
-        await prisma.userProjectV2Progress.update({
-            where: { id: enrollment.id },
-            data: {
-                totalTasks: { increment: 1 }
-            }
-        })
+        await db
+            .update(userProjectV2Progress)
+            .set({ totalTasks: sql`${userProjectV2Progress.totalTasks} + 1` })
+            .where(eq(userProjectV2Progress.id, enrollment.id))
 
-        // Update suggestion to track that this user adopted it
-        await prisma.projectV2FeatureSuggestion.update({
-            where: { id: suggestionId },
-            data: {
-                addedByUsers: {
-                    push: session.user.id
-                }
-            }
-        })
+        await db
+            .update(projectV2FeatureSuggestions)
+            .set({ addedByUsers: [...suggestion.addedByUsers, session.user.id] })
+            .where(eq(projectV2FeatureSuggestions.id, suggestionId))
 
         revalidatePath(`/projects/${project.slug}`)
         revalidatePath(`/projects/${project.slug}/tasks`)
 
-        return {
-            success: true,
-            message: "Task added to your list successfully!"
-        }
+        return { success: true, message: "Task added to your list successfully!" }
     } catch (error) {
         console.error("Error adopting visitor suggestion to tasks:", error)
-        return {
-            success: false,
-            message: "Failed to add task. Please try again."
-        }
+        return { success: false, message: "Failed to add task. Please try again." }
     }
 }
 
 export async function addSuggestionToTasks(suggestionId: string, projectSlug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" }
         }
 
-        // Get the suggestion
-        const suggestion = await prisma.projectV2FeatureSuggestion.findUnique({
-            where: { id: suggestionId },
-            include: {
+        const suggestion = await db.query.projectV2FeatureSuggestions.findFirst({
+            where: eq(projectV2FeatureSuggestions.id, suggestionId),
+            with: {
                 project: {
-                    select: {
-                        id: true,
-                        createdBy: true,
-                        slug: true
-                    }
+                    columns: { id: true, createdBy: true, slug: true }
                 }
             }
         })
@@ -622,45 +570,47 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
             return { success: false, message: "Suggestion not found" }
         }
 
-        // Check if user is the project creator
         if (suggestion.project.createdBy !== session.user.id) {
             return { success: false, message: "Only project creators can add visitor suggestions to tasks" }
         }
 
-        // Check if already added to tasks
         if (suggestion.addedToTasks) {
             return { success: false, message: "This suggestion has already been added to tasks" }
         }
 
-        // Find a sprint to add the task to
-        const firstSprint = await prisma.projectV2Sprint.findFirst({
-            where: { projectId: suggestion.project.id },
-            orderBy: { orderIndex: 'asc' }
+        const firstSprint = await db.query.projectV2Sprints.findFirst({
+            where: eq(projectV2Sprints.projectId, suggestion.project.id),
+            orderBy: [asc(projectV2Sprints.orderIndex)]
         })
 
-        let sprintId = firstSprint?.id;
+        let sprintId = firstSprint?.id
         if (!sprintId) {
-            const newSprint = await prisma.projectV2Sprint.create({
-                data: {
+            const [newSprint] = await db
+                .insert(projectV2Sprints)
+                .values({
                     projectId: suggestion.project.id,
                     name: "General",
                     sprintNumber: 1,
                     duration: "2 weeks",
                     goal: "General tasks",
                     orderIndex: 0
-                }
-            })
-            sprintId = newSprint.id;
+                })
+                .returning()
+            sprintId = newSprint.id
         }
 
-        // Get the current task count for order index
-        const taskCount = await prisma.projectV2Task.count({
-            where: { sprint: { projectId: suggestion.project.id } }
-        })
+        const [taskCount] = await db
+            .select({ count: sql<number>`count(*)` })
+            .from(projectV2Tasks)
+            .where(
+                sql`${projectV2Tasks.sprintId} IN (
+                    SELECT id FROM "ProjectV2Sprint" WHERE "projectId" = ${suggestion.project.id}
+                )`
+            )
 
-        // Create a new task from the suggestion
-        const task = await prisma.projectV2Task.create({
-            data: {
+        const [task] = await db
+            .insert(projectV2Tasks)
+            .values({
                 sprintId,
                 title: suggestion.title,
                 description: [
@@ -679,58 +629,58 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
                 badges: [suggestion.type],
                 tags: suggestion.tags,
                 difficulty: "INTERMEDIATE",
-                orderIndex: taskCount
-            }
-        })
-
-        // Get creator's progress record (create if doesn't exist)
-        let creatorProgress = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: session.user.id,
-                    projectId: suggestion.project.id
-                }
-            }
-        })
-
-        // If creator doesn't have progress yet, create it
-        if (!creatorProgress) {
-            const totalTasks = await prisma.projectV2Task.count({
-                where: { sprint: { projectId: suggestion.project.id } }
+                orderIndex: Number(taskCount?.count ?? 0)
             })
+            .returning()
 
-            creatorProgress = await prisma.userProjectV2Progress.create({
-                data: {
+        let creatorProgress = await db.query.userProjectV2Progress.findFirst({
+            where: and(
+                eq(userProjectV2Progress.userId, session.user.id),
+                eq(userProjectV2Progress.projectId, suggestion.project.id)
+            )
+        })
+
+        if (!creatorProgress) {
+            const [totalTasks] = await db
+                .select({ count: sql<number>`count(*)` })
+                .from(projectV2Tasks)
+                .where(
+                    sql`${projectV2Tasks.sprintId} IN (
+                        SELECT id FROM "ProjectV2Sprint" WHERE "projectId" = ${suggestion.project.id}
+                    )`
+                )
+
+            const [created] = await db
+                .insert(userProjectV2Progress)
+                .values({
                     userId: session.user.id,
                     projectId: suggestion.project.id,
                     status: "IN_PROGRESS",
-                    totalTasks,
+                    totalTasks: Number(totalTasks?.count ?? 0),
                     startedAt: new Date()
-                }
-            })
+                })
+                .returning()
+
+            creatorProgress = created
         }
 
-        // Add task to creator's list
-        await prisma.userTaskV2Status.create({
-            data: {
-                userId: session.user.id,
-                projectId: suggestion.project.id,
-                taskId: task.id,
-                status: "TO_DO",
-                progressId: creatorProgress.id
-            }
+        await db.insert(userTaskV2Statuses).values({
+            userId: session.user.id,
+            projectId: suggestion.project.id,
+            taskId: task.id,
+            status: "TO_DO",
+            progressId: creatorProgress.id
         })
 
-        // Update the suggestion
-        await prisma.projectV2FeatureSuggestion.update({
-            where: { id: suggestionId },
-            data: {
+        await db
+            .update(projectV2FeatureSuggestions)
+            .set({
                 addedToTasks: true,
                 taskId: task.id,
                 status: "APPROVED",
                 addedByUsers: [session.user.id]
-            }
-        })
+            })
+            .where(eq(projectV2FeatureSuggestions.id, suggestionId))
 
         revalidatePath(`/projects/${suggestion.project.slug}`)
         revalidatePath(`/projects/${suggestion.project.slug}/tasks`)
@@ -742,28 +692,22 @@ export async function addSuggestionToTasks(suggestionId: string, projectSlug: st
         }
     } catch (error) {
         console.error("Error adding suggestion to tasks:", error)
-        return {
-            success: false,
-            message: "Failed to add to tasks. Please try again."
-        }
+        return { success: false, message: "Failed to add to tasks. Please try again." }
     }
 }
 
 export async function updateSuggestionStatus(suggestionId: string, status: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" }
         }
 
-        const suggestion = await prisma.projectV2FeatureSuggestion.findUnique({
-            where: { id: suggestionId },
-            include: {
+        const suggestion = await db.query.projectV2FeatureSuggestions.findFirst({
+            where: eq(projectV2FeatureSuggestions.id, suggestionId),
+            with: {
                 project: {
-                    select: {
-                        createdBy: true,
-                        slug: true
-                    }
+                    columns: { createdBy: true, slug: true }
                 }
             }
         })
@@ -772,7 +716,6 @@ export async function updateSuggestionStatus(suggestionId: string, status: strin
             return { success: false, message: "Suggestion not found" }
         }
 
-        // Check if user is the project creator
         if (suggestion.project.createdBy !== session.user.id) {
             return {
                 success: false,
@@ -780,26 +723,16 @@ export async function updateSuggestionStatus(suggestionId: string, status: strin
             }
         }
 
-        await prisma.projectV2FeatureSuggestion.update({
-            where: {
-                id: suggestionId
-            },
-            data: {
-                status: status as any
-            }
-        })
+        await db
+            .update(projectV2FeatureSuggestions)
+            .set({ status: status as any })
+            .where(eq(projectV2FeatureSuggestions.id, suggestionId))
 
         revalidatePath(`/projects/${suggestion.project.slug}`)
 
-        return {
-            success: true,
-            message: "Status updated successfully"
-        }
+        return { success: true, message: "Status updated successfully" }
     } catch (error) {
         console.error("Error updating suggestion status:", error)
-        return {
-            success: false,
-            message: "Failed to update status. Please try again."
-        }
+        return { success: false, message: "Failed to update status. Please try again." }
     }
 }

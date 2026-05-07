@@ -2,12 +2,19 @@
 
 /**
  * KnowMe Profile Server Actions
- * 
+ *
  * Handles profile creation, retrieval, and management
  */
 
-import { auth } from "@repo/auth";
-import { prisma } from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    knowMeProfiles,
+    knowMePrivacySettings,
+    users,
+} from "@repo/db";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type {
 	KnowMeProfileBasic,
@@ -31,16 +38,16 @@ export async function getMyKnowMeProfile(): Promise<
 	KnowMeActionResponse<KnowMeProfileFull>
 > {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
-		const profile = await prisma.knowMeProfile.findUnique({
-			where: { userId: session.user.id },
-			include: {
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.userId, session.user.id),
+			with: {
 				user: {
-					select: {
+					columns: {
 						id: true,
 						username: true,
 						name: true,
@@ -50,11 +57,11 @@ export async function getMyKnowMeProfile(): Promise<
 					},
 				},
 				personalData: {
-					where: { isActive: true },
-					orderBy: { createdAt: "desc" },
+					where: (pd: any, { eq }: any) => eq(pd.isActive, true),
+					orderBy: (pd: any, { desc }: any) => [desc(pd.createdAt)],
 				},
 				platformConnections: {
-					orderBy: { createdAt: "desc" },
+					orderBy: (pc: any, { desc }: any) => [desc(pc.createdAt)],
 				},
 				privacySettings: true,
 			},
@@ -88,7 +95,7 @@ export async function getMyKnowMeProfile(): Promise<
 				createdAt: profile.createdAt,
 				updatedAt: profile.updatedAt,
 				user: profile.user,
-				personalData: profile.personalData.map((pd) => ({
+				personalData: profile.personalData.map((pd: any) => ({
 					id: pd.id,
 					dataType: pd.dataType,
 					title: pd.title,
@@ -100,7 +107,7 @@ export async function getMyKnowMeProfile(): Promise<
 					createdAt: pd.createdAt,
 					updatedAt: pd.updatedAt,
 				})),
-				platformConnections: profile.platformConnections.map((pc) => ({
+				platformConnections: profile.platformConnections.map((pc: any) => ({
 					id: pc.id,
 					platform: pc.platform,
 					platformUsername: pc.platformUsername,
@@ -123,14 +130,9 @@ export async function getMyKnowMeProfile(): Promise<
 						shareWorkHistory: profile.privacySettings.shareWorkHistory,
 						shareEducation: profile.privacySettings.shareEducation,
 						shareSalary: profile.privacySettings.shareSalary,
-						shareExternalData: profile.privacySettings.shareExternalData as Record<
-							string,
-							boolean
-						>,
-						maxQuestionsPerSession:
-							profile.privacySettings.maxQuestionsPerSession,
-						requireAuthForSensitive:
-							profile.privacySettings.requireAuthForSensitive,
+						shareExternalData: profile.privacySettings.shareExternalData as Record<string, boolean>,
+						maxQuestionsPerSession: profile.privacySettings.maxQuestionsPerSession,
+						requireAuthForSensitive: profile.privacySettings.requireAuthForSensitive,
 						blockedUserIds: profile.privacySettings.blockedUserIds,
 						blockedCompanies: profile.privacySettings.blockedCompanies,
 					}
@@ -152,22 +154,20 @@ export async function getKnowMeProfileByUsername(
 	username: string
 ): Promise<KnowMeActionResponse<KnowMeProfilePublic>> {
 	try {
-		const user = await prisma.user.findUnique({
-			where: { username },
-			include: {
+		const user = await db.query.users.findFirst({
+			where: eq(users.username, username),
+			with: {
 				knowmeProfile: {
-					include: {
-						privacySettings: true,
-					},
+					with: { privacySettings: true },
 				},
 			},
 		});
 
-		if (!user || !user.knowmeProfile) {
+		if (!user || !(user as any).knowmeProfile) {
 			return { success: false, error: "Profile not found" };
 		}
 
-		const profile = user.knowmeProfile;
+		const profile = (user as any).knowmeProfile;
 
 		// Check if profile is accessible
 		if (profile.status !== "ACTIVE" || !profile.isPublic) {
@@ -208,14 +208,14 @@ export async function initializeKnowMeProfile(): Promise<
 	KnowMeActionResponse<KnowMeProfileBasic>
 > {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
 		// Check if profile already exists
-		const existing = await prisma.knowMeProfile.findUnique({
-			where: { userId: session.user.id },
+		const existing = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.userId, session.user.id),
 		});
 
 		if (existing) {
@@ -256,38 +256,34 @@ export async function initializeKnowMeProfile(): Promise<
 		const { key, hash } = generateApiKey();
 
 		// Create profile with default settings
-		const profile = await prisma.knowMeProfile.create({
-			data: {
-				userId: session.user.id,
-				status: "SETUP",
-				privacy: "PUBLIC",
-				isPublic: true,
-				includePersonalData: true,
-				includePlatformData: false,
-				includeProjects: true,
-				includeAssessments: true,
-				includeResume: true,
-				updateCycleDays: 10,
-				apiKey: key,
-				apiKeyHash: hash,
-				apiEnabled: false,
-				apiRateLimit: 100,
-				onboardingStep: 1,
-				onboardingCompleted: false,
-				suggestedQuestions: [
-					"What's your experience with React?",
-					"Tell me about your projects",
-					"What technologies do you know?",
-					"Are you available for opportunities?",
-				],
-			},
-		});
+		const [profile] = await db.insert(knowMeProfiles).values({
+			userId: session.user.id,
+			status: "SETUP",
+			privacy: "PUBLIC",
+			isPublic: true,
+			includePersonalData: true,
+			includePlatformData: false,
+			includeProjects: true,
+			includeAssessments: true,
+			includeResume: true,
+			updateCycleDays: 10,
+			apiKey: key,
+			apiKeyHash: hash,
+			apiEnabled: false,
+			apiRateLimit: 100,
+			onboardingStep: 1,
+			onboardingCompleted: false,
+			suggestedQuestions: [
+				"What's your experience with React?",
+				"Tell me about your projects",
+				"What technologies do you know?",
+				"Are you available for opportunities?",
+			],
+		}).returning();
 
 		// Create default privacy settings
-		await prisma.knowMePrivacySettings.create({
-			data: {
-				profileId: profile.id,
-			},
+		await db.insert(knowMePrivacySettings).values({
+			profileId: profile!.id,
 		});
 
 		revalidatePath("/knowme");
@@ -295,26 +291,26 @@ export async function initializeKnowMeProfile(): Promise<
 		return {
 			success: true,
 			data: {
-				id: profile.id,
-				userId: profile.userId,
-				status: profile.status,
-				privacy: profile.privacy,
-				isPublic: profile.isPublic,
-				includePersonalData: profile.includePersonalData,
-				includePlatformData: profile.includePlatformData,
-				includeProjects: profile.includeProjects,
-				includeAssessments: profile.includeAssessments,
-				updateCycleDays: profile.updateCycleDays,
-				lastUpdatedAt: profile.lastUpdatedAt,
-				nextScheduledUpdate: profile.nextScheduledUpdate,
-				totalQuestionsAnswered: profile.totalQuestionsAnswered,
-				totalSessions: profile.totalSessions,
-				totalVisitors: profile.totalVisitors,
-				apiEnabled: profile.apiEnabled,
-				apiRateLimit: profile.apiRateLimit,
-				onboardingCompleted: profile.onboardingCompleted,
-				createdAt: profile.createdAt,
-				updatedAt: profile.updatedAt,
+				id: profile!.id,
+				userId: profile!.userId,
+				status: profile!.status,
+				privacy: profile!.privacy,
+				isPublic: profile!.isPublic,
+				includePersonalData: profile!.includePersonalData,
+				includePlatformData: profile!.includePlatformData,
+				includeProjects: profile!.includeProjects,
+				includeAssessments: profile!.includeAssessments,
+				updateCycleDays: profile!.updateCycleDays,
+				lastUpdatedAt: profile!.lastUpdatedAt,
+				nextScheduledUpdate: profile!.nextScheduledUpdate,
+				totalQuestionsAnswered: profile!.totalQuestionsAnswered,
+				totalSessions: profile!.totalSessions,
+				totalVisitors: profile!.totalVisitors,
+				apiEnabled: profile!.apiEnabled,
+				apiRateLimit: profile!.apiRateLimit,
+				onboardingCompleted: profile!.onboardingCompleted,
+				createdAt: profile!.createdAt,
+				updatedAt: profile!.updatedAt,
 			},
 			message: "Profile initialized successfully",
 		};
@@ -345,13 +341,13 @@ export async function updateKnowMeProfile(data: {
 	aiPersonality?: string;
 }): Promise<KnowMeActionResponse<void>> {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
-		const profile = await prisma.knowMeProfile.findUnique({
-			where: { userId: session.user.id },
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.userId, session.user.id),
 		});
 
 		if (!profile) {
@@ -364,13 +360,12 @@ export async function updateKnowMeProfile(data: {
 			nextScheduledUpdate = calculateNextUpdate(data.updateCycleDays);
 		}
 
-		await prisma.knowMeProfile.update({
-			where: { id: profile.id },
-			data: {
+		await db.update(knowMeProfiles)
+			.set({
 				...data,
 				nextScheduledUpdate,
-			},
-		});
+			})
+			.where(eq(knowMeProfiles.id, profile.id));
 
 		revalidatePath("/knowme");
 		revalidatePath("/knowme/settings");
@@ -389,35 +384,32 @@ export async function activateKnowMeProfile(): Promise<
 	KnowMeActionResponse<void>
 > {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
-			return { 
-				success: false, 
-				error: "Not authenticated" 
+			return {
+				success: false,
+				error: "Not authenticated"
 			};
 		}
 
-		const profile = await prisma.knowMeProfile.findUnique({
-			where: { 
-				userId: session.user.id 
-			},
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.userId, session.user.id),
 		});
 
 		if (!profile) {
-			return { 
-				success: false, error: "Profile not found" 
+			return {
+				success: false, error: "Profile not found"
 			};
 		}
 
-		await prisma.knowMeProfile.update({
-			where: { id: profile.id },
-			data: {
+		await db.update(knowMeProfiles)
+			.set({
 				status: "ACTIVE",
 				onboardingCompleted: true,
 				lastUpdatedAt: new Date(),
 				nextScheduledUpdate: calculateNextUpdate(profile.updateCycleDays),
-			},
-		});
+			})
+			.where(eq(knowMeProfiles.id, profile.id));
 
 		revalidatePath("/knowme");
 
@@ -435,15 +427,14 @@ export async function updateOnboardingStep(
 	step: number
 ): Promise<KnowMeActionResponse<void>> {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
-		await prisma.knowMeProfile.update({
-			where: { userId: session.user.id },
-			data: { onboardingStep: step },
-		});
+		await db.update(knowMeProfiles)
+			.set({ onboardingStep: step })
+			.where(eq(knowMeProfiles.userId, session.user.id));
 
 		return { success: true };
 	} catch (error) {
@@ -463,13 +454,13 @@ export async function deleteKnowMeProfile(): Promise<
 	KnowMeActionResponse<void>
 > {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
-		const profile = await prisma.knowMeProfile.findUnique({
-			where: { userId: session.user.id },
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.userId, session.user.id),
 		});
 
 		if (!profile) {
@@ -477,9 +468,7 @@ export async function deleteKnowMeProfile(): Promise<
 		}
 
 		// Delete profile (cascade will delete related data)
-		await prisma.knowMeProfile.delete({
-			where: { id: profile.id },
-		});
+		await db.delete(knowMeProfiles).where(eq(knowMeProfiles.id, profile.id));
 
 		// TODO: Also delete vectors from Upstash
 		// await deleteNamespace(profile.id);
@@ -504,14 +493,14 @@ export async function hasKnowMeProfile(): Promise<
 	KnowMeActionResponse<{ exists: boolean; status?: string }>
 > {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
-		const profile = await prisma.knowMeProfile.findUnique({
-			where: { userId: session.user.id },
-			select: { status: true },
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.userId, session.user.id),
+			columns: { status: true },
 		});
 
 		return {
@@ -526,4 +515,3 @@ export async function hasKnowMeProfile(): Promise<
 		return { success: false, error: "Failed to check profile" };
 	}
 }
-

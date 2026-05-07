@@ -2,21 +2,21 @@
 //
 // Spaced-repetition reminder cron route.
 //
-// NOTE: This route is designed for a `UserDSATrackingEntry` model that tracks
+// NOTE: This route is designed for a `userDSATrackingEntries` model that tracks
 // spaced-repetition state (nextDueAt, status) per user+problem. That model is
-// not yet present in the Prisma schema. Until it is added, the route falls back
-// to querying `PracticeUserSession` for DSA problems that are IN_PROGRESS and
+// not yet present in the Drizzle schema. Until it is added, the route falls back
+// to querying `practiceUserSession` for DSA problems that are IN_PROGRESS and
 // have not been updated in the past 24 hours — a reasonable proxy.
 //
-// Once the `UserDSATrackingEntry` model is added to the schema and migrated,
+// Once the `userDSATrackingEntries` model is added to the schema and migrated,
 // swap the query block labelled "FALLBACK" for the block labelled "PRIMARY".
 //
 // Trigger this route via a cron job (e.g. Vercel Cron or an external scheduler)
 // with the Authorization header set to: Bearer <CRON_SECRET>
 
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@repo/prisma'
-import { NotificationType, Platform, PracticeModule, PracticeSessionStatus } from '@repo/prisma/client'
+import { db, practiceUserSession, notifications } from '@repo/db'
+import { eq, and, lte, gte } from 'drizzle-orm'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Auth guard
@@ -32,7 +32,6 @@ function isAuthorized(req: NextRequest): boolean {
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
 
 /** Start of today in UTC (midnight). */
 function todayUTCStart(): Date {
@@ -54,40 +53,36 @@ export async function GET(req: NextRequest) {
         const now = new Date()
         const todayStart = todayUTCStart()
 
-        // ── PRIMARY (uncomment once UserDSATrackingEntry is in schema) ─────────
+        // ── PRIMARY (uncomment once userDSATrackingEntries is in schema) ──────
         //
-        // const dueEntries = await prisma.userDSATrackingEntry.findMany({
-        //     where: {
-        //         nextDueAt: { lte: now },
-        //         status: { not: 'COMPLETED' },
-        //     },
-        //     select: {
-        //         id: true,
-        //         userId: true,
-        //         problemId: true,
-        //         problem: { select: { title: true, slug: true } },
-        //         nextDueAt: true,
-        //         status: true,
+        // const dueEntries = await db.query.userDSATrackingEntries.findMany({
+        //     where: and(
+        //         lte(userDSATrackingEntries.nextDueAt, now),
+        //         ne(userDSATrackingEntries.status, 'COMPLETED'),
+        //     ),
+        //     with: {
+        //         problem: { columns: { title: true, slug: true } },
         //     },
         // })
         //
-        // ── FALLBACK: use PracticeUserSession (DSA module, IN_PROGRESS) ────────
+        // ── FALLBACK: use practiceUserSession (DSA module, IN_PROGRESS) ───────
         //
         // Find DSA sessions that are IN_PROGRESS and were last updated > 24 h ago.
-        // These are the most natural "due for review" entries currently in the DB.
         const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
-        const dueEntries = await prisma.practiceUserSession.findMany({
-            where: {
-                module: PracticeModule.DSA,
-                status: PracticeSessionStatus.IN_PROGRESS,
-                updatedAt: { lte: twentyFourHoursAgo },
+        const dueEntries = await db.query.practiceUserSession.findMany({
+            where: and(
+                eq(practiceUserSession.module, 'DSA'),
+                eq(practiceUserSession.status, 'IN_PROGRESS'),
+                lte(practiceUserSession.updatedAt, twentyFourHoursAgo),
+            ),
+            with: {
+                problem: { columns: { title: true, slug: true } },
             },
-            select: {
+            columns: {
                 id: true,
                 userId: true,
                 problemId: true,
-                problem: { select: { title: true, slug: true } },
                 updatedAt: true,
             },
         })
@@ -97,24 +92,19 @@ export async function GET(req: NextRequest) {
         }
 
         // 2. Fetch notifications already created today to avoid duplicates.
-        //    We key by userId + actionUrl (which encodes the problemId).
-        const existingToday = await prisma.notification.findMany({
-            where: {
-                createdAt: { gte: todayStart },
-                platform: Platform.MAIN,
-                // title prefix shared by all dsa-reminder notifications
-                title: { startsWith: '🧠 Time to review' },
-            },
-            select: { userId: true, actionUrl: true },
+        const existingToday = await db.query.notifications.findMany({
+            where: and(
+                gte(notifications.createdAt, todayStart),
+                eq(notifications.platform, 'MAIN'),
+            ),
+            columns: { userId: true, actionUrl: true, title: true },
         })
 
-        // Build a set of "userId::problemId" already notified today
+        // Build a set of "userId::actionUrl" already notified today (dsa-reminder ones)
         const alreadyNotified = new Set<string>(
-            existingToday.map((n) => {
-                // actionUrl format: /practice/dsa/<slug>  or  /practice/dsa?problem=<problemId>
-                // We stored userId+actionUrl together, so key off both
-                return `${n.userId}::${n.actionUrl ?? ''}`
-            })
+            existingToday
+                .filter(n => n.title?.startsWith('Time to review'))
+                .map(n => `${n.userId}::${n.actionUrl ?? ''}`)
         )
 
         // 3. Create notifications for each due entry that hasn't been notified yet.
@@ -122,8 +112,8 @@ export async function GET(req: NextRequest) {
             userId: string
             title: string
             message: string
-            type: NotificationType
-            platform: Platform
+            type: 'INFO'
+            platform: 'MAIN'
             actionUrl: string
         }> = []
 
@@ -135,10 +125,10 @@ export async function GET(req: NextRequest) {
 
             toCreate.push({
                 userId: entry.userId,
-                title: `🧠 Time to review: ${entry.problem.title}`,
+                title: `Time to review: ${entry.problem.title}`,
                 message: `Your spaced-repetition schedule says it's time to revisit "${entry.problem.title}". Keep your streak going!`,
-                type: NotificationType.INFO,
-                platform: Platform.MAIN,
+                type: 'INFO',
+                platform: 'MAIN',
                 actionUrl,
             })
 
@@ -151,7 +141,7 @@ export async function GET(req: NextRequest) {
         }
 
         // 4. Bulk-insert notifications
-        await prisma.notification.createMany({ data: toCreate })
+        await db.insert(notifications).values(toCreate)
 
         return NextResponse.json({ success: true, processed: toCreate.length })
     } catch (err: unknown) {

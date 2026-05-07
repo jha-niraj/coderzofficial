@@ -1,7 +1,23 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import {
+    db,
+    studentUniversityLinks,
+    classEnrollments,
+    universityClasses,
+    projectsV2,
+    userProjectV2Progress,
+    projectV2Sprints,
+    projectV2Tasks,
+    mockInterviewVoice,
+    mockVoiceSession,
+    userPracticeSets,
+    userPracticeSetQuestions,
+    userPracticeSetAttempts,
+} from "@repo/db"
+import { eq, and, inArray, count } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 
 export interface StudentProjectAssignment {
     id: string
@@ -66,7 +82,7 @@ interface ClassInfo {
  * Get all university assignments for a student (projects, mocks, quizzes)
  */
 export async function getStudentUniversityAssignments() {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
@@ -74,44 +90,38 @@ export async function getStudentUniversityAssignments() {
 
     try {
         // Get student's verified university link
-        const studentLink = await prisma.studentUniversityLink.findFirst({
-            where: {
-                userId: session.user.id,
-                verificationStatus: "VERIFIED",
-            },
-            select: {
-                id: true,
-                universityId: true,
-            },
-        })
+        const studentLinkRows = await db
+            .select({ id: studentUniversityLinks.id, universityId: studentUniversityLinks.universityId })
+            .from(studentUniversityLinks)
+            .where(and(
+                eq(studentUniversityLinks.userId, session.user.id),
+                eq(studentUniversityLinks.verificationStatus, "VERIFIED")
+            ))
+            .limit(1)
 
-        if (!studentLink) {
+        if (!studentLinkRows[0]) {
             return {
                 success: false,
                 error: "Not verified with any university",
             }
         }
 
-        // Get student's enrolled classes
-        const enrollments = await prisma.classEnrollment.findMany({
-            where: {
-                studentLinkId: studentLink.id,
-            },
-            select: {
-                classId: true,
-                class: {
-                    select: {
-                        id: true,
-                        name: true,
-                        code: true,
-                    },
-                },
-            },
-        })
+        const studentLink = studentLinkRows[0]
 
-        const enrolledClassIds = enrollments.map(e => e.classId)
+        // Get student's enrolled classes
+        const enrollmentRows = await db
+            .select({
+                classId: classEnrollments.classId,
+                className: universityClasses.name,
+                classCode: universityClasses.code,
+            })
+            .from(classEnrollments)
+            .innerJoin(universityClasses, eq(classEnrollments.classId, universityClasses.id))
+            .where(eq(classEnrollments.studentLinkId, studentLink.id))
+
+        const enrolledClassIds = enrollmentRows.map(e => e.classId)
         const classMap = new Map<string, ClassInfo>(
-            enrollments.map(e => [e.classId, e.class])
+            enrollmentRows.map(e => [e.classId, { id: e.classId, name: e.className, code: e.classCode }])
         )
 
         if (enrolledClassIds.length === 0) {
@@ -131,14 +141,12 @@ export async function getStudentUniversityAssignments() {
             }
         }
 
-        // Fetch all assignment types
         const [projects, mocks, quizzes] = await Promise.all([
             getProjectAssignments(session.user.id, enrolledClassIds, classMap),
             getMockAssignments(session.user.id, enrolledClassIds, classMap),
             getQuizAssignments(session.user.id, enrolledClassIds, classMap),
         ])
 
-        // Calculate stats
         const allAssignments = [...projects, ...mocks, ...quizzes]
         const now = new Date()
         const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
@@ -175,45 +183,45 @@ async function getProjectAssignments(
     enrolledClassIds: string[],
     classMap: Map<string, ClassInfo>
 ): Promise<StudentProjectAssignment[]> {
-    // Find projects that have any of the student's enrolled class IDs
-    const projects = await prisma.projectV2.findMany({
-        where: {
-            isUniversityProject: true,
-            classIds: {
-                hasSome: enrolledClassIds,
-            },
-        },
-        select: {
-            id: true,
-            title: true,
-            shortDescription: true,
-            difficulty: true,
-            technologies: true,
-            slug: true,
-            classIds: true,
-            assignmentDeadline: true,
-            assignmentCredits: true,
-            assignmentInstructions: true,
-        },
-    })
+    // Find projects that are university projects
+    const allProjects = await db
+        .select({
+            id: projectsV2.id,
+            title: projectsV2.title,
+            shortDescription: projectsV2.shortDescription,
+            difficulty: projectsV2.difficulty,
+            technologies: projectsV2.technologies,
+            slug: projectsV2.slug,
+            classIds: projectsV2.classIds,
+            assignmentDeadline: projectsV2.assignmentDeadline,
+            assignmentCredits: projectsV2.assignmentCredits,
+            assignmentInstructions: projectsV2.assignmentInstructions,
+        })
+        .from(projectsV2)
+        .where(eq(projectsV2.isUniversityProject, true))
 
-    // Get student's progress on these projects (using UserProjectV2Progress)
-    const projectProgress = await prisma.userProjectV2Progress.findMany({
-        where: {
-            userId: userId,
-            projectId: { in: projects.map(p => p.id) },
-        },
-        select: {
-            projectId: true,
-            progressPercentage: true,
-            status: true,
-        },
-    })
-
-    type ProgressRecord = { projectId: string; progressPercentage: number; status: string }
-    const progressMap = new Map<string, ProgressRecord>(
-        projectProgress.map(p => [p.projectId, p])
+    // Filter by enrolled class IDs (classIds is an array column)
+    const projects = allProjects.filter(p =>
+        p.classIds.some(cid => enrolledClassIds.includes(cid))
     )
+
+    if (projects.length === 0) return []
+
+    const projectIds = projects.map(p => p.id)
+
+    const progressRows = await db
+        .select({
+            projectId: userProjectV2Progress.projectId,
+            progressPercentage: userProjectV2Progress.progressPercentage,
+            status: userProjectV2Progress.status,
+        })
+        .from(userProjectV2Progress)
+        .where(and(
+            eq(userProjectV2Progress.userId, userId),
+            inArray(userProjectV2Progress.projectId, projectIds)
+        ))
+
+    const progressMap = new Map(progressRows.map(p => [p.projectId, p]))
 
     return projects.map((project): StudentProjectAssignment => {
         const progress = progressMap.get(project.id)
@@ -233,7 +241,7 @@ async function getProjectAssignments(
             id: project.id,
             type: "project",
             title: project.title,
-            description: project.shortDescription,
+            description: project.shortDescription ?? null,
             difficulty: project.difficulty,
             deadline: project.assignmentDeadline,
             creditsRequired: project.assignmentCredits,
@@ -252,45 +260,42 @@ async function getMockAssignments(
     enrolledClassIds: string[],
     classMap: Map<string, ClassInfo>
 ): Promise<StudentMockAssignment[]> {
-    // Find mock interviews that have any of the student's enrolled class IDs
-    const mocks = await prisma.mockInterviewVoice.findMany({
-        where: {
-            isUniversityMock: true,
-            classIds: {
-                hasSome: enrolledClassIds,
-            },
-        },
-        select: {
-            id: true,
-            title: true,
-            description: true,
-            category: true,
-            level: true,
-            classIds: true,
-            assignmentDeadline: true,
-            assignmentCredits: true,
-            assignmentInstructions: true,
-        },
-    })
+    const allMocks = await db
+        .select({
+            id: mockInterviewVoice.id,
+            title: mockInterviewVoice.title,
+            description: mockInterviewVoice.description,
+            category: mockInterviewVoice.category,
+            level: mockInterviewVoice.level,
+            classIds: mockInterviewVoice.classIds,
+            assignmentDeadline: mockInterviewVoice.assignmentDeadline,
+            assignmentCredits: mockInterviewVoice.assignmentCredits,
+            assignmentInstructions: mockInterviewVoice.assignmentInstructions,
+        })
+        .from(mockInterviewVoice)
+        .where(eq(mockInterviewVoice.isUniversityMock, true))
 
-    // Get student's sessions for these mocks (using MockVoiceSession)
-    const mockSessions = await prisma.mockVoiceSession.findMany({
-        where: {
-            userId: userId,
-            mockId: { in: mocks.map(m => m.id) },
-        },
-        select: {
-            mockId: true,
-            status: true,
-            // Note: MockVoiceSession doesn't have overallScore, we use aiAnalysis instead
-            completedAt: true,
-        },
-    })
-
-    type SessionRecord = { mockId: string; status: string; completedAt: Date | null }
-    const sessionMap = new Map<string, SessionRecord>(
-        mockSessions.map(s => [s.mockId, s])
+    const mocks = allMocks.filter(m =>
+        m.classIds.some(cid => enrolledClassIds.includes(cid))
     )
+
+    if (mocks.length === 0) return []
+
+    const mockIds = mocks.map(m => m.id)
+
+    const sessionRows = await db
+        .select({
+            mockId: mockVoiceSession.mockId,
+            status: mockVoiceSession.status,
+            completedAt: mockVoiceSession.completedAt,
+        })
+        .from(mockVoiceSession)
+        .where(and(
+            eq(mockVoiceSession.userId, userId),
+            inArray(mockVoiceSession.mockId, mockIds)
+        ))
+
+    const sessionMap = new Map(sessionRows.map(s => [s.mockId, s]))
 
     return mocks.map((mock): StudentMockAssignment => {
         const session = sessionMap.get(mock.id)
@@ -311,7 +316,7 @@ async function getMockAssignments(
             instructions: mock.assignmentInstructions,
             classNames,
             status,
-            score: undefined, // Score would need to be extracted from aiAnalysis
+            score: undefined,
             completedAt: session?.completedAt ?? undefined,
         }
     })
@@ -322,50 +327,46 @@ async function getQuizAssignments(
     enrolledClassIds: string[],
     classMap: Map<string, ClassInfo>
 ): Promise<StudentQuizAssignment[]> {
-    // Find assessments/quizzes that have any of the student's enrolled class IDs
-    const assessments = await prisma.userPracticeSet.findMany({
-        where: {
-            isUniversityAssessment: true,
-            classIds: {
-                hasSome: enrolledClassIds,
-            },
-        },
-        select: {
-            id: true,
-            title: true,
-            description: true,
-            difficulty: true,
-            timeLimit: true,
-            classIds: true,
-            assignmentDeadline: true,
-            assignmentCredits: true,
-            assignmentInstructions: true,
-            isLiveSession: true,
-            liveSessionActive: true,
-            _count: {
-                select: { questions: true },
-            },
-        },
-    })
+    const allAssessments = await db
+        .select({
+            id: userPracticeSets.id,
+            title: userPracticeSets.title,
+            description: userPracticeSets.description,
+            difficulty: userPracticeSets.difficulty,
+            timeLimit: userPracticeSets.timeLimit,
+            classIds: userPracticeSets.classIds,
+            assignmentDeadline: userPracticeSets.assignmentDeadline,
+            assignmentCredits: userPracticeSets.assignmentCredits,
+            assignmentInstructions: userPracticeSets.assignmentInstructions,
+            isLiveSession: userPracticeSets.isLiveSession,
+            liveSessionActive: userPracticeSets.liveSessionActive,
+            questionCount: userPracticeSets.questionCount,
+        })
+        .from(userPracticeSets)
+        .where(eq(userPracticeSets.isUniversityAssessment, true))
 
-    // Get student's attempts for these assessments
-    const attempts = await prisma.userPracticeSetAttempt.findMany({
-        where: {
-            userId: userId,
-            practiceSetId: { in: assessments.map(a => a.id) },
-        },
-        select: {
-            practiceSetId: true,
-            status: true,
-            score: true,
-            completedAt: true,
-        },
-    })
-
-    type AttemptRecord = { practiceSetId: string; status: string; score: number | null; completedAt: Date | null }
-    const attemptMap = new Map<string, AttemptRecord>(
-        attempts.map(a => [a.practiceSetId, a])
+    const assessments = allAssessments.filter(a =>
+        a.classIds.some(cid => enrolledClassIds.includes(cid))
     )
+
+    if (assessments.length === 0) return []
+
+    const assessmentIds = assessments.map(a => a.id)
+
+    const attemptRows = await db
+        .select({
+            practiceSetId: userPracticeSetAttempts.practiceSetId,
+            status: userPracticeSetAttempts.status,
+            score: userPracticeSetAttempts.score,
+            completedAt: userPracticeSetAttempts.completedAt,
+        })
+        .from(userPracticeSetAttempts)
+        .where(and(
+            eq(userPracticeSetAttempts.userId, userId),
+            inArray(userPracticeSetAttempts.practiceSetId, assessmentIds)
+        ))
+
+    const attemptMap = new Map(attemptRows.map(a => [a.practiceSetId, a]))
 
     return assessments.map((assessment): StudentQuizAssignment => {
         const attempt = attemptMap.get(assessment.id)
@@ -378,9 +379,9 @@ async function getQuizAssignments(
             id: assessment.id,
             type: "quiz",
             title: assessment.title,
-            description: assessment.description,
+            description: assessment.description ?? null,
             difficulty: assessment.difficulty,
-            questionCount: assessment._count.questions,
+            questionCount: assessment.questionCount,
             timeLimit: assessment.timeLimit,
             deadline: assessment.assignmentDeadline,
             creditsRequired: assessment.assignmentCredits,
@@ -402,7 +403,7 @@ export async function getAssignmentDetails(
     assignmentId: string,
     type: "project" | "mock" | "quiz"
 ) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
@@ -411,158 +412,181 @@ export async function getAssignmentDetails(
     try {
         switch (type) {
             case "project": {
-                const project = await prisma.projectV2.findUnique({
-                    where: { id: assignmentId },
-                    select: {
-                        id: true,
-                        title: true,
-                        shortDescription: true,
-                        description: true,
-                        difficulty: true,
-                        technologies: true,
-                        slug: true,
-                        assignmentDeadline: true,
-                        assignmentCredits: true,
-                        assignmentInstructions: true,
-                    },
-                })
+                const projectRows = await db
+                    .select({
+                        id: projectsV2.id,
+                        title: projectsV2.title,
+                        shortDescription: projectsV2.shortDescription,
+                        description: projectsV2.description,
+                        difficulty: projectsV2.difficulty,
+                        technologies: projectsV2.technologies,
+                        slug: projectsV2.slug,
+                        assignmentDeadline: projectsV2.assignmentDeadline,
+                        assignmentCredits: projectsV2.assignmentCredits,
+                        assignmentInstructions: projectsV2.assignmentInstructions,
+                    })
+                    .from(projectsV2)
+                    .where(eq(projectsV2.id, assignmentId))
+                    .limit(1)
 
-                if (!project) {
+                if (!projectRows[0]) {
                     return { success: false, error: "Project not found" }
                 }
 
-                // Get tasks through sprints
-                const sprints = await prisma.projectV2Sprint.findMany({
-                    where: { projectId: assignmentId },
-                    select: {
-                        id: true,
-                        name: true,
-                        tasks: {
-                            select: {
-                                id: true,
-                                title: true,
-                                description: true,
-                                orderIndex: true,
-                            },
-                            orderBy: { orderIndex: "asc" },
-                        },
-                    },
-                    orderBy: { orderIndex: "asc" },
-                })
+                const project = projectRows[0]
 
-                const projectProgress = await prisma.userProjectV2Progress.findUnique({
-                    where: {
-                        userId_projectId: {
-                            userId: session.user.id,
-                            projectId: assignmentId,
-                        },
-                    },
-                    select: {
-                        progressPercentage: true,
-                        status: true,
-                        tasksCompleted: true,
-                    },
-                })
+                // Get sprints with tasks
+                const sprintRows = await db
+                    .select({
+                        id: projectV2Sprints.id,
+                        name: projectV2Sprints.name,
+                        orderIndex: projectV2Sprints.orderIndex,
+                    })
+                    .from(projectV2Sprints)
+                    .where(eq(projectV2Sprints.projectId, assignmentId))
+                    .orderBy(projectV2Sprints.orderIndex)
+
+                const sprintIds = sprintRows.map(s => s.id)
+                const taskRows = sprintIds.length > 0
+                    ? await db
+                        .select({
+                            id: projectV2Tasks.id,
+                            sprintId: projectV2Tasks.sprintId,
+                            title: projectV2Tasks.title,
+                            description: projectV2Tasks.description,
+                            orderIndex: projectV2Tasks.orderIndex,
+                        })
+                        .from(projectV2Tasks)
+                        .where(inArray(projectV2Tasks.sprintId, sprintIds))
+                        .orderBy(projectV2Tasks.orderIndex)
+                    : []
+
+                const tasksBySprintId = new Map<string, typeof taskRows>()
+                for (const task of taskRows) {
+                    const existing = tasksBySprintId.get(task.sprintId) || []
+                    existing.push(task)
+                    tasksBySprintId.set(task.sprintId, existing)
+                }
+
+                const sprints = sprintRows.map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    tasks: tasksBySprintId.get(s.id) || [],
+                }))
+
+                const progressRows = await db
+                    .select({
+                        progressPercentage: userProjectV2Progress.progressPercentage,
+                        status: userProjectV2Progress.status,
+                        tasksCompleted: userProjectV2Progress.tasksCompleted,
+                    })
+                    .from(userProjectV2Progress)
+                    .where(and(
+                        eq(userProjectV2Progress.userId, session.user.id),
+                        eq(userProjectV2Progress.projectId, assignmentId)
+                    ))
+                    .limit(1)
 
                 return {
                     success: true,
                     data: {
                         ...project,
                         sprints,
-                        progress: projectProgress,
+                        progress: progressRows[0] ?? null,
                     },
                 }
             }
 
             case "mock": {
-                const mock = await prisma.mockInterviewVoice.findUnique({
-                    where: { id: assignmentId },
-                    select: {
-                        id: true,
-                        title: true,
-                        description: true,
-                        category: true,
-                        level: true,
-                        questionsCount: true,
-                        duration: true,
-                        assignmentDeadline: true,
-                        assignmentCredits: true,
-                        assignmentInstructions: true,
-                    },
-                })
+                const mockRows = await db
+                    .select({
+                        id: mockInterviewVoice.id,
+                        title: mockInterviewVoice.title,
+                        description: mockInterviewVoice.description,
+                        category: mockInterviewVoice.category,
+                        level: mockInterviewVoice.level,
+                        questionsCount: mockInterviewVoice.questionsCount,
+                        duration: mockInterviewVoice.duration,
+                        assignmentDeadline: mockInterviewVoice.assignmentDeadline,
+                        assignmentCredits: mockInterviewVoice.assignmentCredits,
+                        assignmentInstructions: mockInterviewVoice.assignmentInstructions,
+                    })
+                    .from(mockInterviewVoice)
+                    .where(eq(mockInterviewVoice.id, assignmentId))
+                    .limit(1)
 
-                if (!mock) {
+                if (!mockRows[0]) {
                     return { success: false, error: "Mock interview not found" }
                 }
 
-                const mockSession = await prisma.mockVoiceSession.findFirst({
-                    where: {
-                        userId: session.user.id,
-                        mockId: assignmentId,
-                    },
-                    orderBy: { createdAt: "desc" },
-                    select: {
-                        id: true,
-                        status: true,
-                        completedAt: true,
-                    },
-                })
+                const sessionRows = await db
+                    .select({
+                        id: mockVoiceSession.id,
+                        status: mockVoiceSession.status,
+                        completedAt: mockVoiceSession.completedAt,
+                    })
+                    .from(mockVoiceSession)
+                    .where(and(
+                        eq(mockVoiceSession.userId, session.user.id),
+                        eq(mockVoiceSession.mockId, assignmentId)
+                    ))
+                    .orderBy(mockVoiceSession.createdAt)
+                    .limit(1)
 
                 return {
                     success: true,
                     data: {
-                        ...mock,
-                        session: mockSession,
+                        ...mockRows[0],
+                        session: sessionRows[0] ?? null,
                     },
                 }
             }
 
             case "quiz": {
-                const quiz = await prisma.userPracticeSet.findUnique({
-                    where: { id: assignmentId },
-                    select: {
-                        id: true,
-                        title: true,
-                        description: true,
-                        difficulty: true,
-                        timeLimit: true,
-                        isLiveSession: true,
-                        liveSessionActive: true,
-                        assignmentDeadline: true,
-                        assignmentCredits: true,
-                        assignmentInstructions: true,
-                        _count: {
-                            select: { questions: true },
-                        },
-                    },
-                })
+                const quizRows = await db
+                    .select({
+                        id: userPracticeSets.id,
+                        title: userPracticeSets.title,
+                        description: userPracticeSets.description,
+                        difficulty: userPracticeSets.difficulty,
+                        timeLimit: userPracticeSets.timeLimit,
+                        isLiveSession: userPracticeSets.isLiveSession,
+                        liveSessionActive: userPracticeSets.liveSessionActive,
+                        assignmentDeadline: userPracticeSets.assignmentDeadline,
+                        assignmentCredits: userPracticeSets.assignmentCredits,
+                        assignmentInstructions: userPracticeSets.assignmentInstructions,
+                        questionCount: userPracticeSets.questionCount,
+                    })
+                    .from(userPracticeSets)
+                    .where(eq(userPracticeSets.id, assignmentId))
+                    .limit(1)
 
-                if (!quiz) {
+                if (!quizRows[0]) {
                     return { success: false, error: "Quiz not found" }
                 }
 
-                const quizAttempt = await prisma.userPracticeSetAttempt.findFirst({
-                    where: {
-                        userId: session.user.id,
-                        practiceSetId: assignmentId,
-                    },
-                    orderBy: { createdAt: "desc" },
-                    select: {
-                        id: true,
-                        status: true,
-                        score: true,
-                        correctCount: true,
-                        totalQuestions: true,
-                        completedAt: true,
-                    },
-                })
+                const attemptRows = await db
+                    .select({
+                        id: userPracticeSetAttempts.id,
+                        status: userPracticeSetAttempts.status,
+                        score: userPracticeSetAttempts.score,
+                        correctCount: userPracticeSetAttempts.correctCount,
+                        totalQuestions: userPracticeSetAttempts.totalQuestions,
+                        completedAt: userPracticeSetAttempts.completedAt,
+                    })
+                    .from(userPracticeSetAttempts)
+                    .where(and(
+                        eq(userPracticeSetAttempts.userId, session.user.id),
+                        eq(userPracticeSetAttempts.practiceSetId, assignmentId)
+                    ))
+                    .orderBy(userPracticeSetAttempts.createdAt)
+                    .limit(1)
 
                 return {
                     success: true,
                     data: {
-                        ...quiz,
-                        questionCount: quiz._count.questions,
-                        attempt: quizAttempt,
+                        ...quizRows[0],
+                        attempt: attemptRows[0] ?? null,
                     },
                 }
             }
@@ -584,7 +608,7 @@ export async function startAssignment(
     assignmentId: string,
     type: "project" | "mock" | "quiz"
 ) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
@@ -593,58 +617,76 @@ export async function startAssignment(
     try {
         switch (type) {
             case "project": {
-                // Check if project exists and is a university project
-                const project = await prisma.projectV2.findUnique({
-                    where: { id: assignmentId },
-                    select: { id: true, slug: true, isUniversityProject: true },
-                })
+                const projectRows = await db
+                    .select({
+                        id: projectsV2.id,
+                        slug: projectsV2.slug,
+                        isUniversityProject: projectsV2.isUniversityProject,
+                    })
+                    .from(projectsV2)
+                    .where(eq(projectsV2.id, assignmentId))
+                    .limit(1)
 
-                if (!project || !project.isUniversityProject) {
+                if (!projectRows[0] || !projectRows[0].isUniversityProject) {
                     return { success: false, error: "Project not found" }
                 }
 
                 // Count total tasks for this project
-                const taskCount = await prisma.projectV2Task.count({
-                    where: {
-                        sprint: {
-                            projectId: assignmentId,
-                        },
-                    },
-                })
+                const sprintRows = await db
+                    .select({ id: projectV2Sprints.id })
+                    .from(projectV2Sprints)
+                    .where(eq(projectV2Sprints.projectId, assignmentId))
 
-                // Create or get progress record (using UserProjectV2Progress)
-                await prisma.userProjectV2Progress.upsert({
-                    where: {
-                        userId_projectId: {
-                            userId: session.user.id,
-                            projectId: assignmentId,
-                        },
-                    },
-                    update: {},
-                    create: {
+                const sprintIds = sprintRows.map(s => s.id)
+                const taskCountRows = sprintIds.length > 0
+                    ? await db
+                        .select({ taskCount: count(projectV2Tasks.id) })
+                        .from(projectV2Tasks)
+                        .where(inArray(projectV2Tasks.sprintId, sprintIds))
+                    : [{ taskCount: 0 }]
+
+                const taskCount = taskCountRows[0]?.taskCount || 0
+
+                // Check if progress record exists
+                const existingProgressRows = await db
+                    .select({ id: userProjectV2Progress.id })
+                    .from(userProjectV2Progress)
+                    .where(and(
+                        eq(userProjectV2Progress.userId, session.user.id),
+                        eq(userProjectV2Progress.projectId, assignmentId)
+                    ))
+                    .limit(1)
+
+                if (existingProgressRows[0]) {
+                    // Already started, just redirect
+                } else {
+                    await db.insert(userProjectV2Progress).values({
                         userId: session.user.id,
                         projectId: assignmentId,
                         status: "IN_PROGRESS",
                         progressPercentage: 0,
                         tasksCompleted: 0,
                         totalTasks: taskCount,
-                    },
-                })
+                    })
+                }
 
                 return {
                     success: true,
-                    redirectUrl: `/projects/${project.slug}`,
+                    redirectUrl: `/projects/${projectRows[0].slug}`,
                 }
             }
 
             case "mock": {
-                // Check if mock exists and is a university mock
-                const mock = await prisma.mockInterviewVoice.findUnique({
-                    where: { id: assignmentId },
-                    select: { id: true, isUniversityMock: true },
-                })
+                const mockRows = await db
+                    .select({
+                        id: mockInterviewVoice.id,
+                        isUniversityMock: mockInterviewVoice.isUniversityMock,
+                    })
+                    .from(mockInterviewVoice)
+                    .where(eq(mockInterviewVoice.id, assignmentId))
+                    .limit(1)
 
-                if (!mock || !mock.isUniversityMock) {
+                if (!mockRows[0] || !mockRows[0].isUniversityMock) {
                     return { success: false, error: "Mock interview not found" }
                 }
 
@@ -655,23 +697,22 @@ export async function startAssignment(
             }
 
             case "quiz": {
-                // Check if quiz exists, is a university assessment, and if live session is required
-                const quiz = await prisma.userPracticeSet.findUnique({
-                    where: { id: assignmentId },
-                    select: {
-                        id: true,
-                        isUniversityAssessment: true,
-                        isLiveSession: true,
-                        liveSessionActive: true,
-                    },
-                })
+                const quizRows = await db
+                    .select({
+                        id: userPracticeSets.id,
+                        isUniversityAssessment: userPracticeSets.isUniversityAssessment,
+                        isLiveSession: userPracticeSets.isLiveSession,
+                        liveSessionActive: userPracticeSets.liveSessionActive,
+                    })
+                    .from(userPracticeSets)
+                    .where(eq(userPracticeSets.id, assignmentId))
+                    .limit(1)
 
-                if (!quiz || !quiz.isUniversityAssessment) {
+                if (!quizRows[0] || !quizRows[0].isUniversityAssessment) {
                     return { success: false, error: "Quiz not found" }
                 }
 
-                // If it's a live session quiz, check if session is active
-                if (quiz.isLiveSession && !quiz.liveSessionActive) {
+                if (quizRows[0].isLiveSession && !quizRows[0].liveSessionActive) {
                     return {
                         success: false,
                         error: "This quiz is a live session quiz. Please wait for your teacher to start the session.",
@@ -698,7 +739,7 @@ export async function startAssignment(
  * Get upcoming deadlines for a student
  */
 export async function getUpcomingDeadlines(limit: number = 5) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
@@ -717,7 +758,6 @@ export async function getUpcomingDeadlines(limit: number = 5) {
             ...result.data.quizzes,
         ]
 
-        // Filter and sort by deadline
         const upcomingDeadlines = allAssignments
             .filter(a => a.deadline && new Date(a.deadline) > now && a.status !== "completed")
             .sort((a, b) => {

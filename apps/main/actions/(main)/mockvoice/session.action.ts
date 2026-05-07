@@ -1,7 +1,9 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { db, users, mockInterviewVoice, mockVoiceSession, creditTransactions } from "@repo/db"
+import { eq, and, inArray, count } from "drizzle-orm"
 import { revalidatePath } from 'next/cache'
 
 interface CreateSessionInput {
@@ -23,7 +25,7 @@ interface SessionVariables {
 
 export async function createMockVoiceSession(input: CreateSessionInput) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
@@ -35,22 +37,21 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
 
         const userId = session.user.id
 
-        // Get user and mock details
         const [user, mock] = await Promise.all([
-            prisma.user.findUnique({
-                where: { id: userId },
-                select: {
+            db.query.users.findFirst({
+                where: eq(users.id, userId),
+                columns: {
                     id: true,
                     name: true,
                     username: true,
                     credits: true,
                     resumeText: true,
-                    hasResume: true
-                }
+                    hasResume: true,
+                },
             }),
-            prisma.mockInterviewVoice.findUnique({
-                where: { id: input.mockId },
-                select: {
+            db.query.mockInterviewVoice.findFirst({
+                where: eq(mockInterviewVoice.id, input.mockId),
+                columns: {
                     id: true,
                     title: true,
                     description: true,
@@ -59,9 +60,9 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
                     knowledgeBase: true,
                     creditsRequired: true,
                     includesResume: true,
-                    duration: true
-                }
-            })
+                    duration: true,
+                },
+            }),
         ])
 
         if (!user) {
@@ -74,7 +75,6 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
 
         const creditsToCharge = input.retakeCredits ?? mock.creditsRequired
 
-        // Check if user has enough credits
         if (user.credits < creditsToCharge) {
             return {
                 success: false,
@@ -84,72 +84,58 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
             }
         }
 
-        // Create session and deduct credits in a transaction
-        const result = await prisma.$transaction(async (tx) => {
-            // Prepare variables for ElevenLabs
-            // Resume text is already formatted when stored in database
-            const resumeContent = (input.includesResume && user.hasResume && user.resumeText)
+        const resumeContent =
+            input.includesResume && user.hasResume && user.resumeText
                 ? user.resumeText
                 : null
 
-            const variables: SessionVariables = {
-                username: user.name?.split(' ')[0] || user.username || 'there',
-                position: mock.title,
-                level: mock.level,
-                description: mock.description,
-                knowledge_base: mock.knowledgeBase,
-                resume_content: resumeContent
-            }
+        const variables: SessionVariables = {
+            username: user.name?.split(' ')[0] || user.username || 'there',
+            position: mock.title,
+            level: mock.level,
+            description: mock.description,
+            knowledge_base: mock.knowledgeBase,
+            resume_content: resumeContent,
+        }
 
-            // Create session FIRST
-            const mockSession = await tx.mockVoiceSession.create({
-                data: {
-                    mockId: input.mockId,
-                    userId: userId,
-                    status: 'SCHEDULED',
-                    agentId: agentId,
-                    variables: variables as any,
-                    creditsUsed: creditsToCharge,
-                    scheduledFor: new Date()
-                },
-                select: {
-                    id: true,
-                    variables: true,
-                    agentId: true
-                }
+        // Create session and deduct credits
+        const [newSession] = await db
+            .insert(mockVoiceSession)
+            .values({
+                mockId: input.mockId,
+                userId,
+                status: 'SCHEDULED',
+                agentId,
+                variables: variables as any,
+                creditsUsed: creditsToCharge,
+                scheduledFor: new Date(),
             })
+            .returning({ id: mockVoiceSession.id, variables: mockVoiceSession.variables, agentId: mockVoiceSession.agentId })
 
-            // Deduct credits ONLY AFTER successful session creation
-            await tx.user.update({
-                where: { id: userId },
-                data: {
-                    credits: {
-                        decrement: creditsToCharge
-                    }
-                }
-            })
+        // Deduct credits
+        await db
+            .update(users)
+            .set({ credits: user.credits - creditsToCharge })
+            .where(eq(users.id, userId))
 
-            // Record credit transaction
-            await tx.creditTransaction.create({
-                data: {
-                    userId: userId,
-                    amount: -creditsToCharge,
-                    type: 'SPEND',
-                    description: input.retakeCredits ? `Mock Voice Retake: ${mock.title}` : `Mock Voice Interview: ${mock.title}`,
-                    currency: "INR"
-                }
-            })
-
-            return mockSession
+        // Record credit transaction
+        await db.insert(creditTransactions).values({
+            userId,
+            amount: -creditsToCharge,
+            type: 'SPEND',
+            description: input.retakeCredits
+                ? `Mock Voice Retake: ${mock.title}`
+                : `Mock Voice Interview: ${mock.title}`,
+            currency: 'INR',
         })
 
         revalidatePath('/mockinterview')
 
         return {
             success: true,
-            sessionId: result.id,
-            agentId: result.agentId,
-            variables: result.variables as unknown as SessionVariables
+            sessionId: newSession.id,
+            agentId: newSession.agentId,
+            variables: newSession.variables as unknown as SessionVariables,
         }
 
     } catch (error) {
@@ -163,22 +149,24 @@ export async function createMockVoiceSession(input: CreateSessionInput) {
 
 export async function updateSessionStatus(sessionId: string, status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED') {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        await prisma.mockVoiceSession.update({
-            where: {
-                id: sessionId,
-                userId: session.user.id
-            },
-            data: {
+        await db
+            .update(mockVoiceSession)
+            .set({
                 status,
                 startedAt: status === 'IN_PROGRESS' ? new Date() : undefined,
-                completedAt: status === 'COMPLETED' ? new Date() : undefined
-            }
-        })
+                completedAt: status === 'COMPLETED' ? new Date() : undefined,
+            })
+            .where(
+                and(
+                    eq(mockVoiceSession.id, sessionId),
+                    eq(mockVoiceSession.userId, session.user.id)
+                )
+            )
 
         return { success: true }
     } catch (error) {
@@ -193,22 +181,24 @@ export async function saveConversationData(
     startedAt?: Date
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        await prisma.mockVoiceSession.update({
-            where: {
-                id: sessionId,
-                userId: session.user.id
-            },
-            data: {
+        await db
+            .update(mockVoiceSession)
+            .set({
                 conversationId,
                 status: 'IN_PROGRESS',
-                startedAt: startedAt || new Date()
-            }
-        })
+                startedAt: startedAt || new Date(),
+            })
+            .where(
+                and(
+                    eq(mockVoiceSession.id, sessionId),
+                    eq(mockVoiceSession.userId, session.user.id)
+                )
+            )
 
         return { success: true }
     } catch (error) {
@@ -219,83 +209,67 @@ export async function saveConversationData(
 
 export async function getSessionDetails(sessionId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const mockSession = await prisma.mockVoiceSession.findUnique({
-            where: {
-                id: sessionId,
-                userId: session.user.id
-            },
-            include: {
-                mock: {
-                    select: {
-                        title: true,
-                        description: true,
-                        level: true,
-                        category: true,
-                        duration: true
-                    }
-                }
-            }
+        const mockSession = await db.query.mockVoiceSession.findFirst({
+            where: and(
+                eq(mockVoiceSession.id, sessionId),
+                eq(mockVoiceSession.userId, session.user.id)
+            ),
+            with: { mock: true },
         })
 
         if (!mockSession) {
             return { success: false, error: 'Session not found' }
         }
 
-        return {
-            success: true,
-            session: mockSession
-        }
+        return { success: true, session: mockSession }
     } catch (error) {
         console.error('Error getting session details:', error)
         return { success: false, error: 'Failed to get session details' }
     }
 }
 
-/**
- * Get session count for a user on a specific mock, plus whether they are the creator.
- * Used by purchase-mock-sheet to determine pricing (free retakes vs half price vs full).
- */
 export async function getMockSessionInfo(mockId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const [sessionCount, mock] = await Promise.all([
-            prisma.mockVoiceSession.count({
-                where: {
-                    mockId,
-                    userId: session.user.id,
-                    status: { in: ['COMPLETED', 'IN_PROGRESS', 'SCHEDULED'] }
-                }
+        const [sessionCountRow, mock] = await Promise.all([
+            db
+                .select({ cnt: count() })
+                .from(mockVoiceSession)
+                .where(
+                    and(
+                        eq(mockVoiceSession.mockId, mockId),
+                        eq(mockVoiceSession.userId, session.user.id),
+                        inArray(mockVoiceSession.status, ['COMPLETED', 'IN_PROGRESS', 'SCHEDULED'])
+                    )
+                )
+                .then(([r]) => r),
+            db.query.mockInterviewVoice.findFirst({
+                where: eq(mockInterviewVoice.id, mockId),
+                columns: { createdById: true, creditsRequired: true },
             }),
-            prisma.mockInterviewVoice.findUnique({
-                where: { id: mockId },
-                select: {
-                    createdById: true,
-                    creditsRequired: true
-                }
-            })
         ])
 
         if (!mock) {
             return { success: false, error: 'Mock not found' }
         }
 
+        const sessionCount = Number(sessionCountRow?.cnt ?? 0)
         const isCreator = mock.createdById === session.user.id
-        // First 3 sessions are included (free) if the user created this mock
-        // After 3: creator pays half, non-creator pays full
-        const freeSessionsUsed = isCreator ? Math.min(sessionCount, 3) : 0
         const freeSessionsRemaining = isCreator ? Math.max(0, 3 - sessionCount) : 0
         const needsPayment = isCreator ? sessionCount >= 3 : true
         const creditsToCharge = needsPayment
-            ? (isCreator ? Math.ceil(mock.creditsRequired / 2) : mock.creditsRequired)
+            ? isCreator
+                ? Math.ceil(mock.creditsRequired / 2)
+                : mock.creditsRequired
             : 0
 
         return {
@@ -306,8 +280,8 @@ export async function getMockSessionInfo(mockId: string) {
                 freeSessionsRemaining,
                 needsPayment,
                 creditsToCharge,
-                fullPrice: mock.creditsRequired
-            }
+                fullPrice: mock.creditsRequired,
+            },
         }
     } catch (error) {
         console.error('Error getting mock session info:', error)
@@ -317,13 +291,11 @@ export async function getMockSessionInfo(mockId: string) {
 
 export async function getElevenLabsToken(agentId?: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        // Resolve agent ID: use provided value, or fall back to server-side env var.
-        // Server actions always have access to env vars at runtime regardless of build-time embedding.
         const resolvedAgentId = agentId || process.env.NEXT_PUBLIC_MOCK_VOICE_AI_ASSISTANT
         if (!resolvedAgentId) {
             return { success: false, error: 'Voice interview agent is not configured. Please contact support.' }
@@ -334,9 +306,9 @@ export async function getElevenLabsToken(agentId?: string) {
             {
                 method: 'GET',
                 headers: {
-                    "xi-api-key": process.env.ELEVENLABS_API_KEY as string,
+                    'xi-api-key': process.env.ELEVENLABS_API_KEY as string,
                 },
-                cache: 'no-store'
+                cache: 'no-store',
             }
         )
 

@@ -1,12 +1,13 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { UniversitySubscriptionPlan } from "@prisma/client"
-import { auth } from "@repo/auth"
+import { db, universityMembers, universitySubscriptions, universityPayments } from "@repo/db"
+import { eq, and } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type { CountryCode } from 'dodopayments/resources/misc'
-import { 
-    dodoClient, UNIVERSITY_SUBSCRIPTION_PLANS, 
+import {
+    dodoClient, UNIVERSITY_SUBSCRIPTION_PLANS,
     type UniversitySubscriptionPlanType, getDodoProductId,
     getUniversityPlanPrice, getPlanLimits, getPlanFeatures,
     createDodoCheckoutSession, getDodoPayment
@@ -49,12 +50,12 @@ interface VerifyCheckoutResult {
 // ============================================
 
 async function getUserUniversity() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.universityMember.findFirst({
-        where: { userId: session.user.id },
-        include: { university: true }
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
+        with: { university: true },
     })
 
     return member
@@ -74,7 +75,6 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
             return { success: false, error: "Unauthorized - no university found" }
         }
 
-        // Check permission
         const permissions = member.permissions as string[] | null
         if (!permissions || !permissions.includes("manage_billing")) {
             return { success: false, error: "No permission to manage billing" }
@@ -89,7 +89,6 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
             return { success: false, error: "Enterprise plan requires contacting sales" }
         }
 
-        // Get product ID and price
         const productId = getDodoProductId(input.plan, input.billingCycle)
         const amount = getUniversityPlanPrice(input.plan, input.currency, input.billingCycle)
 
@@ -97,8 +96,6 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
             return { success: false, error: "Payment product not configured for this plan" }
         }
 
-        // Create checkout session with Dodo Payments (RECOMMENDED approach per docs)
-        // Uses checkoutSessions.create which returns checkout_url
         const countryCode = (member.university.country || "IN") as CountryCode
         const checkoutSession = await createDodoCheckoutSession({
             product_cart: [
@@ -127,19 +124,16 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
             },
         })
 
-        // Store pending payment record
-        await prisma.universityPayment.create({
-            data: {
-                universityId: member.universityId,
-                dodoCheckoutSessionId: checkoutSession.session_id,
-                amount,
-                currency: input.currency,
-                status: "PENDING",
-                description: `Subscription: ${planConfig.name} (${input.billingCycle})`,
-                metadata: {
-                    plan: input.plan,
-                    billingCycle: input.billingCycle,
-                }
+        await db.insert(universityPayments).values({
+            universityId: member.universityId,
+            dodoCheckoutSessionId: checkoutSession.session_id,
+            amount,
+            currency: input.currency,
+            status: "PENDING",
+            description: `Subscription: ${planConfig.name} (${input.billingCycle})`,
+            metadata: {
+                plan: input.plan,
+                billingCycle: input.billingCycle,
             }
         })
 
@@ -155,7 +149,7 @@ export async function createCheckoutSession(input: CreateCheckoutInput): Promise
 }
 
 /**
- * Verify checkout session after completion (called from return URL)
+ * Verify checkout session after completion
  */
 export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise<VerifyCheckoutResult> {
     try {
@@ -164,12 +158,11 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
             return { success: false, error: "Unauthorized" }
         }
 
-        // Find the payment record
-        const payment = await prisma.universityPayment.findFirst({
-            where: {
-                universityId: member.universityId,
-                dodoCheckoutSessionId: input.sessionId,
-            }
+        const payment = await db.query.universityPayments.findFirst({
+            where: and(
+                eq(universityPayments.universityId, member.universityId),
+                eq(universityPayments.dodoCheckoutSessionId, input.sessionId),
+            ),
         })
 
         if (!payment) {
@@ -177,12 +170,11 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
         }
 
         if (payment.status === "SUCCEEDED") {
-            // Already processed
-            const subscription = await prisma.universitySubscription.findUnique({
-                where: { universityId: member.universityId }
+            const subscription = await db.query.universitySubscriptions.findFirst({
+                where: eq(universitySubscriptions.universityId, member.universityId),
             })
-            
-            const planConfig = subscription 
+
+            const planConfig = subscription
                 ? UNIVERSITY_SUBSCRIPTION_PLANS[subscription.plan as UniversitySubscriptionPlanType]
                 : null
 
@@ -196,14 +188,10 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
             }
         }
 
-        // If still pending, the webhook hasn't processed it yet
-        // Verify with Dodo API using the helper
         try {
-            // Verify with Dodo Payments API
             const paymentDetails = await getDodoPayment(input.sessionId)
-            
+
             if (paymentDetails.status === "succeeded") {
-                // Process the successful payment
                 await processSuccessfulPayment(
                     member.universityId,
                     input.sessionId,
@@ -235,7 +223,7 @@ export async function verifyCheckoutSession(input: VerifyCheckoutInput): Promise
 }
 
 /**
- * Process a successful payment (called from webhook or verification)
+ * Process a successful payment
  */
 export async function processSuccessfulPayment(
     universityId: string,
@@ -248,7 +236,6 @@ export async function processSuccessfulPayment(
         const limits = getPlanLimits(plan)
         const features = getPlanFeatures(plan)
 
-        // Calculate period end
         const periodEnd = new Date()
         if (billingCycle === "monthly") {
             periodEnd.setMonth(periodEnd.getMonth() + 1)
@@ -256,83 +243,56 @@ export async function processSuccessfulPayment(
             periodEnd.setFullYear(periodEnd.getFullYear() + 1)
         }
 
-        // Calculate amount
-        const amount = billingCycle === "monthly" 
-            ? planConfig.priceINR 
+        const amount = billingCycle === "monthly"
+            ? planConfig.priceINR
             : planConfig.yearlyPriceINR
 
-        // Update payment status
-        await prisma.universityPayment.updateMany({
-            where: {
-                universityId,
-                dodoCheckoutSessionId: paymentSessionId,
-            },
-            data: {
-                status: "SUCCEEDED",
-                paidAt: new Date(),
-            }
-        })
+        await db.update(universityPayments).set({
+            status: "SUCCEEDED",
+            paidAt: new Date(),
+        }).where(
+            and(
+                eq(universityPayments.universityId, universityId),
+                eq(universityPayments.dodoCheckoutSessionId, paymentSessionId),
+            )
+        )
 
         // Upsert subscription
-        await prisma.universitySubscription.upsert({
-            where: { universityId },
-            update: {
-                plan: plan as UniversitySubscriptionPlan,
-                status: "ACTIVE",
-                
-                // Limits (match Prisma schema fields)
-                maxStudents: limits.maxStudents,
-                maxFaculty: limits.maxFaculty,
-                maxDepartments: limits.maxDepartments,
-                maxClassesPerFaculty: limits.maxClassesPerFaculty,
-                maxCreditsPerMonth: limits.maxCreditsPerMonth,
-                
-                // Features (match Prisma schema fields)
-                hasAnalytics: features.hasAnalytics,
-                hasAdvancedReports: features.hasAdvancedReports,
-                hasPlacementModule: features.hasPlacementModule,
-                hasCompanyPortal: features.hasCompanyPortal,
-                hasAPIAccess: features.hasAPIAccess,
-                hasPrioritySupport: features.hasPrioritySupport,
-                hasWhiteLabel: features.hasWhiteLabel,
-                hasCustomBranding: features.hasCustomBranding,
-                
-                // Billing
-                billingCycle: billingCycle.toUpperCase(),
-                amount,
-                currentPeriodStart: new Date(),
-                currentPeriodEnd: periodEnd,
-            },
-            create: {
-                universityId,
-                plan: plan as UniversitySubscriptionPlan,
-                status: "ACTIVE",
-                
-                // Limits (match Prisma schema fields)
-                maxStudents: limits.maxStudents,
-                maxFaculty: limits.maxFaculty,
-                maxDepartments: limits.maxDepartments,
-                maxClassesPerFaculty: limits.maxClassesPerFaculty,
-                maxCreditsPerMonth: limits.maxCreditsPerMonth,
-                
-                // Features (match Prisma schema fields)
-                hasAnalytics: features.hasAnalytics,
-                hasAdvancedReports: features.hasAdvancedReports,
-                hasPlacementModule: features.hasPlacementModule,
-                hasCompanyPortal: features.hasCompanyPortal,
-                hasAPIAccess: features.hasAPIAccess,
-                hasPrioritySupport: features.hasPrioritySupport,
-                hasWhiteLabel: features.hasWhiteLabel,
-                hasCustomBranding: features.hasCustomBranding,
-                
-                // Billing
-                billingCycle: billingCycle.toUpperCase(),
-                amount,
-                currency: "INR",
-                currentPeriodStart: new Date(),
-                currentPeriodEnd: periodEnd,
-            }
+        const existingSubscription = await db.query.universitySubscriptions.findFirst({
+            where: eq(universitySubscriptions.universityId, universityId),
         })
+
+        const subscriptionData = {
+            plan: plan as any,
+            status: "ACTIVE" as const,
+            maxStudents: limits.maxStudents,
+            maxFaculty: limits.maxFaculty,
+            maxDepartments: limits.maxDepartments,
+            maxClassesPerFaculty: limits.maxClassesPerFaculty,
+            maxCreditsPerMonth: limits.maxCreditsPerMonth,
+            hasAnalytics: features.hasAnalytics,
+            hasAdvancedReports: features.hasAdvancedReports,
+            hasPlacementModule: features.hasPlacementModule,
+            hasCompanyPortal: features.hasCompanyPortal,
+            hasAPIAccess: features.hasAPIAccess,
+            hasPrioritySupport: features.hasPrioritySupport,
+            hasWhiteLabel: features.hasWhiteLabel,
+            hasCustomBranding: features.hasCustomBranding,
+            billingCycle: billingCycle.toUpperCase(),
+            amount,
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: periodEnd,
+        }
+
+        if (existingSubscription) {
+            await db.update(universitySubscriptions).set(subscriptionData).where(eq(universitySubscriptions.universityId, universityId))
+        } else {
+            await db.insert(universitySubscriptions).values({
+                universityId,
+                currency: "INR",
+                ...subscriptionData,
+            })
+        }
 
         revalidatePath("/billing")
         return { success: true }
@@ -343,7 +303,7 @@ export async function processSuccessfulPayment(
 }
 
 /**
- * Get billing portal URL (for managing subscription)
+ * Get billing portal URL
  */
 export async function getBillingPortalUrl(returnUrl: string): Promise<{
     success: boolean
@@ -356,14 +316,13 @@ export async function getBillingPortalUrl(returnUrl: string): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        // Check permission with proper type handling
         const permissions = member.permissions as string[] | null
         if (!permissions || !permissions.includes("manage_billing")) {
             return { success: false, error: "No permission to manage billing" }
         }
 
-        const subscription = await prisma.universitySubscription.findUnique({
-            where: { universityId: member.universityId }
+        const subscription = await db.query.universitySubscriptions.findFirst({
+            where: eq(universitySubscriptions.universityId, member.universityId),
         })
 
         if (!subscription) {
@@ -374,11 +333,8 @@ export async function getBillingPortalUrl(returnUrl: string): Promise<{
             return { success: false, error: "Payment system not configured" }
         }
 
-        // If we have a Dodo customer ID, create a portal session
         if (subscription.dodoCustomerId) {
             try {
-                // Create customer portal session with Dodo Payments
-                // The portal session allows customers to manage their subscription
                 const portalSession = await dodoClient.customers.customerPortal.create(
                     subscription.dodoCustomerId
                 )
@@ -389,12 +345,9 @@ export async function getBillingPortalUrl(returnUrl: string): Promise<{
                 }
             } catch (portalError) {
                 console.error("Dodo portal creation error:", portalError)
-                // Fall through to return billing page URL
             }
         }
 
-        // Fallback: Return internal billing page URL if no Dodo customer or portal fails
-        // This allows users to still manage their subscription through our UI
         return {
             success: true,
             portalUrl: returnUrl || "/billing",
@@ -404,8 +357,6 @@ export async function getBillingPortalUrl(returnUrl: string): Promise<{
         return { success: false, error: "Failed to get billing portal" }
     }
 }
-
-// Note: cancelSubscription is defined in subscription.action.ts
 
 /**
  * Get current subscription details with full plan info
@@ -447,16 +398,15 @@ export async function getSubscriptionWithPlanDetails(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const subscription = await prisma.universitySubscription.findUnique({
-            where: { universityId: member.universityId }
+        const subscription = await db.query.universitySubscriptions.findFirst({
+            where: eq(universitySubscriptions.universityId, member.universityId),
         })
 
         if (!subscription) {
-            // Return free plan details if no subscription
             const freePlan = UNIVERSITY_SUBSCRIPTION_PLANS.FREE
             const freeLimits = getPlanLimits('FREE')
             const freeFeatures = getPlanFeatures('FREE')
-            
+
             return {
                 success: true,
                 subscription: {

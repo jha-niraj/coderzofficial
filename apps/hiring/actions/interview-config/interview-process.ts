@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, jobs, interviewProcesses, interviewRounds } from "@repo/db"
+import { eq, and, desc, count, isNotNull, ne, asc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type { InterviewProcessInput } from "@/types"
 
@@ -13,14 +15,14 @@ export type { InterviewProcessInput } from "@/types"
 // ============================================
 
 export async function getCompanyMember() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         throw new Error("Unauthorized")
     }
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     if (!member) {
@@ -43,23 +45,40 @@ export async function getInterviewProcesses() {
     try {
         const member = await getCompanyMember()
 
-        const processes = await prisma.interviewProcess.findMany({
-            where: { companyId: member.companyId },
-            include: {
+        const processes = await db.query.interviewProcesses.findMany({
+            where: eq(interviewProcesses.companyId, member.companyId),
+            with: {
                 rounds: {
-                    orderBy: { roundNumber: "asc" }
-                },
-                _count: {
-                    select: { jobs: true }
+                    orderBy: [asc(interviewRounds.roundNumber)]
                 }
             },
             orderBy: [
-                { isDefault: "desc" },
-                { createdAt: "desc" }
+                desc(interviewProcesses.isDefault),
+                desc(interviewProcesses.createdAt)
             ]
         })
 
-        return { success: true, data: processes }
+        // Get job counts per process separately since interviewProcesses relation doesn't have jobs
+        const processIds = processes.map(p => p.id)
+        const jobCountsMap = new Map<string, number>()
+        if (processIds.length > 0) {
+            const jobRows = await db
+                .select({ interviewProcessId: jobs.interviewProcessId, id: jobs.id })
+                .from(jobs)
+                .where(eq(jobs.companyId, member.companyId))
+            for (const row of jobRows) {
+                if (row.interviewProcessId) {
+                    jobCountsMap.set(row.interviewProcessId, (jobCountsMap.get(row.interviewProcessId) ?? 0) + 1)
+                }
+            }
+        }
+
+        const processesWithCount = processes.map(p => ({
+            ...p,
+            _count: { jobs: jobCountsMap.get(p.id) ?? 0 }
+        }))
+
+        return { success: true, data: processesWithCount }
     } catch (error) {
         console.error("Error fetching interview processes:", error)
         return { success: false, error: "Failed to fetch interview processes" }
@@ -71,22 +90,14 @@ export async function getInterviewProcess(processId: string) {
     try {
         const member = await getCompanyMember()
 
-        const process = await prisma.interviewProcess.findFirst({
-            where: {
-                id: processId,
-                companyId: member.companyId
-            },
-            include: {
+        const process = await db.query.interviewProcesses.findFirst({
+            where: and(
+                eq(interviewProcesses.id, processId),
+                eq(interviewProcesses.companyId, member.companyId)
+            ),
+            with: {
                 rounds: {
-                    orderBy: { roundNumber: "asc" }
-                },
-                jobs: {
-                    select: {
-                        id: true,
-                        title: true,
-                        slug: true,
-                        status: true
-                    }
+                    orderBy: [asc(interviewRounds.roundNumber)]
                 }
             }
         })
@@ -95,7 +106,13 @@ export async function getInterviewProcess(processId: string) {
             return { success: false, error: "Interview process not found" }
         }
 
-        return { success: true, data: process }
+        // Get linked jobs separately
+        const linkedJobs = await db
+            .select({ id: jobs.id, title: jobs.title, slug: jobs.slug, status: jobs.status })
+            .from(jobs)
+            .where(and(eq(jobs.interviewProcessId, processId), eq(jobs.companyId, member.companyId)))
+
+        return { success: true, data: { ...process, jobs: linkedJobs } }
     } catch (error) {
         console.error("Error fetching interview process:", error)
         return { success: false, error: "Failed to fetch interview process" }
@@ -113,51 +130,62 @@ export async function createInterviewProcess(input: InterviewProcessInput) {
 
         // If this is set as default, unset other defaults
         if (input.isDefault) {
-            await prisma.interviewProcess.updateMany({
-                where: {
-                    companyId: member.companyId,
-                    isDefault: true
-                },
-                data: { isDefault: false }
-            })
+            await db.update(interviewProcesses)
+                .set({ isDefault: false })
+                .where(and(
+                    eq(interviewProcesses.companyId, member.companyId),
+                    eq(interviewProcesses.isDefault, true)
+                ))
         }
 
-        const process = await prisma.interviewProcess.create({
-            data: {
-                companyId: member.companyId,
-                name: input.name,
-                description: input.description,
-                isDefault: input.isDefault ?? false,
-                estimatedDurationWeeks: input.estimatedDurationWeeks,
+        const insertedProcesses = await db.insert(interviewProcesses).values({
+            companyId: member.companyId,
+            name: input.name,
+            description: input.description,
+            isDefault: input.isDefault ?? false,
+            estimatedDurationWeeks: input.estimatedDurationWeeks
+        }).returning()
+
+        const process = insertedProcesses[0]
+        if (!process) {
+            return { success: false, error: "Failed to create process" }
+        }
+
+        // Insert rounds
+        if (input.rounds && input.rounds.length > 0) {
+            await db.insert(interviewRounds).values(
+                input.rounds.map((round) => ({
+                    processId: process.id,
+                    roundNumber: round.roundNumber,
+                    roundType: round.roundType,
+                    title: round.title,
+                    durationMinutes: round.durationMinutes,
+                    format: round.format ?? "VIDEO",
+                    description: round.description,
+                    whatToExpect: round.whatToExpect ?? [],
+                    sampleQuestions: round.sampleQuestions ?? [],
+                    evaluationCriteria: round.evaluationCriteria ?? [],
+                    topicsCovered: round.topicsCovered ?? [],
+                    tipsForCandidates: round.tipsForCandidates ?? [],
+                    passRatePercent: round.passRatePercent,
+                    daysToNextRound: round.daysToNextRound,
+                    hasMockInterview: round.hasMockInterview ?? true,
+                    mockKnowledgeBase: round.mockKnowledgeBase
+                }))
+            )
+        }
+
+        const fullProcess = await db.query.interviewProcesses.findFirst({
+            where: eq(interviewProcesses.id, process.id),
+            with: {
                 rounds: {
-                    create: input.rounds.map((round) => ({
-                        roundNumber: round.roundNumber,
-                        roundType: round.roundType,
-                        title: round.title,
-                        durationMinutes: round.durationMinutes,
-                        format: round.format ?? "VIDEO",
-                        description: round.description,
-                        whatToExpect: round.whatToExpect ?? [],
-                        sampleQuestions: round.sampleQuestions ?? [],
-                        evaluationCriteria: round.evaluationCriteria ?? [],
-                        topicsCovered: round.topicsCovered ?? [],
-                        tipsForCandidates: round.tipsForCandidates ?? [],
-                        passRatePercent: round.passRatePercent,
-                        daysToNextRound: round.daysToNextRound,
-                        hasMockInterview: round.hasMockInterview ?? true,
-                        mockKnowledgeBase: round.mockKnowledgeBase
-                    }))
-                }
-            },
-            include: {
-                rounds: {
-                    orderBy: { roundNumber: "asc" }
+                    orderBy: [asc(interviewRounds.roundNumber)]
                 }
             }
         })
 
         revalidatePath("/interview-config")
-        return { success: true, data: process }
+        return { success: true, data: fullProcess }
     } catch (error) {
         console.error("Error creating interview process:", error)
         return { success: false, error: "Failed to create interview process" }
@@ -174,11 +202,11 @@ export async function updateInterviewProcess(processId: string, input: Partial<I
         }
 
         // Verify the process belongs to this company
-        const existingProcess = await prisma.interviewProcess.findFirst({
-            where: {
-                id: processId,
-                companyId: member.companyId
-            }
+        const existingProcess = await db.query.interviewProcesses.findFirst({
+            where: and(
+                eq(interviewProcesses.id, processId),
+                eq(interviewProcesses.companyId, member.companyId)
+            )
         })
 
         if (!existingProcess) {
@@ -187,33 +215,41 @@ export async function updateInterviewProcess(processId: string, input: Partial<I
 
         // If this is set as default, unset other defaults
         if (input.isDefault) {
-            await prisma.interviewProcess.updateMany({
-                where: {
-                    companyId: member.companyId,
-                    isDefault: true,
-                    id: { not: processId }
-                },
-                data: { isDefault: false }
-            })
+            await db.update(interviewProcesses)
+                .set({ isDefault: false })
+                .where(and(
+                    eq(interviewProcesses.companyId, member.companyId),
+                    eq(interviewProcesses.isDefault, true),
+                    ne(interviewProcesses.id, processId)
+                ))
         }
 
-        const process = await prisma.interviewProcess.update({
-            where: { id: processId },
-            data: {
+        const updatedProcessRows = await db.update(interviewProcesses)
+            .set({
                 name: input.name,
                 description: input.description,
                 isDefault: input.isDefault,
                 estimatedDurationWeeks: input.estimatedDurationWeeks
-            },
-            include: {
+            })
+            .where(eq(interviewProcesses.id, processId))
+            .returning()
+
+        const updatedProcess = updatedProcessRows[0]
+        if (!updatedProcess) {
+            return { success: false, error: "Failed to update process" }
+        }
+
+        const fullProcess = await db.query.interviewProcesses.findFirst({
+            where: eq(interviewProcesses.id, updatedProcess.id),
+            with: {
                 rounds: {
-                    orderBy: { roundNumber: "asc" }
+                    orderBy: [asc(interviewRounds.roundNumber)]
                 }
             }
         })
 
         revalidatePath("/interview-config")
-        return { success: true, data: process }
+        return { success: true, data: fullProcess }
     } catch (error) {
         console.error("Error updating interview process:", error)
         return { success: false, error: "Failed to update interview process" }
@@ -230,27 +266,28 @@ export async function deleteInterviewProcess(processId: string) {
         }
 
         // Verify the process belongs to this company
-        const existingProcess = await prisma.interviewProcess.findFirst({
-            where: {
-                id: processId,
-                companyId: member.companyId
-            },
-            include: {
-                _count: { select: { jobs: true } }
-            }
+        const existingProcess = await db.query.interviewProcesses.findFirst({
+            where: and(
+                eq(interviewProcesses.id, processId),
+                eq(interviewProcesses.companyId, member.companyId)
+            )
         })
 
         if (!existingProcess) {
             return { success: false, error: "Interview process not found" }
         }
 
-        if (existingProcess._count.jobs > 0) {
+        // Check if any jobs are linked to this process
+        const linkedJobs = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.interviewProcessId, processId))
+
+        if (linkedJobs.length > 0) {
             return { success: false, error: "Cannot delete: This process is linked to active jobs" }
         }
 
-        await prisma.interviewProcess.delete({
-            where: { id: processId }
-        })
+        await db.delete(interviewProcesses).where(eq(interviewProcesses.id, processId))
 
         revalidatePath("/interview-config")
         return { success: true }
@@ -270,14 +307,14 @@ export async function cloneInterviewProcess(processId: string, newName?: string)
         }
 
         // Get the original process with all rounds
-        const originalProcess = await prisma.interviewProcess.findFirst({
-            where: {
-                id: processId,
-                companyId: member.companyId
-            },
-            include: {
+        const originalProcess = await db.query.interviewProcesses.findFirst({
+            where: and(
+                eq(interviewProcesses.id, processId),
+                eq(interviewProcesses.companyId, member.companyId)
+            ),
+            with: {
                 rounds: {
-                    orderBy: { roundNumber: "asc" }
+                    orderBy: [asc(interviewRounds.roundNumber)]
                 }
             }
         })
@@ -286,47 +323,59 @@ export async function cloneInterviewProcess(processId: string, newName?: string)
             return { success: false, error: "Interview process not found" }
         }
 
-        // Create the new process with cloned rounds
-        const clonedProcess = await prisma.interviewProcess.create({
-            data: {
-                companyId: member.companyId,
-                name: newName || `${originalProcess.name} (Copy)`,
-                description: originalProcess.description,
-                isDefault: false, // Never clone as default
-                estimatedDurationWeeks: originalProcess.estimatedDurationWeeks,
-                avgTimeToHireDays: originalProcess.avgTimeToHireDays,
-                responseRatePercent: originalProcess.responseRatePercent,
-                applicationToInterviewPercent: originalProcess.applicationToInterviewPercent,
-                interviewToOfferPercent: originalProcess.interviewToOfferPercent,
+        // Create the new process
+        const clonedProcessRows = await db.insert(interviewProcesses).values({
+            companyId: member.companyId,
+            name: newName || `${originalProcess.name} (Copy)`,
+            description: originalProcess.description,
+            isDefault: false,
+            estimatedDurationWeeks: originalProcess.estimatedDurationWeeks,
+            avgTimeToHireDays: originalProcess.avgTimeToHireDays,
+            responseRatePercent: originalProcess.responseRatePercent,
+            applicationToInterviewPercent: originalProcess.applicationToInterviewPercent,
+            interviewToOfferPercent: originalProcess.interviewToOfferPercent
+        }).returning()
+
+        const clonedProcess = clonedProcessRows[0]
+        if (!clonedProcess) {
+            return { success: false, error: "Failed to clone process" }
+        }
+
+        // Clone rounds
+        if (originalProcess.rounds.length > 0) {
+            await db.insert(interviewRounds).values(
+                originalProcess.rounds.map(round => ({
+                    processId: clonedProcess.id,
+                    roundNumber: round.roundNumber,
+                    roundType: round.roundType,
+                    title: round.title,
+                    durationMinutes: round.durationMinutes,
+                    format: round.format,
+                    description: round.description,
+                    whatToExpect: round.whatToExpect as string[],
+                    sampleQuestions: round.sampleQuestions as string[],
+                    evaluationCriteria: round.evaluationCriteria as string[],
+                    topicsCovered: round.topicsCovered as string[],
+                    tipsForCandidates: round.tipsForCandidates as string[],
+                    passRatePercent: round.passRatePercent,
+                    daysToNextRound: round.daysToNextRound,
+                    hasMockInterview: round.hasMockInterview,
+                    mockKnowledgeBase: round.mockKnowledgeBase
+                }))
+            )
+        }
+
+        const fullProcess = await db.query.interviewProcesses.findFirst({
+            where: eq(interviewProcesses.id, clonedProcess.id),
+            with: {
                 rounds: {
-                    create: originalProcess.rounds.map(round => ({
-                        roundNumber: round.roundNumber,
-                        roundType: round.roundType,
-                        title: round.title,
-                        durationMinutes: round.durationMinutes,
-                        format: round.format,
-                        description: round.description,
-                        whatToExpect: round.whatToExpect as string[],
-                        sampleQuestions: round.sampleQuestions as string[],
-                        evaluationCriteria: round.evaluationCriteria as string[],
-                        topicsCovered: round.topicsCovered as string[],
-                        tipsForCandidates: round.tipsForCandidates as string[],
-                        passRatePercent: round.passRatePercent,
-                        daysToNextRound: round.daysToNextRound,
-                        hasMockInterview: round.hasMockInterview,
-                        mockKnowledgeBase: round.mockKnowledgeBase
-                    }))
-                }
-            },
-            include: {
-                rounds: {
-                    orderBy: { roundNumber: "asc" }
+                    orderBy: [asc(interviewRounds.roundNumber)]
                 }
             }
         })
 
         revalidatePath("/interview-config")
-        return { success: true, data: clonedProcess }
+        return { success: true, data: fullProcess }
     } catch (error) {
         console.error("Error cloning interview process:", error)
         return { success: false, error: "Failed to clone interview process" }
@@ -338,14 +387,15 @@ export async function hasInterviewProcessConfigured() {
     try {
         const member = await getCompanyMember()
 
-        const count = await prisma.interviewProcess.count({
-            where: {
-                companyId: member.companyId,
-                isActive: true
-            }
-        })
+        const result = await db
+            .select({ count: count() })
+            .from(interviewProcesses)
+            .where(and(
+                eq(interviewProcesses.companyId, member.companyId),
+                eq(interviewProcesses.isActive, true)
+            ))
 
-        return { success: true, hasConfig: count > 0 }
+        return { success: true, hasConfig: (result[0]?.count ?? 0) > 0 }
     } catch (error) {
         console.error("Error checking interview config:", error)
         return { success: false, hasConfig: false }
@@ -357,29 +407,45 @@ export async function getInterviewProcessStats() {
     try {
         const member = await getCompanyMember()
 
-        const [processCount, totalRounds, jobsWithProcess] = await Promise.all([
-            prisma.interviewProcess.count({
-                where: { companyId: member.companyId, isActive: true }
-            }),
-            prisma.interviewRound.count({
-                where: {
-                    process: { companyId: member.companyId }
-                }
-            }),
-            prisma.job.count({
-                where: {
-                    companyId: member.companyId,
-                    interviewProcessId: { not: null }
-                }
-            })
-        ])
+        const processCountRows = await db
+            .select({ count: count() })
+            .from(interviewProcesses)
+            .where(and(
+                eq(interviewProcesses.companyId, member.companyId),
+                eq(interviewProcesses.isActive, true)
+            ))
+
+        // Count rounds belonging to company processes
+        const companyProcessIds = await db
+            .select({ id: interviewProcesses.id })
+            .from(interviewProcesses)
+            .where(eq(interviewProcesses.companyId, member.companyId))
+        const processIds = companyProcessIds.map(p => p.id)
+
+        let totalRounds = 0
+        if (processIds.length > 0) {
+            const { inArray } = await import("drizzle-orm")
+            const roundsRows = await db
+                .select({ count: count() })
+                .from(interviewRounds)
+                .where(inArray(interviewRounds.processId, processIds))
+            totalRounds = roundsRows[0]?.count ?? 0
+        }
+
+        const jobsWithProcessRows = await db
+            .select({ count: count() })
+            .from(jobs)
+            .where(and(
+                eq(jobs.companyId, member.companyId),
+                isNotNull(jobs.interviewProcessId)
+            ))
 
         return {
             success: true,
             data: {
-                processCount,
+                processCount: processCountRows[0]?.count ?? 0,
                 totalRounds,
-                jobsWithProcess
+                jobsWithProcess: jobsWithProcessRows[0]?.count ?? 0
             }
         }
     } catch (error) {

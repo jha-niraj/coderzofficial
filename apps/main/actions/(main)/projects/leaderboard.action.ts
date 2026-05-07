@@ -1,11 +1,23 @@
 "use server"
 
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
 import {
-    calculateTaskScoring, calculateQuizScore, calculateMockScore, 
+    db,
+    users,
+    projectsV2,
+    userProjectV2Progress,
+    userTaskV2Statuses,
+    projectV2QuizAttempts,
+    projectV2MockSessions,
+    projectV2Leaderboards,
+    projectV2GlobalLeaderboards,
+} from "@repo/db";
+import { eq, and, gt, ne, sql } from "drizzle-orm";
+import {
+    calculateTaskScoring, calculateQuizScore, calculateMockScore,
     calculateTotalScore
 } from "@/lib/project-scoring"
-import prisma from "@repo/prisma"
 import type {
     CompletedTask, ScoreCalculation, LeaderboardEntry, GlobalLeaderboardEntry,
     ActionResponse, LeaderboardResponse, GlobalLeaderboardResponse,
@@ -17,60 +29,47 @@ import type {
  */
 export async function updateProjectScore(projectId: string, userId?: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         const targetUserId = userId || session?.user?.id
 
         if (!targetUserId) {
             return { success: false, message: "User not authenticated" }
         }
 
-        // Get user's progress with all related data
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: targetUserId,
-                    projectId
-                }
-            },
-            include: {
+        const progress = await db.query.userProjectV2Progress.findFirst({
+            where: and(
+                eq(userProjectV2Progress.userId, targetUserId),
+                eq(userProjectV2Progress.projectId, projectId)
+            ),
+            with: {
                 taskStatuses: {
-                    include: {
+                    with: {
                         task: {
-                            select: {
-                                id: true,
-                                difficulty: true
-                            }
+                            columns: { id: true, difficulty: true }
                         }
                     }
                 },
                 project: {
-                    include: {
+                    with: {
                         sprints: {
-                            include: {
+                            with: {
                                 tasks: {
-                                    select: {
-                                        id: true,
-                                        difficulty: true
-                                    }
+                                    columns: { id: true, difficulty: true }
                                 }
                             }
                         },
                         quiz: {
-                            select: {
-                                id: true,
-                                totalQuestions: true
-                            }
+                            columns: { id: true, totalQuestions: true }
                         }
                     }
                 }
             }
-        })
+        });
 
         if (!progress) {
             return { success: false, message: "Progress not found" }
         }
 
-        // Get completed tasks
         const completedTasks: CompletedTask[] = progress.taskStatuses
             .filter((ts: any) => ts.status === "COMPLETED")
             .map((ts: any) => ({
@@ -78,35 +77,27 @@ export async function updateProjectScore(projectId: string, userId?: string) {
                 difficulty: ts.task.difficulty
             }))
 
-        // Get quiz score
-        const quizAttempt = await prisma.projectV2QuizAttempt.findUnique({
-            where: {
-                userId_quizId: {
-                    userId: targetUserId,
-                    quizId: progress.project.quiz?.id || ""
-                }
-            }
-        })
+        const quizAttempt = await db.query.projectV2QuizAttempts.findFirst({
+            where: and(
+                eq(projectV2QuizAttempts.userId, targetUserId),
+                eq(projectV2QuizAttempts.quizId, progress.project.quiz?.id || "")
+            )
+        });
 
         const quizCorrect = quizAttempt?.correctAnswers || 0
         const quizTotal = progress.project.quiz?.totalQuestions || 0
 
-        // Get mock score
-        const mockSession = await prisma.projectV2MockSession.findFirst({
-            where: {
-                userId: targetUserId,
-                projectId: projectId,
-                status: "COMPLETED"
-            },
-            orderBy: {
-                completedAt: "desc"
-            }
-        })
+        const mockSession = await db.query.projectV2MockSessions.findFirst({
+            where: and(
+                eq(projectV2MockSessions.userId, targetUserId),
+                eq(projectV2MockSessions.projectId, projectId),
+                eq(projectV2MockSessions.status, "COMPLETED")
+            ),
+            orderBy: (sessions: any, { desc }: any) => [desc(sessions.completedAt)]
+        });
 
         const mockScore = mockSession?.score || null
 
-        // Calculate total score
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const projectData = progress.project as any
         const allTasks = projectData.sprints?.flatMap((s: any) => s.tasks) || []
 
@@ -118,21 +109,16 @@ export async function updateProjectScore(projectId: string, userId?: string) {
             mockScore
         )
 
-        // Update progress with new scores
-        await prisma.userProjectV2Progress.update({
-            where: { id: progress.id },
-            data: {
+        await db.update(userProjectV2Progress)
+            .set({
                 totalScore: scoreCalculation.totalScore,
                 tasksScore: scoreCalculation.tasksScore,
                 quizScore: scoreCalculation.quizScore,
                 mockScore: scoreCalculation.mockScore
-            }
-        })
+            })
+            .where(eq(userProjectV2Progress.id, progress.id));
 
-        // Update or create leaderboard entry
         await updateLeaderboardEntry(projectId, targetUserId)
-
-        // Update global leaderboard
         await updateGlobalLeaderboard(targetUserId)
 
         return {
@@ -150,41 +136,50 @@ export async function updateProjectScore(projectId: string, userId?: string) {
  */
 async function updateLeaderboardEntry(projectId: string, userId: string) {
     try {
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId,
-                    projectId
-                }
-            }
-        })
+        const progress = await db.query.userProjectV2Progress.findFirst({
+            where: and(
+                eq(userProjectV2Progress.userId, userId),
+                eq(userProjectV2Progress.projectId, projectId)
+            )
+        });
 
         if (!progress) return
 
-        // Calculate rank
-        const higherScores = await prisma.userProjectV2Progress.count({
-            where: {
-                projectId,
-                totalScore: {
-                    gt: progress.totalScore
-                }
-            }
-        })
+        const higherScoreRows = await db.select({ count: sql<number>`count(*)` })
+            .from(userProjectV2Progress)
+            .where(and(
+                eq(userProjectV2Progress.projectId, projectId),
+                gt(userProjectV2Progress.totalScore, progress.totalScore)
+            ));
 
-        const rank = higherScores + 1
+        const rank = Number(higherScoreRows[0]?.count ?? 0) + 1
         const progressPercent = progress.totalTasks > 0
             ? (progress.tasksCompleted / progress.totalTasks) * 100
             : 0
 
-        // Upsert leaderboard entry
-        await prisma.projectV2Leaderboard.upsert({
-            where: {
-                userId_projectId: {
-                    userId,
-                    projectId
-                }
-            },
-            create: {
+        const existing = await db.query.projectV2Leaderboards.findFirst({
+            where: and(
+                eq(projectV2Leaderboards.userId, userId),
+                eq(projectV2Leaderboards.projectId, projectId)
+            )
+        });
+
+        if (existing) {
+            await db.update(projectV2Leaderboards)
+                .set({
+                    rank,
+                    score: progress.totalScore,
+                    tasksCompleted: progress.tasksCompleted,
+                    totalTasks: progress.totalTasks,
+                    progressPercent,
+                    tasksScore: progress.tasksScore,
+                    quizScore: progress.quizScore,
+                    mockScore: progress.mockScore,
+                    lastUpdated: new Date()
+                })
+                .where(eq(projectV2Leaderboards.id, existing.id));
+        } else {
+            await db.insert(projectV2Leaderboards).values({
                 userId,
                 projectId,
                 rank,
@@ -195,19 +190,8 @@ async function updateLeaderboardEntry(projectId: string, userId: string) {
                 tasksScore: progress.tasksScore,
                 quizScore: progress.quizScore,
                 mockScore: progress.mockScore
-            },
-            update: {
-                rank,
-                score: progress.totalScore,
-                tasksCompleted: progress.tasksCompleted,
-                totalTasks: progress.totalTasks,
-                progressPercent,
-                tasksScore: progress.tasksScore,
-                quizScore: progress.quizScore,
-                mockScore: progress.mockScore,
-                lastUpdated: new Date()
-            }
-        })
+            });
+        }
     } catch (error) {
         console.error("Error updating leaderboard entry:", error)
     }
@@ -218,53 +202,59 @@ async function updateLeaderboardEntry(projectId: string, userId: string) {
  */
 async function updateGlobalLeaderboard(userId: string) {
     try {
-        // Get all user's project scores
-        const allProgress = await prisma.userProjectV2Progress.findMany({
-            where: {
-                userId,
-                status: {
-                    not: "NOT_STARTED"
-                }
-            }
-        })
+        const allProgress = await db.query.userProjectV2Progress.findMany({
+            where: and(
+                eq(userProjectV2Progress.userId, userId),
+                ne(userProjectV2Progress.status, "NOT_STARTED")
+            )
+        });
 
         const totalScore = allProgress.reduce((sum: number, p: any) => sum + p.totalScore, 0)
         const projectsStarted = allProgress.length
         const projectsCompleted = allProgress.filter((p: any) => p.status === "COMPLETED").length
         const averageScore = projectsStarted > 0 ? totalScore / projectsStarted : 0
 
-        // Get component counts
-        const quizAttempts = await prisma.projectV2QuizAttempt.count({
-            where: {
-                userId,
-                isCompleted: true
-            }
-        })
+        const [quizCountArr, mockCountArr] = await Promise.all([
+            db.select({ count: sql<number>`count(*)` }).from(projectV2QuizAttempts).where(and(
+                eq(projectV2QuizAttempts.userId, userId),
+                eq(projectV2QuizAttempts.isCompleted, true)
+            )),
+            db.select({ count: sql<number>`count(*)` }).from(projectV2MockSessions).where(and(
+                eq(projectV2MockSessions.userId, userId),
+                eq(projectV2MockSessions.status, "COMPLETED")
+            )),
+        ]);
 
-        const mockSessions = await prisma.projectV2MockSession.count({
-            where: {
-                userId,
-                status: "COMPLETED"
-            }
-        })
-
+        const quizAttempts = Number(quizCountArr[0]?.count ?? 0)
+        const mockSessions = Number(mockCountArr[0]?.count ?? 0)
         const totalTasksCompleted = allProgress.reduce((sum: number, p: any) => sum + p.tasksCompleted, 0)
 
-        // Calculate rank
-        const higherScores = await prisma.projectV2GlobalLeaderboard.count({
-            where: {
-                totalScore: {
-                    gt: totalScore
-                }
-            }
-        })
+        const higherScoreRows = await db.select({ count: sql<number>`count(*)` })
+            .from(projectV2GlobalLeaderboards)
+            .where(gt(projectV2GlobalLeaderboards.totalScore, totalScore));
 
-        const rank = higherScores + 1
+        const rank = Number(higherScoreRows[0]?.count ?? 0) + 1
 
-        // Upsert global leaderboard entry
-        await prisma.projectV2GlobalLeaderboard.upsert({
-            where: { userId },
-            create: {
+        const existing = await db.query.projectV2GlobalLeaderboards.findFirst({
+            where: eq(projectV2GlobalLeaderboards.userId, userId)
+        });
+
+        if (existing) {
+            await db.update(projectV2GlobalLeaderboards)
+                .set({
+                    rank,
+                    totalScore,
+                    projectsStarted,
+                    projectsCompleted,
+                    averageScore,
+                    totalTasksCompleted,
+                    totalQuizzesCompleted: quizAttempts,
+                    totalMocksCompleted: mockSessions,
+                    lastUpdated: new Date()
+                })
+                .where(eq(projectV2GlobalLeaderboards.id, existing.id));
+        } else {
+            await db.insert(projectV2GlobalLeaderboards).values({
                 userId,
                 rank,
                 totalScore,
@@ -274,19 +264,8 @@ async function updateGlobalLeaderboard(userId: string) {
                 totalTasksCompleted,
                 totalQuizzesCompleted: quizAttempts,
                 totalMocksCompleted: mockSessions
-            },
-            update: {
-                rank,
-                totalScore,
-                projectsStarted,
-                projectsCompleted,
-                averageScore,
-                totalTasksCompleted,
-                totalQuizzesCompleted: quizAttempts,
-                totalMocksCompleted: mockSessions,
-                lastUpdated: new Date()
-            }
-        })
+            });
+        }
     } catch (error) {
         console.error("Error updating global leaderboard:", error)
     }
@@ -301,10 +280,10 @@ export async function getProjectLeaderboard(
     limit: number = 20
 ): Promise<ActionResponse<LeaderboardResponse>> {
     try {
-        const project = await prisma.projectV2.findUnique({
-            where: { slug: projectSlug },
-            select: { id: true, title: true, visibility: true, slug: true, createdBy: true }
-        })
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, projectSlug),
+            columns: { id: true, title: true, visibility: true, slug: true, createdBy: true }
+        });
 
         if (!project) {
             return { success: false, message: "Project not found" }
@@ -312,32 +291,25 @@ export async function getProjectLeaderboard(
 
         const skip = (page - 1) * limit
 
-        const [leaderboard, total] = await Promise.all([
-            prisma.projectV2Leaderboard.findMany({
-                where: { projectId: project.id },
-                include: {
+        const [leaderboard, totalArr] = await Promise.all([
+            db.query.projectV2Leaderboards.findMany({
+                where: eq(projectV2Leaderboards.projectId, project.id),
+                with: {
                     user: {
-                        select: {
-                            id: true,
-                            username: true,
-                            name: true,
-                            image: true
-                        }
+                        columns: { id: true, username: true, name: true, image: true }
                     }
                 },
-                orderBy: [
-                    { score: "desc" },
-                    { lastUpdated: "asc" }
-                ],
-                skip,
-                take: limit
+                orderBy: (lb: any, { desc, asc }: any) => [desc(lb.score), asc(lb.lastUpdated)],
+                offset: skip,
+                limit
             }),
-            prisma.projectV2Leaderboard.count({
-                where: { projectId: project.id }
-            })
-        ])
+            db.select({ count: sql<number>`count(*)` })
+                .from(projectV2Leaderboards)
+                .where(eq(projectV2Leaderboards.projectId, project.id))
+        ]);
 
-        // Update ranks if needed (real-time ranking)
+        const total = Number(totalArr[0]?.count ?? 0)
+
         const leaderboardWithRanks: LeaderboardEntry[] = leaderboard.map((entry: any, index: number) => ({
             ...entry,
             rank: skip + index + 1
@@ -372,30 +344,22 @@ export async function getGlobalLeaderboard(
     try {
         const skip = (page - 1) * limit
 
-        const [leaderboard, total] = await Promise.all([
-            prisma.projectV2GlobalLeaderboard.findMany({
-                include: {
+        const [leaderboard, totalArr] = await Promise.all([
+            db.query.projectV2GlobalLeaderboards.findMany({
+                with: {
                     user: {
-                        select: {
-                            id: true,
-                            username: true,
-                            name: true,
-                            image: true
-                        }
+                        columns: { id: true, username: true, name: true, image: true }
                     }
                 },
-                orderBy: [
-                    { totalScore: "desc" },
-                    { averageScore: "desc" },
-                    { lastUpdated: "asc" }
-                ],
-                skip,
-                take: limit
+                orderBy: (lb: any, { desc, asc }: any) => [desc(lb.totalScore), desc(lb.averageScore), asc(lb.lastUpdated)],
+                offset: skip,
+                limit
             }),
-            prisma.projectV2GlobalLeaderboard.count()
-        ])
+            db.select({ count: sql<number>`count(*)` }).from(projectV2GlobalLeaderboards)
+        ]);
 
-        // Update ranks (real-time ranking)
+        const total = Number(totalArr[0]?.count ?? 0)
+
         const leaderboardWithRanks: GlobalLeaderboardEntry[] = leaderboard.map((entry: any, index: number) => ({
             ...entry,
             rank: skip + index + 1
@@ -420,66 +384,48 @@ export async function getGlobalLeaderboard(
 }
 
 /**
- * Get user's detailed progress for a project (for the sheet)
+ * Get user's detailed progress for a project
  */
 export async function getUserProjectProgress(projectSlug: string, username: string): Promise<ActionResponse<UserProjectProgressDetail>> {
     try {
-        const user = await prisma.user.findUnique({
-            where: { username },
-            select: {
-                id: true,
-                username: true,
-                name: true,
-                image: true
-            }
-        })
+        const user = await db.query.users.findFirst({
+            where: eq(users.username, username),
+            columns: { id: true, username: true, name: true, image: true }
+        });
 
         if (!user) {
             return { success: false, message: "User not found" }
         }
 
-        const project = await prisma.projectV2.findUnique({
-            where: { slug: projectSlug }
-        })
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, projectSlug)
+        });
 
         if (!project) {
             return { success: false, message: "Project not found" }
         }
 
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: user.id,
-                    projectId: project.id
-                }
-            },
-            include: {
+        const progress = await db.query.userProjectV2Progress.findFirst({
+            where: and(
+                eq(userProjectV2Progress.userId, user.id),
+                eq(userProjectV2Progress.projectId, project.id)
+            ),
+            with: {
                 taskStatuses: {
-                    include: {
+                    with: {
                         task: {
-                            select: {
-                                id: true,
-                                title: true,
-                                description: true,
-                                difficulty: true,
-                                badges: true
-                            }
+                            columns: { id: true, title: true, description: true, difficulty: true, badges: true }
                         }
                     },
-                    orderBy: {
-                        task: {
-                            orderIndex: "asc"
-                        }
-                    }
+                    orderBy: (ts: any, { asc }: any) => [asc(ts.task?.orderIndex)]
                 }
             }
-        })
+        });
 
         if (!progress) {
             return { success: false, message: "No progress found for this user" }
         }
 
-        // Separate tasks by status
         const completedTasks = progress.taskStatuses.filter((ts: any) => ts.status === "COMPLETED")
         const inProgressTasks = progress.taskStatuses.filter((ts: any) => ts.status === "IN_PROGRESS")
         const todoTasks = progress.taskStatuses.filter((ts: any) => ts.status === "TO_DO")

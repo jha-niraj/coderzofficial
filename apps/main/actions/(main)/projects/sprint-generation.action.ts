@@ -1,8 +1,16 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import prisma from '@repo/prisma'
-import { auth } from '@repo/auth'
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    users,
+    projectsV2,
+    projectV2Sprints,
+    projectV2Tasks,
+} from "@repo/db";
+import { eq, and } from "drizzle-orm";
 import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
 
@@ -11,9 +19,9 @@ import { openai } from '@/lib/openai-client'
 // ============================================================================
 
 async function getCurrentUser() {
-    const session = await auth()
+    const session = await getSession(headers());
     if (!session?.user?.email) throw new Error('Not authenticated')
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    const [user] = await db.select().from(users).where(eq(users.email, session.user.email));
     if (!user) throw new Error('User not found')
     return user
 }
@@ -57,7 +65,6 @@ interface GeneratedSprint {
 // Sprint Generation Actions
 // ============================================================================
 
-
 /**
  * Generate a sprint with tasks using AI
  */
@@ -68,23 +75,21 @@ export async function generateSprintWithAI(
     try {
         const user = await getCurrentUser()
 
-        // Get project details for context
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId),
+            with: {
                 sprints: {
-                    include: { tasks: true },
-                    orderBy: { orderIndex: 'asc' }
+                    orderBy: (sprints: any, { asc }: any) => [asc(sprints.orderIndex)],
+                    with: { tasks: true }
                 }
             }
-        })
+        });
 
         if (!project) {
             return { success: false, error: 'Project not found' }
         }
 
-        // Build context from existing sprints
-        const existingSprintsContext = project.sprints.map(s => ({
+        const existingSprintsContext = project.sprints.map((s: any) => ({
             name: s.name,
             goal: s.goal,
             tasksCount: s.tasks.length
@@ -173,7 +178,6 @@ Return a JSON object with this exact structure:
 
         const generatedSprint: GeneratedSprint = JSON.parse(responseContent)
 
-        // Ensure tasks have correct orderIndex
         generatedSprint.tasks = generatedSprint.tasks.map((task, idx) => ({
             ...task,
             orderIndex: idx
@@ -188,8 +192,6 @@ Return a JSON object with this exact structure:
 
 /**
  * Add a generated sprint to the project
- * For creators: Adds directly to the timeline
- * For non-creators: Adds as a personal sprint (needs acceptance for progress tracking)
  */
 export async function addSprintToProject(
     projectId: string,
@@ -199,12 +201,15 @@ export async function addSprintToProject(
     try {
         const user = await getCurrentUser()
 
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            include: {
-                sprints: { orderBy: { orderIndex: 'desc' }, take: 1 }
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, projectId),
+            with: {
+                sprints: {
+                    orderBy: (sprints: any, { desc }: any) => [desc(sprints.orderIndex)],
+                    limit: 1,
+                }
             }
-        })
+        });
 
         if (!project) {
             return { success: false, error: 'Project not found' }
@@ -215,82 +220,84 @@ export async function addSprintToProject(
         const nextOrderIndex = (project.sprints[0]?.orderIndex || 0) + 1
 
         if (isCreator || autoAccept) {
-            // Creator adds sprint directly to the project
-            const sprint = await prisma.projectV2Sprint.create({
-                data: {
-                    projectId,
-                    sprintNumber: nextSprintNumber,
-                    name: sprintData.name,
-                    goal: sprintData.goal,
-                    duration: sprintData.duration,
-                    orderIndex: nextOrderIndex,
-                    createdBy: user.id,
-                    isApproved: true,
-                    tasks: {
-                        create: sprintData.tasks.map((task, idx) => ({
-                            projectV2Id: projectId,
-                            title: task.title,
-                            description: task.description,
-                            hints: task.hints,
-                            estimatedMinutes: task.estimatedMinutes,
-                            difficulty: task.difficulty,
-                            orderIndex: idx,
-                            category: task.category,
-                            estimatedTime: task.estimatedTime,
-                            checkpoints: task.checkpoints,
-                            relatedPages: task.relatedPages,
-                            dependencies: task.dependencies,
-                            badges: task.badges,
-                            tags: task.tags,
-                            terminalCommand: task.terminalCommand,
-                            criteria: task.successCriteria
-                        }))
-                    }
-                }
-            })
+            const [sprint] = await db.insert(projectV2Sprints).values({
+                projectId,
+                sprintNumber: nextSprintNumber,
+                name: sprintData.name,
+                goal: sprintData.goal,
+                duration: sprintData.duration,
+                orderIndex: nextOrderIndex,
+                createdBy: user.id,
+                isApproved: true,
+            }).returning();
+
+            if (sprintData.tasks.length > 0) {
+                await db.insert(projectV2Tasks).values(
+                    sprintData.tasks.map((task, idx) => ({
+                        sprintId: sprint!.id,
+                        projectV2Id: projectId,
+                        title: task.title,
+                        description: task.description,
+                        hints: task.hints,
+                        estimatedMinutes: task.estimatedMinutes,
+                        difficulty: task.difficulty,
+                        orderIndex: idx,
+                        category: task.category,
+                        estimatedTime: task.estimatedTime,
+                        checkpoints: task.checkpoints,
+                        relatedPages: task.relatedPages,
+                        dependencies: task.dependencies,
+                        badges: task.badges,
+                        tags: task.tags,
+                        terminalCommand: task.terminalCommand,
+                        criteria: task.successCriteria
+                    }))
+                );
+            }
 
             revalidatePath(`/projects/${project.slug}`)
 
-            return { success: true, data: { sprintId: sprint.id, isPersonal: false } }
+            return { success: true, data: { sprintId: sprint!.id, isPersonal: false } }
         } else {
-            // Non-creator: Create a personal/suggested sprint
-            const sprint = await prisma.projectV2Sprint.create({
-                data: {
-                    projectId,
-                    sprintNumber: nextSprintNumber,
-                    name: sprintData.name,
-                    goal: sprintData.goal,
-                    duration: sprintData.duration,
-                    orderIndex: nextOrderIndex,
-                    createdBy: user.id,
-                    isApproved: false, // Needs acceptance
-                    isPersonal: true,
-                    tasks: {
-                        create: sprintData.tasks.map((task, idx) => ({
-                            projectV2Id: projectId,
-                            title: task.title,
-                            description: task.description,
-                            hints: task.hints,
-                            estimatedMinutes: task.estimatedMinutes,
-                            difficulty: task.difficulty,
-                            orderIndex: idx,
-                            category: task.category,
-                            estimatedTime: task.estimatedTime,
-                            checkpoints: task.checkpoints,
-                            relatedPages: task.relatedPages,
-                            dependencies: task.dependencies,
-                            badges: task.badges,
-                            tags: task.tags,
-                            terminalCommand: task.terminalCommand,
-                            criteria: task.successCriteria
-                        }))
-                    }
-                }
-            })
+            const [sprint] = await db.insert(projectV2Sprints).values({
+                projectId,
+                sprintNumber: nextSprintNumber,
+                name: sprintData.name,
+                goal: sprintData.goal,
+                duration: sprintData.duration,
+                orderIndex: nextOrderIndex,
+                createdBy: user.id,
+                isApproved: false,
+                isPersonal: true,
+            }).returning();
+
+            if (sprintData.tasks.length > 0) {
+                await db.insert(projectV2Tasks).values(
+                    sprintData.tasks.map((task, idx) => ({
+                        sprintId: sprint!.id,
+                        projectV2Id: projectId,
+                        title: task.title,
+                        description: task.description,
+                        hints: task.hints,
+                        estimatedMinutes: task.estimatedMinutes,
+                        difficulty: task.difficulty,
+                        orderIndex: idx,
+                        category: task.category,
+                        estimatedTime: task.estimatedTime,
+                        checkpoints: task.checkpoints,
+                        relatedPages: task.relatedPages,
+                        dependencies: task.dependencies,
+                        badges: task.badges,
+                        tags: task.tags,
+                        terminalCommand: task.terminalCommand,
+                        criteria: task.successCriteria
+                    }))
+                );
+            }
 
             revalidatePath(`/projects/${project.slug}`)
 
-            return { success: true, data: { sprintId: sprint.id, isPersonal: true } }
+            return { success: true, data: { sprintId: sprint!.id, isPersonal: true } }
         }
     } catch (error) {
         console.error('Error adding sprint to project:', error)
@@ -299,7 +306,7 @@ export async function addSprintToProject(
 }
 
 /**
- * Accept a personal sprint (for non-creators to add to their progress tracking)
+ * Accept a personal sprint
  */
 export async function acceptPersonalSprint(
     sprintId: string
@@ -307,10 +314,10 @@ export async function acceptPersonalSprint(
     try {
         const user = await getCurrentUser()
 
-        const sprint = await prisma.projectV2Sprint.findUnique({
-            where: { id: sprintId },
-            include: { project: true }
-        })
+        const sprint = await db.query.projectV2Sprints.findFirst({
+            where: eq(projectV2Sprints.id, sprintId),
+            with: { project: true }
+        });
 
         if (!sprint) {
             return { success: false, error: 'Sprint not found' }
@@ -320,10 +327,7 @@ export async function acceptPersonalSprint(
             return { success: false, error: 'You can only accept your own sprints' }
         }
 
-        await prisma.projectV2Sprint.update({
-            where: { id: sprintId },
-            data: { isApproved: true }
-        })
+        await db.update(projectV2Sprints).set({ isApproved: true }).where(eq(projectV2Sprints.id, sprintId));
 
         revalidatePath(`/projects/${sprint.project.slug}`)
 
@@ -343,10 +347,10 @@ export async function rejectPersonalSprint(
     try {
         const user = await getCurrentUser()
 
-        const sprint = await prisma.projectV2Sprint.findUnique({
-            where: { id: sprintId },
-            include: { project: true }
-        })
+        const sprint = await db.query.projectV2Sprints.findFirst({
+            where: eq(projectV2Sprints.id, sprintId),
+            with: { project: true }
+        });
 
         if (!sprint) {
             return { success: false, error: 'Sprint not found' }
@@ -356,15 +360,10 @@ export async function rejectPersonalSprint(
             return { success: false, error: 'You can only reject your own sprints' }
         }
 
-        // Delete the sprint and its tasks
-        await prisma.$transaction([
-            prisma.projectV2Task.deleteMany({
-                where: { sprintId }
-            }),
-            prisma.projectV2Sprint.delete({
-                where: { id: sprintId }
-            })
-        ])
+        await db.transaction(async (tx) => {
+            await tx.delete(projectV2Tasks).where(eq(projectV2Tasks.sprintId, sprintId));
+            await tx.delete(projectV2Sprints).where(eq(projectV2Sprints.id, sprintId));
+        });
 
         revalidatePath(`/projects/${sprint.project.slug}`)
 
@@ -376,7 +375,7 @@ export async function rejectPersonalSprint(
 }
 
 /**
- * Get user's sprints for a project (including personal unaccepted ones)
+ * Get user's sprints for a project
  */
 export async function getUserSprintsForProject(
     projectId: string
@@ -402,32 +401,30 @@ export async function getUserSprintsForProject(
     try {
         const user = await getCurrentUser()
 
-        // Get all approved sprints (main timeline)
-        const approvedSprints = await prisma.projectV2Sprint.findMany({
-            where: {
-                projectId,
-                isApproved: true,
-                isPersonal: false
-            },
-            include: { tasks: true },
-            orderBy: { orderIndex: 'asc' }
-        })
+        const approvedSprints = await db.query.projectV2Sprints.findMany({
+            where: and(
+                eq(projectV2Sprints.projectId, projectId),
+                eq(projectV2Sprints.isApproved, true),
+                eq(projectV2Sprints.isPersonal, false)
+            ),
+            with: { tasks: true },
+            orderBy: (sprints: any, { asc }: any) => [asc(sprints.orderIndex)]
+        });
 
-        // Get user's personal sprints (approved or pending)
-        const personalSprints = await prisma.projectV2Sprint.findMany({
-            where: {
-                projectId,
-                createdBy: user.id,
-                isPersonal: true
-            },
-            include: { tasks: true },
-            orderBy: { orderIndex: 'asc' }
-        })
+        const personalSprints = await db.query.projectV2Sprints.findMany({
+            where: and(
+                eq(projectV2Sprints.projectId, projectId),
+                eq(projectV2Sprints.createdBy, user.id),
+                eq(projectV2Sprints.isPersonal, true)
+            ),
+            with: { tasks: true },
+            orderBy: (sprints: any, { asc }: any) => [asc(sprints.orderIndex)]
+        });
 
         return {
             success: true,
             data: {
-                approvedSprints: approvedSprints.map(s => ({
+                approvedSprints: approvedSprints.map((s: any) => ({
                     id: s.id,
                     sprintNumber: s.sprintNumber,
                     name: s.name,
@@ -435,7 +432,7 @@ export async function getUserSprintsForProject(
                     duration: s.duration,
                     tasksCount: s.tasks.length
                 })),
-                personalSprints: personalSprints.map(s => ({
+                personalSprints: personalSprints.map((s: any) => ({
                     id: s.id,
                     sprintNumber: s.sprintNumber,
                     name: s.name,

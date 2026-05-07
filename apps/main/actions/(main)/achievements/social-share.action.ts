@@ -1,7 +1,14 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db,
+    socialConnections,
+    socialShares,
+    userBadges,
+} from '@repo/db'
+import { eq, and, desc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 // ================================================================================
@@ -23,14 +30,14 @@ export interface ShareContentInput {
 
 export async function getSocialConnections() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const connections = await prisma.socialConnection.findMany({
-            where: { userId: session.user.id },
-            select: {
+        const connections = await db.query.socialConnections.findMany({
+            where: eq(socialConnections.userId, session.user.id),
+            columns: {
                 id: true,
                 provider: true,
                 accountName: true,
@@ -54,14 +61,16 @@ export async function getSocialConnections() {
 
 export async function disconnectSocialAccount(provider: 'TWITTER' | 'LINKEDIN') {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        await prisma.socialConnection.deleteMany({
-            where: { userId: session.user.id, provider },
-        })
+        await db.delete(socialConnections)
+            .where(and(
+                eq(socialConnections.userId, session.user.id),
+                eq(socialConnections.provider, provider)
+            ))
 
         revalidatePath('/settings/integrations')
         return { success: true }
@@ -77,14 +86,17 @@ export async function disconnectSocialAccount(provider: 'TWITTER' | 'LINKEDIN') 
 
 export async function generateShareContent(badgeId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const userBadge = await prisma.userBadge.findUnique({
-            where: { userId_badgeId: { userId: session.user.id, badgeId } },
-            include: { badge: true },
+        const userBadge = await db.query.userBadges.findFirst({
+            where: and(
+                eq(userBadges.userId, session.user.id),
+                eq(userBadges.badgeId, badgeId)
+            ),
+            with: { badge: true },
         })
 
         if (!userBadge || userBadge.status !== 'CLAIMED') {
@@ -136,7 +148,7 @@ export async function generateShareContent(badgeId: string) {
 
 export async function improveContentWithAI(content: string, platform: 'twitter' | 'linkedin') {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
@@ -144,7 +156,7 @@ export async function improveContentWithAI(content: string, platform: 'twitter' 
         // In production, this would call OpenAI to improve the content
         // For now, return a slightly modified version
         const improved = platform === 'twitter'
-            ? content.length > 280 
+            ? content.length > 280
                 ? content.substring(0, 277) + '...'
                 : content
             : content
@@ -171,43 +183,52 @@ export async function recordSocialShare(data: {
     errorMessage?: string
 }) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const share = await prisma.socialShare.create({
-            data: {
-                userId: session.user.id,
-                provider: data.provider,
-                shareType: data.shareType,
-                referenceId: data.referenceId,
-                content: data.content,
-                externalPostId: data.externalPostId,
-                externalUrl: data.externalUrl,
-                wasSuccessful: data.wasSuccessful,
-                errorMessage: data.errorMessage,
-            },
-        })
+        const [share] = await db.insert(socialShares).values({
+            userId: session.user.id,
+            provider: data.provider,
+            shareType: data.shareType,
+            referenceId: data.referenceId,
+            content: data.content,
+            externalPostId: data.externalPostId,
+            externalUrl: data.externalUrl,
+            wasSuccessful: data.wasSuccessful,
+            errorMessage: data.errorMessage,
+        }).returning()
 
         // Update badge share count if applicable
         if (data.wasSuccessful && data.referenceId && data.shareType === 'badge') {
-            await prisma.userBadge.updateMany({
-                where: { userId: session.user.id, badgeId: data.referenceId },
-                data: {
-                    shareCount: { increment: 1 },
-                    ...(data.provider === 'TWITTER' ? { sharedToTwitter: true } : {}),
-                    ...(data.provider === 'LINKEDIN' ? { sharedToLinkedIn: true } : {}),
-                },
+            const ubRow = await db.query.userBadges.findFirst({
+                where: and(
+                    eq(userBadges.userId, session.user.id),
+                    eq(userBadges.badgeId, data.referenceId)
+                ),
+                columns: { id: true, shareCount: true },
             })
+
+            if (ubRow) {
+                await db.update(userBadges)
+                    .set({
+                        shareCount: ubRow.shareCount + 1,
+                        ...(data.provider === 'TWITTER' ? { sharedToTwitter: true } : {}),
+                        ...(data.provider === 'LINKEDIN' ? { sharedToLinkedIn: true } : {}),
+                    })
+                    .where(eq(userBadges.id, ubRow.id))
+            }
         }
 
         // Update social connection last used
         if (data.wasSuccessful) {
-            await prisma.socialConnection.updateMany({
-                where: { userId: session.user.id, provider: data.provider },
-                data: { lastUsedAt: new Date() },
-            })
+            await db.update(socialConnections)
+                .set({ lastUsedAt: new Date() })
+                .where(and(
+                    eq(socialConnections.userId, session.user.id),
+                    eq(socialConnections.provider, data.provider)
+                ))
         }
 
         return { success: true, share }
@@ -223,15 +244,15 @@ export async function recordSocialShare(data: {
 
 export async function getShareHistory(limit = 20) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const shares = await prisma.socialShare.findMany({
-            where: { userId: session.user.id },
-            orderBy: { sharedAt: 'desc' },
-            take: limit,
+        const shares = await db.query.socialShares.findMany({
+            where: eq(socialShares.userId, session.user.id),
+            orderBy: desc(socialShares.sharedAt),
+            limit,
         })
 
         return { success: true, shares }
@@ -247,7 +268,7 @@ export async function getShareHistory(limit = 20) {
 
 export async function generateLevelUpShareContent(level: number, title: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@repo/prisma';
+import { db, users } from '@repo/db';
+import { eq } from 'drizzle-orm';
 
 export async function GET(
     req: NextRequest,
@@ -17,15 +18,15 @@ export async function GET(
 
         const decodedEmail = decodeURIComponent(email);
 
-        const user = await prisma.user.findUnique({
-            where: { email: decodedEmail },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, decodedEmail),
+            columns: {
                 id: true,
                 email: true,
                 name: true,
                 emailVerified: true,
-                onboardingCompleted: true
-            }
+                onboardingCompleted: true,
+            },
         });
 
         if (!user) {

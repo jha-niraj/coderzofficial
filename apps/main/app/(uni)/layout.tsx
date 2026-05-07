@@ -59,7 +59,7 @@ const UniContent = ({ children, universityData }: { children: React.ReactNode; u
 
 const UniLayout = ({ children }: LayoutProps) => {
     const isOnline = useNetworkStatus()
-    const { data: session, status } = useSession()
+    const { data: session, isPending } = useSession()
     const router = useRouter()
     const pathname = usePathname()
     const [universityData, setUniversityData] = useState<UniversityData | null>(null)
@@ -71,7 +71,7 @@ const UniLayout = ({ children }: LayoutProps) => {
 
     useEffect(() => {
         const checkUniversityVerification = async () => {
-            if (status === "authenticated" && session?.user) {
+            if (session?.user && !isPending) {
                 try {
                     const response = await getStudentUniversityLink()
                     if (response.success && response.data) {
@@ -100,19 +100,19 @@ const UniLayout = ({ children }: LayoutProps) => {
                 } finally {
                     setLoading(false)
                 }
-            } else if (status === "unauthenticated") {
+            } else if (!session && !isPending) {
                 router.push("/signin")
-            } else if (status !== "loading") {
+            } else if (!isPending) {
                 setLoading(false)
             }
         }
 
         checkUniversityVerification()
-    }, [status, session, router])
+    }, [session, isPending, router])
 
     if (!isOnline) return <OfflineFallback />
 
-    if (status === "loading" || loading) {
+    if (isPending || loading) {
         return (
             <div className="h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950">
                 <div className="flex flex-col items-center gap-4">

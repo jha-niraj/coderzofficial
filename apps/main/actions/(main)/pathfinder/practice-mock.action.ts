@@ -1,19 +1,21 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, pathfinderSubGoals, mockInterviewVoice } from '@repo/db'
+import { eq, and } from 'drizzle-orm'
 import { createMockVoiceSession } from '@/actions/(main)/mockvoice/session.action'
 
 export async function createPathfinderPracticeMockAndSession(subGoalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const subGoal = await prisma.pathfinderSubGoal.findFirst({
-            where: { id: subGoalId },
-            include: { goal: true },
+        const subGoal = await db.query.pathfinderSubGoals.findFirst({
+            where: eq(pathfinderSubGoals.id, subGoalId),
+            with: { goal: true },
         })
 
         if (!subGoal || subGoal.goal.userId !== session.user.id) {
@@ -21,8 +23,8 @@ export async function createPathfinderPracticeMockAndSession(subGoalId: string) 
         }
 
         // Check if we already have a practice mock for this subgoal
-        let mock = await prisma.mockInterviewVoice.findUnique({
-            where: { pathfinderSubGoalId: subGoalId },
+        let mock = await db.query.mockInterviewVoice.findFirst({
+            where: eq(mockInterviewVoice.pathfinderSubGoalId, subGoalId),
         })
 
         if (!mock) {
@@ -31,25 +33,24 @@ export async function createPathfinderPracticeMockAndSession(subGoalId: string) 
                 ? `${resources.content}\n\nTopic: ${subGoal.title}. Ask interview-style questions to test understanding.`
                 : `Topic: ${subGoal.title}. Act as a technical interviewer. Ask interview-style questions to test the candidate's understanding. Category: ${subGoal.goal.category}, Level: ${subGoal.goal.level}.`
 
-            mock = await prisma.mockInterviewVoice.create({
-                data: {
-                    title: `Practice: ${subGoal.title}`,
-                    description: `Mock interview for "${subGoal.title}" - Pathfinder practice`,
-                    category: 'TECHNICAL',
-                    level: subGoal.goal.level as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
-                    duration: 10,
-                    questionsCount: 5,
-                    knowledgeBase,
-                    isPublic: false,
-                    isPredefined: false,
-                    createdById: session.user.id,
-                    includesResume: false,
-                    baseCredits: 0,
-                    creditsRequired: 0,
-                    tags: ['pathfinder', 'practice'],
-                    pathfinderSubGoalId: subGoalId,
-                },
-            })
+            const [created] = await db.insert(mockInterviewVoice).values({
+                title: `Practice: ${subGoal.title}`,
+                description: `Mock interview for "${subGoal.title}" - Pathfinder practice`,
+                category: 'TECHNICAL',
+                level: subGoal.goal.level as 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED',
+                duration: 10,
+                questionsCount: 5,
+                knowledgeBase,
+                isPublic: false,
+                isPredefined: false,
+                createdById: session.user.id,
+                includesResume: false,
+                baseCredits: 0,
+                creditsRequired: 0,
+                tags: ['pathfinder', 'practice'],
+                pathfinderSubGoalId: subGoalId,
+            }).returning()
+            mock = created
         }
 
         const sessionResult = await createMockVoiceSession({

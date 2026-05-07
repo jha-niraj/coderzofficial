@@ -1,10 +1,11 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { Prisma } from "@prisma/client"
-import { auth } from "@repo/auth"
-import { 
-    HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType 
+import { db, companyMembers, companyPayments, companySubscriptions, companyInvoices } from "@repo/db"
+import { eq, and, sum, count, desc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType
 } from "@/lib/dodopayments"
 import type { InvoiceLineItem, InvoiceDetails } from "@/types"
 
@@ -16,12 +17,12 @@ export type { InvoiceLineItem, InvoiceDetails }
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     return member
@@ -53,13 +54,11 @@ export async function getInvoices(limit: number = 20): Promise<{
             return { success: false, invoices: [], error: "Unauthorized" }
         }
 
-        const invoices = await prisma.companyInvoice.findMany({
-            where: { companyId: member.companyId },
-            orderBy: { invoiceDate: "desc" },
-            take: limit,
-            include: {
-                payment: true,
-            }
+        const invoices = await db.query.companyInvoices.findMany({
+            where: eq(companyInvoices.companyId, member.companyId),
+            orderBy: [desc(companyInvoices.invoiceDate)],
+            limit,
+            with: { payment: true }
         })
 
         return {
@@ -89,7 +88,7 @@ export async function getInvoices(limit: number = 20): Promise<{
                 pdfUrl: inv.pdfUrl,
                 notes: inv.notes,
                 paymentId: inv.paymentId,
-                paymentStatus: inv.payment.status,
+                paymentStatus: inv.payment.status
             }))
         }
     } catch (error) {
@@ -112,14 +111,12 @@ export async function getInvoiceById(invoiceId: string): Promise<{
             return { success: false, invoice: null, error: "Unauthorized" }
         }
 
-        const invoice = await prisma.companyInvoice.findFirst({
-            where: { 
-                id: invoiceId,
-                companyId: member.companyId 
-            },
-            include: {
-                payment: true,
-            }
+        const invoice = await db.query.companyInvoices.findFirst({
+            where: and(
+                eq(companyInvoices.id, invoiceId),
+                eq(companyInvoices.companyId, member.companyId)
+            ),
+            with: { payment: true }
         })
 
         if (!invoice) {
@@ -153,7 +150,7 @@ export async function getInvoiceById(invoiceId: string): Promise<{
                 pdfUrl: invoice.pdfUrl,
                 notes: invoice.notes,
                 paymentId: invoice.paymentId,
-                paymentStatus: invoice.payment.status,
+                paymentStatus: invoice.payment.status
             }
         }
     } catch (error) {
@@ -173,11 +170,9 @@ export async function createInvoiceForPayment(paymentId: string): Promise<{
 }> {
     try {
         // Get the payment with company info
-        const payment = await prisma.companyPayment.findUnique({
-            where: { id: paymentId },
-            include: {
-                company: true,
-            }
+        const payment = await db.query.companyPayments.findFirst({
+            where: eq(companyPayments.id, paymentId),
+            with: { company: true }
         })
 
         if (!payment) {
@@ -185,8 +180,8 @@ export async function createInvoiceForPayment(paymentId: string): Promise<{
         }
 
         // Check if invoice already exists
-        const existingInvoice = await prisma.companyInvoice.findUnique({
-            where: { paymentId }
+        const existingInvoice = await db.query.companyInvoices.findFirst({
+            where: eq(companyInvoices.paymentId, paymentId)
         })
 
         if (existingInvoice) {
@@ -205,7 +200,7 @@ export async function createInvoiceForPayment(paymentId: string): Promise<{
                 description: `${planConfig.name} Plan - ${billingCycle === "annual" ? "Annual" : "Monthly"} Subscription`,
                 quantity: 1,
                 unitPrice: payment.amount,
-                amount: payment.amount,
+                amount: payment.amount
             }
         ]
 
@@ -223,32 +218,35 @@ export async function createInvoiceForPayment(paymentId: string): Promise<{
         dueDate.setDate(dueDate.getDate() + 7) // 7 days from now
 
         // Create invoice
-        const invoice = await prisma.companyInvoice.create({
-            data: {
-                companyId: payment.companyId,
-                paymentId: payment.id,
-                invoiceNumber,
-                status: payment.status === "SUCCEEDED" ? "PAID" : "PENDING",
-                lineItems: lineItems as unknown as Prisma.InputJsonValue,
-                subtotal,
-                taxAmount,
-                taxRate,
-                discount: 0,
-                totalAmount,
-                currency: payment.currency,
-                billingName: payment.billingName || payment.company.name,
-                billingEmail: payment.billingEmail,
-                billingAddress: payment.company.address,
-                billingCity: payment.company.city,
-                billingState: payment.company.state,
-                billingCountry: payment.company.country,
-                billingPincode: payment.company.pincode,
-                invoiceDate: new Date(),
-                dueDate,
-                paidAt: payment.status === "SUCCEEDED" ? payment.paidAt : null,
-                notes: `Thank you for subscribing to ${planConfig.name} plan.`,
-            }
-        })
+        const insertedInvoices = await db.insert(companyInvoices).values({
+            companyId: payment.companyId,
+            paymentId: payment.id,
+            invoiceNumber,
+            status: payment.status === "SUCCEEDED" ? "PAID" : "PENDING",
+            lineItems: lineItems as unknown as Record<string, unknown>[],
+            subtotal,
+            taxAmount,
+            taxRate,
+            discount: 0,
+            totalAmount,
+            currency: payment.currency,
+            billingName: payment.billingName || payment.company.name,
+            billingEmail: payment.billingEmail,
+            billingAddress: payment.company.address,
+            billingCity: payment.company.city,
+            billingState: payment.company.state,
+            billingCountry: payment.company.country,
+            billingPincode: payment.company.pincode,
+            invoiceDate: new Date(),
+            dueDate,
+            paidAt: payment.status === "SUCCEEDED" ? payment.paidAt : null,
+            notes: `Thank you for subscribing to ${planConfig.name} plan.`
+        }).returning()
+
+        const invoice = insertedInvoices[0]
+        if (!invoice) {
+            return { success: false, error: "Failed to create invoice" }
+        }
 
         return { success: true, invoiceId: invoice.id }
     } catch (error) {
@@ -270,16 +268,15 @@ export async function markInvoicePaid(invoiceId: string): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        await prisma.companyInvoice.update({
-            where: { 
-                id: invoiceId,
-                companyId: member.companyId 
-            },
-            data: {
+        await db.update(companyInvoices)
+            .set({
                 status: "PAID",
-                paidAt: new Date(),
-            }
-        })
+                paidAt: new Date()
+            })
+            .where(and(
+                eq(companyInvoices.id, invoiceId),
+                eq(companyInvoices.companyId, member.companyId)
+            ))
 
         return { success: true }
     } catch (error) {
@@ -309,37 +306,36 @@ export async function getBillingOverview(): Promise<{
         }
 
         // Get subscription for next billing date
-        const subscription = await prisma.companySubscription.findUnique({
-            where: { companyId: member.companyId }
+        const subscription = await db.query.companySubscriptions.findFirst({
+            where: eq(companySubscriptions.companyId, member.companyId)
         })
 
         // Get total from paid invoices
-        const paidInvoices = await prisma.companyInvoice.aggregate({
-            where: {
-                companyId: member.companyId,
-                status: "PAID",
-            },
-            _sum: { totalAmount: true },
-            _count: true,
-        })
+        const paidInvoicesSums = await db
+            .select({ total: sum(companyInvoices.totalAmount), cnt: count() })
+            .from(companyInvoices)
+            .where(and(
+                eq(companyInvoices.companyId, member.companyId),
+                eq(companyInvoices.status, "PAID")
+            ))
 
         // Get last payment
-        const lastPayment = await prisma.companyPayment.findFirst({
-            where: {
-                companyId: member.companyId,
-                status: "SUCCEEDED",
-            },
-            orderBy: { paidAt: "desc" },
+        const lastPayment = await db.query.companyPayments.findFirst({
+            where: and(
+                eq(companyPayments.companyId, member.companyId),
+                eq(companyPayments.status, "SUCCEEDED")
+            ),
+            orderBy: [desc(companyPayments.paidAt)]
         })
 
         return {
             success: true,
             data: {
-                totalSpent: paidInvoices._sum.totalAmount || 0,
+                totalSpent: Number(paidInvoicesSums[0]?.total) || 0,
                 currency: subscription?.currency || "INR",
-                invoiceCount: paidInvoices._count || 0,
+                invoiceCount: paidInvoicesSums[0]?.cnt || 0,
                 lastPaymentDate: lastPayment?.paidAt || null,
-                nextBillingDate: subscription?.currentPeriodEnd || null,
+                nextBillingDate: subscription?.currentPeriodEnd || null
             }
         }
     } catch (error) {

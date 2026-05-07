@@ -1,7 +1,9 @@
 "use server"
 
-import { auth } from '@repo/auth'
-import prisma from "@repo/prisma"
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, users, backgroundJobs, creditTransactions } from '@repo/db'
+import { eq, sql } from 'drizzle-orm'
 import { z } from "zod"
 import { ProjectEchoSchema } from "../schemas/projects.schema"
 import crypto from 'crypto'
@@ -13,9 +15,9 @@ interface ActionResponse {
 }
 
 async function getCurrentUser() {
-    const session = await auth()
+    const session = await getSession(await headers())
     if (!session?.user?.email) throw new Error("Not authenticated")
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+    const [user] = await db.select().from(users).where(eq(users.email, session.user.email)).limit(1)
     if (!user) throw new Error("User not found")
     return user
 }
@@ -44,21 +46,20 @@ export async function issueWorkerToken(action: 'generate_project' | 'check_job' 
 }
 
 async function deductCredits(userId: string, amount: number, description: string) {
-    await prisma.$transaction([
-        prisma.user.update({
-            where: { id: userId },
-            data: { credits: { decrement: amount } },
-        }),
-        prisma.creditTransaction.create({
-            data: {
-                userId,
-                amount: -amount,
-                type: "SPEND",
-                currency: "NA",
-                description,
-            },
-        }),
-    ])
+    await db.transaction(async (tx) => {
+        await tx
+            .update(users)
+            .set({ credits: sql`${users.credits} - ${amount}` })
+            .where(eq(users.id, userId))
+
+        await tx.insert(creditTransactions).values({
+            userId,
+            amount: -amount,
+            type: 'SPEND',
+            currency: 'INR',
+            description,
+        })
+    })
 }
 
 // ========================================
@@ -87,7 +88,7 @@ export async function initiateProjectGeneration(
         console.log(`💰 [CREDITS] Total cost: ${totalCost} (Base: ${baseCost}, Assessment: ${assessmentCost})`)
 
         // Check user credits (don't deduct yet - wait for worker success)
-        if (user.credits < totalCost) {
+        if ((user.credits ?? 0) < totalCost) {
             console.log(`❌ [CREDITS] Insufficient credits. User has ${user.credits}, needs ${totalCost}`)
             return {
                 success: false,
@@ -139,14 +140,12 @@ export async function initiateProjectGeneration(
         }
 
         // Create job record in database
-        await prisma.backgroundJob.create({
-            data: {
-                jobId: result.jobId,
-                status: 'waiting',
-                progress: 0,
-                userId: user.id,
-                input: validatedInput as any,
-            }
+        await db.insert(backgroundJobs).values({
+            jobId: result.jobId,
+            status: 'waiting',
+            progress: 0,
+            userId: user.id,
+            input: validatedInput as any,
         })
 
         console.log(`✅ [JOB CREATED] Job ID: ${result.jobId}`)
@@ -176,16 +175,17 @@ export async function syncJobStatus(
     error?: string
 ) {
     try {
-        const dbJob = await prisma.backgroundJob.update({
-            where: { jobId },
-            data: {
+        const [dbJob] = await db
+            .update(backgroundJobs)
+            .set({
                 status,
                 progress,
                 result: data ? (data as any) : null,
                 error: error || null,
                 updatedAt: new Date(),
-            },
-        })
+            })
+            .where(eq(backgroundJobs.jobId, jobId))
+            .returning()
 
         return {
             success: true,
@@ -205,9 +205,11 @@ export async function finalizeGeneratedProject(jobId: string, workerData: any) {
         const user = await getCurrentUser()
 
         // Get the job from database to get original input
-        const job = await prisma.backgroundJob.findUnique({
-            where: { jobId },
-        })
+        const [job] = await db
+            .select()
+            .from(backgroundJobs)
+            .where(eq(backgroundJobs.jobId, jobId))
+            .limit(1)
 
         if (!job) {
             return {
@@ -232,13 +234,13 @@ export async function finalizeGeneratedProject(jobId: string, workerData: any) {
         await deductCredits(user.id, totalCost, `Generated project: ${workerData.title || 'Project'}`)
 
         // Update job status
-        await prisma.backgroundJob.update({
-            where: { jobId },
-            data: {
+        await db
+            .update(backgroundJobs)
+            .set({
                 status: 'completed',
                 progress: 100,
-            },
-        })
+            })
+            .where(eq(backgroundJobs.jobId, jobId))
 
         console.log(`✅ [PROJECT GENERATION COMPLETED] Project: ${workerData.slug}`)
 

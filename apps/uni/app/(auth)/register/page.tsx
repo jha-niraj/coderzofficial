@@ -103,8 +103,9 @@ function SignUpForm() {
     const handleGoogleSignUp = async () => {
         try {
             setIsGoogleLoading(true);
-            await signIn("google", {
-                callbackUrl: "/onboarding",
+            await signIn.social({
+                provider: "google",
+                callbackURL: "/onboarding",
             });
         } catch {
             setError("Google sign-up failed. Please try again.");

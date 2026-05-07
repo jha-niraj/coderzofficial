@@ -1,11 +1,13 @@
 import { getProjectBySlug } from '@/actions/(main)/projects/project.action'
 import ProjectDetailsClient from './_components/project-details-client'
 import { ProjectDetailsError } from './_components/project-details-error'
-import { auth } from '@repo/auth'
-import prisma from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, users } from '@repo/db'
+import { eq } from 'drizzle-orm'
 
 export default async function ProjectDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
-    const session = await auth()
+    const session = await getSession(headers())
     const { slug } = await params;
     const result = await getProjectBySlug(slug)
 
@@ -19,18 +21,21 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
     let userCredits = 0
     let currentUser = null
     if (session?.user?.id) {
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: {
-                id: true,
-                credits: true,
-                username: true,
-                name: true,
-                email: true
-            }
-        })
+        const userRows = await db
+            .select({
+                id: users.id,
+                credits: users.credits,
+                username: users.username,
+                name: users.name,
+                email: users.email,
+            })
+            .from(users)
+            .where(eq(users.id, session.user.id))
+            .limit(1)
+
+        const user = userRows[0]
         userCredits = user?.credits || 0
-        currentUser = user
+        currentUser = user || null
     }
 
     return <ProjectDetailsClient project={project} currentUserId={session?.user?.id || null} userCredits={userCredits} currentUser={currentUser || undefined} />

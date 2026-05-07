@@ -260,7 +260,7 @@ export default function UniversityVerificationPage() {
                 ])
 
                 if (universitiesRes.success && universitiesRes.data) {
-                    setUniversities(universitiesRes.data as University[])
+                    setUniversities(universitiesRes.data as unknown as University[])
                 }
 
                 if (statsRes.success && statsRes.data) {

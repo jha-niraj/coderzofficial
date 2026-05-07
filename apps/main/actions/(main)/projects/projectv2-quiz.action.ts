@@ -1,11 +1,20 @@
 "use server"
 
-import { auth } from "@repo/auth";
-import prisma from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    users,
+    creditTransactions,
+    projectsV2,
+    projectV2Quizzes,
+    projectV2QuizQuestions,
+    projectV2QuizAttempts,
+    projectV2QuizAnswers,
+} from "@repo/db";
+import { eq, and, sql } from "drizzle-orm";
 import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
-import { QuizV2Difficulty, CreditType, Currency } from "@repo/prisma/client"
-
 
 const QUIZ_CREDIT_COST = 25
 
@@ -22,24 +31,23 @@ interface QuizQuestion {
  */
 export async function generateProjectQuiz(projectSlug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        // Get project with existing quiz
-        const project = await prisma.projectV2.findUnique({
-            where: { slug: projectSlug },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, projectSlug),
+            with: {
                 quiz: {
-                    include: {
+                    with: {
                         questions: {
-                            orderBy: { orderIndex: 'asc' }
+                            orderBy: (questions: any, { asc }: any) => [asc(questions.orderIndex)]
                         }
                     }
                 },
             }
-        })
+        });
 
         if (!project) {
             return { success: false, error: "Project not found" }
@@ -49,7 +57,6 @@ export async function generateProjectQuiz(projectSlug: string) {
             return { success: false, error: "This project does not include assessments" }
         }
 
-        // Check if quiz already exists
         if (project.quiz) {
             return {
                 success: true,
@@ -69,17 +76,14 @@ export async function generateProjectQuiz(projectSlug: string) {
             }
         }
 
-        // Check user credits
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { credits: true }
-        })
+        const [user] = await db.select({ credits: users.credits })
+            .from(users)
+            .where(eq(users.id, session.user.id));
 
         if (!user || user.credits < QUIZ_CREDIT_COST) {
             return { success: false, error: "Insufficient credits", requiredCredits: QUIZ_CREDIT_COST }
         }
 
-        // Generate quiz questions with OpenAI
         const stacks = project.stacks as any
         const prompt = `You are an expert technical interviewer. Generate 20 multiple-choice quiz questions for a coding project with the following details:
 
@@ -141,11 +145,9 @@ Return ONLY a valid JSON array with 20 questions following this exact structure:
             return { success: false, error: "Failed to generate quiz questions" }
         }
 
-        // Parse the response
         let questions: QuizQuestion[]
         try {
             const parsed = JSON.parse(content)
-            // Handle both direct array and object with questions property
             questions = Array.isArray(parsed) ? parsed : parsed.questions || []
         } catch (e) {
             console.error("Failed to parse OpenAI response:", e)
@@ -156,7 +158,6 @@ Return ONLY a valid JSON array with 20 questions following this exact structure:
             return { success: false, error: `Expected 20 questions, got ${questions?.length || 0}` }
         }
 
-        // Validate question structure
         for (const q of questions) {
             if (!q.difficulty || !["EASY", "MEDIUM", "HARD"].includes(q.difficulty)) {
                 return { success: false, error: "Invalid question difficulty" }
@@ -169,53 +170,45 @@ Return ONLY a valid JSON array with 20 questions following this exact structure:
             }
         }
 
-        // Deduct credits and create transaction
-        await prisma.$transaction(async (tx: any) => {
-            // Update user credits
-            await tx.user.update({
-                where: { id: session.user.id },
-                data: { credits: { decrement: QUIZ_CREDIT_COST } }
-            })
+        await db.transaction(async (tx) => {
+            await tx.update(users)
+                .set({ credits: sql`${users.credits} - ${QUIZ_CREDIT_COST}` })
+                .where(eq(users.id, session.user.id));
 
-            // Create credit transaction
-            await tx.creditTransaction.create({
-                data: {
-                    userId: session.user.id,
-                    currency: Currency.NA,
-                    amount: QUIZ_CREDIT_COST,
-                    type: CreditType.SPEND,
-                    description: `Quiz assessment generated for project: ${project.title}`
-                }
-            })
+            await tx.insert(creditTransactions).values({
+                userId: session.user.id,
+                currency: "NA",
+                amount: QUIZ_CREDIT_COST,
+                type: "SPEND",
+                description: `Quiz assessment generated for project: ${project.title}`
+            });
 
-            // Create quiz and questions
-            await tx.projectV2Quiz.create({
-                data: {
-                    projectId: project.id,
-                    totalQuestions: questions.length,
-                    questions: {
-                        create: questions.map((q, index) => ({
-                            orderIndex: index,
-                            difficulty: q.difficulty as QuizV2Difficulty,
-                            prompt: q.prompt,
-                            options: q.options,
-                            correctAnswer: q.correctAnswer,
-                            explanation: q.explanation
-                        }))
-                    }
-                }
-            })
-        })
+            const [quiz] = await tx.insert(projectV2Quizzes).values({
+                projectId: project.id,
+                totalQuestions: questions.length,
+            }).returning();
 
-        // Fetch the created quiz
-        const createdQuiz = await prisma.projectV2Quiz.findUnique({
-            where: { projectId: project.id },
-            include: {
+            await tx.insert(projectV2QuizQuestions).values(
+                questions.map((q, index) => ({
+                    quizId: quiz!.id,
+                    orderIndex: index,
+                    difficulty: q.difficulty as any,
+                    prompt: q.prompt,
+                    options: q.options,
+                    correctAnswer: q.correctAnswer,
+                    explanation: q.explanation
+                }))
+            );
+        });
+
+        const createdQuiz = await db.query.projectV2Quizzes.findFirst({
+            where: eq(projectV2Quizzes.projectId, project.id),
+            with: {
                 questions: {
-                    orderBy: { orderIndex: 'asc' }
+                    orderBy: (questions: any, { asc }: any) => [asc(questions.orderIndex)]
                 }
             }
-        })
+        });
 
         if (!createdQuiz) {
             return { success: false, error: "Quiz created but could not be retrieved" }
@@ -249,31 +242,30 @@ Return ONLY a valid JSON array with 20 questions following this exact structure:
  */
 export async function submitQuizAttempt(
     projectSlug: string,
-    answers: Record<string, number>, // questionId -> selectedAnswer index
+    answers: Record<string, number>,
     timeSpent: number
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        const project = await prisma.projectV2.findUnique({
-            where: { slug: projectSlug },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, projectSlug),
+            with: {
                 quiz: {
-                    include: {
+                    with: {
                         questions: true
                     }
                 }
             }
-        })
+        });
 
         if (!project?.quiz) {
             return { success: false, error: "Quiz not found" }
         }
 
-        // Calculate score
         let correctAnswers = 0
         const questionAnswers: Array<{
             questionId: string
@@ -298,58 +290,61 @@ export async function submitQuizAttempt(
         const totalQuestions = project.quiz.questions.length
         const score = Math.round((correctAnswers / totalQuestions) * 100)
 
-        // Save attempt
-        const attempt = await prisma.projectV2QuizAttempt.create({
-            data: {
-                userId: session.user.id,
-                projectId: project.id,
-                quizId: project.quiz.id,
-                score,
-                totalQuestions,
-                correctAnswers,
-                timeSpent,
-                isCompleted: true,
-                completedAt: new Date(),
+        const [attempt] = await db.insert(projectV2QuizAttempts).values({
+            userId: session.user.id,
+            projectId: project.id,
+            quizId: project.quiz.id,
+            score,
+            totalQuestions,
+            correctAnswers,
+            timeSpent,
+            isCompleted: true,
+            completedAt: new Date(),
+        }).returning();
+
+        if (questionAnswers.length > 0) {
+            await db.insert(projectV2QuizAnswers).values(
+                questionAnswers.map(qa => ({
+                    attemptId: attempt!.id,
+                    questionId: qa.questionId,
+                    selectedAnswer: qa.selectedAnswer,
+                    isCorrect: qa.isCorrect
+                }))
+            );
+        }
+
+        const attemptWithAnswers = await db.query.projectV2QuizAttempts.findFirst({
+            where: eq(projectV2QuizAttempts.id, attempt!.id),
+            with: {
                 answers: {
-                    create: questionAnswers.map(qa => ({
-                        questionId: qa.questionId,
-                        selectedAnswer: qa.selectedAnswer,
-                        isCorrect: qa.isCorrect
-                    }))
-                }
-            },
-            include: {
-                answers: {
-                    include: {
+                    with: {
                         question: true
                     }
                 }
             }
-        })
+        });
 
-        // Update leaderboard scores after quiz completion
         try {
             const { updateProjectScore } = await import("./leaderboard.action")
             await updateProjectScore(project.id, session.user.id)
         } catch (error) {
             console.error("Failed to update leaderboard scores:", error)
-            // Don't fail the quiz submission if leaderboard update fails
         }
 
         return {
             success: true,
             attempt: {
-                id: attempt.id,
-                score: attempt.score,
-                correctAnswers: attempt.correctAnswers,
-                totalQuestions: attempt.totalQuestions,
-                answers: attempt.answers.map((a: any) => ({
+                id: attempt!.id,
+                score: attempt!.score,
+                correctAnswers: attempt!.correctAnswers,
+                totalQuestions: attempt!.totalQuestions,
+                answers: attemptWithAnswers?.answers.map((a: any) => ({
                     questionId: a.questionId,
                     selectedAnswer: a.selectedAnswer,
                     isCorrect: a.isCorrect,
                     correctAnswer: a.question.correctAnswer,
                     explanation: a.question.explanation
-                }))
+                })) || []
             }
         }
 
@@ -364,28 +359,28 @@ export async function submitQuizAttempt(
  */
 export async function getQuizAttempts(projectSlug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        const project = await prisma.projectV2.findUnique({
-            where: { slug: projectSlug },
-            select: { id: true }
-        })
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, projectSlug),
+            columns: { id: true }
+        });
 
         if (!project) {
             return { success: false, error: "Project not found" }
         }
 
-        const attempts = await prisma.projectV2QuizAttempt.findMany({
-            where: {
-                userId: session.user.id,
-                projectId: project.id
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 10,
-            select: {
+        const attempts = await db.query.projectV2QuizAttempts.findMany({
+            where: and(
+                eq(projectV2QuizAttempts.userId, session.user.id),
+                eq(projectV2QuizAttempts.projectId, project.id)
+            ),
+            orderBy: (attempts: any, { desc }: any) => [desc(attempts.createdAt)],
+            limit: 10,
+            columns: {
                 id: true,
                 score: true,
                 correctAnswers: true,
@@ -394,7 +389,7 @@ export async function getQuizAttempts(projectSlug: string) {
                 completedAt: true,
                 createdAt: true
             }
-        })
+        });
 
         return { success: true, attempts }
 

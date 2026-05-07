@@ -1,7 +1,11 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db, projectV2StandupConfigs, projectV2StandupEntries, projectsV2, users, creditTransactions
+} from '@repo/db'
+import { eq, and, desc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 interface StandupSessionVariables {
@@ -39,33 +43,27 @@ interface ConversationDetails {
 
 /**
  * Create a new standup session for a project
- * Uses ProjectV2StandupEntry model for storage
  */
 export async function createStandupSession(projectId: string, projectSlug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
         const userId = session.user.id
 
-        // Get user and project details
-        const [user, project] = await Promise.all([
-            prisma.user.findUnique({
-                where: { id: userId },
-                select: {
-                    id: true,
-                    name: true,
-                    username: true,
-                    credits: true
-                }
-            }),
-            prisma.projectV2.findUnique({
-                where: { id: projectId },
-                include: {
+        const [[user], project] = await Promise.all([
+            db
+                .select({ id: users.id, name: users.name, credits: users.credits })
+                .from(users)
+                .where(eq(users.id, userId))
+                .limit(1),
+            db.query.projectsV2.findFirst({
+                where: eq(projectsV2.id, projectId),
+                with: {
                     standupConfigs: {
-                        where: { userId }
+                        where: (configs, { eq }) => eq(configs.userId, userId)
                     }
                 }
             })
@@ -79,7 +77,6 @@ export async function createStandupSession(projectId: string, projectSlug: strin
             return { success: false, error: 'Project not found' }
         }
 
-        // Check credits (5 credits per standup)
         const creditsRequired = 5
         if (user.credits < creditsRequired) {
             return {
@@ -90,16 +87,15 @@ export async function createStandupSession(projectId: string, projectSlug: strin
             }
         }
 
-        // Get or create standup config
         let standupConfig = project.standupConfigs[0]
         if (!standupConfig) {
-            // Create a default config
             const now = new Date()
             const weekEnd = new Date(now)
             weekEnd.setDate(weekEnd.getDate() + 7)
 
-            standupConfig = await prisma.projectV2StandupConfig.create({
-                data: {
+            const [created] = await db
+                .insert(projectV2StandupConfigs)
+                .values({
                     userId,
                     projectId: project.id,
                     daysPerWeek: 5,
@@ -111,20 +107,20 @@ export async function createStandupSession(projectId: string, projectSlug: strin
                     isActive: true,
                     currentWeekStart: now,
                     currentWeekEnd: weekEnd
-                }
-            })
+                })
+                .returning()
+
+            standupConfig = created
         }
 
-        // Get the previous standup for context
-        const previousEntry = await prisma.projectV2StandupEntry.findFirst({
-            where: {
-                configId: standupConfig.id,
-                status: 'SUBMITTED'
-            },
-            orderBy: { submittedAt: 'desc' }
+        const previousEntry = await db.query.projectV2StandupEntries.findFirst({
+            where: and(
+                eq(projectV2StandupEntries.configId, standupConfig.id),
+                eq(projectV2StandupEntries.status, 'SUBMITTED')
+            ),
+            orderBy: [desc(projectV2StandupEntries.submittedAt)]
         })
 
-        // Generate time-based greeting
         const now = new Date()
         const hour = now.getHours()
         let timeOfDay: 'morning' | 'afternoon' | 'evening'
@@ -132,9 +128,8 @@ export async function createStandupSession(projectId: string, projectSlug: strin
         else if (hour < 17) timeOfDay = 'afternoon'
         else timeOfDay = 'evening'
 
-        // Create session variables
         const variables: StandupSessionVariables = {
-            user_name: user.name?.split(' ')[0] || user.username || 'there',
+            user_name: user.name?.split(' ')[0] || 'there',
             project_name: project.title,
             project_id: project.id,
             current_date: now.toLocaleDateString('en-US', {
@@ -153,34 +148,27 @@ export async function createStandupSession(projectId: string, projectSlug: strin
             })
         }
 
-        // Create the standup entry and deduct credits
-        const result = await prisma.$transaction(async (tx) => {
-            // Create standup entry
-            const standupEntry = await tx.projectV2StandupEntry.create({
-                data: {
+        const result = await db.transaction(async (tx) => {
+            const [standupEntry] = await tx
+                .insert(projectV2StandupEntries)
+                .values({
                     configId: standupConfig.id,
                     scheduledFor: now,
                     status: 'SCHEDULED'
-                }
-            })
+                })
+                .returning()
 
-            // Deduct credits
-            await tx.user.update({
-                where: { id: userId },
-                data: {
-                    credits: { decrement: creditsRequired }
-                }
-            })
+            await tx
+                .update(users)
+                .set({ credits: sql`${users.credits} - ${creditsRequired}` })
+                .where(eq(users.id, userId))
 
-            // Record credit transaction
-            await tx.creditTransaction.create({
-                data: {
-                    userId,
-                    amount: -creditsRequired,
-                    type: 'SPEND',
-                    description: `Daily Standup: ${project.title}`,
-                    currency: 'NA'
-                }
+            await tx.insert(creditTransactions).values({
+                userId,
+                amount: -creditsRequired,
+                type: 'SPEND',
+                description: `Daily Standup: ${project.title}`,
+                currency: 'NA'
             })
 
             return standupEntry
@@ -211,12 +199,11 @@ export async function createStandupSession(projectId: string, projectSlug: strin
  */
 export async function processStandupConversation(sessionId: string, conversationId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        // Poll ElevenLabs API for conversation details
         let attempts = 0
         const maxAttempts = 30
         let conversationData: ConversationDetails | null = null
@@ -248,32 +235,28 @@ export async function processStandupConversation(sessionId: string, conversation
         }
 
         if (!conversationData || conversationData.status !== 'done') {
-            // Even if we timeout, still mark as submitted with available data
-            await prisma.projectV2StandupEntry.update({
-                where: { id: sessionId },
-                data: {
+            await db
+                .update(projectV2StandupEntries)
+                .set({
                     status: 'SUBMITTED',
                     submittedAt: new Date(),
                     recordingUrl: conversationId
-                }
-            })
+                })
+                .where(eq(projectV2StandupEntries.id, sessionId))
+
             return { success: true, sessionId }
         }
 
-        // Build transcript
         const transcriptText = conversationData.transcript
             .map(t => `[${t.role.toUpperCase()}] (${t.time_in_call_secs}s): ${t.message}`)
             .join('\n\n')
 
         const duration = conversationData.metadata.call_duration_secs
-
-        // Extract standup items using AI
         const extractedData = await extractStandupItemsFromTranscript(transcriptText)
 
-        // Update standup entry with data
-        await prisma.projectV2StandupEntry.update({
-            where: { id: sessionId },
-            data: {
+        await db
+            .update(projectV2StandupEntries)
+            .set({
                 status: 'SUBMITTED',
                 submittedAt: new Date(),
                 durationSeconds: Math.round(duration),
@@ -283,23 +266,23 @@ export async function processStandupConversation(sessionId: string, conversation
                 anyBlockers: extractedData.blockers.join('; '),
                 aiSummary: conversationData.analysis?.transcript_summary || null,
                 aiSuggestions: []
-            }
-        })
+            })
+            .where(eq(projectV2StandupEntries.id, sessionId))
 
-        // Update standup config stats
-        const standupEntry = await prisma.projectV2StandupEntry.findUnique({
-            where: { id: sessionId },
-            include: { config: true }
-        })
+        const [standupEntry] = await db
+            .select({ configId: projectV2StandupEntries.configId })
+            .from(projectV2StandupEntries)
+            .where(eq(projectV2StandupEntries.id, sessionId))
+            .limit(1)
 
         if (standupEntry?.configId) {
-            await prisma.projectV2StandupConfig.update({
-                where: { id: standupEntry.configId },
-                data: {
-                    completedStandups: { increment: 1 },
-                    totalStandups: { increment: 1 }
-                }
-            })
+            await db
+                .update(projectV2StandupConfigs)
+                .set({
+                    completedStandups: sql`${projectV2StandupConfigs.completedStandups} + 1`,
+                    totalStandups: sql`${projectV2StandupConfigs.totalStandups} + 1`,
+                })
+                .where(eq(projectV2StandupConfigs.id, standupEntry.configId))
         }
 
         return {
@@ -384,33 +367,37 @@ If no items are found for a category, return an empty array.`
  */
 export async function getStandupHistory(projectId: string, limit: number = 10) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        // Get the user's standup config for this project
-        const standupConfig = await prisma.projectV2StandupConfig.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: session.user.id,
-                    projectId
-                }
-            }
-        })
+        const [standupConfig] = await db
+            .select({ id: projectV2StandupConfigs.id })
+            .from(projectV2StandupConfigs)
+            .where(
+                and(
+                    eq(projectV2StandupConfigs.userId, session.user.id),
+                    eq(projectV2StandupConfigs.projectId, projectId)
+                )
+            )
+            .limit(1)
 
         if (!standupConfig) {
             return { success: true, standups: [] }
         }
 
-        const standups = await prisma.projectV2StandupEntry.findMany({
-            where: {
-                configId: standupConfig.id,
-                status: 'SUBMITTED'
-            },
-            orderBy: { submittedAt: 'desc' },
-            take: limit
-        })
+        const standups = await db
+            .select()
+            .from(projectV2StandupEntries)
+            .where(
+                and(
+                    eq(projectV2StandupEntries.configId, standupConfig.id),
+                    eq(projectV2StandupEntries.status, 'SUBMITTED')
+                )
+            )
+            .orderBy(desc(projectV2StandupEntries.submittedAt))
+            .limit(limit)
 
         return {
             success: true,
@@ -435,31 +422,37 @@ export async function getStandupHistory(projectId: string, limit: number = 10) {
  */
 export async function getPreviousStandup(projectId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const standupConfig = await prisma.projectV2StandupConfig.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: session.user.id,
-                    projectId
-                }
-            }
-        })
+        const [standupConfig] = await db
+            .select({ id: projectV2StandupConfigs.id })
+            .from(projectV2StandupConfigs)
+            .where(
+                and(
+                    eq(projectV2StandupConfigs.userId, session.user.id),
+                    eq(projectV2StandupConfigs.projectId, projectId)
+                )
+            )
+            .limit(1)
 
         if (!standupConfig) {
             return { success: true, standup: null }
         }
 
-        const standup = await prisma.projectV2StandupEntry.findFirst({
-            where: {
-                configId: standupConfig.id,
-                status: 'SUBMITTED'
-            },
-            orderBy: { submittedAt: 'desc' }
-        })
+        const [standup] = await db
+            .select()
+            .from(projectV2StandupEntries)
+            .where(
+                and(
+                    eq(projectV2StandupEntries.configId, standupConfig.id),
+                    eq(projectV2StandupEntries.status, 'SUBMITTED')
+                )
+            )
+            .orderBy(desc(projectV2StandupEntries.submittedAt))
+            .limit(1)
 
         if (!standup) {
             return { success: true, standup: null }

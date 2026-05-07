@@ -1,32 +1,36 @@
 "use server"
 
-import { prisma } from "@repo/prisma";
-import { auth } from '@repo/auth';
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import {
-    ActivityType, CreditType, Currency
-} from "@repo/prisma/client";
-import { revalidatePath } from "next/cache";
+    db,
+    users,
+    creditTransactions,
+    creditTransfers,
+} from "@repo/db"
+import { eq, or, sql, desc } from "drizzle-orm"
+import { revalidatePath } from "next/cache"
 import cuid from "cuid"
 
 export async function fetchXpAndCredit() {
     try {
-        const session = await auth();
+        const session = await getSession(headers())
         if (!session?.user?.id) {
-            throw new Error('User not authenticated');
+            throw new Error('User not authenticated')
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: {
                 currentXp: true,
                 totalXp: true,
                 credits: true,
-                currentLevel: true
-            }
-        });
+                currentLevel: true,
+            },
+        })
 
         if (!user) {
-            throw new Error('User not found');
+            throw new Error('User not found')
         }
 
         return {
@@ -34,122 +38,103 @@ export async function fetchXpAndCredit() {
             currentXp: user.currentXp,
             totalXp: user.totalXp,
             credits: user.credits,
-            currentLevel: user.currentLevel
-        };
+            currentLevel: user.currentLevel,
+        }
     } catch (error) {
-        console.error('Error fetching XP and credits:', error);
-        return null;
+        console.error('Error fetching XP and credits:', error)
+        return null
     }
 }
 
 export async function convertXpToCredits(xpToConvert: number) {
     try {
-        const session = await auth();
+        const session = await getSession(headers())
         if (!session?.user?.id) {
-            throw new Error('User not authenticated');
+            throw new Error('User not authenticated')
         }
 
         if (xpToConvert <= 0) {
-            throw new Error('XP amount must be positive');
+            throw new Error('XP amount must be positive')
         }
 
-        const result = await prisma.$transaction(async (tx) => {
-            const user = await tx.user.findUnique({
-                where: { id: session.user.id },
-                select: { currentXp: true, credits: true, totalXp: true }
-            });
+        const result = await db.transaction(async (tx) => {
+            const user = await tx.query.users.findFirst({
+                where: eq(users.id, session.user.id),
+                columns: { currentXp: true, credits: true, totalXp: true },
+            })
 
             if (!user) {
-                throw new Error('User not found');
+                throw new Error('User not found')
             }
 
             if (user.currentXp < xpToConvert) {
-                throw new Error('Insufficient current XP');
+                throw new Error('Insufficient current XP')
             }
 
-            const creditsToAdd = Math.floor(xpToConvert / 100);
+            const creditsToAdd = Math.floor(xpToConvert / 100)
 
             if (creditsToAdd === 0) {
-                throw new Error('Need at least 100 XP to convert to credits');
+                throw new Error('Need at least 100 XP to convert to credits')
             }
 
-            const updatedUser = await tx.user.update({
-                where: { id: session.user.id },
-                data: {
-                    currentXp: { decrement: xpToConvert },
-                    credits: { increment: creditsToAdd }
-                }
-            });
+            const [updatedUser] = await tx.update(users)
+                .set({
+                    currentXp: sql`${users.currentXp} - ${xpToConvert}`,
+                    credits: sql`${users.credits} + ${creditsToAdd}`,
+                })
+                .where(eq(users.id, session.user.id))
+                .returning()
 
-            await tx.creditTransaction.create({
-                data: {
-                    userId: session.user.id,
-                    amount: creditsToAdd,
-                    type: CreditType.BONUS,
-                    currency: Currency.INR,
-                    description: `Converted ${xpToConvert} XP to ${creditsToAdd} credits`
-                }
-            });
+            await tx.insert(creditTransactions).values({
+                userId: session.user.id,
+                amount: creditsToAdd,
+                type: 'BONUS',
+                currency: 'INR',
+                description: `Converted ${xpToConvert} XP to ${creditsToAdd} credits`,
+            })
 
             return {
                 newXp: updatedUser.currentXp,
                 newCredits: updatedUser.credits,
                 creditsGained: creditsToAdd,
-                totalXp: user.totalXp
-            };
-        });
+                totalXp: user.totalXp,
+            }
+        })
 
-        return result;
+        return result
     } catch (error) {
-        console.error('Error converting XP to credits:', error);
-        throw error;
+        console.error('Error converting XP to credits:', error)
+        throw error
     }
 }
 
 export async function transferCredits(senderId: string, receiverId: string, amount: number) {
     if (senderId === receiverId) throw new Error("Cannot transfer credits to yourself")
-    console.log("Amount: " + amount);
+    console.log("Amount: " + amount)
 
-    const sender = await prisma.user.findUnique({
-        where: { id: senderId },
-    })
-    const receiver = await prisma.user.findUnique({
-        where: { id: receiverId },
-    })
+    const sender = await db.query.users.findFirst({ where: eq(users.id, senderId) })
+    const receiver = await db.query.users.findFirst({ where: eq(users.id, receiverId) })
 
     if (!sender || !receiver) throw new Error("Sender or receiver not found")
     if (sender.credits < amount) throw new Error("Insufficient credits")
 
-    const result = await prisma.$transaction(async (tx) => {
-        await tx.user.update({
-            where: { id: senderId },
-            data: { credits: { decrement: amount }, creditsShared: { increment: amount } },
-        })
-        await tx.user.update({
-            where: { id: receiverId },
-            data: { credits: { increment: amount } },
-        })
-        await tx.creditTransfer.create({
-            data: {
-                senderId,
-                receiverId,
-                amount,
-                transferReference: cuid(),
-            },
-        })
-        await tx.recentActivity.create({
-            data: {
-                userId: senderId,
-                activityType: ActivityType.CREDIT_SHARED,
-                description: `Transferred ${amount} credits to ${receiver.username}`,
-            },
-        })
-        await tx.recentActivity.create({
-            data: {
-                userId: receiverId,
-                activityType: ActivityType.CREDIT_RECEIVED,
-                description: `Received ${amount} credits from ${sender.username}`,
-            },
+    const result = await db.transaction(async (tx) => {
+        await tx.update(users)
+            .set({
+                credits: sql`${users.credits} - ${amount}`,
+                creditsShared: sql`${users.creditsShared} + ${amount}`,
+            })
+            .where(eq(users.id, senderId))
+
+        await tx.update(users)
+            .set({ credits: sql`${users.credits} + ${amount}` })
+            .where(eq(users.id, receiverId))
+
+        await tx.insert(creditTransfers).values({
+            senderId,
+            receiverId,
+            amount,
+            transferReference: cuid(),
         })
     })
 
@@ -158,16 +143,16 @@ export async function transferCredits(senderId: string, receiverId: string, amou
 }
 
 export async function getTransferHistory(userId: string) {
-    const [sent, received] = await prisma.$transaction([
-        prisma.creditTransfer.findMany({
-            where: { senderId: userId },
-            include: { receiver: { select: { username: true, name: true } } },
-            orderBy: { createdAt: "desc" },
+    const [sent, received] = await Promise.all([
+        db.query.creditTransfers.findMany({
+            where: eq(creditTransfers.senderId, userId),
+            with: { receiver: { columns: { username: true, name: true } } },
+            orderBy: desc(creditTransfers.createdAt),
         }),
-        prisma.creditTransfer.findMany({
-            where: { receiverId: userId },
-            include: { sender: { select: { username: true, name: true } } },
-            orderBy: { createdAt: "desc" },
+        db.query.creditTransfers.findMany({
+            where: eq(creditTransfers.receiverId, userId),
+            with: { sender: { columns: { username: true, name: true } } },
+            orderBy: desc(creditTransfers.createdAt),
         }),
     ])
 

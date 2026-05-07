@@ -1,22 +1,19 @@
 "use server"
 
-import prisma from "@repo/prisma"
+import { db, users } from "@repo/db"
+import { isNotNull, sql } from "drizzle-orm"
 
 export async function getColleges() {
     try {
-        const colleges = await prisma.user.findMany({
-            where: {
-                university: {
-                    not: null
-                }
-            },
-            select: {
-                university: true
-            },
-            distinct: ['university']
-        })
+        const rows = await db
+            .selectDistinct({ university: users.university })
+            .from(users)
+            .where(isNotNull(users.university))
 
-        const uniqueColleges = [...new Set(colleges.map((c: any) => c.university).filter(Boolean))] as string[]
+        const uniqueColleges = rows
+            .map((r) => r.university)
+            .filter(Boolean) as string[]
+
         return { success: true, colleges: uniqueColleges.sort() }
     } catch (error) {
         console.error('Error fetching colleges:', error)
@@ -58,19 +55,14 @@ export async function getCompanies() {
 
     try {
         // Get companies from database (user's current employers)
-        const companiesFromDb = await prisma.user.findMany({
-            where: {
-                company: {
-                    not: null
-                }
-            },
-            select: {
-                company: true
-            },
-            distinct: ['company']
-        })
+        const rows = await db
+            .selectDistinct({ company: users.company })
+            .from(users)
+            .where(isNotNull(users.company))
 
-        const dbCompanies = companiesFromDb.map((c: { company: string | null }) => c.company).filter(Boolean) as string[]
+        const dbCompanies = rows
+            .map((r) => r.company)
+            .filter(Boolean) as string[]
 
         // Merge and deduplicate
         const allCompanies = [...new Set([...popularCompanies, ...dbCompanies])]

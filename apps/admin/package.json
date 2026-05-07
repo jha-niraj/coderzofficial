@@ -13,6 +13,9 @@
 	"dependencies": {
 		"@prisma/client": "6.14.0",
 		"@repo/auth": "workspace:*",
+		"better-auth": "^1.2.7",
+		"@repo/db": "workspace:*",
+		"drizzle-orm": "^0.45.2",
 		"@repo/prisma": "workspace:*",
 		"@repo/ui": "workspace:*",
 		"bcryptjs": "^3.0.3",

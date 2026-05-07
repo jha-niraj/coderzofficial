@@ -36,7 +36,7 @@ function SignInForm({ searchParams }: SignInFormProps) {
     const [githubSignIn, setGithubSignIn] = useState<boolean>(false);
     const router = useRouter();
     const callbackUrl = searchParams?.get("callbackUrl") || "/dashboard";
-    const { status } = useSession();
+    const { data: session, isPending } = useSession();
     const [ssoRedirecting, setSsoRedirecting] = useState(false);
 
     // If already authenticated and this is a Learn SSO request, redirect to SSO endpoint immediately
@@ -45,14 +45,14 @@ function SignInForm({ searchParams }: SignInFormProps) {
         const redirectUri = searchParams?.get('redirect_uri');
         const state = searchParams?.get('state');
         const isLearnPlatformRequest = (callbackUrl && callbackUrl.includes('learn.')) || (redirectUri && redirectUri.includes('learn.'));
-        if (status === 'authenticated' && isLearnPlatformRequest && redirectUri) {
+        if (session && !isPending && isLearnPlatformRequest && redirectUri) {
             setSsoRedirecting(true);
             const ssoUrl = new URL('/api/auth/signin', window.location.origin);
             ssoUrl.searchParams.set('redirect_uri', redirectUri);
             if (state) ssoUrl.searchParams.set('state', state);
             window.location.href = ssoUrl.toString();
         }
-    }, [status, callbackUrl, searchParams, ssoRedirecting]);
+    }, [session, isPending, callbackUrl, searchParams, ssoRedirecting]);
 
     // Check if user just verified their email
     useEffect(() => {

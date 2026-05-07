@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, universityMembers, universityPayments } from "@repo/db"
+import { eq, and, or, count } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import type { PaymentRecord, PaymentStatus } from "@/types"
 
 // ============================================
@@ -9,12 +11,12 @@ import type { PaymentRecord, PaymentStatus } from "@/types"
 // ============================================
 
 async function getUserUniversity() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.universityMember.findFirst({
-        where: { userId: session.user.id },
-        include: { university: true }
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
+        with: { university: true },
     })
 
     return member
@@ -47,23 +49,14 @@ export async function getPaymentHistory(options?: {
         const pageSize = options?.pageSize || 10
         const skip = (page - 1) * pageSize
 
-        // Build where clause
-        const where: { universityId: string; status?: string } = {
-            universityId: member.universityId,
-        }
-        if (options?.status) {
-            where.status = options.status
-        }
+        const totalCountResult = await db.select({ count: count() }).from(universityPayments).where(eq(universityPayments.universityId, member.universityId))
+        const totalCount = totalCountResult[0]?.count ?? 0
 
-        // Get total count
-        const totalCount = await prisma.universityPayment.count({ where })
-
-        // Get payments
-        const payments = await prisma.universityPayment.findMany({
-            where,
-            orderBy: { createdAt: "desc" },
-            skip,
-            take: pageSize,
+        const payments = await db.query.universityPayments.findMany({
+            where: eq(universityPayments.universityId, member.universityId),
+            orderBy: (tbl, { desc }) => desc(tbl.createdAt),
+            offset: skip,
+            limit: pageSize,
         })
 
         return {
@@ -90,7 +83,7 @@ export async function getPaymentHistory(options?: {
  */
 export async function getPayment(paymentId: string): Promise<{
     success: boolean
-    payment?: PaymentRecord & { 
+    payment?: PaymentRecord & {
         dodoCheckoutSessionId: string | null
         dodoPaymentId: string | null
         metadata: unknown
@@ -103,11 +96,11 @@ export async function getPayment(paymentId: string): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const payment = await prisma.universityPayment.findFirst({
-            where: {
-                id: paymentId,
-                universityId: member.universityId,
-            }
+        const payment = await db.query.universityPayments.findFirst({
+            where: and(
+                eq(universityPayments.id, paymentId),
+                eq(universityPayments.universityId, member.universityId),
+            ),
         })
 
         if (!payment) {
@@ -157,15 +150,13 @@ export async function getPaymentSummary(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        // Get all payments
-        const payments = await prisma.universityPayment.findMany({
-            where: { universityId: member.universityId },
-            orderBy: { createdAt: "desc" },
+        const payments = await db.query.universityPayments.findMany({
+            where: eq(universityPayments.universityId, member.universityId),
+            orderBy: (tbl, { desc }) => desc(tbl.createdAt),
         })
 
         const successfulPayments = payments.filter(p => p.status === "SUCCEEDED")
         const totalSpent = successfulPayments.reduce((sum, p) => sum + p.amount, 0)
-
         const lastSuccessful = successfulPayments[0]
 
         return {
@@ -198,18 +189,15 @@ export async function updatePaymentStatus(
     error?: string
 }> {
     try {
-        await prisma.universityPayment.updateMany({
-            where: {
-                OR: [
-                    { dodoCheckoutSessionId: dodoPaymentId },
-                    { dodoPaymentId: dodoPaymentId },
-                ]
-            },
-            data: {
-                status,
-                paidAt: paidAt || (status === "SUCCEEDED" ? new Date() : undefined),
-            }
-        })
+        await db.update(universityPayments).set({
+            status,
+            paidAt: paidAt || (status === "SUCCEEDED" ? new Date() : undefined),
+        }).where(
+            or(
+                eq(universityPayments.dodoCheckoutSessionId, dodoPaymentId),
+                eq(universityPayments.dodoPaymentId, dodoPaymentId),
+            )
+        )
 
         return { success: true }
     } catch (error) {
@@ -236,31 +224,26 @@ export async function requestRefund(paymentId: string, reason: string): Promise<
             return { success: false, error: "No permission to manage billing" }
         }
 
-        const payment = await prisma.universityPayment.findFirst({
-            where: {
-                id: paymentId,
-                universityId: member.universityId,
-                status: "SUCCEEDED",
-            }
+        const payment = await db.query.universityPayments.findFirst({
+            where: and(
+                eq(universityPayments.id, paymentId),
+                eq(universityPayments.universityId, member.universityId),
+                eq(universityPayments.status, "SUCCEEDED"),
+            ),
         })
 
         if (!payment) {
             return { success: false, error: "Payment not found or not eligible for refund" }
         }
 
-        // TODO: Process refund with Dodo Payments API
-        // For now, just mark as refund requested in metadata
-        await prisma.universityPayment.update({
-            where: { id: paymentId },
-            data: {
-                metadata: {
-                    ...(payment.metadata as object || {}),
-                    refundRequested: true,
-                    refundReason: reason,
-                    refundRequestedAt: new Date().toISOString(),
-                }
+        await db.update(universityPayments).set({
+            metadata: {
+                ...(payment.metadata as object || {}),
+                refundRequested: true,
+                refundReason: reason,
+                refundRequestedAt: new Date().toISOString(),
             }
-        })
+        }).where(eq(universityPayments.id, paymentId))
 
         return { success: true }
     } catch (error) {

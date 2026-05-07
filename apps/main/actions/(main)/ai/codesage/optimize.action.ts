@@ -1,7 +1,13 @@
 "use server"
 
-import { auth } from "@repo/auth"
-import { prisma } from "@repo/prisma"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db,
+    codebaseProject,
+    codebaseOptimizationIssue,
+} from "@repo/db"
+import { eq, and, desc } from "drizzle-orm"
 import { openai } from "@/lib/openai-client"
 import { zodResponseFormat } from "openai/helpers/zod"
 import { z } from "zod"
@@ -74,15 +80,15 @@ function groupFilesByType(files: Array<{ filePath: string; content: string }>): 
 }
 
 export async function runOptimizationScan(slug: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: "Unauthorized" }
 
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: session.user.id },
-        include: {
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, session.user.id)),
+        with: {
             files: {
-                select: { filePath: true, content: true, language: true, extension: true },
-                where: { NOT: { extension: { in: ["md", "json", "yaml", "yml", "lock"] } } },
+                columns: { filePath: true, content: true, language: true, extension: true },
+                where: (f: any, { notInArray }: any) => notInArray(f.extension, ["md", "json", "yaml", "yml", "lock"]),
             },
         },
     })
@@ -91,9 +97,9 @@ export async function runOptimizationScan(slug: string) {
     if (project.indexStatus !== "ready") return { success: false, error: "Project is still indexing" }
 
     // Clear existing issues
-    await prisma.codebaseOptimizationIssue.deleteMany({ where: { projectId: project.id } })
+    await db.delete(codebaseOptimizationIssue).where(eq(codebaseOptimizationIssue.projectId, project.id))
 
-    const files = project.files.map(f => ({ filePath: f.filePath, content: f.content }))
+    const files = project.files.map((f: any) => ({ filePath: f.filePath, content: f.content }))
     const batches = groupFilesByType(files)
 
     const allIssues: Array<z.infer<typeof IssueSchema>["issues"][0]> = []
@@ -135,17 +141,16 @@ export async function runOptimizationScan(slug: string) {
     }
 
     if (allIssues.length === 0) {
-        await prisma.codebaseProject.update({
-            where: { id: project.id },
-            data: { optimizedAt: new Date() },
-        })
+        await db.update(codebaseProject)
+            .set({ optimizedAt: new Date() })
+            .where(eq(codebaseProject.id, project.id))
         revalidatePath(`/ai/codesage/c/${slug}/optimize`)
         return { success: true, issueCount: 0 }
     }
 
     // Save issues
-    await prisma.codebaseOptimizationIssue.createMany({
-        data: allIssues.map(issue => ({
+    await db.insert(codebaseOptimizationIssue).values(
+        allIssues.map(issue => ({
             projectId: project.id,
             category: issue.category,
             severity: issue.severity,
@@ -159,54 +164,49 @@ export async function runOptimizationScan(slug: string) {
             explanation: issue.explanation,
             effortLevel: issue.effortLevel,
             status: "open",
-        })),
-    })
+        }))
+    )
 
-    await prisma.codebaseProject.update({
-        where: { id: project.id },
-        data: { optimizedAt: new Date() },
-    })
+    await db.update(codebaseProject)
+        .set({ optimizedAt: new Date() })
+        .where(eq(codebaseProject.id, project.id))
 
     revalidatePath(`/ai/codesage/c/${slug}/optimize`)
     return { success: true, issueCount: allIssues.length }
 }
 
 export async function getOptimizationIssues(slug: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, issues: [] }
 
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: session.user.id },
-        select: { id: true, optimizedAt: true },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, session.user.id)),
+        columns: { id: true, optimizedAt: true },
     })
     if (!project) return { success: false, issues: [] }
 
-    const issues = await prisma.codebaseOptimizationIssue.findMany({
-        where: { projectId: project.id },
-        orderBy: [
-            { severity: "asc" }, // critical first
-            { effortLevel: "asc" },
-        ],
+    const issues = await db.query.codebaseOptimizationIssue.findMany({
+        where: eq(codebaseOptimizationIssue.projectId, project.id),
+        orderBy: [codebaseOptimizationIssue.severity, codebaseOptimizationIssue.effortLevel],
     })
 
     return { success: true, issues, optimizedAt: project.optimizedAt }
 }
 
 export async function updateIssueStatus(issueId: string, status: "open" | "done" | "ignored") {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false }
 
-    const issue = await prisma.codebaseOptimizationIssue.findUnique({
-        where: { id: issueId },
-        include: { project: { select: { userId: true } } },
+    const issue = await db.query.codebaseOptimizationIssue.findFirst({
+        where: eq(codebaseOptimizationIssue.id, issueId),
+        with: { project: { columns: { userId: true } } },
     })
 
     if (!issue || issue.project.userId !== session.user.id) return { success: false }
 
-    await prisma.codebaseOptimizationIssue.update({
-        where: { id: issueId },
-        data: { status },
-    })
+    await db.update(codebaseOptimizationIssue)
+        .set({ status })
+        .where(eq(codebaseOptimizationIssue.id, issueId))
 
     return { success: true }
 }

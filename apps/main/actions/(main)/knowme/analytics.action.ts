@@ -2,14 +2,21 @@
 
 /**
  * KnowMe Analytics Server Actions
- * 
+ *
  * Handles analytics, insights, and statistics
  */
 
-import { auth } from "@repo/auth";
-import { prisma } from "@repo/prisma";
-import type { KnowMeQuestionCategory } from "@repo/prisma/client";
-import type { 
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    knowMeProfiles,
+    knowMeQuestionAnalytics,
+    knowMeChatSessions,
+    knowMeProfileViews,
+} from "@repo/db";
+import { eq, and, gte, lt, desc, sql } from "drizzle-orm";
+import type {
   KnowMeActionResponse,
   KnowMeAnalyticsFull,
   KnowMeAnalyticsOverview,
@@ -33,13 +40,13 @@ export async function getKnowMeAnalytics(
   timeRange: TimeRange = "30d"
 ): Promise<KnowMeActionResponse<KnowMeAnalyticsFull>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
     });
 
     if (!profile) {
@@ -98,64 +105,71 @@ async function getOverviewStats(
 ): Promise<KnowMeAnalyticsOverview> {
   // Current period stats
   const [currentQuestions, currentSessions, currentViews] = await Promise.all([
-    prisma.knowMeQuestionAnalytics.count({
-      where: {
-        profileId,
-        askedAt: { gte: startDate },
-      },
-    }),
-    prisma.knowMeChatSession.count({
-      where: {
-        profileId,
-        startedAt: { gte: startDate },
-      },
-    }),
-    prisma.knowMeProfileView.count({
-      where: {
-        profileId,
-        viewedAt: { gte: startDate },
-      },
-    }),
+    db.select({ count: sql<number>`count(*)` })
+      .from(knowMeQuestionAnalytics)
+      .where(and(
+        eq(knowMeQuestionAnalytics.profileId, profileId),
+        gte(knowMeQuestionAnalytics.askedAt, startDate)
+      )),
+    db.select({ count: sql<number>`count(*)` })
+      .from(knowMeChatSessions)
+      .where(and(
+        eq(knowMeChatSessions.profileId, profileId),
+        gte(knowMeChatSessions.startedAt, startDate)
+      )),
+    db.select({ count: sql<number>`count(*)` })
+      .from(knowMeProfileViews)
+      .where(and(
+        eq(knowMeProfileViews.profileId, profileId),
+        gte(knowMeProfileViews.viewedAt, startDate)
+      )),
   ]);
 
   // Previous period stats
   const [prevQuestions, prevSessions, prevViews] = await Promise.all([
-    prisma.knowMeQuestionAnalytics.count({
-      where: {
-        profileId,
-        askedAt: { gte: previousStartDate, lt: startDate },
-      },
-    }),
-    prisma.knowMeChatSession.count({
-      where: {
-        profileId,
-        startedAt: { gte: previousStartDate, lt: startDate },
-      },
-    }),
-    prisma.knowMeProfileView.count({
-      where: {
-        profileId,
-        viewedAt: { gte: previousStartDate, lt: startDate },
-      },
-    }),
+    db.select({ count: sql<number>`count(*)` })
+      .from(knowMeQuestionAnalytics)
+      .where(and(
+        eq(knowMeQuestionAnalytics.profileId, profileId),
+        gte(knowMeQuestionAnalytics.askedAt, previousStartDate),
+        lt(knowMeQuestionAnalytics.askedAt, startDate)
+      )),
+    db.select({ count: sql<number>`count(*)` })
+      .from(knowMeChatSessions)
+      .where(and(
+        eq(knowMeChatSessions.profileId, profileId),
+        gte(knowMeChatSessions.startedAt, previousStartDate),
+        lt(knowMeChatSessions.startedAt, startDate)
+      )),
+    db.select({ count: sql<number>`count(*)` })
+      .from(knowMeProfileViews)
+      .where(and(
+        eq(knowMeProfileViews.profileId, profileId),
+        gte(knowMeProfileViews.viewedAt, previousStartDate),
+        lt(knowMeProfileViews.viewedAt, startDate)
+      )),
   ]);
 
-  const avgPerSession = currentSessions > 0 
-    ? Math.round((currentQuestions / currentSessions) * 10) / 10 
-    : 0;
-  const prevAvgPerSession = prevSessions > 0 
-    ? Math.round((prevQuestions / prevSessions) * 10) / 10 
+  const cQ = Number(currentQuestions[0]?.count ?? 0);
+  const cS = Number(currentSessions[0]?.count ?? 0);
+  const cV = Number(currentViews[0]?.count ?? 0);
+  const pQ = Number(prevQuestions[0]?.count ?? 0);
+  const pS = Number(prevSessions[0]?.count ?? 0);
+  const pV = Number(prevViews[0]?.count ?? 0);
+
+  const avgPerSession = cS > 0
+    ? Math.round((cQ / cS) * 10) / 10
     : 0;
 
   return {
-    totalQuestions: currentQuestions,
-    totalVisitors: currentViews,
-    totalSessions: currentSessions,
+    totalQuestions: cQ,
+    totalVisitors: cV,
+    totalSessions: cS,
     avgQuestionsPerSession: avgPerSession,
     trends: {
-      questions: calculateTrend(currentQuestions, prevQuestions),
-      visitors: calculateTrend(currentViews, prevViews),
-      sessions: calculateTrend(currentSessions, prevSessions),
+      questions: calculateTrend(cQ, pQ),
+      visitors: calculateTrend(cV, pV),
+      sessions: calculateTrend(cS, pS),
     },
   };
 }
@@ -167,22 +181,25 @@ async function getQuestionsByCategory(
   profileId: string,
   startDate: Date
 ): Promise<QuestionCategoryStats[]> {
-  const categories = await prisma.knowMeQuestionAnalytics.groupBy({
-    by: ["questionCategory"],
-    where: {
-      profileId,
-      askedAt: { gte: startDate },
-    },
-    _count: true,
-  });
+  const categories = await db
+    .select({
+      questionCategory: knowMeQuestionAnalytics.questionCategory,
+      count: sql<number>`count(*)`,
+    })
+    .from(knowMeQuestionAnalytics)
+    .where(and(
+      eq(knowMeQuestionAnalytics.profileId, profileId),
+      gte(knowMeQuestionAnalytics.askedAt, startDate)
+    ))
+    .groupBy(knowMeQuestionAnalytics.questionCategory);
 
-  const total = categories.reduce((sum, c) => sum + c._count, 0);
+  const total = categories.reduce((sum, c) => sum + Number(c.count), 0);
 
   return categories
     .map((c) => ({
       category: c.questionCategory,
-      count: c._count,
-      percentage: total > 0 ? Math.round((c._count / total) * 100) : 0,
+      count: Number(c.count),
+      percentage: total > 0 ? Math.round((Number(c.count) / total) * 100) : 0,
     }))
     .sort((a, b) => b.count - a.count);
 }
@@ -195,20 +212,19 @@ async function getTopQuestions(
   startDate: Date
 ): Promise<TopQuestion[]> {
   // Get raw questions
-  const questions = await prisma.knowMeQuestionAnalytics.findMany({
-    where: {
-      profileId,
-      askedAt: { gte: startDate },
-    },
-    select: {
+  const questions = await db.query.knowMeQuestionAnalytics.findMany({
+    where: and(
+      eq(knowMeQuestionAnalytics.profileId, profileId),
+      gte(knowMeQuestionAnalytics.askedAt, startDate)
+    ),
+    columns: {
       question: true,
       questionCategory: true,
     },
   });
 
   // Count similar questions (basic similarity - exact match for now)
-  // In production, you'd want more sophisticated grouping
-  const questionCounts = new Map<string, { count: number; category: KnowMeQuestionCategory }>();
+  const questionCounts = new Map<string, { count: number; category: string }>();
 
   for (const q of questions) {
     const normalized = q.question.toLowerCase().trim();
@@ -224,7 +240,7 @@ async function getTopQuestions(
     .map(([question, data]) => ({
       question: question.charAt(0).toUpperCase() + question.slice(1),
       count: data.count,
-      category: data.category,
+      category: data.category as any,
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
@@ -237,14 +253,14 @@ async function getRecentVisitors(
   profileId: string,
   startDate: Date
 ): Promise<VisitorData[]> {
-  const sessions = await prisma.knowMeChatSession.findMany({
-    where: {
-      profileId,
-      startedAt: { gte: startDate },
-    },
-    include: {
+  const sessions = await db.query.knowMeChatSessions.findMany({
+    where: and(
+      eq(knowMeChatSessions.profileId, profileId),
+      gte(knowMeChatSessions.startedAt, startDate)
+    ),
+    with: {
       visitorUser: {
-        select: {
+        columns: {
           id: true,
           name: true,
           image: true,
@@ -253,12 +269,12 @@ async function getRecentVisitors(
         },
       },
       messages: {
-        where: { role: "user" },
-        select: { content: true },
+        where: (m: any, { eq }: any) => eq(m.role, "user"),
+        columns: { content: true },
       },
     },
-    orderBy: { lastActivityAt: "desc" },
-    take: 20,
+    orderBy: [desc(knowMeChatSessions.lastActivityAt)],
+    limit: 20,
   });
 
   // Group by user/session
@@ -270,8 +286,8 @@ async function getRecentVisitors(
 
     // Extract topics from questions
     const topics = session.messages
-      .flatMap((m) => extractTopicsFromQuestion(m.content))
-      .filter((t, i, arr) => arr.indexOf(t) === i)
+      .flatMap((m: any) => extractTopicsFromQuestion(m.content))
+      .filter((t: string, i: number, arr: string[]) => arr.indexOf(t) === i)
       .slice(0, 5);
 
     if (existing) {
@@ -323,31 +339,34 @@ async function getDailyActivity(
     dayEnd.setDate(dayEnd.getDate() + 1);
 
     const [questions, visitors, sessions] = await Promise.all([
-      prisma.knowMeQuestionAnalytics.count({
-        where: {
-          profileId,
-          askedAt: { gte: dayStart, lt: dayEnd },
-        },
-      }),
-      prisma.knowMeProfileView.count({
-        where: {
-          profileId,
-          viewedAt: { gte: dayStart, lt: dayEnd },
-        },
-      }),
-      prisma.knowMeChatSession.count({
-        where: {
-          profileId,
-          startedAt: { gte: dayStart, lt: dayEnd },
-        },
-      }),
+      db.select({ count: sql<number>`count(*)` })
+        .from(knowMeQuestionAnalytics)
+        .where(and(
+          eq(knowMeQuestionAnalytics.profileId, profileId),
+          gte(knowMeQuestionAnalytics.askedAt, dayStart),
+          lt(knowMeQuestionAnalytics.askedAt, dayEnd)
+        )),
+      db.select({ count: sql<number>`count(*)` })
+        .from(knowMeProfileViews)
+        .where(and(
+          eq(knowMeProfileViews.profileId, profileId),
+          gte(knowMeProfileViews.viewedAt, dayStart),
+          lt(knowMeProfileViews.viewedAt, dayEnd)
+        )),
+      db.select({ count: sql<number>`count(*)` })
+        .from(knowMeChatSessions)
+        .where(and(
+          eq(knowMeChatSessions.profileId, profileId),
+          gte(knowMeChatSessions.startedAt, dayStart),
+          lt(knowMeChatSessions.startedAt, dayEnd)
+        )),
     ]);
 
     dailyData.push({
       date: dayStart.toISOString().split("T")[0] as string,
-      questions,
-      visitors,
-      sessions,
+      questions: Number(questions[0]?.count ?? 0),
+      visitors: Number(visitors[0]?.count ?? 0),
+      sessions: Number(sessions[0]?.count ?? 0),
     });
   }
 
@@ -412,7 +431,7 @@ function generateInsights(
   }
 
   // Growth insight
-  if (overview.trends.questions.direction === "up" && 
+  if (overview.trends.questions.direction === "up" &&
       overview.trends.questions.changePercent > 20) {
     insights.push({
       type: "info",
@@ -503,13 +522,13 @@ export async function exportAnalyticsData(
   visitors: Array<{ type: string; questionsAsked: number; date: Date }>;
 }>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
     });
 
     if (!profile) {
@@ -519,29 +538,29 @@ export async function exportAnalyticsData(
     const { startDate } = getDateRange(timeRange);
 
     const [questions, sessions] = await Promise.all([
-      prisma.knowMeQuestionAnalytics.findMany({
-        where: {
-          profileId: profile.id,
-          askedAt: { gte: startDate },
-        },
-        select: {
+      db.query.knowMeQuestionAnalytics.findMany({
+        where: and(
+          eq(knowMeQuestionAnalytics.profileId, profile.id),
+          gte(knowMeQuestionAnalytics.askedAt, startDate)
+        ),
+        columns: {
           question: true,
           questionCategory: true,
           askedAt: true,
         },
-        orderBy: { askedAt: "desc" },
+        orderBy: [desc(knowMeQuestionAnalytics.askedAt)],
       }),
-      prisma.knowMeChatSession.findMany({
-        where: {
-          profileId: profile.id,
-          startedAt: { gte: startDate },
-        },
-        select: {
+      db.query.knowMeChatSessions.findMany({
+        where: and(
+          eq(knowMeChatSessions.profileId, profile.id),
+          gte(knowMeChatSessions.startedAt, startDate)
+        ),
+        columns: {
           viewerType: true,
           questionsAsked: true,
           startedAt: true,
         },
-        orderBy: { startedAt: "desc" },
+        orderBy: [desc(knowMeChatSessions.startedAt)],
       }),
     ]);
 
@@ -565,4 +584,3 @@ export async function exportAnalyticsData(
     return { success: false, error: "Failed to export data" };
   }
 }
-

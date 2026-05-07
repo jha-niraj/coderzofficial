@@ -36,7 +36,7 @@ interface Notification {
 
 export function HiringSidebar() {
     const { isCollapsed, setIsCollapsed } = useSidebar();
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
     const { theme, setTheme } = useTheme();
     const pathname = usePathname();
     const router = useRouter();
@@ -368,7 +368,7 @@ export function HiringSidebar() {
                         </button>
                     </div>
                     {
-                        status === "authenticated" && session && (
+                        session && (
                             <div
                                 className="relative"
                                 onMouseEnter={handleNotificationsMouseEnter}
@@ -423,7 +423,7 @@ export function HiringSidebar() {
                     }
                 </div>
                 {
-                    status === "authenticated" && session ? (
+                    session ? (
                         <div
                             className="relative px-3 py-2"
                             onMouseEnter={handleProfileMouseEnter}
@@ -462,7 +462,7 @@ export function HiringSidebar() {
                                         onMouseLeave={handleProfileMouseLeave}
                                     >
                                         <div className="p-2">
-                                            <button onClick={() => signOut({ callbackUrl: "/" })} className="cursor-pointer w-full flex items-center gap-3 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 rounded-md transition-colors text-sm">
+                                            <button onClick={async () => { await signOut(); router.push("/"); }} className="cursor-pointer w-full flex items-center gap-3 px-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 rounded-md transition-colors text-sm">
                                                 <LogOut className="h-4 w-4" />
                                                 Sign Out
                                             </button>

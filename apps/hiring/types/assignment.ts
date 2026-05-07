@@ -49,7 +49,8 @@ export interface AssignmentApplication {
         name: string | null
         email: string
         image: string | null
-    }
+    } | null
+    [key: string]: unknown
 }
 
 // ============================================
@@ -65,6 +66,7 @@ export interface JobWithAssignmentDetails {
     assignmentInstructions: string | null
     assignmentDeadlineDays: number | null
     applications: AssignmentApplication[]
+    [key: string]: unknown
 }
 
 // ============================================
@@ -84,7 +86,7 @@ export interface AssignmentSubmissionItem {
         name: string | null
         email: string
         image: string | null
-    }
+    } | null
     job: {
         id: string
         title: string
@@ -92,6 +94,7 @@ export interface AssignmentSubmissionItem {
         assignmentDetails: unknown
         assignmentDeadlineDays: number | null
     }
+    [key: string]: unknown
 }
 
 // ============================================

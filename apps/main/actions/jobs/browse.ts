@@ -1,7 +1,18 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db,
+    jobs,
+    jobApplications,
+    savedJobs,
+    jobRecommendations,
+    companies,
+    interviewProcesses,
+    interviewRounds,
+} from "@repo/db"
+import { eq, and, or, ilike, inArray, desc, asc, count, sql } from "drizzle-orm"
 
 export interface JobFilters {
     search?: string
@@ -55,72 +66,75 @@ export async function browseJobs(filters: JobFilters = {}, page = 1, limit = 20)
     try {
         const skip = (page - 1) * limit
 
-        const where: Record<string, unknown> = {
-            status: "ACTIVE",
-            visibility: "PUBLIC"
-        }
+        const conditions: any[] = [
+            eq(jobs.status, "ACTIVE"),
+            eq(jobs.visibility, "PUBLIC"),
+        ]
 
         if (filters.search) {
-            where.OR = [
-                { title: { contains: filters.search, mode: "insensitive" } },
-                { description: { contains: filters.search, mode: "insensitive" } },
-                { company: { name: { contains: filters.search, mode: "insensitive" } } }
-            ]
+            conditions.push(
+                or(
+                    ilike(jobs.title, `%${filters.search}%`),
+                    ilike(jobs.description, `%${filters.search}%`)
+                )
+            )
         }
 
         if (filters.locationType && filters.locationType.length > 0) {
-            where.locationType = { in: filters.locationType }
+            conditions.push(inArray(jobs.locationType, filters.locationType as any[]))
         }
 
         if (filters.employmentType && filters.employmentType.length > 0) {
-            where.employmentType = { in: filters.employmentType }
+            conditions.push(inArray(jobs.employmentType, filters.employmentType as any[]))
         }
 
         if (filters.companyId) {
-            where.companyId = filters.companyId
+            conditions.push(eq(jobs.companyId, filters.companyId))
         }
 
-        const [jobs, total] = await Promise.all([
-            prisma.job.findMany({
-                where,
-                include: {
+        const whereClause = and(...conditions)
+
+        const [jobRows, [{ total }]] = await Promise.all([
+            db.query.jobs.findMany({
+                where: whereClause,
+                with: {
                     company: {
-                        select: {
-                            id: true,
-                            name: true,
-                            logoUrl: true,
-                            industry: true
-                        }
+                        columns: { id: true, name: true, logoUrl: true, industry: true },
                     },
-                    interviewProcess: {
-                        select: {
-                            id: true,
-                            name: true,
-                            estimatedDurationWeeks: true,
-                            rounds: {
-                                select: {
-                                    id: true,
-                                    roundNumber: true,
-                                    title: true,
-                                    roundType: true,
-                                    hasMockInterview: true
-                                },
-                                orderBy: { roundNumber: "asc" }
-                            }
-                        }
-                    }
                 },
-                orderBy: [
-                    { featured: "desc" },
-                    { publishedAt: "desc" }
-                ],
-                skip,
-                take: limit
+                orderBy: [desc(jobs.featured), desc(jobs.publishedAt)],
+                offset: skip,
+                limit,
             }),
-            prisma.job.count({ where })
+            db.select({ total: count() }).from(jobs).where(whereClause),
         ])
 
-        const formattedJobs: JobListResult[] = jobs.map(job => ({
+        // Load interviewProcesses separately for these jobs
+        const processIds = jobRows
+            .map(j => (j as any).interviewProcessId)
+            .filter(Boolean) as string[]
+
+        const processRows = processIds.length > 0
+            ? await db.query.interviewProcesses.findMany({
+                where: inArray(interviewProcesses.id, processIds),
+                with: {
+                    rounds: {
+                        columns: {
+                            id: true,
+                            roundNumber: true,
+                            title: true,
+                            roundType: true,
+                            hasMockInterview: true,
+                        },
+                        orderBy: (r: any, { asc: a }: any) => [a(r.roundNumber)],
+                    },
+                },
+            })
+            : []
+
+        const processMap = new Map(processRows.map(p => [p.id, p]))
+
+        const formattedJobs: JobListResult[] = jobRows.map(job => ({
             id: job.id,
             title: job.title,
             slug: job.slug,
@@ -134,11 +148,11 @@ export async function browseJobs(filters: JobFilters = {}, page = 1, limit = 20)
             salaryMax: job.salaryMax,
             salaryCurrency: job.salaryCurrency,
             salaryDisclosed: job.salaryDisclosed,
-            skillsRequired: job.skillsRequired as string[],
+            skillsRequired: (job.skillsRequired as string[]) || [],
             hasAssignment: job.hasAssignment,
             applicationsCount: job.applicationsCount,
             publishedAt: job.publishedAt,
-            interviewProcess: job.interviewProcess
+            interviewProcess: processMap.get((job as any).interviewProcessId ?? '') ?? null,
         }))
 
         return {
@@ -148,8 +162,8 @@ export async function browseJobs(filters: JobFilters = {}, page = 1, limit = 20)
                 pagination: {
                     page,
                     limit,
-                    total,
-                    totalPages: Math.ceil(total / limit)
+                    total: Number(total),
+                    totalPages: Math.ceil(Number(total) / limit)
                 }
             }
         }
@@ -162,14 +176,14 @@ export async function browseJobs(filters: JobFilters = {}, page = 1, limit = 20)
 // Get a single job by slug
 export async function getJobBySlug(slug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         const userId = session?.user?.id
 
-        const job = await prisma.job.findUnique({
-            where: { slug },
-            include: {
+        const job = await db.query.jobs.findFirst({
+            where: eq(jobs.slug, slug),
+            with: {
                 company: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         slug: true,
@@ -179,74 +193,73 @@ export async function getJobBySlug(slug: string) {
                         website: true,
                         companySize: true,
                         headquarters: true,
-                        verificationStatus: true
-                    }
+                        verificationStatus: true,
+                    },
                 },
-                interviewProcess: {
-                    include: {
-                        rounds: {
-                            orderBy: { roundNumber: "asc" }
-                        }
-                    }
-                }
-            }
+            },
         })
 
         if (!job || job.status !== "ACTIVE") {
             return { success: false, error: "Job not found" }
         }
 
-        // Check if user has already applied
+        // Load interview process
+        const interviewProcess = (job as any).interviewProcessId
+            ? await db.query.interviewProcesses.findFirst({
+                where: eq(interviewProcesses.id, (job as any).interviewProcessId),
+                with: {
+                    rounds: {
+                        orderBy: (r: any, { asc: a }: any) => [a(r.roundNumber)],
+                    },
+                },
+            })
+            : null
+
+        // Check if user has already applied / saved
         let application = null
         let isSaved = false
         if (userId) {
             const [app, savedJob] = await Promise.all([
-                prisma.jobApplication.findUnique({
-                    where: {
-                        jobId_userId: {
-                            jobId: job.id,
-                            userId
-                        }
-                    }
+                db.query.jobApplications.findFirst({
+                    where: and(
+                        eq(jobApplications.jobId, job.id),
+                        eq(jobApplications.userId, userId)
+                    ),
                 }),
-                prisma.savedJob.findUnique({
-                    where: {
-                        userId_jobId: {
-                            userId,
-                            jobId: job.id
-                        }
-                    }
-                })
+                db.query.savedJobs.findFirst({
+                    where: and(
+                        eq(savedJobs.userId, userId),
+                        eq(savedJobs.jobId, job.id)
+                    ),
+                }),
             ])
             application = app
             isSaved = !!savedJob
         }
 
         // Increment view count
-        await prisma.job.update({
-            where: { id: job.id },
-            data: { viewsCount: { increment: 1 } }
-        })
+        await db.update(jobs)
+            .set({ viewsCount: sql`${jobs.viewsCount} + 1` })
+            .where(eq(jobs.id, job.id))
 
         // Parse JSON fields as arrays
         const parseJsonArray = (value: unknown): string[] => {
             if (!value) return []
             if (Array.isArray(value)) return value as string[]
             if (typeof value === "object") {
-                // If it's an object with items array
                 const obj = value as Record<string, unknown>
                 if (Array.isArray(obj.items)) return obj.items as string[]
             }
             return []
         }
 
-        // Format interview process to match expected interface
-        const formattedInterviewProcess = job.interviewProcess ? {
-            id: job.interviewProcess.id,
-            name: job.interviewProcess.name,
-            description: job.interviewProcess.description,
-            estimatedDurationWeeks: job.interviewProcess.estimatedDurationWeeks,
-            rounds: job.interviewProcess.rounds.map(round => ({
+        // Format interview process
+        const formattedInterviewProcess = interviewProcess ? {
+            id: interviewProcess.id,
+            name: interviewProcess.name,
+            description: interviewProcess.description,
+            estimatedDurationWeeks: interviewProcess.estimatedDurationWeeks,
+            rounds: interviewProcess.rounds.map(round => ({
                 id: round.id,
                 roundNumber: round.roundNumber,
                 title: round.title,
@@ -280,7 +293,7 @@ export async function getJobBySlug(slug: string) {
                 salaryMax: job.salaryMax,
                 salaryCurrency: job.salaryCurrency,
                 salaryDisclosed: job.salaryDisclosed,
-                skillsRequired: job.skillsRequired as string[],
+                skillsRequired: (job.skillsRequired as string[]) || [],
                 hasAssignment: job.hasAssignment,
                 applicationsCount: job.applicationsCount,
                 publishedAt: job.publishedAt,
@@ -299,94 +312,52 @@ export async function getJobBySlug(slug: string) {
 // Get recommended jobs for the user
 export async function getRecommendedJobs(limit = 10) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
+
         if (!session?.user?.id) {
             // Return general featured jobs for unauthenticated users
-            const jobs = await prisma.job.findMany({
-                where: {
-                    status: "ACTIVE",
-                    visibility: "PUBLIC",
-                    featured: true
-                },
-                include: {
+            const jobRows = await db.query.jobs.findMany({
+                where: and(
+                    eq(jobs.status, "ACTIVE"),
+                    eq(jobs.visibility, "PUBLIC"),
+                    eq(jobs.featured, true)
+                ),
+                with: {
                     company: {
-                        select: {
-                            id: true,
-                            name: true,
-                            logoUrl: true,
-                            industry: true
-                        }
+                        columns: { id: true, name: true, logoUrl: true, industry: true },
                     },
-                    interviewProcess: {
-                        select: {
-                            id: true,
-                            name: true,
-                            rounds: {
-                                select: {
-                                    id: true,
-                                    roundNumber: true,
-                                    title: true,
-                                    roundType: true,
-                                    hasMockInterview: true
-                                },
-                                orderBy: { roundNumber: "asc" }
-                            }
-                        }
-                    }
                 },
-                take: limit
+                limit,
             })
-
-            return { success: true, data: jobs }
+            return { success: true, data: jobRows }
         }
 
         // Get user's recommendations
-        const recommendations = await prisma.jobRecommendation.findMany({
-            where: {
-                userId: session.user.id,
-                isDismissed: false
-            },
-            include: {
+        const recommendations = await db.query.jobRecommendations.findMany({
+            where: and(
+                eq(jobRecommendations.userId, session.user.id),
+                eq(jobRecommendations.isDismissed, false)
+            ),
+            with: {
                 job: {
-                    include: {
+                    with: {
                         company: {
-                            select: {
-                                id: true,
-                                name: true,
-                                logoUrl: true,
-                                industry: true
-                            }
+                            columns: { id: true, name: true, logoUrl: true, industry: true },
                         },
-                        interviewProcess: {
-                            select: {
-                                id: true,
-                                name: true,
-                                rounds: {
-                                    select: {
-                                        id: true,
-                                        roundNumber: true,
-                                        title: true,
-                                        roundType: true,
-                                        hasMockInterview: true
-                                    },
-                                    orderBy: { roundNumber: "asc" }
-                                }
-                            }
-                        }
-                    }
-                }
+                    },
+                },
             },
-            orderBy: { matchScore: "desc" },
-            take: limit
+            orderBy: desc(jobRecommendations.matchScore),
+            limit,
         })
 
-        const jobs = recommendations.map(r => ({
+        const jobList = recommendations.map(r => ({
             ...r.job,
             matchScore: r.matchScore,
             matchReasons: r.matchReasons
         }))
 
-        return { success: true, data: jobs }
+        return { success: true, data: jobList }
     } catch (error) {
         console.error("Error fetching recommendations:", error)
         return { success: false, error: "Failed to fetch recommendations" }
@@ -396,35 +367,16 @@ export async function getRecommendedJobs(limit = 10) {
 // Get jobs by company
 export async function getJobsByCompany(companyId: string) {
     try {
-        const jobs = await prisma.job.findMany({
-            where: {
-                companyId,
-                status: "ACTIVE",
-                visibility: "PUBLIC"
-            },
-            include: {
-                interviewProcess: {
-                    select: {
-                        id: true,
-                        name: true,
-                        estimatedDurationWeeks: true,
-                        rounds: {
-                            select: {
-                                id: true,
-                                roundNumber: true,
-                                title: true,
-                                roundType: true,
-                                hasMockInterview: true
-                            },
-                            orderBy: { roundNumber: "asc" }
-                        }
-                    }
-                }
-            },
-            orderBy: { publishedAt: "desc" }
+        const jobRows = await db.query.jobs.findMany({
+            where: and(
+                eq(jobs.companyId, companyId),
+                eq(jobs.status, "ACTIVE"),
+                eq(jobs.visibility, "PUBLIC")
+            ),
+            orderBy: desc(jobs.publishedAt),
         })
 
-        return { success: true, data: jobs }
+        return { success: true, data: jobRows }
     } catch (error) {
         console.error("Error fetching company jobs:", error)
         return { success: false, error: "Failed to fetch jobs" }
@@ -434,31 +386,25 @@ export async function getJobsByCompany(companyId: string) {
 // Save/unsave a job
 export async function toggleSaveJob(jobId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const existingSave = await prisma.savedJob.findUnique({
-            where: {
-                userId_jobId: {
-                    userId: session.user.id,
-                    jobId
-                }
-            }
+        const existingSave = await db.query.savedJobs.findFirst({
+            where: and(
+                eq(savedJobs.userId, session.user.id),
+                eq(savedJobs.jobId, jobId)
+            ),
         })
 
         if (existingSave) {
-            await prisma.savedJob.delete({
-                where: { id: existingSave.id }
-            })
+            await db.delete(savedJobs).where(eq(savedJobs.id, existingSave.id))
             return { success: true, saved: false }
         } else {
-            await prisma.savedJob.create({
-                data: {
-                    userId: session.user.id,
-                    jobId
-                }
+            await db.insert(savedJobs).values({
+                userId: session.user.id,
+                jobId,
             })
             return { success: true, saved: true }
         }
@@ -471,43 +417,37 @@ export async function toggleSaveJob(jobId: string) {
 // Get saved jobs
 export async function getSavedJobs() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const savedJobs = await prisma.savedJob.findMany({
-            where: { userId: session.user.id },
-            orderBy: { createdAt: "desc" }
+        const savedEntries = await db.query.savedJobs.findMany({
+            where: eq(savedJobs.userId, session.user.id),
+            orderBy: desc(savedJobs.createdAt),
         })
 
-        if (savedJobs.length === 0) {
+        if (savedEntries.length === 0) {
             return { success: true, data: [] }
         }
 
-        // Get the jobs separately
-        const jobIds = savedJobs.map(s => s.jobId)
-        const jobs = await prisma.job.findMany({
-            where: {
-                id: { in: jobIds },
-                status: "ACTIVE"
-            },
-            include: {
+        const jobIds = savedEntries.map(s => s.jobId)
+        const jobRows = await db.query.jobs.findMany({
+            where: and(
+                inArray(jobs.id, jobIds),
+                eq(jobs.status, "ACTIVE")
+            ),
+            with: {
                 company: {
-                    select: {
-                        id: true,
-                        name: true,
-                        logoUrl: true,
-                        industry: true
-                    }
-                }
-            }
+                    columns: { id: true, name: true, logoUrl: true, industry: true },
+                },
+            },
         })
 
         // Match jobs with saved data
-        const result = savedJobs
+        const result = savedEntries
             .map(saved => {
-                const job = jobs.find(j => j.id === saved.jobId)
+                const job = jobRows.find(j => j.id === saved.jobId)
                 if (!job) return null
                 return {
                     ...job,
@@ -527,31 +467,27 @@ export async function getSavedJobs() {
 // Save a job
 export async function saveJob(jobId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const existingSave = await prisma.savedJob.findUnique({
-            where: {
-                userId_jobId: {
-                    userId: session.user.id,
-                    jobId
-                }
-            }
+        const existingSave = await db.query.savedJobs.findFirst({
+            where: and(
+                eq(savedJobs.userId, session.user.id),
+                eq(savedJobs.jobId, jobId)
+            ),
         })
 
         if (existingSave) {
             return { success: true, message: "Already saved" }
         }
 
-        await prisma.savedJob.create({
-            data: {
-                userId: session.user.id,
-                jobId
-            }
+        await db.insert(savedJobs).values({
+            userId: session.user.id,
+            jobId,
         })
-        
+
         return { success: true }
     } catch (error) {
         console.error("Error saving job:", error)
@@ -562,18 +498,18 @@ export async function saveJob(jobId: string) {
 // Unsave a job
 export async function unsaveJob(jobId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        await prisma.savedJob.deleteMany({
-            where: {
-                userId: session.user.id,
-                jobId
-            }
-        })
-        
+        await db.delete(savedJobs).where(
+            and(
+                eq(savedJobs.userId, session.user.id),
+                eq(savedJobs.jobId, jobId)
+            )
+        )
+
         return { success: true }
     } catch (error) {
         console.error("Error unsaving job:", error)

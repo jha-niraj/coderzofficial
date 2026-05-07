@@ -15,7 +15,7 @@ import { getCurrentMemberDetails } from "@/actions/auth"
 import type { UniversityMemberRole } from "@/types"
 
 export default function UniversityHomePage() {
-    const { data: session, status } = useSession()
+    const { data: session, isPending } = useSession()
     const [memberRole, setMemberRole] = useState<UniversityMemberRole | null>(null)
     const [departmentName, setDepartmentName] = useState<string | undefined>(undefined)
     const [isLoading, setIsLoading] = useState(true)
@@ -24,7 +24,7 @@ export default function UniversityHomePage() {
 
     useEffect(() => {
         async function fetchMemberDetails() {
-            if (status === "authenticated") {
+            if (session && !isPending) {
                 try {
                     const result = await getCurrentMemberDetails()
                     if (result.success && result.member) {
@@ -42,9 +42,9 @@ export default function UniversityHomePage() {
             }
         }
         fetchMemberDetails()
-    }, [status])
+    }, [session, isPending])
 
-    if (status === "loading" || isLoading) {
+    if (isPending || isLoading) {
         return (
             <div className="min-h-full flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">

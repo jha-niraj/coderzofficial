@@ -252,7 +252,8 @@ export default function OnboardingPage() {
     const handleLogout = async () => {
         setLoggingOut(true)
         try {
-            await signOut({ callbackUrl: '/signin' })
+            await signOut()
+            window.location.href = '/signin'
         } catch (error) {
             console.error('Logout error:', error)
             toast.error('Failed to logout')

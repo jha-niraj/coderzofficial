@@ -16,7 +16,7 @@ import { Input } from "@repo/ui/components/ui/input"
 
 export default function AdminSignInPage() {
     const router = useRouter()
-    const { data: session, status } = useSession()
+    const { data: session, isPending } = useSession()
     const [isLoading, setIsLoading] = useState(false)
     const [authMode, setAuthMode] = useState<"credentials" | "accessCode">("credentials")
     const [showPassword, setShowPassword] = useState(false)
@@ -28,10 +28,10 @@ export default function AdminSignInPage() {
 
     // Redirect if already authenticated
     useEffect(() => {
-        if (status === "authenticated" && session) {
+        if (session && !isPending) {
             router.push("/dashboard")
         }
-    }, [session, status, router])
+    }, [session, isPending, router])
 
     const handleCredentialsSignIn = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -46,7 +46,8 @@ export default function AdminSignInPage() {
         setIsLoading(true)
 
         try {
-            const result = await signIn("credentials", {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = await (signIn as any)("credentials", {
                 email,
                 password,
                 redirect: false,
@@ -99,7 +100,8 @@ export default function AdminSignInPage() {
             }
 
             // If valid, sign in with credentials
-            const result = await signIn("credentials", {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const result = await (signIn as any)("credentials", {
                 email,
                 password: accessCode, // Use access code as temporary password
                 isAccessCode: true,
@@ -126,7 +128,7 @@ export default function AdminSignInPage() {
         }
     }
 
-    if (status === "loading") {
+    if (isPending) {
         return (
             <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-neutral-400" />

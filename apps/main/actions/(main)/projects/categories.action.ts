@@ -1,19 +1,26 @@
 'use server'
 
-import prisma from '@repo/prisma'
+import {
+    db,
+    projectCategories,
+    projectTechnologies,
+    projectsV2,
+    projectIdeas,
+} from "@repo/db";
+import { eq, and, sql, inArray } from "drizzle-orm";
 
 export async function getProjectCategories() {
     try {
-        const categories = await prisma.projectCategory.findMany({
-            where: { isActive: true },
-            include: {
+        const categories = await db.query.projectCategories.findMany({
+            where: eq(projectCategories.isActive, true),
+            with: {
                 technologies: {
-                    where: { isActive: true },
-                    orderBy: { orderIndex: 'asc' },
+                    where: eq(projectTechnologies.isActive, true),
+                    orderBy: (techs: any, { asc }: any) => [asc(techs.orderIndex)],
                 },
             },
-            orderBy: { orderIndex: 'asc' },
-        })
+            orderBy: (cats: any, { asc }: any) => [asc(cats.orderIndex)],
+        });
         return { success: true as const, data: categories }
     } catch (error) {
         console.error('Error fetching categories:', error)
@@ -23,14 +30,20 @@ export async function getProjectCategories() {
 
 export async function getProjectTechnologies(categorySlug?: string) {
     try {
-        const technologies = await prisma.projectTechnology.findMany({
-            where: {
-                isActive: true,
-                ...(categorySlug ? { category: { slug: categorySlug } } : {}),
+        const technologies = await db.query.projectTechnologies.findMany({
+            where: categorySlug
+                ? and(
+                    eq(projectTechnologies.isActive, true),
+                    sql`${projectTechnologies.categoryId} IN (SELECT id FROM ${projectCategories} WHERE slug = ${categorySlug})`
+                )
+                : eq(projectTechnologies.isActive, true),
+            with: {
+                category: {
+                    columns: { name: true, slug: true, icon: true, color: true }
+                }
             },
-            include: { category: { select: { name: true, slug: true, icon: true, color: true } } },
-            orderBy: { orderIndex: 'asc' },
-        })
+            orderBy: (techs: any, { asc }: any) => [asc(techs.orderIndex)],
+        });
         return { success: true as const, data: technologies }
     } catch (error) {
         console.error('Error fetching technologies:', error)
@@ -46,35 +59,39 @@ export async function getPlatformProjects(options?: {
     offset?: number
 }) {
     try {
-        const where: Record<string, unknown> = {
-            isPlatformSeeded: true,
-            visibility: 'PUBLIC',
-        }
+        const conditions: any[] = [
+            eq(projectsV2.isPlatformSeeded, true),
+            eq(projectsV2.visibility, 'PUBLIC'),
+        ];
         if (options?.technology) {
-            where.technologies = { has: options.technology }
+            conditions.push(sql`${projectsV2.technologies} @> ARRAY[${options.technology}]::text[]`);
         }
         if (options?.difficulty) {
-            where.difficulty = options.difficulty
+            conditions.push(eq(projectsV2.difficulty, options.difficulty));
         }
 
-        const [projects, total] = await Promise.all([
-            prisma.projectV2.findMany({
-                where,
-                select: {
+        const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+        const [projects, totalArr] = await Promise.all([
+            db.query.projectsV2.findMany({
+                where: whereClause,
+                columns: {
                     id: true, slug: true, title: true, shortDescription: true, description: true,
                     technologies: true, difficulty: true, estimatedHours: true, totalViews: true,
                     totalStarted: true, includeAssessment: true, isPlatformSeeded: true, projectSource: true,
                     recruiterSignal: true, generationType: true, guidedModeEnabled: true,
-                    creator: { select: { name: true, username: true, image: true } },
-                    _count: { select: { progress: true, submissions: true } },
                 },
-                orderBy: { totalStarted: 'desc' },
-                take: options?.limit || 20,
-                skip: options?.offset || 0,
+                with: {
+                    creator: { columns: { name: true, username: true, image: true } },
+                },
+                orderBy: (p: any, { desc }: any) => [desc(p.totalStarted)],
+                limit: options?.limit || 20,
+                offset: options?.offset || 0,
             }),
-            prisma.projectV2.count({ where }),
-        ])
+            db.select({ count: sql<number>`count(*)` }).from(projectsV2).where(whereClause),
+        ]);
 
+        const total = Number(totalArr[0]?.count ?? 0);
         return { success: true as const, data: projects, total }
     } catch (error) {
         console.error('Error fetching platform projects:', error)
@@ -84,51 +101,49 @@ export async function getPlatformProjects(options?: {
 
 export async function getCategoryWithIdeas(categorySlug: string) {
     try {
-        const category = await prisma.projectCategory.findUnique({
-            where: { slug: categorySlug },
-            include: {
+        const category = await db.query.projectCategories.findFirst({
+            where: eq(projectCategories.slug, categorySlug),
+            with: {
                 technologies: {
-                    where: { isActive: true },
-                    orderBy: { orderIndex: 'asc' },
+                    where: eq(projectTechnologies.isActive, true),
+                    orderBy: (techs: any, { asc }: any) => [asc(techs.orderIndex)],
                 },
             },
-        })
+        });
 
         if (!category) {
             return { success: false as const, error: 'Category not found' }
         }
 
-        // Also fetch platform projects for this category's technologies
-        const techNames = category.technologies.map(t => t.name)
-        const platformProjects = await prisma.projectV2.findMany({
-            where: {
-                isPlatformSeeded: true,
-                visibility: 'PUBLIC',
-                technologies: { hasSome: techNames },
-            },
-            select: {
-                id: true, slug: true, title: true, shortDescription: true, description: true,
-                technologies: true, difficulty: true, estimatedHours: true, totalViews: true,
-                totalStarted: true, includeAssessment: true, isPlatformSeeded: true, projectSource: true,
-                recruiterSignal: true, guidedModeEnabled: true,
-                creator: { select: { name: true, username: true, image: true } },
-                _count: { select: { progress: true, submissions: true } },
-            },
-            orderBy: { totalStarted: 'desc' },
-        })
+        const techNames = category.technologies.map((t: any) => t.name);
 
-        // Fetch community ideas for this category
-        const ideas = await prisma.projectIdea.findMany({
-            where: {
-                status: 'APPROVED',
-                OR: [
-                    { categories: { hasSome: [categorySlug] } },
-                    { technologies: { hasSome: techNames } },
-                ],
-            },
-            orderBy: { upvotes: 'desc' },
-            take: 20,
-        })
+        const [platformProjects, ideas] = await Promise.all([
+            db.query.projectsV2.findMany({
+                where: and(
+                    eq(projectsV2.isPlatformSeeded, true),
+                    eq(projectsV2.visibility, 'PUBLIC'),
+                    sql`${projectsV2.technologies} && ARRAY[${sql.join(techNames.map((t: string) => sql`${t}`), sql`, `)}]::text[]`
+                ),
+                columns: {
+                    id: true, slug: true, title: true, shortDescription: true, description: true,
+                    technologies: true, difficulty: true, estimatedHours: true, totalViews: true,
+                    totalStarted: true, includeAssessment: true, isPlatformSeeded: true, projectSource: true,
+                    recruiterSignal: true, guidedModeEnabled: true,
+                },
+                with: {
+                    creator: { columns: { name: true, username: true, image: true } },
+                },
+                orderBy: (p: any, { desc }: any) => [desc(p.totalStarted)],
+            }),
+            db.query.projectIdeas.findMany({
+                where: and(
+                    eq(projectIdeas.status, 'APPROVED'),
+                    sql`(${projectIdeas.categories} @> ARRAY[${categorySlug}]::text[] OR ${projectIdeas.technologies} && ARRAY[${sql.join(techNames.map((t: string) => sql`${t}`), sql`, `)}]::text[])`
+                ),
+                orderBy: (ideas: any, { desc }: any) => [desc(ideas.upvotes)],
+                limit: 20,
+            }),
+        ]);
 
         return { success: true as const, data: { category, platformProjects, ideas } }
     } catch (error) {

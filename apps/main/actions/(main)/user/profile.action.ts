@@ -1,24 +1,32 @@
 "use server"
 
-import { auth } from '@repo/auth';
-import { prisma } from "@repo/prisma";
+import { getSession } from '@repo/auth';
+import { headers } from 'next/headers';
+import {
+    db, users, workExperiences, portfolioProjects, projectLinks, projectMedia,
+    socialLinks, userEducations, skills, skillEndorsements, certifications,
+    userProfiles, profileViews, achievements, recentActivities,
+    follow, userProjectV2Progress
+} from "@repo/db";
 import { revalidatePath } from "next/cache";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
+
+export type ProfileTheme = "OCEAN_BLUE" | "SUNSET_ORANGE" | "FOREST_GREEN" | "PURPLE_DREAM" | "DARK_MODE";
+export type ProfileLayout = "DEFAULT" | "MINIMAL" | "SHOWCASE" | "PORTFOLIO";
+export type ProfileVisibility = "PUBLIC" | "FOLLOWERS" | "PRIVATE";
 
 // ================= WORK EXPERIENCE ACTIONS =================
 
 export async function getWorkExperiences() {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required", data: [] };
         }
 
-        const experiences = await prisma.workExperience.findMany({
-            where: { userId: session.user.id },
-            orderBy: [
-                { isCurrentlyWorking: 'desc' },
-                { startDate: 'desc' }
-            ]
+        const experiences = await db.query.workExperiences.findMany({
+            where: eq(workExperiences.userId, session.user.id),
+            orderBy: [desc(workExperiences.isCurrentlyWorking), desc(workExperiences.startDate)]
         });
 
         return { success: true, data: experiences };
@@ -40,17 +48,15 @@ export async function addWorkExperience(data: {
     isCurrentlyWorking: boolean;
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
-        const experience = await prisma.workExperience.create({
-            data: {
-                userId: session.user.id,
-                ...data
-            }
-        });
+        const [experience] = await db.insert(workExperiences).values({
+            userId: session.user.id,
+            ...data
+        }).returning();
 
         revalidatePath("/profile");
         return { success: true, message: "Work experience added successfully", data: experience };
@@ -72,25 +78,22 @@ export async function updateWorkExperience(id: string, data: {
     isCurrentlyWorking?: boolean;
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
         // Verify ownership
-        const existing = await prisma.workExperience.findUnique({
-            where: { id },
-            select: { userId: true }
+        const existing = await db.query.workExperiences.findFirst({
+            where: eq(workExperiences.id, id),
+            columns: { userId: true }
         });
 
         if (!existing || existing.userId !== session.user.id) {
             return { success: false, message: "Unauthorized" };
         }
 
-        const experience = await prisma.workExperience.update({
-            where: { id },
-            data
-        });
+        const [experience] = await db.update(workExperiences).set(data).where(eq(workExperiences.id, id)).returning();
 
         revalidatePath("/profile");
         return { success: true, message: "Work experience updated successfully", data: experience };
@@ -102,22 +105,22 @@ export async function updateWorkExperience(id: string, data: {
 
 export async function deleteWorkExperience(id: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
         // Verify ownership
-        const existing = await prisma.workExperience.findUnique({
-            where: { id },
-            select: { userId: true }
+        const existing = await db.query.workExperiences.findFirst({
+            where: eq(workExperiences.id, id),
+            columns: { userId: true }
         });
 
         if (!existing || existing.userId !== session.user.id) {
             return { success: false, message: "Unauthorized" };
         }
 
-        await prisma.workExperience.delete({ where: { id } });
+        await db.delete(workExperiences).where(eq(workExperiences.id, id));
 
         revalidatePath("/profile");
         return { success: true, message: "Work experience deleted successfully" };
@@ -131,18 +134,18 @@ export async function deleteWorkExperience(id: string) {
 
 export async function getPortfolioProjects() {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required", data: [] };
         }
 
-        const projects = await prisma.portfolioProject.findMany({
-            where: { userId: session.user.id },
-            include: {
-                projectLinks: true,
-                projectMedia: true
+        const projects = await db.query.portfolioProjects.findMany({
+            where: eq(portfolioProjects.userId, session.user.id),
+            with: {
+                links: true,
+                media: true
             },
-            orderBy: { startDate: 'desc' }
+            orderBy: [desc(portfolioProjects.startDate)]
         });
 
         return { success: true, data: projects };
@@ -167,32 +170,37 @@ export async function addPortfolioProject(data: {
     media?: { mediaUrl: string; mediaType: string; caption?: string | null }[];
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
         const { links, media, ...projectData } = data;
 
-        const project = await prisma.portfolioProject.create({
-            data: {
-                userId: session.user.id,
-                ...projectData,
-                projectLinks: links ? {
-                    create: links
-                } : undefined,
-                projectMedia: media ? {
-                    create: media
-                } : undefined
-            },
-            include: {
-                projectLinks: true,
-                projectMedia: true
-            }
+        const [project] = await db.insert(portfolioProjects).values({
+            userId: session.user.id,
+            ...projectData
+        }).returning();
+
+        if (links && links.length > 0) {
+            await db.insert(projectLinks).values(
+                links.map(l => ({ projectId: project!.id, linkType: l.linkType, url: l.url, description: l.description || null }))
+            );
+        }
+
+        if (media && media.length > 0) {
+            await db.insert(projectMedia).values(
+                media.map(m => ({ projectId: project!.id, mediaUrl: m.mediaUrl, mediaType: m.mediaType, caption: m.caption || null }))
+            );
+        }
+
+        const fullProject = await db.query.portfolioProjects.findFirst({
+            where: eq(portfolioProjects.id, project!.id),
+            with: { links: true, media: true }
         });
 
         revalidatePath("/profile");
-        return { success: true, message: "Project added successfully", data: project };
+        return { success: true, message: "Project added successfully", data: fullProject };
     } catch (error) {
         console.error("Error adding portfolio project:", error);
         return { success: false, message: "Failed to add project" };
@@ -214,14 +222,14 @@ export async function updatePortfolioProject(id: string, data: {
     media?: { mediaUrl: string; mediaType: string; caption?: string | null }[];
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
-        const existing = await prisma.portfolioProject.findUnique({
-            where: { id },
-            select: { userId: true }
+        const existing = await db.query.portfolioProjects.findFirst({
+            where: eq(portfolioProjects.id, id),
+            columns: { userId: true }
         });
 
         if (!existing || existing.userId !== session.user.id) {
@@ -230,44 +238,45 @@ export async function updatePortfolioProject(id: string, data: {
 
         const { links, media, ...projectData } = data;
 
-        await prisma.$transaction(async (tx) => {
-            await tx.portfolioProject.update({
-                where: { id },
-                data: projectData
-            });
+        await db.transaction(async (tx) => {
+            if (Object.keys(projectData).length > 0) {
+                await tx.update(portfolioProjects).set(projectData).where(eq(portfolioProjects.id, id));
+            }
 
             if (links !== undefined) {
-                await tx.projectLink.deleteMany({ where: { projectId: id } });
-                if (links.filter((l) => l.url?.trim()).length > 0) {
-                    await tx.projectLink.createMany({
-                        data: links.filter((l) => l.url?.trim()).map((l) => ({
+                await tx.delete(projectLinks).where(eq(projectLinks.projectId, id));
+                const validLinks = links.filter((l) => l.url?.trim());
+                if (validLinks.length > 0) {
+                    await tx.insert(projectLinks).values(
+                        validLinks.map((l) => ({
                             projectId: id,
                             linkType: l.linkType,
                             url: l.url,
                             description: l.description || null,
-                        })),
-                    });
+                        }))
+                    );
                 }
             }
 
             if (media !== undefined) {
-                await tx.projectMedia.deleteMany({ where: { projectId: id } });
-                if (media.filter((m) => m.mediaUrl?.trim()).length > 0) {
-                    await tx.projectMedia.createMany({
-                        data: media.filter((m) => m.mediaUrl?.trim()).map((m) => ({
+                await tx.delete(projectMedia).where(eq(projectMedia.projectId, id));
+                const validMedia = media.filter((m) => m.mediaUrl?.trim());
+                if (validMedia.length > 0) {
+                    await tx.insert(projectMedia).values(
+                        validMedia.map((m) => ({
                             projectId: id,
                             mediaUrl: m.mediaUrl,
                             mediaType: m.mediaType,
                             caption: m.caption || null,
-                        })),
-                    });
+                        }))
+                    );
                 }
             }
         });
 
-        const project = await prisma.portfolioProject.findUnique({
-            where: { id },
-            include: { projectLinks: true, projectMedia: true }
+        const project = await db.query.portfolioProjects.findFirst({
+            where: eq(portfolioProjects.id, id),
+            with: { links: true, media: true }
         });
 
         revalidatePath("/profile");
@@ -281,22 +290,22 @@ export async function updatePortfolioProject(id: string, data: {
 
 export async function deletePortfolioProject(id: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
         // Verify ownership
-        const existing = await prisma.portfolioProject.findUnique({
-            where: { id },
-            select: { userId: true }
+        const existing = await db.query.portfolioProjects.findFirst({
+            where: eq(portfolioProjects.id, id),
+            columns: { userId: true }
         });
 
         if (!existing || existing.userId !== session.user.id) {
             return { success: false, message: "Unauthorized" };
         }
 
-        await prisma.portfolioProject.delete({ where: { id } });
+        await db.delete(portfolioProjects).where(eq(portfolioProjects.id, id));
 
         revalidatePath("/profile");
         return { success: true, message: "Project deleted successfully" };
@@ -310,17 +319,17 @@ export async function deletePortfolioProject(id: string) {
 
 export async function getSocialLinks() {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required", data: [] };
         }
 
-        const socialLinks = await prisma.socialLink.findMany({
-            where: { userId: session.user.id },
-            orderBy: [{ order: 'asc' }, { createdAt: 'desc' }]
+        const links = await db.query.socialLinks.findMany({
+            where: eq(socialLinks.userId, session.user.id),
+            orderBy: [asc(socialLinks.order), desc(socialLinks.createdAt)]
         });
 
-        return { success: true, data: socialLinks };
+        return { success: true, data: links };
     } catch (error) {
         console.error("Error fetching social links:", error);
         return { success: false, message: "Failed to fetch social links", data: [] };
@@ -334,17 +343,15 @@ export async function addSocialLink(data: {
     order?: number;
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
-        const socialLink = await prisma.socialLink.create({
-            data: {
-                userId: session.user.id,
-                ...data
-            }
-        });
+        const [socialLink] = await db.insert(socialLinks).values({
+            userId: session.user.id,
+            ...data
+        }).returning();
 
         revalidatePath("/profile");
         return { success: true, message: "Social link added successfully", data: socialLink };
@@ -361,25 +368,22 @@ export async function updateSocialLink(id: string, data: {
     order?: number;
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
         // Verify ownership
-        const existing = await prisma.socialLink.findUnique({
-            where: { id },
-            select: { userId: true }
+        const existing = await db.query.socialLinks.findFirst({
+            where: eq(socialLinks.id, id),
+            columns: { userId: true }
         });
 
         if (!existing || existing.userId !== session.user.id) {
             return { success: false, message: "Unauthorized" };
         }
 
-        const socialLink = await prisma.socialLink.update({
-            where: { id },
-            data
-        });
+        const [socialLink] = await db.update(socialLinks).set(data).where(eq(socialLinks.id, id)).returning();
 
         revalidatePath("/profile");
         return { success: true, message: "Social link updated successfully", data: socialLink };
@@ -391,22 +395,22 @@ export async function updateSocialLink(id: string, data: {
 
 export async function deleteSocialLink(id: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
         // Verify ownership
-        const existing = await prisma.socialLink.findUnique({
-            where: { id },
-            select: { userId: true }
+        const existing = await db.query.socialLinks.findFirst({
+            where: eq(socialLinks.id, id),
+            columns: { userId: true }
         });
 
         if (!existing || existing.userId !== session.user.id) {
             return { success: false, message: "Unauthorized" };
         }
 
-        await prisma.socialLink.delete({ where: { id } });
+        await db.delete(socialLinks).where(eq(socialLinks.id, id));
 
         revalidatePath("/profile");
         return { success: true, message: "Social link deleted successfully" };
@@ -420,14 +424,14 @@ export async function deleteSocialLink(id: string) {
 
 export async function getUserEducations() {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required", data: [] };
         }
 
-        const educations = await prisma.userEducation.findMany({
-            where: { userId: session.user.id },
-            orderBy: [{ order: 'asc' }, { startDate: 'desc' }]
+        const educations = await db.query.userEducations.findMany({
+            where: eq(userEducations.userId, session.user.id),
+            orderBy: [asc(userEducations.order), desc(userEducations.startDate)]
         });
 
         return { success: true, data: educations };
@@ -446,17 +450,15 @@ export async function addUserEducation(data: {
     order?: number;
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
-        const education = await prisma.userEducation.create({
-            data: {
-                userId: session.user.id,
-                ...data
-            }
-        });
+        const [education] = await db.insert(userEducations).values({
+            userId: session.user.id,
+            ...data
+        }).returning();
 
         revalidatePath("/profile");
         revalidatePath("/ai/resume");
@@ -476,24 +478,21 @@ export async function updateUserEducation(id: string, data: {
     order?: number;
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
-        const existing = await prisma.userEducation.findUnique({
-            where: { id },
-            select: { userId: true }
+        const existing = await db.query.userEducations.findFirst({
+            where: eq(userEducations.id, id),
+            columns: { userId: true }
         });
 
         if (!existing || existing.userId !== session.user.id) {
             return { success: false, message: "Unauthorized" };
         }
 
-        const education = await prisma.userEducation.update({
-            where: { id },
-            data
-        });
+        const [education] = await db.update(userEducations).set(data).where(eq(userEducations.id, id)).returning();
 
         revalidatePath("/profile");
         revalidatePath("/ai/resume");
@@ -506,21 +505,21 @@ export async function updateUserEducation(id: string, data: {
 
 export async function deleteUserEducation(id: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }
 
-        const existing = await prisma.userEducation.findUnique({
-            where: { id },
-            select: { userId: true }
+        const existing = await db.query.userEducations.findFirst({
+            where: eq(userEducations.id, id),
+            columns: { userId: true }
         });
 
         if (!existing || existing.userId !== session.user.id) {
             return { success: false, message: "Unauthorized" };
         }
 
-        await prisma.userEducation.delete({ where: { id } });
+        await db.delete(userEducations).where(eq(userEducations.id, id));
 
         revalidatePath("/profile");
         revalidatePath("/ai/resume");
@@ -536,25 +535,59 @@ export async function deleteUserEducation(id: string) {
  */
 export async function getPublicResumeByUsername(username: string) {
     try {
-        const user = await prisma.user.findFirst({
-            where: { username },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.username, username),
+            columns: {
                 id: true,
                 name: true,
                 username: true,
                 occupation: true,
                 location: true,
                 image: true,
-                experiences: { orderBy: [{ isCurrentlyWorking: "desc" }, { startDate: "desc" }] },
-                portfolioProjects: { orderBy: { startDate: "desc" }, include: { projectLinks: true } },
-                skills: { orderBy: [{ order: "asc" }, { name: "asc" }] },
-                educations: { orderBy: [{ order: "asc" }, { startDate: "desc" }] },
-                certifications: { orderBy: { issuedDate: "desc" } },
-                socialLinks: { orderBy: { order: "asc" } },
             },
         });
         if (!user) return { success: false, error: "Resume not found" };
-        return { success: true, user };
+
+        const [experiences, projects, userSkills, educations, certs, links] = await Promise.all([
+            db.query.workExperiences.findMany({
+                where: eq(workExperiences.userId, user.id),
+                orderBy: [desc(workExperiences.isCurrentlyWorking), desc(workExperiences.startDate)]
+            }),
+            db.query.portfolioProjects.findMany({
+                where: eq(portfolioProjects.userId, user.id),
+                with: { links: true },
+                orderBy: [desc(portfolioProjects.startDate)]
+            }),
+            db.query.skills.findMany({
+                where: eq(skills.userId, user.id),
+                orderBy: [asc(skills.order), asc(skills.name)]
+            }),
+            db.query.userEducations.findMany({
+                where: eq(userEducations.userId, user.id),
+                orderBy: [asc(userEducations.order), desc(userEducations.startDate)]
+            }),
+            db.query.certifications.findMany({
+                where: eq(certifications.userId, user.id),
+                orderBy: [desc(certifications.issuedDate)]
+            }),
+            db.query.socialLinks.findMany({
+                where: eq(socialLinks.userId, user.id),
+                orderBy: [asc(socialLinks.order)]
+            }),
+        ]);
+
+        return {
+            success: true,
+            user: {
+                ...user,
+                experiences,
+                portfolioProjects: projects,
+                skills: userSkills,
+                educations,
+                certifications: certs,
+                socialLinks: links,
+            }
+        };
     } catch (error) {
         console.error("Error fetching public resume:", error);
         return { success: false, error: "Failed to load resume" };
@@ -565,25 +598,25 @@ export async function getPublicResumeByUsername(username: string) {
 
 export async function getProfileCompletion() {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required", completion: 0 };
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            include: {
-                experiences: true,
-                portfolioProjects: true,
-                socialLinks: true,
-                skills: true,
-                certifications: true
-            }
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
         });
 
         if (!user) {
             return { success: false, message: "User not found", completion: 0 };
         }
+
+        const [userExperiences, userProjects, userSocialLinks, userSkills] = await Promise.all([
+            db.query.workExperiences.findMany({ where: eq(workExperiences.userId, user.id) }),
+            db.query.portfolioProjects.findMany({ where: eq(portfolioProjects.userId, user.id) }),
+            db.query.socialLinks.findMany({ where: eq(socialLinks.userId, user.id) }),
+            db.query.skills.findMany({ where: eq(skills.userId, user.id) }),
+        ]);
 
         // Calculate completion percentage based on 6 key items shown in dialog
         let completed = 0;
@@ -600,19 +633,19 @@ export async function getProfileCompletion() {
         if (hasResume) completed++;
 
         // 3. Work Experience
-        const hasExperience = user.experiences.length > 0;
+        const hasExperience = userExperiences.length > 0;
         if (hasExperience) completed++;
 
         // 4. Portfolio Projects
-        const hasProjects = user.portfolioProjects.length > 0;
+        const hasProjects = userProjects.length > 0;
         if (hasProjects) completed++;
 
         // 5. Social Links
-        const hasSocials = user.socialLinks.length > 0;
+        const hasSocials = userSocialLinks.length > 0;
         if (hasSocials) completed++;
 
         // 6. Skills
-        const hasSkills = user.skills && user.skills.length > 0;
+        const hasSkills = userSkills && userSkills.length > 0;
         if (hasSkills) completed++;
 
         // 7. Career Details
@@ -644,98 +677,114 @@ export async function getProfileCompletion() {
 // PROFILE REDESIGN - NEW FEATURES
 // ============================================
 
-import { ProfileTheme, ProfileLayout, ProfileVisibility } from "@repo/prisma/client";
-
 /**
  * Get user's own profile (full access)
  */
 export async function getOwnProfile() {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" };
         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            include: {
-                userProfile: true,
-                portfolioProjects: {
-                    include: {
-                        projectLinks: true,
-                    },
-                    orderBy: { startDate: "desc" },
-                },
-                UserProjectV2Progress: {
-                    include: {
-                        project: {
-                            select: {
-                                id: true,
-                                slug: true,
-                                title: true,
-                                shortDescription: true,
-                                description: true,
-                                technologies: true,
-                                generationType: true,
-                                difficulty: true,
-                            },
-                        },
-                    },
-                    orderBy: { createdAt: "desc" },
-                },
-                skills: {
-                    include: {
-                        endorsements: true,
-                    },
-                },
-                recentActivity: {
-                    orderBy: { createdAt: "desc" },
-                    take: 20,
-                },
-                userAchievements: {
-                    orderBy: { unlockedAt: "desc" },
-                    take: 10,
-                },
-                userBadges: {
-                    where: { status: "CLAIMED" },
-                    orderBy: { claimedAt: "desc" },
-                    take: 10,
-                    include: { badge: true },
-                },
-                experiences: {
-                    orderBy: { startDate: "desc" },
-                },
-                certifications: {
-                    orderBy: { issuedDate: "desc" },
-                },
-                socialLinks: {
-                    orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-                },
-                educations: {
-                    orderBy: [{ order: "asc" }, { startDate: "desc" }],
-                },
-            },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
         });
 
         if (!user) {
             return { success: false, error: "User not found" };
         }
 
-        // Merge achievements from userAchievements (legacy) and userBadges (new system)
-        const legacyAchievements = (user as { userAchievements?: { id: string; title: string; description: string }[] }).userAchievements?.map((a) => ({
+        const [
+            userProfile,
+            userPortfolioProjects,
+            projectProgressList,
+            userSkills,
+            userRecentActivities,
+            userAchievementsList,
+            userExperiences,
+            userCertifications,
+            userSocialLinks,
+            userEducations,
+        ] = await Promise.all([
+            db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, user.id) }),
+            db.query.portfolioProjects.findMany({
+                where: eq(portfolioProjects.userId, user.id),
+                with: { links: true },
+                orderBy: [desc(portfolioProjects.startDate)]
+            }),
+            db.query.userProjectV2Progress.findMany({
+                where: eq(userProjectV2Progress.userId, user.id),
+                with: {
+                    project: {
+                        columns: {
+                            id: true,
+                            slug: true,
+                            title: true,
+                            shortDescription: true,
+                            description: true,
+                            technologies: true,
+                            generationType: true,
+                            difficulty: true,
+                        }
+                    }
+                },
+                orderBy: (t, { desc }) => [desc(t.createdAt)]
+            }),
+            db.query.skills.findMany({
+                where: eq(skills.userId, user.id),
+                with: { endorsements: true }
+            }),
+            db.query.recentActivities.findMany({
+                where: eq(recentActivities.userId, user.id),
+                orderBy: [desc(recentActivities.createdAt)],
+                limit: 20
+            }),
+            db.query.achievements.findMany({
+                where: eq(achievements.userId, user.id),
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit: 10
+            }),
+            db.query.workExperiences.findMany({
+                where: eq(workExperiences.userId, user.id),
+                orderBy: [desc(workExperiences.startDate)]
+            }),
+            db.query.certifications.findMany({
+                where: eq(certifications.userId, user.id),
+                orderBy: [desc(certifications.issuedDate)]
+            }),
+            db.query.socialLinks.findMany({
+                where: eq(socialLinks.userId, user.id),
+                orderBy: [asc(socialLinks.order), desc(socialLinks.createdAt)]
+            }),
+            db.query.userEducations.findMany({
+                where: eq(userEducations.userId, user.id),
+                orderBy: [asc(userEducations.order), desc(userEducations.startDate)]
+            }),
+        ]);
+
+        const achievementsList = userAchievementsList.map(a => ({
             id: a.id,
             title: a.title,
             description: a.description,
-        })) ?? [];
-        const badgeAchievements = (user as { userBadges?: { id: string; badge: { name: string; description: string } }[] }).userBadges?.map((ub) => ({
-            id: ub.id,
-            title: ub.badge.name,
-            description: ub.badge.description,
-        })) ?? [];
-        const achievements = [...badgeAchievements, ...legacyAchievements].slice(0, 10);
+        }));
 
-        const { userAchievements: _ua, userBadges: _ub, ...rest } = user as { userAchievements?: unknown; userBadges?: unknown } & typeof user;
-        return { success: true, user: { ...rest, achievements } };
+        return {
+            success: true,
+            user: {
+                ...user,
+                userProfile,
+                portfolioProjects: userPortfolioProjects,
+                UserProjectV2Progress: projectProgressList,
+                skills: userSkills,
+                recentActivity: userRecentActivities,
+                achievements: achievementsList,
+                experiences: userExperiences,
+                certifications: userCertifications,
+                socialLinks: userSocialLinks,
+                educations: userEducations,
+            }
+        };
     } catch (error) {
         console.error("Error fetching own profile:", error);
         return { success: false, error: "Failed to fetch profile" };
@@ -747,69 +796,12 @@ export async function getOwnProfile() {
  */
 export async function getPublicProfile(username: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         const viewerId = session?.user?.id;
 
         // Find the profile owner
-        const profileOwner = await prisma.user.findUnique({
-            where: { username },
-            include: {
-                userProfile: true,
-                portfolioProjects: {
-                    include: {
-                        projectLinks: true,
-                    },
-                    orderBy: { startDate: "desc" },
-                },
-                UserProjectV2Progress: {
-                    include: {
-                        project: {
-                            select: {
-                                id: true,
-                                slug: true,
-                                title: true,
-                                shortDescription: true,
-                                description: true,
-                                technologies: true,
-                                generationType: true,
-                                difficulty: true,
-                            },
-                        },
-                    },
-                    orderBy: { createdAt: "desc" },
-                },
-                skills: {
-                    include: {
-                        endorsements: true,
-                    },
-                },
-                recentActivity: {
-                    orderBy: { createdAt: "desc" },
-                    take: 20,
-                },
-                userAchievements: {
-                    orderBy: { unlockedAt: "desc" },
-                    take: 10,
-                },
-                userBadges: {
-                    where: { status: "CLAIMED" },
-                    orderBy: { claimedAt: "desc" },
-                    take: 10,
-                    include: { badge: true },
-                },
-                experiences: {
-                    orderBy: { startDate: "desc" },
-                },
-                certifications: {
-                    orderBy: { issuedDate: "desc" },
-                },
-                socialLinks: {
-                    orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-                },
-                educations: {
-                    orderBy: [{ order: "asc" }, { startDate: "desc" }],
-                },
-            },
+        const profileOwner = await db.query.users.findFirst({
+            where: eq(users.username, username),
         });
 
         if (!profileOwner) {
@@ -820,14 +812,16 @@ export async function getPublicProfile(username: string) {
         const isOwnProfile = viewerId === profileOwner.id;
 
         // Get or create profile settings
-        let profile = profileOwner.userProfile;
+        let profile = await db.query.userProfiles.findFirst({
+            where: eq(userProfiles.userId, profileOwner.id)
+        });
+
         if (!profile) {
             // Create default profile if doesn't exist
-            profile = await prisma.userProfile.create({
-                data: {
-                    userId: profileOwner.id,
-                },
-            });
+            const [newProfile] = await db.insert(userProfiles).values({
+                userId: profileOwner.id,
+            }).returning();
+            profile = newProfile!;
         }
 
         // Check access based on privacy settings
@@ -838,14 +832,12 @@ export async function getPublicProfile(username: string) {
 
             if (profile.visibility === "FOLLOWERS") {
                 // Check if viewer is following the profile owner
-                const isFollowing = await prisma.follow.findUnique({
-                    where: {
-                        followerId_followingId: {
-                            followerId: viewerId || "",
-                            followingId: profileOwner.id,
-                        },
-                    },
-                });
+                const isFollowing = viewerId ? await db.query.follow.findFirst({
+                    where: and(
+                        eq(follow.followerId, viewerId),
+                        eq(follow.followingId, profileOwner.id)
+                    )
+                }) : null;
 
                 if (!isFollowing) {
                     return {
@@ -857,25 +849,102 @@ export async function getPublicProfile(username: string) {
 
             // Track profile view
             await trackProfileView(profile.id, viewerId || null, "direct");
+        }
 
-            // Merge achievements for display
-            const pubLegacy = (profileOwner as { userAchievements?: { id: string; title: string; description: string }[] }).userAchievements?.map((a) => ({
-                id: a.id, title: a.title, description: a.description,
-            })) ?? [];
-            const pubBadges = (profileOwner as { userBadges?: { id: string; badge: { name: string; description: string } }[] }).userBadges?.map((ub) => ({
-                id: ub.id, title: ub.badge.name, description: ub.badge.description,
-            })) ?? [];
-            const pubAchievements = [...pubBadges, ...pubLegacy].slice(0, 10);
+        const [
+            userPortfolioProjects,
+            projectProgressList,
+            userSkills,
+            userRecentActivities,
+            userAchievementsList,
+            userExperiences,
+            userCertifications,
+            userSocialLinks,
+            userEducations,
+        ] = await Promise.all([
+            db.query.portfolioProjects.findMany({
+                where: eq(portfolioProjects.userId, profileOwner.id),
+                with: { links: true },
+                orderBy: [desc(portfolioProjects.startDate)]
+            }),
+            db.query.userProjectV2Progress.findMany({
+                where: eq(userProjectV2Progress.userId, profileOwner.id),
+                with: {
+                    project: {
+                        columns: {
+                            id: true,
+                            slug: true,
+                            title: true,
+                            shortDescription: true,
+                            description: true,
+                            technologies: true,
+                            generationType: true,
+                            difficulty: true,
+                        }
+                    }
+                },
+                orderBy: (t, { desc }) => [desc(t.createdAt)]
+            }),
+            db.query.skills.findMany({
+                where: eq(skills.userId, profileOwner.id),
+                with: { endorsements: true }
+            }),
+            db.query.recentActivities.findMany({
+                where: eq(recentActivities.userId, profileOwner.id),
+                orderBy: [desc(recentActivities.createdAt)],
+                limit: 20
+            }),
+            db.query.achievements.findMany({
+                where: eq(achievements.userId, profileOwner.id),
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit: 10
+            }),
+            db.query.workExperiences.findMany({
+                where: eq(workExperiences.userId, profileOwner.id),
+                orderBy: [desc(workExperiences.startDate)]
+            }),
+            db.query.certifications.findMany({
+                where: eq(certifications.userId, profileOwner.id),
+                orderBy: [desc(certifications.issuedDate)]
+            }),
+            db.query.socialLinks.findMany({
+                where: eq(socialLinks.userId, profileOwner.id),
+                orderBy: [asc(socialLinks.order), desc(socialLinks.createdAt)]
+            }),
+            db.query.userEducations.findMany({
+                where: eq(userEducations.userId, profileOwner.id),
+                orderBy: [asc(userEducations.order), desc(userEducations.startDate)]
+            }),
+        ]);
 
-            const { userAchievements: _pua, userBadges: _pub, ...pubRest } = profileOwner as { userAchievements?: unknown; userBadges?: unknown } & typeof profileOwner;
+        const achievementsList = userAchievementsList.map(a => ({
+            id: a.id,
+            title: a.title,
+            description: a.description,
+        }));
+
+        const fullProfileOwner = {
+            ...profileOwner,
+            userProfile: profile,
+            portfolioProjects: userPortfolioProjects,
+            UserProjectV2Progress: projectProgressList,
+            skills: userSkills,
+            recentActivity: userRecentActivities,
+            achievements: achievementsList,
+            experiences: userExperiences,
+            certifications: userCertifications,
+            socialLinks: userSocialLinks,
+            educations: userEducations,
+        };
+
+        if (!isOwnProfile) {
             const filteredUser = {
-                ...pubRest,
-                achievements: pubAchievements,
+                ...fullProfileOwner,
                 email: profile.showEmail ? profileOwner.email : null,
                 phone: null,
                 resume: profile.showResume ? profileOwner.resume : null,
                 resumeText: null,
-                recentActivity: profile.showActivity ? profileOwner.recentActivity : [],
+                recentActivity: profile.showActivity ? userRecentActivities : [],
             };
 
             return {
@@ -886,19 +955,9 @@ export async function getPublicProfile(username: string) {
             };
         }
 
-        // Merge achievements for own profile view
-        const ownLegacy = (profileOwner as { userAchievements?: { id: string; title: string; description: string }[] }).userAchievements?.map((a) => ({
-            id: a.id, title: a.title, description: a.description,
-        })) ?? [];
-        const ownBadges = (profileOwner as { userBadges?: { id: string; badge: { name: string; description: string } }[] }).userBadges?.map((ub) => ({
-            id: ub.id, title: ub.badge.name, description: ub.badge.description,
-        })) ?? [];
-        const ownAchievements = [...ownBadges, ...ownLegacy].slice(0, 10);
-        const { userAchievements: _oa, userBadges: _ob, ...ownRest } = profileOwner as { userAchievements?: unknown; userBadges?: unknown } & typeof profileOwner;
-
         return {
             success: true,
-            user: { ...ownRest, achievements: ownAchievements },
+            user: fullProfileOwner,
             isOwnProfile: true,
             canEdit: true,
         };
@@ -918,32 +977,25 @@ export async function trackProfileView(
 ) {
     try {
         // Don't track owner's own views
-        const profile = await prisma.userProfile.findUnique({
-            where: { id: profileId },
-            select: { userId: true },
+        const profile = await db.query.userProfiles.findFirst({
+            where: eq(userProfiles.id, profileId),
+            columns: { userId: true },
         });
 
         if (profile?.userId === viewerId) {
             return { success: true };
         }
 
-        await prisma.profileView.create({
-            data: {
-                profileId,
-                viewerId,
-                source,
-            },
+        await db.insert(profileViews).values({
+            profileId,
+            viewerId,
+            source,
         });
 
         // Increment profile view count
-        await prisma.userProfile.update({
-            where: { id: profileId },
-            data: {
-                profileViews: {
-                    increment: 1,
-                },
-            },
-        });
+        await db.update(userProfiles).set({
+            profileViews: sql`${userProfiles.profileViews} + 1`
+        }).where(eq(userProfiles.id, profileId));
 
         return { success: true };
     } catch (error) {
@@ -962,34 +1014,30 @@ export async function updateProfileSettings(data: {
     tagline?: string;
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" };
         }
 
         // Get or create profile
-        let profile = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id },
+        let profile = await db.query.userProfiles.findFirst({
+            where: eq(userProfiles.userId, session.user.id),
         });
 
         if (!profile) {
-            profile = await prisma.userProfile.create({
-                data: {
-                    userId: session.user.id,
-                },
-            });
+            const [newProfile] = await db.insert(userProfiles).values({
+                userId: session.user.id,
+            }).returning();
+            profile = newProfile!;
         }
 
         // Update profile
-        const updatedProfile = await prisma.userProfile.update({
-            where: { id: profile.id },
-            data: {
-                ...(data.coverGradient && { coverGradient: data.coverGradient }),
-                ...(data.theme && { theme: data.theme }),
-                ...(data.layout && { layout: data.layout }),
-                ...(data.tagline !== undefined && { tagline: data.tagline }),
-            },
-        });
+        const [updatedProfile] = await db.update(userProfiles).set({
+            ...(data.coverGradient && { coverGradient: data.coverGradient }),
+            ...(data.theme && { theme: data.theme }),
+            ...(data.layout && { layout: data.layout }),
+            ...(data.tagline !== undefined && { tagline: data.tagline }),
+        }).where(eq(userProfiles.id, profile.id)).returning();
 
         // Recalculate completion score
         await calculateNewProfileCompletion(session.user.id);
@@ -1015,29 +1063,27 @@ export async function updatePrivacySettings(data: {
     allowMessages?: boolean;
 }) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" };
         }
 
         // Get or create profile
-        let profile = await prisma.userProfile.findUnique({
-            where: { userId: session.user.id },
+        let profile = await db.query.userProfiles.findFirst({
+            where: eq(userProfiles.userId, session.user.id),
         });
 
         if (!profile) {
-            profile = await prisma.userProfile.create({
-                data: {
-                    userId: session.user.id,
-                },
-            });
+            const [newProfile] = await db.insert(userProfiles).values({
+                userId: session.user.id,
+            }).returning();
+            profile = newProfile!;
         }
 
         // Update privacy settings
-        const updatedProfile = await prisma.userProfile.update({
-            where: { id: profile.id },
-            data,
-        });
+        const [updatedProfile] = await db.update(userProfiles).set(data).where(
+            eq(userProfiles.id, profile.id)
+        ).returning();
 
         revalidatePath("/profile");
         return { success: true, profile: updatedProfile };
@@ -1056,15 +1102,15 @@ export async function updatePrivacySettings(data: {
  */
 export async function endorseSkill(skillId: string, message?: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" };
         }
 
         // Check if skill exists
-        const skill = await prisma.skills.findUnique({
-            where: { id: skillId },
-            include: { user: true },
+        const skill = await db.query.skills.findFirst({
+            where: eq(skills.id, skillId),
+            with: { user: true },
         });
 
         if (!skill) {
@@ -1077,13 +1123,11 @@ export async function endorseSkill(skillId: string, message?: string) {
         }
 
         // Check if already endorsed
-        const existingEndorsement = await prisma.skillEndorsement.findUnique({
-            where: {
-                skillId_endorserId: {
-                    skillId,
-                    endorserId: session.user.id,
-                },
-            },
+        const existingEndorsement = await db.query.skillEndorsements.findFirst({
+            where: and(
+                eq(skillEndorsements.skillId, skillId),
+                eq(skillEndorsements.endorserId, session.user.id)
+            ),
         });
 
         if (existingEndorsement) {
@@ -1091,12 +1135,10 @@ export async function endorseSkill(skillId: string, message?: string) {
         }
 
         // Create endorsement
-        await prisma.skillEndorsement.create({
-            data: {
-                skillId,
-                endorserId: session.user.id,
-                message,
-            },
+        await db.insert(skillEndorsements).values({
+            skillId,
+            endorserId: session.user.id,
+            message,
         });
 
         revalidatePath(`/profile/${skill.user.username}`);
@@ -1112,19 +1154,17 @@ export async function endorseSkill(skillId: string, message?: string) {
  */
 export async function removeEndorsement(skillId: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" };
         }
 
-        await prisma.skillEndorsement.delete({
-            where: {
-                skillId_endorserId: {
-                    skillId,
-                    endorserId: session.user.id,
-                },
-            },
-        });
+        await db.delete(skillEndorsements).where(
+            and(
+                eq(skillEndorsements.skillId, skillId),
+                eq(skillEndorsements.endorserId, session.user.id)
+            )
+        );
 
         revalidatePath("/profile");
         return { success: true };
@@ -1143,7 +1183,7 @@ export async function removeEndorsement(skillId: string) {
  */
 export async function getProfileAnalytics(userId?: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         const targetUserId = userId || session?.user?.id;
 
         if (!targetUserId) {
@@ -1155,12 +1195,12 @@ export async function getProfileAnalytics(userId?: string) {
             return { success: false, error: "Unauthorized" };
         }
 
-        const profile = await prisma.userProfile.findUnique({
-            where: { userId: targetUserId },
-            include: {
+        const profile = await db.query.userProfiles.findFirst({
+            where: eq(userProfiles.userId, targetUserId),
+            with: {
                 views: {
-                    orderBy: { viewedAt: "desc" },
-                    take: 100,
+                    orderBy: [desc(profileViews.viewedAt)],
+                    limit: 100,
                 },
             },
         });
@@ -1222,21 +1262,22 @@ export async function getProfileAnalytics(userId?: string) {
  */
 export async function calculateNewProfileCompletion(userId: string) {
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            include: {
-                userProfile: true,
-                skills: true,
-                experiences: true,
-                certifications: true,
-                portfolioProjects: true,
-                socialLinks: true,
-            },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
         });
 
         if (!user) {
             return { success: false, error: "User not found" };
         }
+
+        const [userProfile, userSkills, userExperiences, userCertifications, userProjects, userSocialLinks] = await Promise.all([
+            db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, userId) }),
+            db.query.skills.findMany({ where: eq(skills.userId, userId) }),
+            db.query.workExperiences.findMany({ where: eq(workExperiences.userId, userId) }),
+            db.query.certifications.findMany({ where: eq(certifications.userId, userId) }),
+            db.query.portfolioProjects.findMany({ where: eq(portfolioProjects.userId, userId) }),
+            db.query.socialLinks.findMany({ where: eq(socialLinks.userId, userId) }),
+        ]);
 
         let score = 0;
 
@@ -1247,10 +1288,9 @@ export async function calculateNewProfileCompletion(userId: string) {
         if (user.location) score += 5;
 
         // Profile customization (10 points)
-        if (user.userProfile?.coverGradient)
-            score += 5;
-        if (user.userProfile?.tagline) score += 3;
-        if (user.userProfile?.theme) score += 2;
+        if (userProfile?.coverGradient) score += 5;
+        if (userProfile?.tagline) score += 3;
+        if (userProfile?.theme) score += 2;
 
         // Career Details (15 points)
         if (user.careerGoals && user.careerGoals.length > 0) score += 5;
@@ -1258,31 +1298,30 @@ export async function calculateNewProfileCompletion(userId: string) {
         if (user.expectedSalary) score += 5;
 
         // Skills (15 points)
-        if (user.skills.length > 0) score += 5;
-        if (user.skills.length >= 5) score += 5;
-        if (user.skills.length >= 10) score += 5;
+        if (userSkills.length > 0) score += 5;
+        if (userSkills.length >= 5) score += 5;
+        if (userSkills.length >= 10) score += 5;
 
         // Experience (10 points)
-        if (user.experiences.length > 0) score += 10;
+        if (userExperiences.length > 0) score += 10;
 
         // Education & Certifications (10 points)
         if (user.university) score += 5;
-        if (user.certifications.length > 0) score += 5;
+        if (userCertifications.length > 0) score += 5;
 
         // Projects (10 points)
-        if (user.portfolioProjects.length > 0) score += 5;
-        if (user.portfolioProjects.length >= 3) score += 5;
+        if (userProjects.length > 0) score += 5;
+        if (userProjects.length >= 3) score += 5;
 
         // Social & Contact (5 points)
-        if (user.socialLinks && user.socialLinks.length > 0) score += 3;
+        if (userSocialLinks && userSocialLinks.length > 0) score += 3;
         if (user.website) score += 2;
 
         // Update profile with new score
-        if (user.userProfile) {
-            await prisma.userProfile.update({
-                where: { id: user.userProfile.id },
-                data: { completionScore: score },
-            });
+        if (userProfile) {
+            await db.update(userProfiles).set({
+                completionScore: score
+            }).where(eq(userProfiles.id, userProfile.id));
         }
 
         return { success: true, score };
@@ -1297,13 +1336,13 @@ export async function calculateNewProfileCompletion(userId: string) {
  */
 export async function getProfileByUsername(username: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         const viewerId = session?.user?.id;
 
         // First check if it's own profile
-        const targetUser = await prisma.user.findUnique({
-            where: { username },
-            select: { id: true },
+        const targetUser = await db.query.users.findFirst({
+            where: eq(users.username, username),
+            columns: { id: true },
         });
 
         if (!targetUser) {
@@ -1312,73 +1351,89 @@ export async function getProfileByUsername(username: string) {
 
         const isOwnProfile = viewerId === targetUser.id;
 
-        const user = await prisma.user.findUnique({
-            where: { username },
-            include: {
-                userProfile: true,
-                portfolioProjects: {
-                    // If own profile, fetch all; otherwise only PUBLIC
-                    where: isOwnProfile ? {} : { visibility: "PUBLIC" },
-                    include: {
-                        projectLinks: true,
-                        projectMedia: true,
-                    },
-                    orderBy: { startDate: "desc" },
-                    take: 20,
-                },
-                skills: {
-                    include: {
-                        endorsements: true,
-                    },
-                },
-                experiences: {
-                    orderBy: { startDate: "desc" },
-                },
-                certifications: {
-                    orderBy: { issuedDate: "desc" },
-                },
-                achievements: true,
-                socialLinks: true,
-                recentActivity: {
-                    orderBy: { createdAt: "desc" },
-                    take: 10,
-                },
-                followers: true,
-                following: true,
-            },
+        const user = await db.query.users.findFirst({
+            where: eq(users.username, username),
         });
 
         if (!user) {
             return { success: false, error: "User not found" };
         }
 
+        const [
+            userProfile,
+            userPortfolioProjects,
+            userSkills,
+            userExperiences,
+            userCertifications,
+            userAchievementsList,
+            userSocialLinks,
+            userRecentActivities,
+        ] = await Promise.all([
+            db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, user.id) }),
+            db.query.portfolioProjects.findMany({
+                where: isOwnProfile
+                    ? eq(portfolioProjects.userId, user.id)
+                    : and(eq(portfolioProjects.userId, user.id), eq(portfolioProjects.visibility, "Public")),
+                with: { links: true, media: true },
+                orderBy: [desc(portfolioProjects.startDate)],
+                limit: 20,
+            }),
+            db.query.skills.findMany({
+                where: eq(skills.userId, user.id),
+                with: { endorsements: true }
+            }),
+            db.query.workExperiences.findMany({
+                where: eq(workExperiences.userId, user.id),
+                orderBy: [desc(workExperiences.startDate)]
+            }),
+            db.query.certifications.findMany({
+                where: eq(certifications.userId, user.id),
+                orderBy: [desc(certifications.issuedDate)]
+            }),
+            db.query.achievements.findMany({
+                where: eq(achievements.userId, user.id),
+            }),
+            db.query.socialLinks.findMany({ where: eq(socialLinks.userId, user.id) }),
+            db.query.recentActivities.findMany({
+                where: eq(recentActivities.userId, user.id),
+                orderBy: [desc(recentActivities.createdAt)],
+                limit: 10
+            }),
+        ]);
+
         // Check if viewer is following the user
         let isFollowing = false;
         if (viewerId && !isOwnProfile) {
-            const follow = await prisma.follow.findUnique({
-                where: {
-                    followerId_followingId: {
-                        followerId: viewerId,
-                        followingId: user.id,
-                    },
-                },
+            const followRecord = await db.query.follow.findFirst({
+                where: and(
+                    eq(follow.followerId, viewerId),
+                    eq(follow.followingId, user.id)
+                ),
             });
-            isFollowing = !!follow;
+            isFollowing = !!followRecord;
         }
 
         // Get follow counts
-        const followersCount = await prisma.follow.count({
-            where: { followingId: user.id },
-        });
+        const [followersResult, followingResult] = await Promise.all([
+            db.select({ count: sql<number>`count(*)` }).from(follow).where(eq(follow.followingId, user.id)),
+            db.select({ count: sql<number>`count(*)` }).from(follow).where(eq(follow.followerId, user.id)),
+        ]);
 
-        const followingCount = await prisma.follow.count({
-            where: { followerId: user.id },
-        });
+        const followersCount = Number(followersResult[0]?.count ?? 0);
+        const followingCount = Number(followingResult[0]?.count ?? 0);
 
         return {
             success: true,
             user: {
                 ...user,
+                userProfile,
+                portfolioProjects: userPortfolioProjects,
+                skills: userSkills,
+                experiences: userExperiences,
+                certifications: userCertifications,
+                achievements: userAchievementsList,
+                socialLinks: userSocialLinks,
+                recentActivity: userRecentActivities,
                 followersCount,
                 followingCount,
             },
@@ -1397,45 +1452,44 @@ export async function getProfileByUsername(username: string) {
 export async function getUserProfileStats(userId: string) {
     try {
         const [
-            portfolioCount,
-            platformCount,
-            skillsCount,
-            achievementsCount,
-            experienceCount,
-            followersCount,
-            followingCount,
+            portfolioCountResult,
+            platformCountResult,
+            skillsCountResult,
+            achievementsCountResult,
+            experienceCountResult,
+            followersCountResult,
+            followingCountResult,
+            user,
         ] = await Promise.all([
-            prisma.portfolioProject.count({ where: { userId } }),
-            prisma.userProjectV2Progress.count({ where: { userId } }),
-            prisma.skills.count({ where: { userId } }),
-            prisma.achievements.count({ where: { userId } }),
-            prisma.workExperience.count({ where: { userId } }),
-            prisma.follow.count({ where: { followingId: userId } }),
-            prisma.follow.count({ where: { followerId: userId } }),
+            db.select({ count: sql<number>`count(*)` }).from(portfolioProjects).where(eq(portfolioProjects.userId, userId)),
+            db.select({ count: sql<number>`count(*)` }).from(userProjectV2Progress).where(eq(userProjectV2Progress.userId, userId)),
+            db.select({ count: sql<number>`count(*)` }).from(skills).where(eq(skills.userId, userId)),
+            db.select({ count: sql<number>`count(*)` }).from(achievements).where(eq(achievements.userId, userId)),
+            db.select({ count: sql<number>`count(*)` }).from(workExperiences).where(eq(workExperiences.userId, userId)),
+            db.select({ count: sql<number>`count(*)` }).from(follow).where(eq(follow.followingId, userId)),
+            db.select({ count: sql<number>`count(*)` }).from(follow).where(eq(follow.followerId, userId)),
+            db.query.users.findFirst({
+                where: eq(users.id, userId),
+                columns: {
+                    currentXp: true,
+                    totalXp: true,
+                    currentLevel: true,
+                    credits: true,
+                },
+            }),
         ]);
 
-        const projectsCount = portfolioCount + platformCount;
-
-        // Get XP and Level
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                currentXp: true,
-                totalXp: true,
-                currentLevel: true,
-                credits: true,
-            },
-        });
+        const projectsCount = Number(portfolioCountResult[0]?.count ?? 0) + Number(platformCountResult[0]?.count ?? 0);
 
         return {
             success: true,
             stats: {
                 projectsCount,
-                skillsCount,
-                achievementsCount,
-                experienceCount,
-                followersCount,
-                followingCount,
+                skillsCount: Number(skillsCountResult[0]?.count ?? 0),
+                achievementsCount: Number(achievementsCountResult[0]?.count ?? 0),
+                experienceCount: Number(experienceCountResult[0]?.count ?? 0),
+                followersCount: Number(followersCountResult[0]?.count ?? 0),
+                followingCount: Number(followingCountResult[0]?.count ?? 0),
                 xp: user?.currentXp || 0,
                 totalXp: user?.totalXp || 0,
                 level: user?.currentLevel || 1,

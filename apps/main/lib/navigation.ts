@@ -1,8 +1,8 @@
 import {
-    Users2, MessageSquare, FolderKanban, Sparkles, User, User2,
+    MessageSquare, FolderKanban, Sparkles, User, User2,
     Briefcase, Video, Brain, Cable, LayoutDashboard, Heading,
     Home, LucideWandSparkles, GraduationCap,
-    Target, FileText, BookOpen, StickyNote, Code2,
+    Target, FileText, Code2,
     Network, Globe, Server
 } from "lucide-react"
 
@@ -38,18 +38,6 @@ export const mainNavigation: NavigationConfig = {
             status: "active"
         },
         {
-            name: "My Notes",
-            path: "studio",
-            icon: StickyNote,
-            status: "active"
-        },
-        {
-            name: "Learn",
-            path: "learn",
-            icon: BookOpen,
-            status: "active"
-        },
-        {
             name: "Pathfinder",
             path: "pathfinder",
             icon: Target,
@@ -82,12 +70,6 @@ export const mainNavigation: NavigationConfig = {
                     icon: Server
                 }
             ]
-        },
-        {
-            name: "Communities",
-            path: "communities",
-            icon: Users2,
-            status: "active"
         },
         {
             name: "Projects",

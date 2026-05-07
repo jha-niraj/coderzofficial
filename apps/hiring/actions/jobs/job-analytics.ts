@@ -1,21 +1,23 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, jobs, jobApplications } from "@repo/db"
+import { eq, and, count, sum, gte, inArray } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 
 // ============================================
 // HELPERS
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return null
     }
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     return member
@@ -32,17 +34,17 @@ export async function getJobStats(jobId: string) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const job = await prisma.job.findFirst({
-            where: { id: jobId, companyId: member.companyId },
-            select: {
+        const job = await db.query.jobs.findFirst({
+            where: and(eq(jobs.id, jobId), eq(jobs.companyId, member.companyId)),
+            columns: {
                 id: true,
                 title: true,
                 viewsCount: true,
-                applicationsCount: true,
+                applicationsCount: true
+            },
+            with: {
                 applications: {
-                    select: {
-                        status: true
-                    }
+                    columns: { status: true }
                 }
             }
         })
@@ -62,7 +64,7 @@ export async function getJobStats(jobId: string) {
             data: {
                 views: job.viewsCount,
                 totalApplications: job.applications.length,
-                conversionRate: job.viewsCount > 0 
+                conversionRate: job.viewsCount > 0
                     ? ((job.applications.length / job.viewsCount) * 100).toFixed(1)
                     : 0,
                 statusBreakdown: statusCounts
@@ -81,25 +83,47 @@ export async function getJobsOverview() {
             return { success: false, error: "Unauthorized" }
         }
 
-        const [totalJobs, activeJobs, totalApplications, recentApplications] = await Promise.all([
-            prisma.job.count({ where: { companyId: member.companyId } }),
-            prisma.job.count({ where: { companyId: member.companyId, status: "ACTIVE" } }),
-            prisma.jobApplication.count({
-                where: { job: { companyId: member.companyId } }
-            }),
-            prisma.jobApplication.count({
-                where: {
-                    job: { companyId: member.companyId },
-                    createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-                }
-            })
-        ])
+        const allJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = allJobIds.map(j => j.id)
+
+        const totalJobsRows = await db
+            .select({ count: count() })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+
+        const activeJobsRows = await db
+            .select({ count: count() })
+            .from(jobs)
+            .where(and(eq(jobs.companyId, member.companyId), eq(jobs.status, "ACTIVE")))
+
+        let totalApplications = 0
+        let recentApplications = 0
+        if (jobIds.length > 0) {
+            const totalAppsRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(inArray(jobApplications.jobId, jobIds))
+
+            const recentAppsRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.jobId, jobIds),
+                    gte(jobApplications.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+                ))
+
+            totalApplications = totalAppsRows[0]?.count ?? 0
+            recentApplications = recentAppsRows[0]?.count ?? 0
+        }
 
         return {
             success: true,
             data: {
-                totalJobs,
-                activeJobs,
+                totalJobs: totalJobsRows[0]?.count ?? 0,
+                activeJobs: activeJobsRows[0]?.count ?? 0,
                 totalApplications,
                 recentApplications
             }
@@ -118,16 +142,16 @@ export async function getOverallJobStats() {
             return { success: false, error: "Unauthorized" }
         }
 
-        const jobs = await prisma.job.findMany({
-            where: { companyId: member.companyId },
-            select: {
-                status: true,
-                viewsCount: true,
-                applicationsCount: true
-            }
-        })
+        const jobList = await db
+            .select({
+                status: jobs.status,
+                viewsCount: jobs.viewsCount,
+                applicationsCount: jobs.applicationsCount
+            })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
 
-        const stats = jobs.reduce((acc, job) => {
+        const stats = jobList.reduce((acc, job) => {
             acc.total++
             acc.totalViews += job.viewsCount
             acc.totalApplications += job.applicationsCount

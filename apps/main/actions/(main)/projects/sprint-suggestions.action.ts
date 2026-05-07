@@ -1,9 +1,13 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import prisma from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db, projectV2SprintSuggestions, projectsV2, projectV2Sprints, projectV2Tasks,
+    userProjectV2Progress
+} from '@repo/db'
+import { eq, and, desc } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { ProjectV2Difficulty } from '@prisma/client'
 
 interface ActionResponse {
     success: boolean
@@ -12,11 +16,9 @@ interface ActionResponse {
 }
 
 async function getCurrentUser() {
-    const session = await auth()
-    if (!session?.user?.email) throw new Error('Not authenticated')
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } })
-    if (!user) throw new Error('User not found')
-    return user
+    const session = await getSession(headers())
+    if (!session?.user?.id) throw new Error('Not authenticated')
+    return { id: session.user.id }
 }
 
 // ========================================
@@ -54,28 +56,30 @@ export async function submitSprintSuggestion({
     try {
         const user = await getCurrentUser()
 
-        // Check the project exists
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            select: { id: true, slug: true, createdBy: true }
-        })
+        const [project] = await db
+            .select({ id: projectsV2.id, slug: projectsV2.slug, createdBy: projectsV2.createdBy })
+            .from(projectsV2)
+            .where(eq(projectsV2.id, projectId))
+            .limit(1)
 
         if (!project) {
             return { success: false, error: 'Project not found' }
         }
 
-        // Check if user is enrolled
-        const enrollment = await prisma.userProjectV2Progress.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } }
+        const enrollment = await db.query.userProjectV2Progress.findFirst({
+            where: and(
+                eq(userProjectV2Progress.userId, user.id),
+                eq(userProjectV2Progress.projectId, projectId)
+            )
         })
 
-        // Allow creators and enrolled users to suggest
         if (!enrollment && project.createdBy !== user.id) {
             return { success: false, error: 'You must be enrolled in this project to suggest tasks' }
         }
 
-        const suggestion = await prisma.projectV2SprintSuggestion.create({
-            data: {
+        const [suggestion] = await db
+            .insert(projectV2SprintSuggestions)
+            .values({
                 projectId,
                 suggestedById: user.id,
                 sprintNumber,
@@ -83,8 +87,8 @@ export async function submitSprintSuggestion({
                 goal,
                 duration,
                 suggestedTasks: JSON.parse(JSON.stringify(suggestedTasks)),
-            }
-        })
+            })
+            .returning()
 
         revalidatePath(`/projects/${project.slug}`)
 
@@ -106,29 +110,32 @@ export async function getSprintSuggestions(
     try {
         const user = await getCurrentUser()
 
-        const project = await prisma.projectV2.findUnique({
-            where: { id: projectId },
-            select: { id: true, createdBy: true }
-        })
+        const [project] = await db
+            .select({ id: projectsV2.id, createdBy: projectsV2.createdBy })
+            .from(projectsV2)
+            .where(eq(projectsV2.id, projectId))
+            .limit(1)
 
         if (!project) {
             return { success: false, error: 'Project not found' }
         }
 
-        const suggestions = await prisma.projectV2SprintSuggestion.findMany({
-            where: {
-                projectId,
-                ...(status ? { status } : {}),
-            },
-            include: {
+        const conditions: any[] = [eq(projectV2SprintSuggestions.projectId, projectId)]
+        if (status) {
+            conditions.push(eq(projectV2SprintSuggestions.status, status))
+        }
+
+        const suggestions = await db.query.projectV2SprintSuggestions.findMany({
+            where: and(...conditions),
+            orderBy: [desc(projectV2SprintSuggestions.createdAt)],
+            with: {
                 suggestedBy: {
-                    select: { id: true, name: true, username: true, image: true }
+                    columns: { id: true, name: true, image: true }
                 },
                 reviewedBy: {
-                    select: { id: true, name: true, username: true }
+                    columns: { id: true, name: true }
                 }
-            },
-            orderBy: { createdAt: 'desc' },
+            }
         })
 
         return { success: true, data: { suggestions, isCreator: project.createdBy === user.id } }
@@ -155,10 +162,12 @@ export async function reviewSprintSuggestion({
     try {
         const user = await getCurrentUser()
 
-        const suggestion = await prisma.projectV2SprintSuggestion.findUnique({
-            where: { id: suggestionId },
-            include: {
-                project: { select: { id: true, slug: true, createdBy: true } }
+        const suggestion = await db.query.projectV2SprintSuggestions.findFirst({
+            where: eq(projectV2SprintSuggestions.id, suggestionId),
+            with: {
+                project: {
+                    columns: { id: true, slug: true, createdBy: true }
+                }
             }
         })
 
@@ -166,7 +175,6 @@ export async function reviewSprintSuggestion({
             return { success: false, error: 'Suggestion not found' }
         }
 
-        // Only project creator can review
         if (suggestion.project.createdBy !== user.id) {
             return { success: false, error: 'Only the project creator can review suggestions' }
         }
@@ -176,61 +184,57 @@ export async function reviewSprintSuggestion({
         }
 
         if (action === 'APPROVED') {
-            // Create actual sprint + tasks from the suggestion
-            const result = await prisma.$transaction(async (tx) => {
-                const sprint = await tx.projectV2Sprint.create({
-                    data: {
+            const result = await db.transaction(async (tx) => {
+                const [sprint] = await tx
+                    .insert(projectV2Sprints)
+                    .values({
                         projectId: suggestion.projectId,
                         sprintNumber: suggestion.sprintNumber,
                         name: suggestion.name,
                         goal: suggestion.goal,
                         duration: suggestion.duration,
                         orderIndex: suggestion.sprintNumber - 1,
-                    }
-                })
+                    })
+                    .returning()
 
-                // Create tasks from suggested tasks
                 const suggestedTasks = (suggestion.suggestedTasks as unknown as Array<{
                     title: string; description: string; criteria?: string[];
                     hints?: string[]; difficulty?: string; estimatedTime?: string; category?: string;
                 }>) || []
 
+                const validDifficulties = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'] as const
+
                 for (let i = 0; i < suggestedTasks.length; i++) {
                     const task = suggestedTasks[i]
                     if (!task) continue
 
-                    // Validate difficulty as enum
-                    const validDifficulties: ProjectV2Difficulty[] = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED']
-                    const taskDifficulty = validDifficulties.includes(task.difficulty as ProjectV2Difficulty)
-                        ? (task.difficulty as ProjectV2Difficulty)
-                        : ('INTERMEDIATE' as ProjectV2Difficulty)
+                    const taskDifficulty = validDifficulties.includes(task.difficulty as any)
+                        ? (task.difficulty as typeof validDifficulties[number])
+                        : 'INTERMEDIATE'
 
-                    await tx.projectV2Task.create({
-                        data: {
-                            sprintId: sprint.id,
-                            title: task.title,
-                            description: [task.description],
-                            criteria: task.criteria || [],
-                            hints: task.hints || [],
-                            difficulty: taskDifficulty,
-                            estimatedTime: task.estimatedTime || '30 min',
-                            category: task.category || 'FEATURE',
-                            orderIndex: i,
-                        }
+                    await tx.insert(projectV2Tasks).values({
+                        sprintId: sprint.id,
+                        title: task.title,
+                        description: [task.description],
+                        criteria: task.criteria || [],
+                        hints: task.hints || [],
+                        difficulty: taskDifficulty,
+                        estimatedTime: task.estimatedTime || '30 min',
+                        category: task.category || 'FEATURE',
+                        orderIndex: i,
                     })
                 }
 
-                // Update suggestion record
-                await tx.projectV2SprintSuggestion.update({
-                    where: { id: suggestionId },
-                    data: {
+                await tx
+                    .update(projectV2SprintSuggestions)
+                    .set({
                         status: 'APPROVED',
                         reviewedById: user.id,
                         reviewedAt: new Date(),
                         reviewNote,
                         createdSprintId: sprint.id,
-                    }
-                })
+                    })
+                    .where(eq(projectV2SprintSuggestions.id, suggestionId))
 
                 return sprint
             })
@@ -238,16 +242,15 @@ export async function reviewSprintSuggestion({
             revalidatePath(`/projects/${suggestion.project.slug}`)
             return { success: true, data: { sprint: result } }
         } else {
-            // Reject
-            await prisma.projectV2SprintSuggestion.update({
-                where: { id: suggestionId },
-                data: {
+            await db
+                .update(projectV2SprintSuggestions)
+                .set({
                     status: 'REJECTED',
                     reviewedById: user.id,
                     reviewedAt: new Date(),
                     reviewNote,
-                }
-            })
+                })
+                .where(eq(projectV2SprintSuggestions.id, suggestionId))
 
             revalidatePath(`/projects/${suggestion.project.slug}`)
             return { success: true }

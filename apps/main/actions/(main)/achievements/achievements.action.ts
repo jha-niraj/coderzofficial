@@ -1,11 +1,21 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
-import { BadgeCategory } from '@repo/prisma/client'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db,
+    badges,
+    userBadges,
+    levels,
+    socialConnections,
+    users,
+    xpTransactions,
+    achievementNotifications,
+} from '@repo/db'
+import { eq, and, asc, desc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import type { 
-    BadgeRequirements, BadgeProgress 
+import type {
+    BadgeRequirements, BadgeProgress
 } from '@/types/achievements'
 
 // ================================================================================
@@ -69,7 +79,7 @@ export interface LevelInfo {
 
 export async function getUserAchievements() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
@@ -77,18 +87,18 @@ export async function getUserAchievements() {
         const userId = session.user.id
 
         // Get all badges
-        const allBadges = await prisma.badge.findMany({
-            where: { isActive: true },
-            orderBy: [{ category: 'asc' }, { tier: 'asc' }, { order: 'asc' }],
+        const allBadges = await db.query.badges.findMany({
+            where: eq(badges.isActive, true),
+            orderBy: [asc(badges.category), asc(badges.tier), asc(badges.order)],
         })
 
         // Get user's badge progress
-        const userBadges = await prisma.userBadge.findMany({
-            where: { userId },
-            include: { badge: true },
+        const ubRows = await db.query.userBadges.findMany({
+            where: eq(userBadges.userId, userId),
+            with: { badge: true },
         })
 
-        const userBadgeMap = new Map(userBadges.map(ub => [ub.badgeId, ub]))
+        const userBadgeMap = new Map(ubRows.map(ub => [ub.badgeId, ub]))
 
         // Combine badges with user progress
         const badgesWithProgress: BadgeWithProgress[] = allBadges.map(badge => {
@@ -130,21 +140,21 @@ export async function getUserAchievements() {
             mythicBadges: claimedBadges.filter(b => b.rarity === 'MYTHIC').length,
             totalXpFromBadges: claimedBadges.reduce((sum, b) => sum + b.xpReward, 0),
             totalCreditsFromBadges: claimedBadges.reduce((sum, b) => sum + b.creditsReward, 0),
-            totalShares: userBadges.reduce((sum, ub) => sum + ub.shareCount, 0),
+            totalShares: ubRows.reduce((sum, ub) => sum + ub.shareCount, 0),
         }
 
         // Get user level info
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: { totalXp: true, currentLevel: true },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            columns: { totalXp: true, currentLevel: true },
         })
 
-        const levels = await prisma.level.findMany({
-            orderBy: { level: 'asc' },
+        const allLevels = await db.query.levels.findMany({
+            orderBy: asc(levels.level),
         })
 
-        const currentLevelConfig = levels.find(l => l.level === (user?.currentLevel || 1))
-        const nextLevelConfig = levels.find(l => l.level === (user?.currentLevel || 1) + 1)
+        const currentLevelConfig = allLevels.find(l => l.level === (user?.currentLevel || 1))
+        const nextLevelConfig = allLevels.find(l => l.level === (user?.currentLevel || 1) + 1)
 
         const levelInfo: LevelInfo = {
             level: user?.currentLevel || 1,
@@ -156,18 +166,21 @@ export async function getUserAchievements() {
             currentXp: user?.totalXp || 0,
             nextLevelXp: nextLevelConfig?.xpRequired || null,
             progressPercent: nextLevelConfig
-                ? Math.min(100, Math.round(((user?.totalXp || 0) - (currentLevelConfig?.xpRequired || 0)) / 
+                ? Math.min(100, Math.round(((user?.totalXp || 0) - (currentLevelConfig?.xpRequired || 0)) /
                     ((nextLevelConfig?.xpRequired || 0) - (currentLevelConfig?.xpRequired || 0)) * 100))
                 : 100,
-            xpToNext: nextLevelConfig 
+            xpToNext: nextLevelConfig
                 ? (nextLevelConfig.xpRequired - (user?.totalXp || 0))
                 : 0,
         }
 
         // Get social connections
-        const socialConnections = await prisma.socialConnection.findMany({
-            where: { userId, isActive: true },
-            select: {
+        const socialConns = await db.query.socialConnections.findMany({
+            where: and(
+                eq(socialConnections.userId, userId),
+                eq(socialConnections.isActive, true)
+            ),
+            columns: {
                 provider: true,
                 accountName: true,
                 accountHandle: true,
@@ -180,8 +193,8 @@ export async function getUserAchievements() {
             badges: badgesWithProgress,
             stats,
             levelInfo,
-            socialConnections,
-            levels,
+            socialConnections: socialConns,
+            levels: allLevels,
         }
     } catch (error) {
         console.error('Error fetching achievements:', error)
@@ -195,7 +208,7 @@ export async function getUserAchievements() {
 
 export async function claimBadge(badgeId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
@@ -203,9 +216,9 @@ export async function claimBadge(badgeId: string) {
         const userId = session.user.id
 
         // Get user badge
-        const userBadge = await prisma.userBadge.findUnique({
-            where: { userId_badgeId: { userId, badgeId } },
-            include: { badge: true },
+        const userBadge = await db.query.userBadges.findFirst({
+            where: and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badgeId)),
+            with: { badge: true },
         })
 
         if (!userBadge) {
@@ -216,56 +229,48 @@ export async function claimBadge(badgeId: string) {
             return { success: false, error: 'Badge is not ready to claim' }
         }
 
+        const badge = userBadge.badge
+
         // Update badge status and award rewards
-        await prisma.$transaction([
-            // Update user badge
-            prisma.userBadge.update({
-                where: { id: userBadge.id },
-                data: {
-                    status: 'CLAIMED',
-                    claimedAt: new Date(),
-                },
-            }),
-            // Award XP
-            prisma.user.update({
-                where: { id: userId },
-                data: {
-                    totalXp: { increment: userBadge.badge.xpReward },
-                    credits: { increment: userBadge.badge.creditsReward },
-                },
-            }),
-            // Create XP transaction
-            prisma.xpTransaction.create({
-                data: {
-                    userId,
-                    amount: userBadge.badge.xpReward,
-                    description: `Claimed badge: ${userBadge.badge.name}`,
-                    type: 'REWARD',
-                    source: 'badge',
-                    sourceId: badgeId,
-                },
-            }),
-            // Create notification
-            prisma.achievementNotification.create({
-                data: {
-                    userId,
-                    type: 'badge_claimed',
-                    title: 'Badge Claimed!',
-                    message: `You claimed the "${userBadge.badge.name}" badge and earned ${userBadge.badge.xpReward} XP and ${userBadge.badge.creditsReward} credits!`,
-                    referenceType: 'badge',
-                    referenceId: badgeId,
-                    icon: userBadge.badge.icon,
-                    color: userBadge.badge.color,
-                },
-            }),
-        ])
+        await db.transaction(async (tx) => {
+            await tx.update(userBadges)
+                .set({ status: 'CLAIMED', claimedAt: new Date() })
+                .where(eq(userBadges.id, userBadge.id))
+
+            await tx.update(users)
+                .set({
+                    totalXp: sql`${users.totalXp} + ${badge.xpReward}`,
+                    credits: sql`${users.credits} + ${badge.creditsReward}`,
+                })
+                .where(eq(users.id, userId))
+
+            await tx.insert(xpTransactions).values({
+                userId,
+                amount: badge.xpReward,
+                description: `Claimed badge: ${badge.name}`,
+                type: 'REWARD',
+                source: 'badge',
+                sourceId: badgeId,
+            })
+
+            await tx.insert(achievementNotifications).values({
+                userId,
+                type: 'badge_claimed',
+                title: 'Badge Claimed!',
+                message: `You claimed the "${badge.name}" badge and earned ${badge.xpReward} XP and ${badge.creditsReward} credits!`,
+                referenceType: 'badge',
+                referenceId: badgeId,
+                icon: badge.icon,
+                color: badge.color,
+            })
+        })
 
         revalidatePath('/achievements')
         return {
             success: true,
-            badge: userBadge.badge,
-            xpReward: userBadge.badge.xpReward,
-            creditsReward: userBadge.badge.creditsReward,
+            badge,
+            xpReward: badge.xpReward,
+            creditsReward: badge.creditsReward,
         }
     } catch (error) {
         console.error('Error claiming badge:', error)
@@ -279,15 +284,15 @@ export async function claimBadge(badgeId: string) {
 
 export async function togglePinBadge(badgeId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
         const userId = session.user.id
 
-        const userBadge = await prisma.userBadge.findUnique({
-            where: { userId_badgeId: { userId, badgeId } },
+        const userBadge = await db.query.userBadges.findFirst({
+            where: and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badgeId)),
         })
 
         if (!userBadge || userBadge.status !== 'CLAIMED') {
@@ -296,18 +301,18 @@ export async function togglePinBadge(badgeId: string) {
 
         // Check if already pinned 5 badges
         if (!userBadge.isPinned) {
-            const pinnedCount = await prisma.userBadge.count({
-                where: { userId, isPinned: true },
+            const pinnedRows = await db.query.userBadges.findMany({
+                where: and(eq(userBadges.userId, userId), eq(userBadges.isPinned, true)),
+                columns: { id: true },
             })
-            if (pinnedCount >= 5) {
+            if (pinnedRows.length >= 5) {
                 return { success: false, error: 'You can only pin up to 5 badges' }
             }
         }
 
-        await prisma.userBadge.update({
-            where: { id: userBadge.id },
-            data: { isPinned: !userBadge.isPinned },
-        })
+        await db.update(userBadges)
+            .set({ isPinned: !userBadge.isPinned })
+            .where(eq(userBadges.id, userBadge.id))
 
         revalidatePath('/achievements')
         revalidatePath('/profile')
@@ -324,18 +329,22 @@ export async function togglePinBadge(badgeId: string) {
 
 export async function getPinnedBadges(userId?: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         const targetUserId = userId || session?.user?.id
-        
+
         if (!targetUserId) {
             return { success: false, error: 'User not found' }
         }
 
-        const pinnedBadges = await prisma.userBadge.findMany({
-            where: { userId: targetUserId, isPinned: true, status: 'CLAIMED' },
-            include: { badge: true },
-            orderBy: { displayOrder: 'asc' },
-            take: 5,
+        const pinnedBadges = await db.query.userBadges.findMany({
+            where: and(
+                eq(userBadges.userId, targetUserId),
+                eq(userBadges.isPinned, true),
+                eq(userBadges.status, 'CLAIMED')
+            ),
+            with: { badge: true },
+            orderBy: asc(userBadges.displayOrder),
+            limit: 5,
         })
 
         return {
@@ -363,18 +372,21 @@ export async function getPinnedBadges(userId?: string) {
 
 export async function getRecentAchievements(userId?: string, limit = 5) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         const targetUserId = userId || session?.user?.id
-        
+
         if (!targetUserId) {
             return { success: false, error: 'User not found' }
         }
 
-        const recentBadges = await prisma.userBadge.findMany({
-            where: { userId: targetUserId, status: 'CLAIMED' },
-            include: { badge: true },
-            orderBy: { claimedAt: 'desc' },
-            take: limit,
+        const recentBadges = await db.query.userBadges.findMany({
+            where: and(
+                eq(userBadges.userId, targetUserId),
+                eq(userBadges.status, 'CLAIMED')
+            ),
+            with: { badge: true },
+            orderBy: desc(userBadges.claimedAt),
+            limit,
         })
 
         return {
@@ -405,27 +417,40 @@ export async function getRecentAchievements(userId?: string, limit = 5) {
 
 export async function getBadgesByCategory(category: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
         const userId = session.user.id
 
-        const badges = await prisma.badge.findMany({
-            where: { category: category as BadgeCategory, isActive: true },
-            orderBy: [{ tier: 'asc' }, { order: 'asc' }],
+        const badgeRows = await db.query.badges.findMany({
+            where: and(
+                eq(badges.category, category as typeof badges.$inferSelect['category']),
+                eq(badges.isActive, true)
+            ),
+            orderBy: [asc(badges.tier), asc(badges.order)],
         })
 
-        const userBadges = await prisma.userBadge.findMany({
-            where: { userId, badgeId: { in: badges.map(b => b.id) } },
+        const ubRows = await db.query.userBadges.findMany({
+            where: and(
+                eq(userBadges.userId, userId),
+            ),
+            columns: {
+                badgeId: true,
+                status: true,
+                progress: true,
+                progressPercent: true,
+                claimedAt: true,
+                isPinned: true,
+            },
         })
 
-        const userBadgeMap = new Map(userBadges.map(ub => [ub.badgeId, ub]))
+        const userBadgeMap = new Map(ubRows.map(ub => [ub.badgeId, ub]))
 
         return {
             success: true,
-            badges: badges.map(badge => ({
+            badges: badgeRows.map(badge => ({
                 ...badge,
                 status: userBadgeMap.get(badge.id)?.status || 'LOCKED',
                 progress: userBadgeMap.get(badge.id)?.progress || null,
@@ -446,15 +471,18 @@ export async function getBadgesByCategory(category: string) {
 
 export async function getAchievementNotifications() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const notifications = await prisma.achievementNotification.findMany({
-            where: { userId: session.user.id, isDismissed: false },
-            orderBy: { createdAt: 'desc' },
-            take: 20,
+        const notifications = await db.query.achievementNotifications.findMany({
+            where: and(
+                eq(achievementNotifications.userId, session.user.id),
+                eq(achievementNotifications.isDismissed, false)
+            ),
+            orderBy: desc(achievementNotifications.createdAt),
+            limit: 20,
         })
 
         return { success: true, notifications }
@@ -470,15 +498,17 @@ export async function getAchievementNotifications() {
 
 export async function markNotificationRead(notificationId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        await prisma.achievementNotification.update({
-            where: { id: notificationId, userId: session.user.id },
-            data: { isRead: true, readAt: new Date() },
-        })
+        await db.update(achievementNotifications)
+            .set({ isRead: true, readAt: new Date() })
+            .where(and(
+                eq(achievementNotifications.id, notificationId),
+                eq(achievementNotifications.userId, session.user.id)
+            ))
 
         return { success: true }
     } catch (error) {
@@ -493,15 +523,17 @@ export async function markNotificationRead(notificationId: string) {
 
 export async function dismissNotification(notificationId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        await prisma.achievementNotification.update({
-            where: { id: notificationId, userId: session.user.id },
-            data: { isDismissed: true },
-        })
+        await db.update(achievementNotifications)
+            .set({ isDismissed: true })
+            .where(and(
+                eq(achievementNotifications.id, notificationId),
+                eq(achievementNotifications.userId, session.user.id)
+            ))
 
         return { success: true }
     } catch (error) {

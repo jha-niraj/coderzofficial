@@ -19,7 +19,7 @@ import type { ReadonlyURLSearchParams } from "next/navigation"
 import { Label } from "@repo/ui/components/ui/label"
 
 export function AuthDialog() {
-	const { status } = useSession()
+	const { data: session } = useSession()
 	const sp = useSearchParams()
 	const pathname = usePathname()
 	const router = useRouter()
@@ -48,7 +48,7 @@ export function AuthDialog() {
 
 	// When session becomes authenticated, close modal and redirect
 	useEffect(() => {
-		if (status === "authenticated" && open) {
+		if (session && open) {
 			dismissFromUrl()
 			// If there's a callback URL, redirect to it
 			if (resolvedCallback && resolvedCallback !== pathname) {
@@ -56,7 +56,7 @@ export function AuthDialog() {
 			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [status, open, resolvedCallback, pathname, router])
+	}, [session, open, resolvedCallback, pathname, router])
 
 	function dismissFromUrl() {
 		closeAuth()

@@ -1,9 +1,17 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import prisma from '@repo/prisma'
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    projectV2Tasks,
+    projectV2Sprints,
+    userProjectV2Progress,
+    userTaskV2Statuses,
+    projectV2FeatureSuggestions,
+} from "@repo/db";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { revalidatePath } from 'next/cache'
-// import { ActionResult } from '@/types/actions'
 
 type ActionResult = {
     success: boolean
@@ -17,59 +25,59 @@ export async function updateTaskStatus(
     path?: string
 ): Promise<ActionResult> {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const task = await prisma.projectV2Task.findUnique({
-            where: { id: taskId },
-            include: { sprint: true }
-        })
+        const task = await db.query.projectV2Tasks.findFirst({
+            where: eq(projectV2Tasks.id, taskId),
+            with: { sprint: true }
+        });
 
         if (!task) {
             return { success: false, error: 'Task not found' }
         }
 
-        const projectId = task.sprint.projectId
+        const projectId = task.sprint.projectId;
 
         // Find user progress
-        const progress = await prisma.userProjectV2Progress.findUnique({
-            where: {
-                userId_projectId: {
-                    userId: session.user.id,
-                    projectId
-                }
-            }
-        })
+        const progress = await db.query.userProjectV2Progress.findFirst({
+            where: and(
+                eq(userProjectV2Progress.userId, session.user.id),
+                eq(userProjectV2Progress.projectId, projectId)
+            )
+        });
 
         if (!progress) {
-            // If progress record doesn't exist, we can't track task status properly linked to progress
-            // Optionally create it, but usually it's created on "Start Project"
             return { success: false, error: 'Project progress not found (Please start the project first)' }
         }
 
         // Upsert user status
-        await prisma.userTaskV2Status.upsert({
-            where: {
-                userId_taskId: {
-                    userId: session.user.id,
-                    taskId: taskId
-                }
-            },
-            create: {
+        const existingStatus = await db.query.userTaskV2Statuses.findFirst({
+            where: and(
+                eq(userTaskV2Statuses.userId, session.user.id),
+                eq(userTaskV2Statuses.taskId, taskId)
+            )
+        });
+
+        if (existingStatus) {
+            await db.update(userTaskV2Statuses)
+                .set({
+                    status,
+                    completedAt: status === 'COMPLETED' ? new Date() : null
+                })
+                .where(eq(userTaskV2Statuses.id, existingStatus.id));
+        } else {
+            await db.insert(userTaskV2Statuses).values({
                 userId: session.user.id,
-                taskId: taskId,
-                projectId: projectId,
+                taskId,
+                projectId,
                 progressId: progress.id,
                 status,
                 completedAt: status === 'COMPLETED' ? new Date() : null
-            },
-            update: {
-                status,
-                completedAt: status === 'COMPLETED' ? new Date() : null
-            }
-        })
+            });
+        }
 
         if (path) revalidatePath(path)
         return { success: true }
@@ -93,47 +101,41 @@ export async function addTaskToSprint(
     path?: string
 ): Promise<ActionResult> {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
         // Get max order index
-        const lastTask = await prisma.projectV2Task.findFirst({
-            where: { sprintId },
-            orderBy: { orderIndex: 'desc' },
-            select: { orderIndex: true }
-        })
-        const newOrderIndex = (lastTask?.orderIndex ?? -1) + 1
+        const lastTask = await db.query.projectV2Tasks.findFirst({
+            where: eq(projectV2Tasks.sprintId, sprintId),
+            orderBy: (tasks: any, { desc }: any) => [desc(tasks.orderIndex)],
+            columns: { orderIndex: true }
+        });
+        const newOrderIndex = (lastTask?.orderIndex ?? -1) + 1;
 
-        const task = await prisma.projectV2Task.create({
-            data: {
-                sprintId,
-                projectV2Id: projectId,
-                title: data.title,
-                description: [data.description], // Assuming description is a string, wrap in array
-                difficulty: data.difficulty,
-                orderIndex: newOrderIndex,
-                estimatedTime: data.estimatedTime,
-                category: data.category
-            }
-        })
+        await db.insert(projectV2Tasks).values({
+            sprintId,
+            projectV2Id: projectId,
+            title: data.title,
+            description: [data.description],
+            difficulty: data.difficulty,
+            orderIndex: newOrderIndex,
+            estimatedTime: data.estimatedTime,
+            category: data.category
+        });
 
         if (addToSuggestions) {
-            await prisma.projectV2FeatureSuggestion.create({
-                data: {
-                    projectId,
-                    userId: session.user.id,
-                    title: data.title,
-                    description: data.description,
-                    type: 'FEATURE', // Default type
-                    status: 'APPROVED', // Auto-approve since it's added as task? Or PENDING? Let's say APPROVED/IMPLEMENTED since it's in a sprint? Or just PENDING.
-                    // Actually if user adds it to their task list, it's "Added to Tasks".
-                    // But here it's "Add to Suggestions List" which implies generic suggestion.
-                    suggestedBy: 'ENROLLED_USER', // or Creator
-                    tags: data.category ? [data.category] : []
-                }
-            })
+            await db.insert(projectV2FeatureSuggestions).values({
+                projectId,
+                userId: session.user.id,
+                title: data.title,
+                description: data.description,
+                type: 'FEATURE',
+                status: 'APPROVED',
+                suggestedBy: 'ENROLLED_USER',
+                tags: data.category ? [data.category] : []
+            });
         }
 
         if (path) revalidatePath(path)

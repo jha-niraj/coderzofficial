@@ -1,22 +1,21 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, studentUniversityLinks, universityMembers, classEnrollments, departments } from "@repo/db"
+import { eq, and, desc, count, inArray, sql } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import type { 
-    SemesterType, StudentVerificationStatus 
-} from "@repo/prisma/client"
 
 // ============================================
 // HELPERS
 // ============================================
 
 async function getUserUniversity() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.universityMember.findFirst({
-        where: { userId: session.user.id },
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
     })
 
     return member
@@ -31,9 +30,9 @@ async function getUserUniversity() {
  */
 export async function getStudents(
     filters?: {
-        verificationStatus?: StudentVerificationStatus
+        verificationStatus?: string
         departmentId?: string
-        semester?: SemesterType
+        semester?: string
         batchYear?: string
         search?: string
         isActive?: boolean
@@ -47,9 +46,9 @@ export async function getStudents(
             id: string
             userId: string
             universityEmail: string
-            verificationStatus: StudentVerificationStatus
+            verificationStatus: string
             rollNumber: string | null
-            semester: SemesterType | null
+            semester: string | null
             batchYear: string | null
             departmentId: string | null
             departmentName: string | null
@@ -71,56 +70,28 @@ export async function getStudents(
             return { success: false, error: "Unauthorized" }
         }
 
-        // Build where clause
-        type WhereClause = {
-            universityId: string
-            verificationStatus?: StudentVerificationStatus
-            departmentId?: string
-            semester?: SemesterType
-            batchYear?: string
-            isActive?: boolean
-            OR?: Array<{
-                universityEmail?: { contains: string; mode: "insensitive" }
-                rollNumber?: { contains: string; mode: "insensitive" }
-            }>
-        }
-
-        const where: WhereClause = {
-            universityId: member.universityId,
-        }
-
-        if (filters?.verificationStatus) where.verificationStatus = filters.verificationStatus
-        if (filters?.departmentId) where.departmentId = filters.departmentId
-        if (filters?.semester) where.semester = filters.semester
-        if (filters?.batchYear) where.batchYear = filters.batchYear
-        if (filters?.isActive !== undefined) where.isActive = filters.isActive
-        if (filters?.search) {
-            where.OR = [
-                { universityEmail: { contains: filters.search, mode: "insensitive" } },
-                { rollNumber: { contains: filters.search, mode: "insensitive" } },
-            ]
-        }
-
         const skip = (page - 1) * pageSize
 
-        // Get total count
-        const totalCount = await prisma.studentUniversityLink.count({ where })
-
-        // Get students
-        const students = await prisma.studentUniversityLink.findMany({
-            where,
-            include: {
-                department: {
-                    select: {
-                        id: true,
-                        name: true,
-                    }
-                }
+        const students = await db.query.studentUniversityLinks.findMany({
+            where: (tbl, { and, eq }) => {
+                const conditions = [eq(tbl.universityId, member.universityId)]
+                if (filters?.verificationStatus) conditions.push(eq(tbl.verificationStatus, filters.verificationStatus as any))
+                if (filters?.departmentId) conditions.push(eq(tbl.departmentId, filters.departmentId))
+                if (filters?.semester) conditions.push(eq(tbl.semester, filters.semester as any))
+                if (filters?.batchYear) conditions.push(eq(tbl.batchYear, filters.batchYear))
+                if (filters?.isActive !== undefined) conditions.push(eq(tbl.isActive, filters.isActive))
+                return and(...conditions)
             },
-            orderBy: { createdAt: "desc" },
-            skip,
-            take: pageSize,
+            with: {
+                department: { columns: { id: true, name: true } },
+            },
+            orderBy: desc(studentUniversityLinks.createdAt),
+            offset: skip,
+            limit: pageSize,
         })
+
+        const totalCountResult = await db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.universityId, member.universityId))
+        const totalCount = totalCountResult[0]?.count ?? 0
 
         const studentList = students.map(s => ({
             id: s.id,
@@ -163,11 +134,11 @@ export async function getStudent(studentId: string): Promise<{
         id: string
         userId: string
         universityEmail: string
-        verificationStatus: StudentVerificationStatus
+        verificationStatus: string
         verifiedAt: Date | null
         rejectionReason: string | null
         rollNumber: string | null
-        semester: SemesterType | null
+        semester: string | null
         batchYear: string | null
         departmentId: string | null
         departmentName: string | null
@@ -186,29 +157,22 @@ export async function getStudent(studentId: string): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const student = await prisma.studentUniversityLink.findFirst({
-            where: {
-                id: studentId,
-                universityId: member.universityId,
+        const student = await db.query.studentUniversityLinks.findFirst({
+            where: and(
+                eq(studentUniversityLinks.id, studentId),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            ),
+            with: {
+                department: { columns: { id: true, name: true } },
             },
-            include: {
-                department: {
-                    select: {
-                        id: true,
-                        name: true,
-                    }
-                },
-                _count: {
-                    select: {
-                        enrollments: true,
-                    }
-                }
-            }
         })
 
         if (!student) {
             return { success: false, error: "Student not found" }
         }
+
+        const enrollmentCountResult = await db.select({ count: count() }).from(classEnrollments).where(eq(classEnrollments.studentLinkId, studentId))
+        const enrollmentCount = enrollmentCountResult[0]?.count ?? 0
 
         return {
             success: true,
@@ -229,7 +193,7 @@ export async function getStudent(studentId: string): Promise<{
                 isActive: student.isActive,
                 createdAt: student.createdAt,
                 updatedAt: student.updatedAt,
-                enrollmentCount: student._count.enrollments,
+                enrollmentCount,
             }
         }
     } catch (error) {
@@ -258,22 +222,23 @@ export async function getStudentStats(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
+        const uniId = member.universityId
         const [total, verified, pending, rejected, active] = await Promise.all([
-            prisma.studentUniversityLink.count({ where: { universityId: member.universityId } }),
-            prisma.studentUniversityLink.count({ where: { universityId: member.universityId, verificationStatus: "VERIFIED" } }),
-            prisma.studentUniversityLink.count({ where: { universityId: member.universityId, verificationStatus: "PENDING" } }),
-            prisma.studentUniversityLink.count({ where: { universityId: member.universityId, verificationStatus: "REJECTED" } }),
-            prisma.studentUniversityLink.count({ where: { universityId: member.universityId, isActive: true } }),
+            db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.universityId, uniId)),
+            db.select({ count: count() }).from(studentUniversityLinks).where(and(eq(studentUniversityLinks.universityId, uniId), eq(studentUniversityLinks.verificationStatus, "VERIFIED"))),
+            db.select({ count: count() }).from(studentUniversityLinks).where(and(eq(studentUniversityLinks.universityId, uniId), eq(studentUniversityLinks.verificationStatus, "PENDING"))),
+            db.select({ count: count() }).from(studentUniversityLinks).where(and(eq(studentUniversityLinks.universityId, uniId), eq(studentUniversityLinks.verificationStatus, "REJECTED"))),
+            db.select({ count: count() }).from(studentUniversityLinks).where(and(eq(studentUniversityLinks.universityId, uniId), eq(studentUniversityLinks.isActive, true))),
         ])
 
         return {
             success: true,
             stats: {
-                totalStudents: total,
-                verifiedStudents: verified,
-                pendingStudents: pending,
-                rejectedStudents: rejected,
-                activeStudents: active,
+                totalStudents: total[0]?.count ?? 0,
+                verifiedStudents: verified[0]?.count ?? 0,
+                pendingStudents: pending[0]?.count ?? 0,
+                rejectedStudents: rejected[0]?.count ?? 0,
+                activeStudents: active[0]?.count ?? 0,
             }
         }
     } catch (error) {
@@ -300,24 +265,28 @@ export async function getStudentsByDepartment(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const byDepartment = await prisma.studentUniversityLink.groupBy({
-            by: ["departmentId"],
-            where: { universityId: member.universityId },
-            _count: true,
-        })
+        // Group by departmentId using sql
+        const byDepartment = await db
+            .select({
+                departmentId: studentUniversityLinks.departmentId,
+                count: count(),
+            })
+            .from(studentUniversityLinks)
+            .where(eq(studentUniversityLinks.universityId, member.universityId))
+            .groupBy(studentUniversityLinks.departmentId)
 
-        const departments = await prisma.department.findMany({
-            where: { universityId: member.universityId },
-            select: { id: true, name: true },
+        const deptRows = await db.query.departments.findMany({
+            where: eq(departments.universityId, member.universityId),
+            columns: { id: true, name: true },
         })
-        const deptMap = new Map(departments.map(d => [d.id, d.name]))
+        const deptMap = new Map(deptRows.map(d => [d.id, d.name]))
 
         return {
             success: true,
             data: byDepartment.map(d => ({
                 departmentId: d.departmentId,
                 departmentName: d.departmentId ? (deptMap.get(d.departmentId) ?? "Unknown") : "No Department",
-                count: d._count,
+                count: d.count,
             }))
         }
     } catch (error) {
@@ -338,7 +307,7 @@ export async function verifyStudent(
     payload: {
         status: "VERIFIED" | "REJECTED"
         rollNumber?: string
-        semester?: SemesterType
+        semester?: string
         batchYear?: string
         departmentId?: string
         rejectionReason?: string
@@ -360,29 +329,26 @@ export async function verifyStudent(
         }
 
         // Verify student exists
-        const student = await prisma.studentUniversityLink.findFirst({
-            where: {
-                id: studentId,
-                universityId: member.universityId,
-            }
+        const student = await db.query.studentUniversityLinks.findFirst({
+            where: and(
+                eq(studentUniversityLinks.id, studentId),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            ),
         })
 
         if (!student) {
             return { success: false, error: "Student not found" }
         }
 
-        await prisma.studentUniversityLink.update({
-            where: { id: studentId },
-            data: {
-                verificationStatus: payload.status,
-                verifiedAt: payload.status === "VERIFIED" ? new Date() : null,
-                rollNumber: payload.rollNumber,
-                semester: payload.semester,
-                batchYear: payload.batchYear,
-                departmentId: payload.departmentId,
-                rejectionReason: payload.status === "REJECTED" ? payload.rejectionReason : null,
-            },
-        })
+        await db.update(studentUniversityLinks).set({
+            verificationStatus: payload.status,
+            verifiedAt: payload.status === "VERIFIED" ? new Date() : null,
+            rollNumber: payload.rollNumber,
+            semester: payload.semester as any,
+            batchYear: payload.batchYear,
+            departmentId: payload.departmentId,
+            rejectionReason: payload.status === "REJECTED" ? payload.rejectionReason : null,
+        }).where(eq(studentUniversityLinks.id, studentId))
 
         revalidatePath("/dashboard/students")
         revalidatePath(`/dashboard/students/${studentId}`)
@@ -417,20 +383,19 @@ export async function bulkVerifyStudents(
             return { success: false, error: "No permission to verify students" }
         }
 
-        const result = await prisma.studentUniversityLink.updateMany({
-            where: {
-                id: { in: studentIds },
-                universityId: member.universityId,
-            },
-            data: {
-                verificationStatus: status,
-                verifiedAt: status === "VERIFIED" ? new Date() : null,
-                rejectionReason: status === "REJECTED" ? rejectionReason : null,
-            },
-        })
+        await db.update(studentUniversityLinks).set({
+            verificationStatus: status,
+            verifiedAt: status === "VERIFIED" ? new Date() : null,
+            rejectionReason: status === "REJECTED" ? rejectionReason : null,
+        }).where(
+            and(
+                inArray(studentUniversityLinks.id, studentIds),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            )
+        )
 
         revalidatePath("/dashboard/students")
-        return { success: true, count: result.count }
+        return { success: true, count: studentIds.length }
     } catch (error) {
         console.error("Bulk verify students error:", error)
         return { success: false, error: "Failed to bulk verify students" }
@@ -464,23 +429,20 @@ export async function allocateCredits(
         }
 
         // Verify student exists
-        const student = await prisma.studentUniversityLink.findFirst({
-            where: {
-                id: studentId,
-                universityId: member.universityId,
-            }
+        const student = await db.query.studentUniversityLinks.findFirst({
+            where: and(
+                eq(studentUniversityLinks.id, studentId),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            ),
         })
 
         if (!student) {
             return { success: false, error: "Student not found" }
         }
 
-        await prisma.studentUniversityLink.update({
-            where: { id: studentId },
-            data: {
-                creditsAllocated: { increment: credits },
-            },
-        })
+        await db.update(studentUniversityLinks).set({
+            creditsAllocated: sql`${studentUniversityLinks.creditsAllocated} + ${credits}`,
+        }).where(eq(studentUniversityLinks.id, studentId))
 
         revalidatePath(`/dashboard/students/${studentId}`)
         return { success: true }
@@ -513,18 +475,17 @@ export async function bulkAllocateCredits(
             return { success: false, error: "No permission to manage credits" }
         }
 
-        const result = await prisma.studentUniversityLink.updateMany({
-            where: {
-                id: { in: studentIds },
-                universityId: member.universityId,
-            },
-            data: {
-                creditsAllocated: { increment: credits },
-            },
-        })
+        await db.update(studentUniversityLinks).set({
+            creditsAllocated: sql`${studentUniversityLinks.creditsAllocated} + ${credits}`,
+        }).where(
+            and(
+                inArray(studentUniversityLinks.id, studentIds),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            )
+        )
 
         revalidatePath("/dashboard/students")
-        return { success: true, count: result.count }
+        return { success: true, count: studentIds.length }
     } catch (error) {
         console.error("Bulk allocate credits error:", error)
         return { success: false, error: "Failed to bulk allocate credits" }
@@ -542,7 +503,7 @@ export async function updateStudent(
     studentId: string,
     payload: {
         rollNumber?: string
-        semester?: SemesterType
+        semester?: string
         batchYear?: string
         departmentId?: string | null
         isActive?: boolean
@@ -564,21 +525,18 @@ export async function updateStudent(
         }
 
         // Verify student exists
-        const student = await prisma.studentUniversityLink.findFirst({
-            where: {
-                id: studentId,
-                universityId: member.universityId,
-            }
+        const student = await db.query.studentUniversityLinks.findFirst({
+            where: and(
+                eq(studentUniversityLinks.id, studentId),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            ),
         })
 
         if (!student) {
             return { success: false, error: "Student not found" }
         }
 
-        await prisma.studentUniversityLink.update({
-            where: { id: studentId },
-            data: payload,
-        })
+        await db.update(studentUniversityLinks).set(payload as any).where(eq(studentUniversityLinks.id, studentId))
 
         revalidatePath("/dashboard/students")
         revalidatePath(`/dashboard/students/${studentId}`)
@@ -609,21 +567,18 @@ export async function deactivateStudent(studentId: string): Promise<{
         }
 
         // Verify student exists
-        const student = await prisma.studentUniversityLink.findFirst({
-            where: {
-                id: studentId,
-                universityId: member.universityId,
-            }
+        const student = await db.query.studentUniversityLinks.findFirst({
+            where: and(
+                eq(studentUniversityLinks.id, studentId),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            ),
         })
 
         if (!student) {
             return { success: false, error: "Student not found" }
         }
 
-        await prisma.studentUniversityLink.update({
-            where: { id: studentId },
-            data: { isActive: false },
-        })
+        await db.update(studentUniversityLinks).set({ isActive: false }).where(eq(studentUniversityLinks.id, studentId))
 
         revalidatePath("/dashboard/students")
         revalidatePath(`/dashboard/students/${studentId}`)
@@ -654,21 +609,18 @@ export async function reactivateStudent(studentId: string): Promise<{
         }
 
         // Verify student exists
-        const student = await prisma.studentUniversityLink.findFirst({
-            where: {
-                id: studentId,
-                universityId: member.universityId,
-            }
+        const student = await db.query.studentUniversityLinks.findFirst({
+            where: and(
+                eq(studentUniversityLinks.id, studentId),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            ),
         })
 
         if (!student) {
             return { success: false, error: "Student not found" }
         }
 
-        await prisma.studentUniversityLink.update({
-            where: { id: studentId },
-            data: { isActive: true },
-        })
+        await db.update(studentUniversityLinks).set({ isActive: true }).where(eq(studentUniversityLinks.id, studentId))
 
         revalidatePath("/dashboard/students")
         revalidatePath(`/dashboard/students/${studentId}`)
@@ -703,31 +655,25 @@ export async function getStudentEnrollments(studentId: string): Promise<{
         }
 
         // Verify student exists
-        const student = await prisma.studentUniversityLink.findFirst({
-            where: {
-                id: studentId,
-                universityId: member.universityId,
-            }
+        const student = await db.query.studentUniversityLinks.findFirst({
+            where: and(
+                eq(studentUniversityLinks.id, studentId),
+                eq(studentUniversityLinks.universityId, member.universityId),
+            ),
         })
 
         if (!student) {
             return { success: false, error: "Student not found" }
         }
 
-        const enrollments = await prisma.classEnrollment.findMany({
-            where: { studentLinkId: studentId },
-            include: {
+        const enrollments = await db.query.classEnrollments.findMany({
+            where: eq(classEnrollments.studentLinkId, studentId),
+            with: {
                 class: {
-                    select: {
-                        id: true,
-                        name: true,
-                        code: true,
-                        semester: true,
-                        academicYear: true,
-                    }
-                }
+                    columns: { id: true, name: true, code: true, semester: true, academicYear: true },
+                },
             },
-            orderBy: { enrolledAt: "desc" },
+            orderBy: desc(classEnrollments.enrolledAt),
         })
 
         return {

@@ -1,7 +1,15 @@
 "use server";
 
-import { auth } from "@repo/auth";
-import prisma from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    users,
+    creditTransactions,
+    projectV2StandupConfigs,
+    projectV2StandupEntries,
+} from "@repo/db";
+import { eq, and, gte, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 interface ActionResponse {
@@ -11,38 +19,30 @@ interface ActionResponse {
 }
 
 async function getCurrentUser() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.email) throw new Error("Not authenticated");
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    const [user] = await db.select().from(users).where(eq(users.email, session.user.email));
     if (!user) throw new Error("User not found");
     return user;
 }
 
 async function deductCredits(userId: string, amount: number, description: string) {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { credits: true },
-    });
+    const [user] = await db.select({ credits: users.credits }).from(users).where(eq(users.id, userId));
 
     if (!user || user.credits < amount) {
         throw new Error("Insufficient credits");
     }
 
-    await prisma.$transaction([
-        prisma.user.update({
-            where: { id: userId },
-            data: { credits: { decrement: amount } },
-        }),
-        prisma.creditTransaction.create({
-            data: {
-                userId,
-                amount: -amount,
-                type: "SPEND",
-                currency: "NA",
-                description,
-            },
-        }),
-    ]);
+    await db.transaction(async (tx) => {
+        await tx.update(users).set({ credits: sql`${users.credits} - ${amount}` }).where(eq(users.id, userId));
+        await tx.insert(creditTransactions).values({
+            userId,
+            amount: -amount,
+            type: "SPEND",
+            currency: "NA",
+            description,
+        });
+    });
 }
 
 // ========================================
@@ -53,8 +53,11 @@ export async function checkStandupConfig(projectId: string): Promise<ActionRespo
     try {
         const user = await getCurrentUser();
 
-        const config = await prisma.projectV2StandupConfig.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } },
+        const config = await db.query.projectV2StandupConfigs.findFirst({
+            where: and(
+                eq(projectV2StandupConfigs.userId, user.id),
+                eq(projectV2StandupConfigs.projectId, projectId)
+            ),
         });
 
         return {
@@ -77,17 +80,16 @@ export async function checkStandupConfig(projectId: string): Promise<ActionRespo
 interface StandupConfigInput {
     projectId: string;
     projectSlug: string;
-    daysPerWeek: number; // 4-7
-    standupTime: string; // HH:MM format
-    durationMinutes: number; // 5-10
-    selectedDays: number[]; // [1,2,3,4,5] for Mon-Fri
+    daysPerWeek: number;
+    standupTime: string;
+    durationMinutes: number;
+    selectedDays: number[];
 }
 
 export async function createStandupConfig(input: StandupConfigInput): Promise<ActionResponse> {
     try {
         const user = await getCurrentUser();
 
-        // Validate input
         if (input.daysPerWeek < 4 || input.daysPerWeek > 7) {
             return { success: false, error: "Days per week must be between 4 and 7" };
         }
@@ -100,20 +102,20 @@ export async function createStandupConfig(input: StandupConfigInput): Promise<Ac
             return { success: false, error: "Selected days must match days per week" };
         }
 
-        // Check if config already exists
-        const existing = await prisma.projectV2StandupConfig.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId: input.projectId } },
+        const existing = await db.query.projectV2StandupConfigs.findFirst({
+            where: and(
+                eq(projectV2StandupConfigs.userId, user.id),
+                eq(projectV2StandupConfigs.projectId, input.projectId)
+            ),
         });
 
         if (existing) {
             return { success: false, error: "Standup configuration already exists for this project" };
         }
 
-        // Calculate costs
         const creditsPerDay = 5;
         const weeklyCredits = input.daysPerWeek * creditsPerDay;
 
-        // Check if user has enough credits
         if (user.credits < weeklyCredits) {
             return {
                 success: false,
@@ -121,56 +123,48 @@ export async function createStandupConfig(input: StandupConfigInput): Promise<Ac
             };
         }
 
-        // Calculate week start and end
         const now = new Date();
         const currentDay = now.getDay();
         const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() - currentDay); // Start of current week (Sunday)
+        weekStart.setDate(now.getDate() - currentDay);
         weekStart.setHours(0, 0, 0, 0);
 
         const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 7); // End of current week
+        weekEnd.setDate(weekStart.getDate() + 7);
 
-        // Deduct credits
         await deductCredits(
             user.id,
             weeklyCredits,
             `Daily Standup - Week ${weekStart.toISOString().split('T')[0]}`
         );
 
-        // Create configuration
-        const config = await prisma.projectV2StandupConfig.create({
-            data: {
-                userId: user.id,
-                projectId: input.projectId,
-                daysPerWeek: input.daysPerWeek,
-                standupTime: input.standupTime,
-                durationMinutes: input.durationMinutes,
-                selectedDays: input.selectedDays,
-                creditsPerDay,
-                weeklyCredits,
-                currentWeekStart: weekStart,
-                currentWeekEnd: weekEnd,
-                isActive: true,
-            },
-        });
+        const [config] = await db.insert(projectV2StandupConfigs).values({
+            userId: user.id,
+            projectId: input.projectId,
+            daysPerWeek: input.daysPerWeek,
+            standupTime: input.standupTime,
+            durationMinutes: input.durationMinutes,
+            selectedDays: input.selectedDays,
+            creditsPerDay,
+            weeklyCredits,
+            currentWeekStart: weekStart,
+            currentWeekEnd: weekEnd,
+            isActive: true,
+        }).returning();
 
-        // Create standup entries for the current week
         const entries = [];
         for (let i = 0; i < 7; i++) {
             const dayOfWeek = i;
             if (input.selectedDays.includes(dayOfWeek)) {
                 const scheduledDate = new Date(weekStart);
                 scheduledDate.setDate(weekStart.getDate() + i);
-                
-                // Set the time
+
                 const [hours, minutes] = input.standupTime.split(':');
                 scheduledDate.setHours(parseInt(hours!), parseInt(minutes!), 0, 0);
 
-                // Only create entries for future dates
                 if (scheduledDate > now) {
                     entries.push({
-                        configId: config.id,
+                        configId: config!.id,
                         scheduledFor: scheduledDate,
                         status: "SCHEDULED",
                     });
@@ -179,16 +173,12 @@ export async function createStandupConfig(input: StandupConfigInput): Promise<Ac
         }
 
         if (entries.length > 0) {
-            await prisma.projectV2StandupEntry.createMany({
-                data: entries,
-            });
+            await db.insert(projectV2StandupEntries).values(entries);
         }
 
-        // Update config with total standups
-        await prisma.projectV2StandupConfig.update({
-            where: { id: config.id },
-            data: { totalStandups: entries.length },
-        });
+        await db.update(projectV2StandupConfigs)
+            .set({ totalStandups: entries.length })
+            .where(eq(projectV2StandupConfigs.id, config!.id));
 
         revalidatePath(`/projects/${input.projectSlug}`);
         revalidatePath(`/projects/${input.projectSlug}/tasks`);
@@ -212,8 +202,11 @@ export async function renewStandupConfig(projectId: string, projectSlug: string)
     try {
         const user = await getCurrentUser();
 
-        const config = await prisma.projectV2StandupConfig.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } },
+        const config = await db.query.projectV2StandupConfigs.findFirst({
+            where: and(
+                eq(projectV2StandupConfigs.userId, user.id),
+                eq(projectV2StandupConfigs.projectId, projectId)
+            ),
         });
 
         if (!config) {
@@ -224,7 +217,6 @@ export async function renewStandupConfig(projectId: string, projectSlug: string)
             return { success: false, error: "Standup configuration is not active" };
         }
 
-        // Check if user has enough credits
         if (user.credits < config.weeklyCredits) {
             return {
                 success: false,
@@ -232,7 +224,6 @@ export async function renewStandupConfig(projectId: string, projectSlug: string)
             };
         }
 
-        // Deduct credits
         const nextWeekStart = new Date(config.currentWeekEnd);
         await deductCredits(
             user.id,
@@ -240,26 +231,23 @@ export async function renewStandupConfig(projectId: string, projectSlug: string)
             `Daily Standup - Week ${nextWeekStart.toISOString().split('T')[0]}`
         );
 
-        // Update config for next week
         const nextWeekEnd = new Date(nextWeekStart);
         nextWeekEnd.setDate(nextWeekStart.getDate() + 7);
 
-        await prisma.projectV2StandupConfig.update({
-            where: { id: config.id },
-            data: {
+        await db.update(projectV2StandupConfigs)
+            .set({
                 currentWeekStart: nextWeekStart,
                 currentWeekEnd: nextWeekEnd,
-            },
-        });
+            })
+            .where(eq(projectV2StandupConfigs.id, config.id));
 
-        // Create standup entries for next week
         const entries = [];
         for (let i = 0; i < 7; i++) {
             const dayOfWeek = i;
             if (config.selectedDays.includes(dayOfWeek)) {
                 const scheduledDate = new Date(nextWeekStart);
                 scheduledDate.setDate(nextWeekStart.getDate() + i);
-                
+
                 const [hours, minutes] = config.standupTime.split(':');
                 scheduledDate.setHours(parseInt(hours!), parseInt(minutes!), 0, 0);
 
@@ -271,15 +259,13 @@ export async function renewStandupConfig(projectId: string, projectSlug: string)
             }
         }
 
-        await prisma.projectV2StandupEntry.createMany({
-            data: entries,
-        });
+        if (entries.length > 0) {
+            await db.insert(projectV2StandupEntries).values(entries);
+        }
 
-        // Update total standups count
-        await prisma.projectV2StandupConfig.update({
-            where: { id: config.id },
-            data: { totalStandups: { increment: entries.length } },
-        });
+        await db.update(projectV2StandupConfigs)
+            .set({ totalStandups: sql`${projectV2StandupConfigs.totalStandups} + ${entries.length}` })
+            .where(eq(projectV2StandupConfigs.id, config.id));
 
         revalidatePath(`/projects/${projectSlug}`);
 
@@ -302,16 +288,19 @@ export async function getUpcomingStandups(projectId: string): Promise<ActionResp
     try {
         const user = await getCurrentUser();
 
-        const config = await prisma.projectV2StandupConfig.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } },
-            include: {
+        const config = await db.query.projectV2StandupConfigs.findFirst({
+            where: and(
+                eq(projectV2StandupConfigs.userId, user.id),
+                eq(projectV2StandupConfigs.projectId, projectId)
+            ),
+            with: {
                 standupEntries: {
-                    where: {
-                        scheduledFor: { gte: new Date() },
-                        status: { in: ["SCHEDULED", "SUBMITTED"] },
-                    },
-                    orderBy: { scheduledFor: 'asc' },
-                    take: 10,
+                    where: and(
+                        gte(projectV2StandupEntries.scheduledFor, new Date()),
+                        inArray(projectV2StandupEntries.status, ["SCHEDULED", "SUBMITTED"])
+                    ),
+                    orderBy: (entries: any, { asc }: any) => [asc(entries.scheduledFor)],
+                    limit: 10,
                 },
             },
         });
@@ -351,9 +340,9 @@ export async function submitStandup(input: StandupSubmission, projectSlug: strin
     try {
         const user = await getCurrentUser();
 
-        const entry = await prisma.projectV2StandupEntry.findUnique({
-            where: { id: input.entryId },
-            include: { config: true },
+        const entry = await db.query.projectV2StandupEntries.findFirst({
+            where: eq(projectV2StandupEntries.id, input.entryId),
+            with: { config: true },
         });
 
         if (!entry) {
@@ -368,10 +357,8 @@ export async function submitStandup(input: StandupSubmission, projectSlug: strin
             return { success: false, error: "Standup already submitted" };
         }
 
-        // Update entry
-        await prisma.projectV2StandupEntry.update({
-            where: { id: input.entryId },
-            data: {
+        await db.update(projectV2StandupEntries)
+            .set({
                 whatDidYesterday: input.whatDidYesterday,
                 whatDoingToday: input.whatDoingToday,
                 anyBlockers: input.anyBlockers,
@@ -379,14 +366,12 @@ export async function submitStandup(input: StandupSubmission, projectSlug: strin
                 durationSeconds: input.durationSeconds,
                 status: "SUBMITTED",
                 submittedAt: new Date(),
-            },
-        });
+            })
+            .where(eq(projectV2StandupEntries.id, input.entryId));
 
-        // Update config stats
-        await prisma.projectV2StandupConfig.update({
-            where: { id: entry.configId },
-            data: { completedStandups: { increment: 1 } },
-        });
+        await db.update(projectV2StandupConfigs)
+            .set({ completedStandups: sql`${projectV2StandupConfigs.completedStandups} + 1` })
+            .where(eq(projectV2StandupConfigs.id, entry.configId));
 
         revalidatePath(`/projects/${projectSlug}`);
 
@@ -409,28 +394,28 @@ export async function deactivateStandupConfig(projectId: string, projectSlug: st
     try {
         const user = await getCurrentUser();
 
-        const config = await prisma.projectV2StandupConfig.findUnique({
-            where: { userId_projectId: { userId: user.id, projectId } },
+        const config = await db.query.projectV2StandupConfigs.findFirst({
+            where: and(
+                eq(projectV2StandupConfigs.userId, user.id),
+                eq(projectV2StandupConfigs.projectId, projectId)
+            ),
         });
 
         if (!config) {
             return { success: false, error: "Standup configuration not found" };
         }
 
-        await prisma.projectV2StandupConfig.update({
-            where: { id: config.id },
-            data: { isActive: false },
-        });
+        await db.update(projectV2StandupConfigs)
+            .set({ isActive: false })
+            .where(eq(projectV2StandupConfigs.id, config.id));
 
-        // Mark all future scheduled standups as missed
-        await prisma.projectV2StandupEntry.updateMany({
-            where: {
-                configId: config.id,
-                scheduledFor: { gte: new Date() },
-                status: "SCHEDULED",
-            },
-            data: { status: "MISSED" },
-        });
+        await db.update(projectV2StandupEntries)
+            .set({ status: "MISSED" })
+            .where(and(
+                eq(projectV2StandupEntries.configId, config.id),
+                gte(projectV2StandupEntries.scheduledFor, new Date()),
+                eq(projectV2StandupEntries.status, "SCHEDULED")
+            ));
 
         revalidatePath(`/projects/${projectSlug}`);
 
@@ -444,5 +429,3 @@ export async function deactivateStandupConfig(projectId: string, projectSlug: st
         return { success: false, error: error.message };
     }
 }
-
-

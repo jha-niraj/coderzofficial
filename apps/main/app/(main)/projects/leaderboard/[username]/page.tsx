@@ -1,6 +1,8 @@
 import { Suspense } from 'react'
-import { auth } from '@repo/auth'
-import prisma from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, users, userProjectV2Progress, userTaskV2Statuses, projectsV2, projectV2Tasks, projectV2Sprints } from '@repo/db'
+import { eq, desc } from 'drizzle-orm'
 import { UserProfileLeaderboardClient } from './_components/user-profile-leaderboard-client'
 import {
     Card, CardContent, CardDescription, CardHeader, CardTitle
@@ -16,85 +18,37 @@ interface UserProfileLeaderboardPageProps {
 }
 
 async function getUserProfile(username: string) {
-    const user = await prisma.user.findUnique({
-        where: { username },
-        select: {
-            id: true,
-            name: true,
-            username: true,
-            email: true,
-            image: true,
-            bio: true,
-            credits: true,
-            createdAt: true,
-            // Get user's project progress
-            UserProjectV2Progress: {
-                select: {
-                    id: true,
-                    status: true,
-                    progressPercentage: true,
-                    tasksCompleted: true,
-                    totalTasks: true,
-                    startedAt: true,
-                    completedAt: true,
-                    updatedAt: true,
-                    project: {
-                        select: {
-                            id: true,
-                            slug: true,
-                            title: true,
-                            shortDescription: true,
-                            difficulty: true,
-                            estimatedHours: true,
-                            technologies: true,
-                            visibility: true
-                        }
-                    }
-                },
-                orderBy: {
-                    updatedAt: 'desc'
-                }
-            },
-            // Get recent task completions
-            UserTaskV2Status: {
-                where: {
-                    status: 'COMPLETED'
-                },
-                select: {
-                    id: true,
-                    completedAt: true,
-                    task: {
-                        select: {
-                            id: true,
-                            title: true,
-                            sprint: {
-                                select: {
-                                    project: {
-                                        select: {
-                                            slug: true,
-                                            title: true
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                orderBy: {
-                    completedAt: 'desc'
-                },
-                take: 10
-            }
-        }
+    const user = await db.query.users.findFirst({
+        where: eq(users.username, username),
+        columns: { id: true, name: true, username: true, email: true, image: true, bio: true, credits: true, createdAt: true },
     })
+    if (!user) return null
 
-    return user
+    const [progressRows, taskRows] = await Promise.all([
+        db.query.userProjectV2Progress.findMany({
+            where: eq(userProjectV2Progress.userId, user.id),
+            with: { project: { columns: { id: true, slug: true, title: true, shortDescription: true, difficulty: true, estimatedHours: true, technologies: true, visibility: true } } },
+            orderBy: [desc(userProjectV2Progress.updatedAt)],
+        }),
+        db.query.userTaskV2Statuses.findMany({
+            where: eq(userTaskV2Statuses.userId, user.id),
+            with: { task: { columns: { id: true, title: true }, with: { sprint: { columns: {}, with: { project: { columns: { slug: true, title: true } } } } } } },
+            orderBy: [desc(userTaskV2Statuses.completedAt)],
+            limit: 10,
+        }),
+    ])
+
+    return {
+        ...user,
+        UserProjectV2Progress: progressRows,
+        UserTaskV2Status: taskRows.filter(t => t.status === 'COMPLETED'),
+    }
 }
 
 export default async function UserProfileLeaderboardPage({
     params
 }: UserProfileLeaderboardPageProps) {
-    const session = await auth()
+    const session = await getSession(headers())
     const { username } = await params;
     const userProfile = await getUserProfile(username)
 

@@ -1,9 +1,11 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, jobs, jobApplications, users } from "@repo/db"
+import { eq, and, desc, inArray, gte, lte, isNotNull, isNull, count, or, ilike } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import type { 
+import type {
     ApplicationStatus
 } from "@/types"
 
@@ -141,12 +143,12 @@ export interface ApplicationFilters {
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
     return member
 }
@@ -164,11 +166,11 @@ export async function getApplicationStats(): Promise<{
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const companyJobs = await prisma.job.findMany({
-            where: { companyId: member.companyId },
-            select: { id: true }
-        })
-        const jobIds = companyJobs.map(j => j.id)
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
 
         if (jobIds.length === 0) {
             return {
@@ -181,38 +183,44 @@ export async function getApplicationStats(): Promise<{
         }
 
         const [
-            total, newApps, underReview, shortlisted,
-            interviewScheduled, interviewed, offered, hired, rejected, thisWeek
+            totalRows,
+            newAppsRows,
+            underReviewRows,
+            shortlistedRows,
+            interviewScheduledRows,
+            interviewedRows,
+            offeredRows,
+            hiredRows,
+            rejectedRows,
+            thisWeekRows
         ] = await Promise.all([
-            prisma.jobApplication.count({ where: { jobId: { in: jobIds } } }),
-            prisma.jobApplication.count({ where: { jobId: { in: jobIds }, status: "APPLIED" } }),
-            prisma.jobApplication.count({ where: { jobId: { in: jobIds }, status: "UNDER_REVIEW" } }),
-            prisma.jobApplication.count({ where: { jobId: { in: jobIds }, status: "SHORTLISTED" } }),
-            prisma.jobApplication.count({ where: { jobId: { in: jobIds }, status: "INTERVIEW_SCHEDULED" } }),
-            prisma.jobApplication.count({ where: { jobId: { in: jobIds }, status: "INTERVIEWED" } }),
-            prisma.jobApplication.count({ where: { jobId: { in: jobIds }, status: "OFFER_EXTENDED" } }),
-            prisma.jobApplication.count({ where: { jobId: { in: jobIds }, status: "HIRED" } }),
-            prisma.jobApplication.count({ where: { jobId: { in: jobIds }, status: "REJECTED" } }),
-            prisma.jobApplication.count({
-                where: {
-                    jobId: { in: jobIds },
-                    appliedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-                }
-            })
+            db.select({ count: count() }).from(jobApplications).where(inArray(jobApplications.jobId, jobIds)),
+            db.select({ count: count() }).from(jobApplications).where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "APPLIED"))),
+            db.select({ count: count() }).from(jobApplications).where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "UNDER_REVIEW"))),
+            db.select({ count: count() }).from(jobApplications).where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "SHORTLISTED"))),
+            db.select({ count: count() }).from(jobApplications).where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "INTERVIEW_SCHEDULED"))),
+            db.select({ count: count() }).from(jobApplications).where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "INTERVIEWED"))),
+            db.select({ count: count() }).from(jobApplications).where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "OFFER_EXTENDED"))),
+            db.select({ count: count() }).from(jobApplications).where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "HIRED"))),
+            db.select({ count: count() }).from(jobApplications).where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "REJECTED"))),
+            db.select({ count: count() }).from(jobApplications).where(and(
+                inArray(jobApplications.jobId, jobIds),
+                gte(jobApplications.appliedAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+            ))
         ])
 
         return {
             success: true,
             data: {
-                total,
-                new: newApps,
-                underReview,
-                shortlisted,
-                interviewing: interviewScheduled + interviewed,
-                offered,
-                hired,
-                rejected,
-                thisWeek
+                total: totalRows[0]?.count ?? 0,
+                new: newAppsRows[0]?.count ?? 0,
+                underReview: underReviewRows[0]?.count ?? 0,
+                shortlisted: shortlistedRows[0]?.count ?? 0,
+                interviewing: (interviewScheduledRows[0]?.count ?? 0) + (interviewedRows[0]?.count ?? 0),
+                offered: offeredRows[0]?.count ?? 0,
+                hired: hiredRows[0]?.count ?? 0,
+                rejected: rejectedRows[0]?.count ?? 0,
+                thisWeek: thisWeekRows[0]?.count ?? 0
             }
         }
     } catch (error) {
@@ -234,25 +242,24 @@ export async function getJobApplicationStats(): Promise<{
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const jobs = await prisma.job.findMany({
-            where: { companyId: member.companyId },
-            select: {
-                id: true,
-                title: true,
-                slug: true,
-                _count: { select: { applications: true } },
-                applications: { select: { status: true } }
+        const jobList = await db.query.jobs.findMany({
+            where: eq(jobs.companyId, member.companyId),
+            columns: { id: true, title: true, slug: true },
+            with: {
+                applications: {
+                    columns: { status: true }
+                }
             },
-            orderBy: { createdAt: "desc" }
+            orderBy: [desc(jobs.createdAt)]
         })
 
-        const stats: JobApplicationStats[] = jobs.map(job => {
+        const stats: JobApplicationStats[] = jobList.map(job => {
             const statuses = job.applications.map(a => a.status)
             return {
                 jobId: job.id,
                 jobTitle: job.title,
                 jobSlug: job.slug,
-                total: job._count.applications,
+                total: job.applications.length,
                 new: statuses.filter(s => s === "APPLIED").length,
                 underReview: statuses.filter(s => s === "UNDER_REVIEW").length,
                 shortlisted: statuses.filter(s => s === "SHORTLISTED").length,
@@ -288,68 +295,89 @@ export async function getApplications(
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const where: any = {
-            job: { companyId: member.companyId }
-        }
+        // Get company job IDs
+        const companyJobsQuery = db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(
+                jobSlug
+                    ? and(eq(jobs.companyId, member.companyId), eq(jobs.slug, jobSlug))
+                    : eq(jobs.companyId, member.companyId)
+            )
+        const companyJobs = await companyJobsQuery
+        const jobIds = companyJobs.map(j => j.id)
 
-        if (jobSlug) {
-            where.job.slug = jobSlug
-        }
-
-        if (filters?.status && filters.status.length > 0) {
-            where.status = { in: filters.status }
-        }
-
-        if (filters?.jobId) {
-            where.jobId = filters.jobId
-        }
-
-        if (filters?.search) {
-            where.user = {
-                OR: [
-                    { name: { contains: filters.search, mode: "insensitive" } },
-                    { email: { contains: filters.search, mode: "insensitive" } }
-                ]
+        if (jobIds.length === 0) {
+            return {
+                success: true,
+                data: { applications: [], total: 0, page, pageSize, totalPages: 0 }
             }
         }
 
-        if (filters?.dateFrom || filters?.dateTo) {
-            where.appliedAt = {}
-            if (filters.dateFrom) where.appliedAt.gte = filters.dateFrom
-            if (filters.dateTo) where.appliedAt.lte = filters.dateTo
-        }
+        const conditions = [inArray(jobApplications.jobId, jobIds)]
 
+        if (filters?.status && filters.status.length > 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            conditions.push(inArray(jobApplications.status, filters.status as any[]) as any)
+        }
+        if (filters?.jobId) {
+            conditions.push(eq(jobApplications.jobId, filters.jobId))
+        }
+        if (filters?.dateFrom) {
+            conditions.push(gte(jobApplications.appliedAt, filters.dateFrom))
+        }
+        if (filters?.dateTo) {
+            conditions.push(lte(jobApplications.appliedAt, filters.dateTo))
+        }
         if (filters?.minMatchScore) {
-            where.matchScore = { gte: filters.minMatchScore }
+            conditions.push(gte(jobApplications.matchScore, filters.minMatchScore))
+        }
+        if (filters?.hasResume === true) {
+            conditions.push(isNotNull(jobApplications.resumeUrl))
+        } else if (filters?.hasResume === false) {
+            conditions.push(isNull(jobApplications.resumeUrl))
         }
 
-        if (filters?.hasResume !== undefined) {
-            where.resumeUrl = filters.hasResume ? { not: null } : null
-        }
+        const totalRows = await db
+            .select({ count: count() })
+            .from(jobApplications)
+            .where(and(...conditions))
 
-        const total = await prisma.jobApplication.count({ where })
+        const total = totalRows[0]?.count ?? 0
 
-        const applications = await prisma.jobApplication.findMany({
-            where,
-            include: {
-                job: { select: { id: true, title: true, slug: true } },
-                reviewedBy: { select: { id: true, displayName: true } }
+        const applicationList = await db.query.jobApplications.findMany({
+            where: and(...conditions),
+            with: {
+                job: { columns: { id: true, title: true, slug: true } },
             },
-            orderBy: { appliedAt: "desc" },
-            skip: (page - 1) * pageSize,
-            take: pageSize
+            orderBy: [desc(jobApplications.appliedAt)],
+            offset: (page - 1) * pageSize,
+            limit: pageSize
         })
 
-        // Fetch users separately
-        const userIds = [...new Set(applications.map(app => app.userId))]
-        const users = await prisma.user.findMany({
-            where: { id: { in: userIds } },
-            select: { id: true, name: true, email: true, image: true, phone: true }
-        })
-        const userMap = new Map(users.map(u => [u.id, u]))
+        // Fetch users separately for search and profile data
+        const userIds = [...new Set(applicationList.map(app => app.userId))]
 
-        const formattedApplications: ApplicationListItem[] = applications.map(app => {
+        const userList = await db
+            .select({ id: users.id, name: users.name, email: users.email, image: users.image, phone: users.phone })
+            .from(users)
+            .where(inArray(users.id, userIds))
+
+        // If search filter, filter applicationList by matching user
+        let filteredApplications = applicationList
+        if (filters?.search) {
+            const searchLower = filters.search.toLowerCase()
+            const matchingUserIds = new Set(
+                userList
+                    .filter(u => u.name?.toLowerCase().includes(searchLower) || u.email.toLowerCase().includes(searchLower))
+                    .map(u => u.id)
+            )
+            filteredApplications = applicationList.filter(app => matchingUserIds.has(app.userId))
+        }
+
+        const userMap = new Map(userList.map(u => [u.id, u]))
+
+        const formattedApplications: ApplicationListItem[] = filteredApplications.map(app => {
             const user = userMap.get(app.userId)
             return {
                 id: app.id,
@@ -368,7 +396,7 @@ export async function getApplications(
                 resumeUrl: app.resumeUrl,
                 coverLetter: app.coverLetter,
                 reviewedAt: app.reviewedAt,
-                reviewedBy: app.reviewedBy
+                reviewedBy: null
             }
         })
 
@@ -401,26 +429,26 @@ export async function getApplicationDetail(applicationId: string): Promise<{
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: { companyId: member.companyId }
-            },
-            include: {
+        // Get company job IDs first
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            ),
+            with: {
                 job: {
-                    select: {
+                    columns: {
                         id: true, title: true, slug: true,
                         skillsRequired: true, skillsPreferred: true,
                         experienceMin: true, experienceMax: true
                     }
                 },
-                reviewedBy: {
-                    select: {
-                        id: true,
-                        displayName: true,
-                        user: { select: { name: true, email: true } }
-                    }
-                }
             }
         })
 
@@ -428,23 +456,25 @@ export async function getApplicationDetail(applicationId: string): Promise<{
             return { success: false, error: "Application not found" }
         }
 
-        // Fetch user with profile fields (User model has profile fields directly)
-        const user = await prisma.user.findUnique({
-            where: { id: application.userId },
-            select: {
-                id: true, 
-                name: true, 
-                email: true, 
+        // Fetch user with profile fields
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, application.userId),
+            columns: {
+                id: true,
+                name: true,
+                email: true,
                 image: true,
                 phone: true,
                 bio: true,
                 location: true,
                 website: true,
-                socialLinks: true,
-                skills: {
-                    select: {
-                        name: true
-                    }
+                linkedinUrl: true,
+                githubUrl: true,
+                websiteUrl: true
+            },
+            with: {
+                userSkills: {
+                    columns: { name: true }
                 }
             }
         })
@@ -452,11 +482,6 @@ export async function getApplicationDetail(applicationId: string): Promise<{
         if (!user) {
             return { success: false, error: "User not found" }
         }
-
-        // Extract social links from socialLinks array
-        const socialLinkMap = Object.fromEntries(
-            (user.socialLinks ?? []).map((l: { platform: string; url: string }) => [l.platform.toUpperCase(), l.url])
-        )
 
         const detail: ApplicationDetail = {
             id: application.id,
@@ -468,15 +493,15 @@ export async function getApplicationDetail(applicationId: string): Promise<{
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                image: user.image,
-                phone: user.phone,
+                image: user.image ?? null,
+                phone: user.phone ?? null,
                 location: user.location || null,
                 bio: user.bio || null,
                 headline: null,
-                linkedinUrl: (socialLinkMap['LINKEDIN'] as string | undefined) || null,
-                githubUrl: (socialLinkMap['GITHUB'] as string | undefined) || null,
-                portfolioUrl: user.website || (socialLinkMap['PORTFOLIO'] as string | undefined) || null,
-                skills: user.skills?.map(s => s.name) || []
+                linkedinUrl: user.linkedinUrl || null,
+                githubUrl: user.githubUrl || null,
+                portfolioUrl: user.websiteUrl || user.website || null,
+                skills: user.userSkills?.map(s => s.name) || []
             },
             job: {
                 id: application.job.id,
@@ -504,7 +529,7 @@ export async function getApplicationDetail(applicationId: string): Promise<{
             reviewedAt: application.reviewedAt,
             rejectionReason: application.rejectionReason,
             hrNotes: application.hrNotes,
-            reviewedBy: application.reviewedBy,
+            reviewedBy: null,
             createdAt: application.createdAt,
             updatedAt: application.updatedAt
         }
@@ -530,27 +555,32 @@ export async function updateApplicationStatus(
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: { companyId: member.companyId }
-            }
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            )
         })
 
         if (!application) {
             return { success: false, error: "Application not found" }
         }
 
-        await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        await db.update(jobApplications)
+            .set({
                 status,
                 rejectionReason: status === "REJECTED" ? rejectionReason : null,
                 hrNotes: hrNotes || application.hrNotes,
                 reviewedById: member.id,
                 reviewedAt: new Date()
-            }
-        })
+            })
+            .where(eq(jobApplications.id, applicationId))
 
         revalidatePath("/applications")
         return { success: true }
@@ -595,12 +625,18 @@ export async function scheduleInterview(
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: { companyId: member.companyId }
-            },
-            include: { job: true }
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            ),
+            with: { job: true }
         })
 
         if (!application) {
@@ -610,17 +646,16 @@ export async function scheduleInterview(
         const interviewId = `interview_${applicationId}_${Date.now()}`
         const interviewLink = `/interview/${interviewId}`
 
-        await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        await db.update(jobApplications)
+            .set({
                 status: "INTERVIEW_SCHEDULED",
                 interviewId,
                 interviewScheduledAt: scheduledAt,
                 hrNotes: notes || application.hrNotes,
                 reviewedById: member.id,
                 reviewedAt: new Date()
-            }
-        })
+            })
+            .where(eq(jobApplications.id, applicationId))
 
         revalidatePath("/applications")
         return { success: true, interviewLink }
@@ -642,11 +677,17 @@ export async function addApplicationNote(
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: { companyId: member.companyId }
-            }
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            )
         })
 
         if (!application) {
@@ -657,14 +698,13 @@ export async function addApplicationNote(
         const existingNotes = application.hrNotes || ""
         const newNote = `[${timestamp}] ${note}\n\n${existingNotes}`
 
-        await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        await db.update(jobApplications)
+            .set({
                 hrNotes: newNote,
                 reviewedById: member.id,
                 reviewedAt: new Date()
-            }
-        })
+            })
+            .where(eq(jobApplications.id, applicationId))
 
         revalidatePath("/applications")
         return { success: true }
@@ -693,9 +733,9 @@ export async function getJobBySlug(slug: string): Promise<{
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const job = await prisma.job.findFirst({
-            where: { slug, companyId: member.companyId },
-            select: { id: true, title: true, slug: true, status: true, applicationsCount: true }
+        const job = await db.query.jobs.findFirst({
+            where: and(eq(jobs.slug, slug), eq(jobs.companyId, member.companyId)),
+            columns: { id: true, title: true, slug: true, status: true, applicationsCount: true }
         })
 
         if (!job) {

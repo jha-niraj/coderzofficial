@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma";
-import { auth } from "@repo/auth";
+import { db, users, universities, universityMembers, studentUniversityLinks, departments } from "@repo/db"
+import { eq, and, count } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import bcrypt from "bcryptjs";
 import type {
     UserProfile,
@@ -18,19 +20,19 @@ import type {
 // ============================================
 
 /**
- * Check if user needs to change their password (invited users with temporary password)
+ * Check if user needs to change their password
  */
 export async function checkMustChangePassword() {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, mustChangePassword: false };
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { mustChangePassword: true },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: { mustChangePassword: true },
         });
 
         return {
@@ -44,19 +46,19 @@ export async function checkMustChangePassword() {
 }
 
 /**
- * Get the current user's profile along with their university member info
+ * Get the current user's profile
  */
 export async function getUserProfile() {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: {
                 id: true,
                 name: true,
                 email: true,
@@ -92,23 +94,17 @@ export async function getUserProfile() {
  * Get the current user's university member info
  */
 export async function getCurrentMember() {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
     }
 
     try {
-        const member = await prisma.universityMember.findFirst({
-            where: { userId: session.user.id },
-            include: {
-                department: {
-                    select: {
-                        id: true,
-                        name: true,
-                        code: true,
-                    },
-                },
+        const member = await db.query.universityMembers.findFirst({
+            where: eq(universityMembers.userId, session.user.id),
+            with: {
+                department: { columns: { id: true, name: true, code: true } },
             },
         });
 
@@ -162,38 +158,36 @@ export async function getCurrentMember() {
  * Get university details (accessible to all members)
  */
 export async function getUniversityDetails() {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
     }
 
     try {
-        const member = await prisma.universityMember.findFirst({
-            where: { userId: session.user.id },
-            select: { universityId: true, role: true },
+        const member = await db.query.universityMembers.findFirst({
+            where: eq(universityMembers.userId, session.user.id),
+            columns: { universityId: true, role: true },
         });
 
         if (!member) {
             return { success: false, error: "Not a member of any university" };
         }
 
-        const university = await prisma.university.findUnique({
-            where: { id: member.universityId },
-            include: {
-                _count: {
-                    select: {
-                        members: true,
-                        studentLinks: true,
-                        departments: true,
-                    },
-                },
-            },
+        const university = await db.query.universities.findFirst({
+            where: eq(universities.id, member.universityId),
         });
 
         if (!university) {
             return { success: false, error: "University not found" };
         }
+
+        // Get counts
+        const [memberCountResult, studentCountResult, departmentCountResult] = await Promise.all([
+            db.select({ count: count() }).from(universityMembers).where(eq(universityMembers.universityId, member.universityId)),
+            db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.universityId, member.universityId)),
+            db.select({ count: count() }).from(departments).where(eq(departments.universityId, member.universityId)),
+        ])
 
         const universityDetails: UniversityDetails = {
             id: university.id,
@@ -220,9 +214,9 @@ export async function getUniversityDetails() {
             totalCreditsAllocated: university.totalCreditsAllocated,
             totalCreditsUsed: university.totalCreditsUsed,
             creditExpiryDate: university.creditExpiryDate,
-            memberCount: university._count.members,
-            studentCount: university._count.studentLinks,
-            departmentCount: university._count.departments,
+            memberCount: memberCountResult[0]?.count ?? 0,
+            studentCount: studentCountResult[0]?.count ?? 0,
+            departmentCount: departmentCountResult[0]?.count ?? 0,
             createdAt: university.createdAt,
             updatedAt: university.updatedAt,
         };
@@ -246,36 +240,28 @@ export async function getUniversityDetails() {
  * Update the current user's profile
  */
 export async function updateUserProfile(payload: UpdateProfilePayload) {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
     }
 
     try {
-        // Update user info
         const updateData: Record<string, string | undefined> = {};
         if (payload.name !== undefined) updateData.name = payload.name;
         if (payload.phone !== undefined) updateData.phone = payload.phone;
         if (payload.bio !== undefined) updateData.bio = payload.bio;
 
         if (Object.keys(updateData).length > 0) {
-            await prisma.user.update({
-                where: { id: session.user.id },
-                data: updateData,
-            });
+            await db.update(users).set(updateData).where(eq(users.id, session.user.id));
         }
 
-        // Update university member info if display name or custom job title changed
         if (payload.displayName !== undefined || payload.jobTitleCustom !== undefined) {
             const memberUpdateData: Record<string, string | undefined> = {};
             if (payload.displayName !== undefined) memberUpdateData.displayName = payload.displayName;
             if (payload.jobTitleCustom !== undefined) memberUpdateData.jobTitleCustom = payload.jobTitleCustom;
 
-            await prisma.universityMember.updateMany({
-                where: { userId: session.user.id },
-                data: memberUpdateData,
-            });
+            await db.update(universityMembers).set(memberUpdateData).where(eq(universityMembers.userId, session.user.id));
         }
 
         return { success: true, message: "Profile updated successfully" };
@@ -289,54 +275,45 @@ export async function updateUserProfile(payload: UpdateProfilePayload) {
  * Change the current user's password
  */
 export async function changePassword(payload: ChangePasswordPayload) {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
     }
 
-    // Validate password match
     if (payload.newPassword !== payload.confirmPassword) {
         return { success: false, error: "New passwords do not match" };
     }
 
-    // Validate password strength
     if (payload.newPassword.length < 8) {
         return { success: false, error: "Password must be at least 8 characters" };
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { hashedPassword: true },
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: { hashedPassword: true },
         });
 
         if (!user) {
             return { success: false, error: "User not found" };
         }
 
-        // Check if user has a password (might be OAuth user)
         if (!user.hashedPassword) {
             return { success: false, error: "Cannot change password for OAuth accounts" };
         }
 
-        // Verify current password
         const isValid = await bcrypt.compare(payload.currentPassword, user.hashedPassword);
         if (!isValid) {
             return { success: false, error: "Current password is incorrect" };
         }
 
-        // Hash new password
         const hashedPassword = await bcrypt.hash(payload.newPassword, 12);
 
-        // Update password and clear mustChangePassword flag
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: { 
-                hashedPassword,
-                mustChangePassword: false, // Clear the flag after password change
-            },
-        });
+        await db.update(users).set({
+            hashedPassword,
+            mustChangePassword: false,
+        }).where(eq(users.id, session.user.id));
 
         return { success: true, message: "Password changed successfully" };
     } catch (error) {
@@ -349,17 +326,16 @@ export async function changePassword(payload: ChangePasswordPayload) {
  * Update university details (HEAD only)
  */
 export async function updateUniversityDetails(payload: UpdateUniversityPayload) {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" };
     }
 
     try {
-        // Check if user is HEAD
-        const member = await prisma.universityMember.findFirst({
-            where: { userId: session.user.id },
-            select: { universityId: true, role: true },
+        const member = await db.query.universityMembers.findFirst({
+            where: eq(universityMembers.userId, session.user.id),
+            columns: { universityId: true, role: true },
         });
 
         if (!member) {
@@ -370,7 +346,6 @@ export async function updateUniversityDetails(payload: UpdateUniversityPayload) 
             return { success: false, error: "Only HEAD can update university details" };
         }
 
-        // Build update data
         const updateData: Record<string, unknown> = {};
         if (payload.name !== undefined) updateData.name = payload.name;
         if (payload.website !== undefined) updateData.website = payload.website;
@@ -388,10 +363,7 @@ export async function updateUniversityDetails(payload: UpdateUniversityPayload) 
         if (payload.pincode !== undefined) updateData.pincode = payload.pincode;
 
         if (Object.keys(updateData).length > 0) {
-            await prisma.university.update({
-                where: { id: member.universityId },
-                data: updateData,
-            });
+            await db.update(universities).set(updateData).where(eq(universities.id, member.universityId));
         }
 
         return { success: true, message: "University details updated successfully" };

@@ -1,14 +1,16 @@
 "use server"
 
-import { auth } from '@repo/auth'
-import prisma from "@repo/prisma"
+import { db, follow, conversation, chatMessage } from "@repo/db"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { eq, and, or, ilike, inArray } from "drizzle-orm"
 
 /**
  * Get or create a conversation between two users
  */
 export async function getOrCreateConversation(participantId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated", conversation: null }
         }
@@ -18,22 +20,18 @@ export async function getOrCreateConversation(participantId: string) {
         }
 
         // Check if users are following each other
-        const isFollowing = await prisma.follow.findUnique({
-            where: {
-                followerId_followingId: {
-                    followerId: session.user.id,
-                    followingId: participantId
-                }
-            }
+        const isFollowing = await db.query.follow.findFirst({
+            where: and(
+                eq(follow.followerId, session.user.id),
+                eq(follow.followingId, participantId)
+            )
         })
 
-        const isFollower = await prisma.follow.findUnique({
-            where: {
-                followerId_followingId: {
-                    followerId: participantId,
-                    followingId: session.user.id
-                }
-            }
+        const isFollower = await db.query.follow.findFirst({
+            where: and(
+                eq(follow.followerId, participantId),
+                eq(follow.followingId, session.user.id)
+            )
         })
 
         if (!isFollowing && !isFollower) {
@@ -45,68 +43,34 @@ export async function getOrCreateConversation(participantId: string) {
         }
 
         // Find existing conversation (either direction)
-        let conversation = await prisma.conversation.findFirst({
-            where: {
-                OR: [
-                    {
-                        participant1Id: session.user.id,
-                        participant2Id: participantId
-                    },
-                    {
-                        participant1Id: participantId,
-                        participant2Id: session.user.id
-                    }
-                ]
-            },
-            include: {
-                participant1: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true
-                    }
-                },
-                participant2: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true
-                    }
-                }
-            }
+        let conv = await db.query.conversation.findFirst({
+            where: or(
+                and(
+                    eq(conversation.participant1Id, session.user.id),
+                    eq(conversation.participant2Id, participantId)
+                ),
+                and(
+                    eq(conversation.participant1Id, participantId),
+                    eq(conversation.participant2Id, session.user.id)
+                )
+            ),
+            with: { participant1: true, participant2: true }
         })
 
         // Create if doesn't exist
-        if (!conversation) {
-            conversation = await prisma.conversation.create({
-                data: {
-                    participant1Id: session.user.id,
-                    participant2Id: participantId
-                },
-                include: {
-                    participant1: {
-                        select: {
-                            id: true,
-                            name: true,
-                            username: true,
-                            image: true
-                        }
-                    },
-                    participant2: {
-                        select: {
-                            id: true,
-                            name: true,
-                            username: true,
-                            image: true
-                        }
-                    }
-                }
+        if (!conv) {
+            const [newConv] = await db.insert(conversation).values({
+                participant1Id: session.user.id,
+                participant2Id: participantId
+            }).returning()
+
+            conv = await db.query.conversation.findFirst({
+                where: eq(conversation.id, newConv.id),
+                with: { participant1: true, participant2: true }
             })
         }
 
-        return { success: true, conversation }
+        return { success: true, conversation: conv }
     } catch (error) {
         console.error("Get or create conversation error:", error)
         return { success: false, error: "Failed to create conversation", conversation: null }
@@ -118,52 +82,29 @@ export async function getOrCreateConversation(participantId: string) {
  */
 export async function getConversations() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated", conversations: [] }
         }
 
-        const conversations = await prisma.conversation.findMany({
-            where: {
-                OR: [
-                    { participant1Id: session.user.id },
-                    { participant2Id: session.user.id }
-                ]
-            },
-            include: {
-                participant1: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true
-                    }
-                },
-                participant2: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true
-                    }
-                },
+        const conversations = await db.query.conversation.findMany({
+            where: or(
+                eq(conversation.participant1Id, session.user.id),
+                eq(conversation.participant2Id, session.user.id)
+            ),
+            with: {
+                participant1: true,
+                participant2: true,
                 messages: {
-                    take: 1,
-                    orderBy: { createdAt: "desc" },
-                    select: {
-                        content: true,
-                        type: true,
-                        createdAt: true,
-                        senderId: true,
-                        status: true
-                    }
+                    limit: 1,
+                    orderBy: (t, { desc }) => [desc(t.createdAt)]
                 }
             },
-            orderBy: { lastMessageAt: "desc" }
+            orderBy: (t, { desc }) => [desc(t.lastMessageAt)]
         })
 
         // Map conversations to include the "other" participant
-        const mappedConversations = conversations.map((conv: typeof conversations[number]) => {
+        const mappedConversations = conversations.map(conv => {
             const otherParticipant = conv.participant1Id === session.user.id
                 ? conv.participant2
                 : conv.participant1
@@ -192,33 +133,27 @@ export async function getConversations() {
  */
 export async function deleteConversation(conversationId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        const conversation = await prisma.conversation.findUnique({
-            where: { id: conversationId }
+        const conv = await db.query.conversation.findFirst({
+            where: eq(conversation.id, conversationId)
         })
 
-        if (!conversation) {
+        if (!conv) {
             return { success: false, error: "Conversation not found" }
         }
 
-        if (conversation.participant1Id !== session.user.id &&
-            conversation.participant2Id !== session.user.id) {
+        if (conv.participant1Id !== session.user.id &&
+            conv.participant2Id !== session.user.id) {
             return { success: false, error: "Not authorized" }
         }
 
-        // Delete all messages and the conversation
-        await prisma.$transaction([
-            prisma.chatMessage.deleteMany({
-                where: { conversationId }
-            }),
-            prisma.conversation.delete({
-                where: { id: conversationId }
-            })
-        ])
+        // Delete all messages first, then the conversation
+        await db.delete(chatMessage).where(eq(chatMessage.conversationId, conversationId))
+        await db.delete(conversation).where(eq(conversation.id, conversationId))
 
         return { success: true, message: "Conversation deleted" }
     } catch (error) {
@@ -232,20 +167,18 @@ export async function deleteConversation(conversationId: string) {
  */
 export async function searchUsersForChat(query: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated", users: [] }
         }
 
         // Get users that the current user follows or is followed by
-        const following = await prisma.follow.findMany({
-            where: { followerId: session.user.id },
-            select: { followingId: true }
+        const following = await db.query.follow.findMany({
+            where: eq(follow.followerId, session.user.id)
         })
 
-        const followers = await prisma.follow.findMany({
-            where: { followingId: session.user.id },
-            select: { followerId: true }
+        const followers = await db.query.follow.findMany({
+            where: eq(follow.followingId, session.user.id)
         })
 
         const connectedUserIds = [
@@ -257,30 +190,19 @@ export async function searchUsersForChat(query: string) {
             return { success: true, users: [] }
         }
 
-        const users = await prisma.user.findMany({
-            where: {
-                AND: [
-                    { id: { in: connectedUserIds } },
-                    { id: { not: session.user.id } },
-                    {
-                        OR: [
-                            { name: { contains: query, mode: "insensitive" } },
-                            { username: { contains: query, mode: "insensitive" } }
-                        ]
-                    }
-                ]
-            },
-            select: {
-                id: true,
-                name: true,
-                username: true,
-                image: true,
-                bio: true
-            },
-            take: 20
+        const { users } = await import("@repo/db")
+        const results = await db.query.users.findMany({
+            where: and(
+                inArray(users.id, connectedUserIds),
+                or(
+                    ilike(users.name ?? '', `%${query}%`),
+                    ilike(users.username ?? '', `%${query}%`)
+                )
+            ),
+            limit: 20
         })
 
-        return { success: true, users }
+        return { success: true, users: results }
     } catch (error) {
         console.error("Search users for chat error:", error)
         return { success: false, error: "Failed to search users", users: [] }

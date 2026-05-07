@@ -16,27 +16,27 @@ import { ScrollArea } from "@repo/ui/components/ui/scroll-area"
 
 function HiringLayoutContent({ children }: { children: React.ReactNode }) {
     const { isCollapsed } = useSidebar()
-    const { data: session, status } = useSession()
+    const { data: session, isPending } = useSession()
     const router = useRouter()
 
     // Redirect to signin if not authenticated
     useEffect(() => {
-        if (status === "unauthenticated") {
+        if (!session && !isPending) {
             router.push("/signin")
         }
-    }, [status, router])
+    }, [session, isPending, router])
 
     // Redirect to onboarding if not completed
     useEffect(() => {
-        if (status === "authenticated" && session) {
+        if (session && !isPending) {
             const user = session.user as { onboardingCompleted?: boolean }
             if (!user.onboardingCompleted) {
                 router.push("/onboarding")
             }
         }
-    }, [status, session, router])
+    }, [session, isPending, router])
 
-    if (status === "loading") {
+    if (isPending) {
         return (
             <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">

@@ -1,28 +1,35 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from '@repo/auth'
+import { db, users, skills, certifications } from "@repo/db"
+import { getSession } from '@repo/auth'
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { SkillCategory } from "@repo/prisma/client"
 import {
     ContactInfo, UserCertification, UserProfile, UserSkill
 } from "@/types/user"
+import { eq, ilike } from "drizzle-orm"
 
 export async function getUserProfile() {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.email) {
         throw new Error("User not authenticated")
     }
 
-    const user = await prisma.user.findUnique({
-        where: {
-            email: session.user.email
-        },
-        include: {
-            skills: true,
-            certifications: true
+    const user = await db.query.users.findFirst({
+        where: eq(users.email, session.user.email),
+        with: {
+            userSkills: true,
+            // skills (legacy) also available
         }
+    })
+
+    // Get skills and certifications separately since the relations may differ
+    const userSkillsList = await db.query.skills.findMany({
+        where: eq(skills.userId, session.user.id as string)
+    })
+    const certList = await db.query.certifications.findMany({
+        where: eq(certifications.userId, session.user.id as string)
     })
 
     if (!user) {
@@ -52,14 +59,14 @@ export async function getUserProfile() {
         expectedSalary: user?.expectedSalary || null,
         noticePeriod: user?.noticePeriod || null,
         workExperience: user?.workExperience || null,
-        skills: user.skills.map(skill => ({
+        skills: userSkillsList.map(skill => ({
             id: skill.id,
             name: skill.name,
             level: skill.level,
             category: skill.category,
             order: skill.order,
         })),
-        certifications: user.certifications.map(cert => ({
+        certifications: certList.map(cert => ({
             id: cert.id,
             name: cert.name,
             issuer: cert.issuer,
@@ -77,8 +84,9 @@ export async function getUserProfile() {
         maxCreditsShared: user?.maxCreditsShared
     }
 }
+
 export async function updateUserProfile(data: Partial<UserProfile>) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.email) {
         throw new Error("User not authenticated")
@@ -104,15 +112,19 @@ export async function updateUserProfile(data: Partial<UserProfile>) {
         workExperience: data.workExperience,
     };
 
-    const updatedUser = await prisma.user.update({
-        where: {
-            email: session.user.email
-        },
-        data: userUpdateData,
-        include: {
-            skills: true,
-            certifications: true
-        }
+    const [updatedUser] = await db.update(users).set(userUpdateData).where(
+        eq(users.email, session.user.email)
+    ).returning()
+
+    if (!updatedUser) {
+        throw new Error("Failed to update user")
+    }
+
+    const userSkillsList = await db.query.skills.findMany({
+        where: eq(skills.userId, updatedUser.id)
+    })
+    const certList = await db.query.certifications.findMany({
+        where: eq(certifications.userId, updatedUser.id)
     })
 
     revalidatePath('/profile')
@@ -137,13 +149,13 @@ export async function updateUserProfile(data: Partial<UserProfile>) {
         website: "",
         occupation: "",
         createdAt: updatedUser.createdAt,
-        skills: updatedUser.skills.map(skill => ({
+        skills: userSkillsList.map(skill => ({
             id: skill.id,
             name: skill.name,
             level: skill.level,
             category: skill.category
         })) as UserSkill[],
-        certifications: updatedUser.certifications.map(cert => ({
+        certifications: certList.map(cert => ({
             id: cert.id,
             name: cert.name,
             issuer: cert.issuer,
@@ -163,66 +175,50 @@ export async function updateUserProfile(data: Partial<UserProfile>) {
         workExperience: updatedUser.workExperience || null,
     }
 }
-export async function updateUserSkills(skills: UserSkill[]) {
-    const session = await auth()
+
+export async function updateUserSkills(skillsList: UserSkill[]) {
+    const session = await getSession(headers())
 
     if (!session?.user?.email) {
         throw new Error("User not authenticated")
     }
 
-    const user = await prisma.user.findUnique({
-        where: {
-            email: session.user.email
-        },
-        select: { id: true }
+    const user = await db.query.users.findFirst({
+        where: eq(users.email, session.user.email),
+        columns: { id: true }
     })
 
     if (!user) {
         throw new Error("User not found")
     }
 
-    for (const skill of skills) {
+    for (const skill of skillsList) {
         if (skill.id) {
-            await prisma.skills.update({
-                where: { id: skill.id },
-                data: {
-                    name: skill.name,
-                    level: typeof skill.level === 'number' ? String(skill.level) : skill.level,
-                    category: skill.category || SkillCategory.FRONTEND,
-                    ...(skill.order !== undefined && { order: skill.order }),
-                }
-            })
+            await db.update(skills).set({
+                name: skill.name,
+                level: typeof skill.level === 'number' ? String(skill.level) : skill.level,
+                category: skill.category || 'FRONTEND',
+                ...(skill.order !== undefined && { order: skill.order }),
+            }).where(eq(skills.id, skill.id))
         } else {
-            await prisma.skills.create({
-                data: {
-                    name: skill.name,
-                    level: typeof skill.level === 'number' ? String(skill.level) : skill.level,
-                    category: skill.category || SkillCategory.FRONTEND,
-                    order: skill.order ?? 0,
-                    userId: user.id
-                }
+            await db.insert(skills).values({
+                name: skill.name,
+                level: typeof skill.level === 'number' ? String(skill.level) : skill.level,
+                category: skill.category || 'FRONTEND',
+                order: skill.order ?? 0,
+                userId: user.id
             })
         }
     }
 
-    const updatedUser = await prisma.user.findUnique({
-        where: {
-            email: session.user.email
-        },
-        include: {
-            skills: true,
-            certifications: true
-        }
+    const updatedSkills = await db.query.skills.findMany({
+        where: eq(skills.userId, user.id)
     })
-
-    if (!updatedUser) {
-        throw new Error("Failed to fetch updated user")
-    }
 
     revalidatePath('/profile')
     revalidatePath('/ai/resume')
 
-    return updatedUser.skills.map(skill => ({
+    return updatedSkills.map(skill => ({
         id: skill.id,
         name: skill.name,
         level: skill.level,
@@ -232,88 +228,69 @@ export async function updateUserSkills(skills: UserSkill[]) {
 }
 
 export async function deleteSkill(id: string) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.email) {
         throw new Error("User not authenticated")
     }
-    const user = await prisma.user.findUnique({
-        where: { email: session.user.email },
-        select: { id: true },
+    const user = await db.query.users.findFirst({
+        where: eq(users.email, session.user.email),
+        columns: { id: true },
     })
     if (!user) throw new Error("User not found")
-    const skill = await prisma.skills.findUnique({
-        where: { id },
-        select: { userId: true },
+    const skill = await db.query.skills.findFirst({
+        where: eq(skills.id, id),
+        columns: { userId: true },
     })
     if (!skill || skill.userId !== user.id) {
         throw new Error("Unauthorized to delete this skill")
     }
-    await prisma.skills.delete({ where: { id } })
+    await db.delete(skills).where(eq(skills.id, id))
     revalidatePath("/profile")
     revalidatePath("/ai/resume")
 }
 
-export async function updateUserCertifications(certifications: UserCertification[]) {
-    const session = await auth()
+export async function updateUserCertifications(certificationsList: UserCertification[]) {
+    const session = await getSession(headers())
 
     if (!session?.user?.email) {
         throw new Error("User not authenticated")
     }
 
-    const user = await prisma.user.findUnique({
-        where: {
-            email: session.user.email
-        },
-        select: { id: true }
+    const user = await db.query.users.findFirst({
+        where: eq(users.email, session.user.email),
+        columns: { id: true }
     })
 
     if (!user) {
         throw new Error("User not found")
     }
 
-    for (const cert of certifications) {
+    for (const cert of certificationsList) {
         if (cert.id) {
-            await prisma.certifications.update({
-                where: {
-                    id: cert.id
-                },
-                data: {
-                    name: cert.name,
-                    issuer: cert.issuer,
-                    issuedDate: cert.issuedDate,
-                    link: cert.link || "",
-                }
-            })
+            await db.update(certifications).set({
+                name: cert.name,
+                issuer: cert.issuer,
+                issuedDate: cert.issuedDate,
+                link: cert.link || "",
+            }).where(eq(certifications.id, cert.id))
         } else {
-            await prisma.certifications.create({
-                data: {
-                    name: cert.name,
-                    issuer: cert.issuer,
-                    issuedDate: cert.issuedDate!,
-                    link: cert.link || "",
-                    userId: user.id
-                }
+            await db.insert(certifications).values({
+                name: cert.name,
+                issuer: cert.issuer,
+                issuedDate: cert.issuedDate!,
+                link: cert.link || "",
+                userId: user.id
             })
         }
     }
 
-    const updatedUser = await prisma.user.findUnique({
-        where: {
-            email: session.user.email
-        },
-        include: {
-            skills: true,
-            certifications: true
-        }
+    const updatedCerts = await db.query.certifications.findMany({
+        where: eq(certifications.userId, user.id)
     })
-
-    if (!updatedUser) {
-        throw new Error("Failed to fetch updated user")
-    }
 
     revalidatePath('/profile')
 
-    return updatedUser.certifications.map(cert => ({
+    return updatedCerts.map(cert => ({
         id: cert.id,
         name: cert.name,
         issuer: cert.issuer,
@@ -321,34 +298,28 @@ export async function updateUserCertifications(certifications: UserCertification
         link: cert.link
     })) as UserCertification[]
 }
+
 export async function updateContactInfo(contactData: ContactInfo) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.email) {
         throw new Error("User not authenticated")
     }
 
-    const user = await prisma.user.findUnique({
-        where: {
-            email: session.user.email
-        },
-        select: { id: true }
+    const user = await db.query.users.findFirst({
+        where: eq(users.email, session.user.email),
+        columns: { id: true }
     })
 
     if (!user) {
         throw new Error("User not found")
     }
 
-    const updatedUser = await prisma.user.update({
-        where: {
-            id: session?.user?.id
-        },
-        data: {
-            phone: contactData.phone,
-            gender: contactData.gender,
-            yearofbirth: contactData.yearofbirth
-        }
-    })
+    const [updatedUser] = await db.update(users).set({
+        phone: contactData.phone,
+        gender: contactData.gender,
+        yearofbirth: contactData.yearofbirth
+    }).where(eq(users.id, user.id)).returning()
 
     if (!updatedUser) {
         throw new Error("Failed to fetch updated user")
@@ -362,18 +333,17 @@ export async function updateContactInfo(contactData: ContactInfo) {
         yearofbirth: updatedUser.yearofbirth,
     }
 }
+
 export async function getUserReferralCode() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session) {
         return null;
     }
 
     try {
-        const user = await prisma.user.findUnique({
-            where: {
-                email: session.user.email,
-            },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, session.user.email as string),
+            columns: {
                 referralCode: true,
                 referralCount: true,
             },
@@ -398,19 +368,20 @@ export async function getUserReferralCode() {
         throw new Error("Error occurred while getting the referral code");
     }
 }
+
 export async function checkUsername(username: string) {
     if (!username || username.length < 3) return false;
 
-    const user = await prisma.user.findUnique({
-        where: {
-            username: username.toLowerCase(),
-        },
+    const user = await db.query.users.findFirst({
+        where: eq(users.username, username.toLowerCase()),
+        columns: { id: true }
     });
 
-    return user === null;
+    return user === null || user === undefined;
 }
+
 export async function updateUsername(newUsername: string) {
-    const session = await auth();
+    const session = await getSession(headers());
 
     if (!session?.user) {
         return { success: false, message: "Unauthorized" };
@@ -419,14 +390,9 @@ export async function updateUsername(newUsername: string) {
     const userId = session.user.id;
 
     try {
-        const updatedUser = await prisma.user.update({
-            where: {
-                id: userId,
-            },
-            data: {
-                username: newUsername.toLowerCase(),
-            },
-        });
+        const [updatedUser] = await db.update(users).set({
+            username: newUsername.toLowerCase(),
+        }).where(eq(users.id, userId)).returning();
 
         return { success: true, message: "Username updated successfully", updatedUsername: updatedUser?.username };
     } catch (error: any) {
@@ -434,15 +400,11 @@ export async function updateUsername(newUsername: string) {
         return { success: false, message: "Failed to update username" };
     }
 }
+
 export async function searchUsers(query: string) {
-    const users = await prisma.user.findMany({
-        where: {
-            username: {
-                contains: query,
-                mode: "insensitive",
-            },
-        },
-        select: {
+    const usersList = await db.query.users.findMany({
+        where: ilike(users.username, `%${query}%`),
+        columns: {
             id: true,
             username: true,
             name: true,
@@ -450,13 +412,14 @@ export async function searchUsers(query: string) {
             credits: true
         },
     })
-    return users
+    return usersList
 }
+
 export async function getUserByEmail(email: string) {
     try {
-        const user = await prisma.user.findUnique({
-            where: { email },
-            select: {
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email),
+            columns: {
                 id: true,
                 name: true,
                 email: true,
@@ -474,31 +437,37 @@ export async function getUserByEmail(email: string) {
                 currentLevel: true,
                 credits: true,
                 createdAt: true,
-                skills: {
-                    select: {
+            },
+            with: {
+                userSkills: {
+                    columns: {
                         name: true,
                         level: true,
                         category: true,
                     },
                 },
-                certifications: {
-                    select: {
-                        name: true,
-                        issuer: true,
-                        issuedDate: true,
-                        link: true,
-                    },
-                },
-            },
+            }
         });
 
         if (!user) {
             throw new Error("User not found");
         }
 
+        // Also fetch legacy skills
+        const userSkillsList = await db.query.skills.findMany({
+            where: eq(skills.userId, user.id),
+            columns: { name: true, level: true, category: true }
+        });
+        const certList = await db.query.certifications.findMany({
+            where: eq(certifications.userId, user.id),
+            columns: { name: true, issuer: true, issuedDate: true, link: true }
+        });
+
         return {
             user: {
                 ...user,
+                skills: userSkillsList,
+                certifications: certList,
                 xp: user.currentXp,
             },
         };
@@ -510,7 +479,7 @@ export async function getUserByEmail(email: string) {
 
 export async function updateUserResume(file: File) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
@@ -523,15 +492,12 @@ export async function updateUserResume(file: File) {
         // Simple mock upload - in reality you'd upload to S3/Cloudinary/etc
         const mockUrl = `https://example.com/resumes/${session.user.id}/${file.name}`
 
-        await prisma.user.update({
-            where: { id: session.user.id },
-            data: {
-                hasResume: true,
-                resume: mockUrl,
-                // You might also want to extract text from the file and store it
-                // resumeText: extractedText
-            }
-        })
+        await db.update(users).set({
+            hasResume: true,
+            resume: mockUrl,
+            // You might also want to extract text from the file and store it
+            // resumeText: extractedText
+        }).where(eq(users.id, session.user.id))
 
         revalidatePath('/profile')
         revalidatePath('/ai/jobinterviewassistant')

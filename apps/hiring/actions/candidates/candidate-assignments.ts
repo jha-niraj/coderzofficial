@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, jobs, jobApplications, applicationActivities, interviewPrepProgress } from "@repo/db"
+import { eq, and, inArray } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type { BestScores, RecommendedResource } from "@/types"
 
@@ -10,14 +12,14 @@ import type { BestScores, RecommendedResource } from "@/types"
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return null
     }
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     return member
@@ -41,37 +43,44 @@ export async function submitAssignment(applicationId: string, submission: {
             return { success: false, error: "Unauthorized" }
         }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                job: { companyId: member.companyId }
-            }
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            )
         })
 
         if (!application) {
             return { success: false, error: "Application not found" }
         }
 
-        const updated = await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        const [updated] = await db.update(jobApplications)
+            .set({
                 assignmentSubmittedAt: new Date(),
                 assignmentScore: submission.score ?? undefined,
                 assignmentFeedback: submission.feedback ?? undefined,
-                status: "ASSIGNMENT_SUBMITTED",
-                activities: {
-                    create: {
-                        activityType: "ASSIGNMENT_SUBMISSION",
-                        userId: application.userId,
-                        metadata: {
-                            submissionUrl: submission.submissionUrl,
-                            codeLanguage: submission.codeLanguage,
-                            description: "Candidate submitted assignment"
-                        },
-                        completedAt: new Date()
-                    }
-                }
-            }
+                status: "ASSIGNMENT_SUBMITTED"
+            })
+            .where(eq(jobApplications.id, applicationId))
+            .returning()
+
+        // Create activity record
+        await db.insert(applicationActivities).values({
+            applicationId,
+            userId: application.userId,
+            activityType: "ASSIGNMENT_SUBMISSION",
+            metadata: {
+                submissionUrl: submission.submissionUrl,
+                codeLanguage: submission.codeLanguage,
+                description: "Candidate submitted assignment"
+            },
+            completedAt: new Date()
         })
 
         revalidatePath("/candidates")
@@ -85,32 +94,39 @@ export async function submitAssignment(applicationId: string, submission: {
 }
 
 // Update assignment progress (e.g., save incremental progress or studio link)
-export async function updateAssignmentProgress(applicationId: string, progress: { 
+export async function updateAssignmentProgress(applicationId: string, progress: {
     notes?: string
     percentComplete?: number
     timeSpentMinutes?: number
-    submissionUrl?: string 
+    submissionUrl?: string
 }) {
     try {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const application = await prisma.jobApplication.findFirst({ 
-            where: { id: applicationId, job: { companyId: member.companyId } } 
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            )
         })
         if (!application) return { success: false, error: "Application not found" }
 
-        await prisma.applicationActivity.create({
-            data: {
-                applicationId,
-                userId: application.userId,
-                activityType: "ASSIGNMENT_PROGRESS",
-                metadata: {
-                    notes: progress.notes ?? "Assignment progress update",
-                    percentComplete: progress.percentComplete,
-                    timeSpentMinutes: progress.timeSpentMinutes,
-                    submissionUrl: progress.submissionUrl
-                }
+        await db.insert(applicationActivities).values({
+            applicationId,
+            userId: application.userId,
+            activityType: "ASSIGNMENT_PROGRESS",
+            metadata: {
+                notes: progress.notes ?? "Assignment progress update",
+                percentComplete: progress.percentComplete,
+                timeSpentMinutes: progress.timeSpentMinutes,
+                submissionUrl: progress.submissionUrl
             }
         })
 
@@ -133,7 +149,9 @@ export async function getPrepProgress(applicationId: string) {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const progress = await prisma.interviewPrepProgress.findFirst({ where: { applicationId } })
+        const progress = await db.query.interviewPrepProgress.findFirst({
+            where: eq(interviewPrepProgress.applicationId, applicationId)
+        })
         if (!progress) return { success: false, data: null }
 
         return { success: true, data: progress }
@@ -159,50 +177,63 @@ export async function upsertPrepProgress(applicationId: string, data: Partial<{
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const application = await prisma.jobApplication.findFirst({ 
-            where: { id: applicationId, job: { companyId: member.companyId } } 
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                inArray(jobApplications.jobId, jobIds.length > 0 ? jobIds : ["__none__"])
+            )
         })
         if (!application) return { success: false, error: "Application not found" }
 
         // Try to find existing
-        const existing = await prisma.interviewPrepProgress.findFirst({ where: { applicationId } })
+        const existing = await db.query.interviewPrepProgress.findFirst({
+            where: eq(interviewPrepProgress.applicationId, applicationId)
+        })
+
         if (existing) {
-            const updated = await prisma.interviewPrepProgress.update({
-                where: { id: existing.id },
-                data: {
+            const [updated] = await db.update(interviewPrepProgress)
+                .set({
                     overallReadinessScore: data.overallReadinessScore ?? existing.overallReadinessScore,
                     roundsCompleted: data.roundsCompleted ?? existing.roundsCompleted,
                     totalRounds: data.totalRounds ?? existing.totalRounds,
                     lastPracticedAt: data.lastPracticedAt ?? existing.lastPracticedAt,
-                    totalPracticeSessions: data.totalPracticeSessionsIncrement ? { increment: data.totalPracticeSessionsIncrement } : undefined,
-                    totalPracticeMinutes: data.totalPracticeMinutesIncrement ? { increment: data.totalPracticeMinutesIncrement } : undefined,
-                    // For JSON fields, use provided data or keep existing value (which is already JSON)
-                    bestScores: data.bestScores !== undefined ? data.bestScores : existing.bestScores ?? undefined,
+                    totalPracticeSessions: data.totalPracticeSessionsIncrement
+                        ? existing.totalPracticeSessions + data.totalPracticeSessionsIncrement
+                        : existing.totalPracticeSessions,
+                    totalPracticeMinutes: data.totalPracticeMinutesIncrement
+                        ? existing.totalPracticeMinutes + data.totalPracticeMinutesIncrement
+                        : existing.totalPracticeMinutes,
+                    bestScores: data.bestScores !== undefined ? data.bestScores : (existing.bestScores ?? undefined),
                     nextRecommendedRound: data.nextRecommendedRound ?? existing.nextRecommendedRound,
-                    recommendedResources: data.recommendedResources !== undefined ? data.recommendedResources : existing.recommendedResources ?? undefined
-                }
-            })
+                    recommendedResources: data.recommendedResources !== undefined ? data.recommendedResources : (existing.recommendedResources ?? undefined)
+                })
+                .where(eq(interviewPrepProgress.id, existing.id))
+                .returning()
 
             return { success: true, data: updated }
         }
 
         // Create new
-        const created = await prisma.interviewPrepProgress.create({
-            data: {
-                applicationId,
-                userId: application.userId,
-                overallReadinessScore: data.overallReadinessScore ?? 0,
-                targetReadinessScore: 80,
-                roundsCompleted: data.roundsCompleted ?? 0,
-                totalRounds: data.totalRounds ?? 0,
-                lastPracticedAt: data.lastPracticedAt,
-                totalPracticeSessions: data.totalPracticeSessionsIncrement ?? 0,
-                totalPracticeMinutes: data.totalPracticeMinutesIncrement ?? 0,
-                bestScores: data.bestScores,
-                nextRecommendedRound: data.nextRecommendedRound,
-                recommendedResources: data.recommendedResources
-            }
-        })
+        const [created] = await db.insert(interviewPrepProgress).values({
+            applicationId,
+            userId: application.userId,
+            overallReadinessScore: data.overallReadinessScore ?? 0,
+            targetReadinessScore: 80,
+            roundsCompleted: data.roundsCompleted ?? 0,
+            totalRounds: data.totalRounds ?? 0,
+            lastPracticedAt: data.lastPracticedAt,
+            totalPracticeSessions: data.totalPracticeSessionsIncrement ?? 0,
+            totalPracticeMinutes: data.totalPracticeMinutesIncrement ?? 0,
+            bestScores: data.bestScores,
+            nextRecommendedRound: data.nextRecommendedRound,
+            recommendedResources: data.recommendedResources
+        }).returning()
 
         return { success: true, data: created }
     } catch (error) {

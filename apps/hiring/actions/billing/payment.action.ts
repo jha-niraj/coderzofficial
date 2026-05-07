@@ -1,10 +1,12 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, companyPayments, companySubscriptions } from "@repo/db"
+import { eq, and, or, desc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { 
-    dodoClient, HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType 
+import {
+    dodoClient, HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType
 } from "@/lib/dodopayments"
 import type { PaymentRecord, WebhookPaymentData } from "@/types"
 
@@ -16,12 +18,12 @@ export type { PaymentRecord, WebhookPaymentData }
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     return member
@@ -45,10 +47,10 @@ export async function getPaymentHistory(limit: number = 10): Promise<{
             return { success: false, payments: [], error: "Unauthorized" }
         }
 
-        const payments = await prisma.companyPayment.findMany({
-            where: { companyId: member.companyId },
-            orderBy: { createdAt: "desc" },
-            take: limit,
+        const payments = await db.query.companyPayments.findMany({
+            where: eq(companyPayments.companyId, member.companyId),
+            orderBy: [desc(companyPayments.createdAt)],
+            limit
         })
 
         return {
@@ -60,7 +62,7 @@ export async function getPaymentHistory(limit: number = 10): Promise<{
                 status: p.status,
                 createdAt: p.createdAt,
                 description: p.description,
-                paidAt: p.paidAt,
+                paidAt: p.paidAt
             }))
         }
     } catch (error) {
@@ -83,14 +85,12 @@ export async function verifyPayment(paymentId: string): Promise<{
         }
 
         // Get payment record from database
-        const payment = await prisma.companyPayment.findFirst({
-            where: {
-                dodoPaymentId: paymentId,
-                companyId: member.companyId,
-            },
-            include: {
-                subscription: true,
-            }
+        const payment = await db.query.companyPayments.findFirst({
+            where: and(
+                eq(companyPayments.dodoPaymentId, paymentId),
+                eq(companyPayments.companyId, member.companyId)
+            ),
+            with: { subscription: true }
         })
 
         if (!payment) {
@@ -111,63 +111,54 @@ export async function verifyPayment(paymentId: string): Promise<{
 
         if (paymentDetails.status === "succeeded") {
             // Update payment status
-            await prisma.companyPayment.update({
-                where: { id: payment.id },
-                data: { status: "SUCCEEDED", paidAt: new Date() }
-            })
+            await db.update(companyPayments)
+                .set({ status: "SUCCEEDED", paidAt: new Date() })
+                .where(eq(companyPayments.id, payment.id))
 
             // Activate or update subscription if metadata contains plan info
             const metadata = payment.metadata as { plan?: HiringSubscriptionPlanType; billingCycle?: string } | null
             const plan = metadata?.plan || "PRO"
             const billingCycle = metadata?.billingCycle || "monthly"
             const planConfig = HIRING_SUBSCRIPTION_PLANS[plan]
-            
+
             if (planConfig) {
                 const periodEnd = new Date()
                 periodEnd.setMonth(periodEnd.getMonth() + (billingCycle === "annual" ? 12 : 1))
 
-                await prisma.companySubscription.upsert({
-                    where: { companyId: member.companyId },
-                    update: {
-                        plan: plan,
-                        status: "ACTIVE",
-                        amount: payment.amount,
-                        currency: payment.currency,
-                        billingCycle: billingCycle,
-                        currentPeriodStart: new Date(),
-                        currentPeriodEnd: periodEnd,
-                        maxJobPosts: planConfig.maxJobPosts,
-                        maxApplications: planConfig.maxApplications,
-                        maxInterviewTemplates: planConfig.maxInterviewTemplates,
-                        maxTeamMembers: planConfig.maxTeamMembers,
-                        hasAIScreening: planConfig.hasAIScreening,
-                        hasCustomAssignments: planConfig.hasCustomAssignments,
-                        hasPrioritySupport: planConfig.hasPrioritySupport,
-                        hasAPIAccess: planConfig.hasAPIAccess,
-                        hasSSO: planConfig.hasSSO,
-                        hasWhiteLabel: planConfig.hasWhiteLabel,
-                    },
-                    create: {
-                        companyId: member.companyId,
-                        plan: plan,
-                        status: "ACTIVE",
-                        amount: payment.amount,
-                        currency: payment.currency,
-                        billingCycle: billingCycle,
-                        currentPeriodStart: new Date(),
-                        currentPeriodEnd: periodEnd,
-                        maxJobPosts: planConfig.maxJobPosts,
-                        maxApplications: planConfig.maxApplications,
-                        maxInterviewTemplates: planConfig.maxInterviewTemplates,
-                        maxTeamMembers: planConfig.maxTeamMembers,
-                        hasAIScreening: planConfig.hasAIScreening,
-                        hasCustomAssignments: planConfig.hasCustomAssignments,
-                        hasPrioritySupport: planConfig.hasPrioritySupport,
-                        hasAPIAccess: planConfig.hasAPIAccess,
-                        hasSSO: planConfig.hasSSO,
-                        hasWhiteLabel: planConfig.hasWhiteLabel,
-                    }
+                const existingSub = await db.query.companySubscriptions.findFirst({
+                    where: eq(companySubscriptions.companyId, member.companyId)
                 })
+
+                const subData = {
+                    plan,
+                    status: "ACTIVE" as const,
+                    amount: payment.amount,
+                    currency: payment.currency,
+                    billingCycle,
+                    currentPeriodStart: new Date(),
+                    currentPeriodEnd: periodEnd,
+                    maxJobPosts: planConfig.maxJobPosts,
+                    maxApplications: planConfig.maxApplications,
+                    maxInterviewTemplates: planConfig.maxInterviewTemplates,
+                    maxTeamMembers: planConfig.maxTeamMembers,
+                    hasAIScreening: planConfig.hasAIScreening,
+                    hasCustomAssignments: planConfig.hasCustomAssignments,
+                    hasPrioritySupport: planConfig.hasPrioritySupport,
+                    hasAPIAccess: planConfig.hasAPIAccess,
+                    hasSSO: planConfig.hasSSO,
+                    hasWhiteLabel: planConfig.hasWhiteLabel
+                }
+
+                if (existingSub) {
+                    await db.update(companySubscriptions)
+                        .set(subData)
+                        .where(eq(companySubscriptions.companyId, member.companyId))
+                } else {
+                    await db.insert(companySubscriptions).values({
+                        companyId: member.companyId,
+                        ...subData
+                    })
+                }
             }
 
             // Create invoice for the payment
@@ -179,10 +170,9 @@ export async function verifyPayment(paymentId: string): Promise<{
         }
 
         if (paymentDetails.status === "failed") {
-            await prisma.companyPayment.update({
-                where: { id: payment.id },
-                data: { status: "FAILED", failedAt: new Date() }
-            })
+            await db.update(companyPayments)
+                .set({ status: "FAILED", failedAt: new Date() })
+                .where(eq(companyPayments.id, payment.id))
             return { success: false, error: "Payment failed" }
         }
 
@@ -206,13 +196,11 @@ export async function handlePaymentWebhook(data: WebhookPaymentData): Promise<{
         const { paymentId, amount, currency, status, metadata } = data
 
         // Find company by payment checkout session
-        const payment = await prisma.companyPayment.findFirst({
-            where: { 
-                OR: [
-                    { dodoPaymentId: paymentId },
-                    { dodoCheckoutSessionId: paymentId }
-                ]
-            }
+        const payment = await db.query.companyPayments.findFirst({
+            where: or(
+                eq(companyPayments.dodoPaymentId, paymentId),
+                eq(companyPayments.dodoCheckoutSessionId, paymentId)
+            )
         })
 
         if (!payment) {
@@ -223,19 +211,18 @@ export async function handlePaymentWebhook(data: WebhookPaymentData): Promise<{
         const plan = (metadata?.plan || "PRO") as HiringSubscriptionPlanType
         const billingCycle = metadata?.billingCycle || "monthly"
 
-        const paymentStatus = status === "succeeded" ? "SUCCEEDED" : 
-                             status === "failed" ? "FAILED" : "PENDING"
+        const paymentStatus = status === "succeeded" ? "SUCCEEDED" :
+            status === "failed" ? "FAILED" : "PENDING"
 
         // Update payment record
-        await prisma.companyPayment.update({
-            where: { id: payment.id },
-            data: { 
+        await db.update(companyPayments)
+            .set({
                 status: paymentStatus,
                 dodoPaymentId: paymentId,
                 paidAt: status === "succeeded" ? new Date() : undefined,
-                failedAt: status === "failed" ? new Date() : undefined,
-            }
-        })
+                failedAt: status === "failed" ? new Date() : undefined
+            })
+            .where(eq(companyPayments.id, payment.id))
 
         // If payment succeeded, update subscription
         if (status === "succeeded") {
@@ -244,48 +231,40 @@ export async function handlePaymentWebhook(data: WebhookPaymentData): Promise<{
                 const periodEnd = new Date()
                 periodEnd.setMonth(periodEnd.getMonth() + (billingCycle === "annual" ? 12 : 1))
 
-                await prisma.companySubscription.upsert({
-                    where: { companyId: payment.companyId },
-                    update: {
-                        plan,
-                        status: "ACTIVE",
-                        amount,
-                        currency,
-                        billingCycle,
-                        currentPeriodStart: new Date(),
-                        currentPeriodEnd: periodEnd,
-                        maxJobPosts: planConfig.maxJobPosts,
-                        maxApplications: planConfig.maxApplications,
-                        maxInterviewTemplates: planConfig.maxInterviewTemplates,
-                        maxTeamMembers: planConfig.maxTeamMembers,
-                        hasAIScreening: planConfig.hasAIScreening,
-                        hasCustomAssignments: planConfig.hasCustomAssignments,
-                        hasPrioritySupport: planConfig.hasPrioritySupport,
-                        hasAPIAccess: planConfig.hasAPIAccess,
-                        hasSSO: planConfig.hasSSO,
-                        hasWhiteLabel: planConfig.hasWhiteLabel,
-                    },
-                    create: {
-                        companyId: payment.companyId,
-                        plan,
-                        status: "ACTIVE",
-                        amount,
-                        currency,
-                        billingCycle,
-                        currentPeriodStart: new Date(),
-                        currentPeriodEnd: periodEnd,
-                        maxJobPosts: planConfig.maxJobPosts,
-                        maxApplications: planConfig.maxApplications,
-                        maxInterviewTemplates: planConfig.maxInterviewTemplates,
-                        maxTeamMembers: planConfig.maxTeamMembers,
-                        hasAIScreening: planConfig.hasAIScreening,
-                        hasCustomAssignments: planConfig.hasCustomAssignments,
-                        hasPrioritySupport: planConfig.hasPrioritySupport,
-                        hasAPIAccess: planConfig.hasAPIAccess,
-                        hasSSO: planConfig.hasSSO,
-                        hasWhiteLabel: planConfig.hasWhiteLabel,
-                    }
+                const subData = {
+                    plan,
+                    status: "ACTIVE" as const,
+                    amount,
+                    currency,
+                    billingCycle,
+                    currentPeriodStart: new Date(),
+                    currentPeriodEnd: periodEnd,
+                    maxJobPosts: planConfig.maxJobPosts,
+                    maxApplications: planConfig.maxApplications,
+                    maxInterviewTemplates: planConfig.maxInterviewTemplates,
+                    maxTeamMembers: planConfig.maxTeamMembers,
+                    hasAIScreening: planConfig.hasAIScreening,
+                    hasCustomAssignments: planConfig.hasCustomAssignments,
+                    hasPrioritySupport: planConfig.hasPrioritySupport,
+                    hasAPIAccess: planConfig.hasAPIAccess,
+                    hasSSO: planConfig.hasSSO,
+                    hasWhiteLabel: planConfig.hasWhiteLabel
+                }
+
+                const existingSub = await db.query.companySubscriptions.findFirst({
+                    where: eq(companySubscriptions.companyId, payment.companyId)
                 })
+
+                if (existingSub) {
+                    await db.update(companySubscriptions)
+                        .set(subData)
+                        .where(eq(companySubscriptions.companyId, payment.companyId))
+                } else {
+                    await db.insert(companySubscriptions).values({
+                        companyId: payment.companyId,
+                        ...subData
+                    })
+                }
             }
         }
 

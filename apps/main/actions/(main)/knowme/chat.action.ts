@@ -2,13 +2,21 @@
 
 /**
  * KnowMe Chat Server Actions
- * 
+ *
  * Handles AI chat functionality with RAG (Retrieval-Augmented Generation)
  */
 
-import { auth } from "@repo/auth";
-import { prisma } from "@repo/prisma";
-import type { KnowMeViewerType } from "@repo/prisma/client";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    knowMeProfiles,
+    knowMeChatSessions,
+    knowMeChatMessages,
+    knowMeQuestionAnalytics,
+    knowMePersonalData,
+} from "@repo/db";
+import { eq, and, sql } from "drizzle-orm";
 import type {
 	KnowMeActionResponse, KnowMeChatSessionData, ChatResponse,
 	ChatMessageSource, EmbeddingMetadata
@@ -33,17 +41,17 @@ export async function getOrCreateChatSession(
 	sessionToken?: string
 ): Promise<KnowMeActionResponse<KnowMeChatSessionData>> {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		const currentUserId = session?.user?.id;
 
 		// Try to find existing session
 		if (sessionToken) {
-			const existingSession = await prisma.knowMeChatSession.findUnique({
-				where: { sessionToken },
-				include: {
+			const existingSession = await db.query.knowMeChatSessions.findFirst({
+				where: eq(knowMeChatSessions.sessionToken, sessionToken),
+				with: {
 					messages: {
-						orderBy: { createdAt: "asc" },
-						take: 50, // Limit messages
+						orderBy: (m: any, { asc }: any) => [asc(m.createdAt)],
+						limit: 50,
 					},
 				},
 			});
@@ -57,9 +65,9 @@ export async function getOrCreateChatSession(
 		}
 
 		// Get profile to determine viewer type
-		const profile = await prisma.knowMeProfile.findUnique({
-			where: { id: profileId },
-			include: { privacySettings: true },
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.id, profileId),
+			with: { privacySettings: true },
 		});
 
 		if (!profile) {
@@ -67,7 +75,7 @@ export async function getOrCreateChatSession(
 		}
 
 		// Determine viewer type
-		let viewerType: KnowMeViewerType = "ANONYMOUS";
+		let viewerType: "OWNER" | "REGISTERED_USER" | "RECRUITER" | "ANONYMOUS" | "EXTERNAL_API" = "ANONYMOUS";
 		if (currentUserId) {
 			if (currentUserId === profile.userId) {
 				viewerType = "OWNER";
@@ -89,33 +97,34 @@ export async function getOrCreateChatSession(
 		}
 
 		// Create new session
-		const newSession = await prisma.knowMeChatSession.create({
-			data: {
-				profileId,
-				visitorUserId: currentUserId,
-				viewerType,
-				sessionToken: generateSessionToken(),
-				rateLimitRemaining: privacySettings?.maxQuestionsPerSession || 20,
-				rateLimitResetAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
-				source: "direct",
-			},
-			include: {
-				messages: true,
-			},
-		});
+		const [newSession] = await db.insert(knowMeChatSessions).values({
+			profileId,
+			visitorUserId: currentUserId,
+			viewerType,
+			sessionToken: generateSessionToken(),
+			rateLimitRemaining: privacySettings?.maxQuestionsPerSession || 20,
+			rateLimitResetAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+			source: "direct",
+		}).returning();
 
 		// Update profile stats
-		await prisma.knowMeProfile.update({
-			where: { id: profileId },
-			data: {
-				totalSessions: { increment: 1 },
-				totalVisitors: { increment: viewerType !== "OWNER" ? 1 : 0 },
-			},
+		await db.update(knowMeProfiles)
+			.set({
+				totalSessions: sql`${knowMeProfiles.totalSessions} + 1`,
+				totalVisitors: viewerType !== "OWNER"
+					? sql`${knowMeProfiles.totalVisitors} + 1`
+					: knowMeProfiles.totalVisitors,
+			})
+			.where(eq(knowMeProfiles.id, profileId));
+
+		const sessionWithMessages = await db.query.knowMeChatSessions.findFirst({
+			where: eq(knowMeChatSessions.id, newSession!.id),
+			with: { messages: true },
 		});
 
 		return {
 			success: true,
-			data: formatChatSession(newSession),
+			data: formatChatSession(sessionWithMessages!),
 		};
 	} catch (error) {
 		console.error("Error getting/creating chat session:", error);
@@ -134,13 +143,13 @@ export async function sendChatMessage(
 
 	try {
 		// Get session and profile
-		const chatSession = await prisma.knowMeChatSession.findUnique({
-			where: { id: sessionId },
-			include: {
+		const chatSession = await db.query.knowMeChatSessions.findFirst({
+			where: eq(knowMeChatSessions.id, sessionId),
+			with: {
 				profile: {
-					include: {
+					with: {
 						user: {
-							select: {
+							columns: {
 								name: true,
 								username: true,
 								occupation: true,
@@ -170,25 +179,22 @@ export async function sendChatMessage(
 				};
 			}
 			// Reset rate limit
-			await prisma.knowMeChatSession.update({
-				where: { id: sessionId },
-				data: {
+			await db.update(knowMeChatSessions)
+				.set({
 					rateLimitRemaining: 20,
 					rateLimitResetAt: new Date(Date.now() + 60 * 60 * 1000),
-				},
-			});
+				})
+				.where(eq(knowMeChatSessions.id, sessionId));
 		}
 
 		const profile = chatSession.profile;
 		const user = profile.user;
 
 		// Save user message
-		await prisma.knowMeChatMessage.create({
-			data: {
-				sessionId,
-				role: "user",
-				content: question,
-			},
+		await db.insert(knowMeChatMessages).values({
+			sessionId,
+			role: "user",
+			content: question,
 		});
 
 		// Generate embedding for the question
@@ -239,56 +245,50 @@ export async function sendChatMessage(
 		}
 
 		// Save AI response
-		const aiMessage = await prisma.knowMeChatMessage.create({
-			data: {
-				sessionId,
-				role: "assistant",
-				content: answer,
-				sources: sources as unknown as undefined,
-				tokensUsed,
-				responseTimeMs,
-				retrievedChunks: relevantChunks.map((c) => ({
-					id: c.id,
-					score: c.score,
-				})) as unknown as undefined,
-			},
+		await db.insert(knowMeChatMessages).values({
+			sessionId,
+			role: "assistant",
+			content: answer,
+			sources: sources as any,
+			tokensUsed,
+			responseTimeMs,
+			retrievedChunks: relevantChunks.map((c) => ({
+				id: c.id,
+				score: c.score,
+			})) as any,
 		});
 
 		// Update session stats
-		await prisma.knowMeChatSession.update({
-			where: { id: sessionId },
-			data: {
-				questionsAsked: { increment: 1 },
-				messagesCount: { increment: 2 },
-				rateLimitRemaining: { decrement: 1 },
+		await db.update(knowMeChatSessions)
+			.set({
+				questionsAsked: sql`${knowMeChatSessions.questionsAsked} + 1`,
+				messagesCount: sql`${knowMeChatSessions.messagesCount} + 2`,
+				rateLimitRemaining: sql`${knowMeChatSessions.rateLimitRemaining} - 1`,
 				lastActivityAt: new Date(),
-			},
-		});
+			})
+			.where(eq(knowMeChatSessions.id, sessionId));
 
 		// Update profile stats
-		await prisma.knowMeProfile.update({
-			where: { id: profile.id },
-			data: {
-				totalQuestionsAnswered: { increment: 1 },
-			},
-		});
+		await db.update(knowMeProfiles)
+			.set({
+				totalQuestionsAnswered: sql`${knowMeProfiles.totalQuestionsAnswered} + 1`,
+			})
+			.where(eq(knowMeProfiles.id, profile.id));
 
 		// Log analytics
 		const questionCategory = categorizeQuestion(question);
 		const keywords = extractKeywords(question);
 
-		await prisma.knowMeQuestionAnalytics.create({
-			data: {
-				profileId: profile.id,
-				question,
-				questionCategory,
-				questionKeywords: keywords,
-				askedByUserId: chatSession.visitorUserId,
-				askedByType: chatSession.viewerType,
-				responseGenerated: true,
-				responseTimeMs,
-				responseTokens: tokensUsed,
-			},
+		await db.insert(knowMeQuestionAnalytics).values({
+			profileId: profile.id,
+			question,
+			questionCategory,
+			questionKeywords: keywords,
+			askedByUserId: chatSession.visitorUserId,
+			askedByType: chatSession.viewerType,
+			responseGenerated: true,
+			responseTimeMs,
+			responseTokens: tokensUsed,
 		});
 
 		return {
@@ -314,11 +314,11 @@ export async function getChatHistory(
 	sessionToken: string
 ): Promise<KnowMeActionResponse<KnowMeChatSessionData>> {
 	try {
-		const chatSession = await prisma.knowMeChatSession.findUnique({
-			where: { sessionToken },
-			include: {
+		const chatSession = await db.query.knowMeChatSessions.findFirst({
+			where: eq(knowMeChatSessions.sessionToken, sessionToken),
+			with: {
 				messages: {
-					orderBy: { createdAt: "asc" },
+					orderBy: (m: any, { asc }: any) => [asc(m.createdAt)],
 				},
 			},
 		});
@@ -346,13 +346,9 @@ export async function submitMessageFeedback(
 	feedback?: string
 ): Promise<KnowMeActionResponse<void>> {
 	try {
-		await prisma.knowMeChatMessage.update({
-			where: { id: messageId },
-			data: {
-				wasHelpful,
-				feedback,
-			},
-		});
+		await db.update(knowMeChatMessages)
+			.set({ wasHelpful, feedback })
+			.where(eq(knowMeChatMessages.id, messageId));
 
 		return { success: true, message: "Feedback submitted" };
 	} catch (error) {
@@ -368,12 +364,9 @@ export async function endChatSession(
 	sessionToken: string
 ): Promise<KnowMeActionResponse<void>> {
 	try {
-		await prisma.knowMeChatSession.update({
-			where: { sessionToken },
-			data: {
-				endedAt: new Date(),
-			},
-		});
+		await db.update(knowMeChatSessions)
+			.set({ endedAt: new Date() })
+			.where(eq(knowMeChatSessions.sessionToken, sessionToken));
 
 		return { success: true };
 	} catch (error) {
@@ -386,26 +379,7 @@ export async function endChatSession(
 // HELPER FUNCTIONS
 // ============================================
 
-function formatChatSession(session: {
-	id: string;
-	profileId: string;
-	visitorUserId: string | null;
-	viewerType: KnowMeViewerType;
-	questionsAsked: number;
-	rateLimitRemaining: number;
-	startedAt: Date;
-	lastActivityAt: Date;
-	sessionToken: string;
-	messages: {
-		id: string;
-		role: string;
-		content: string;
-		sources: unknown;
-		responseTimeMs: number | null;
-		wasHelpful: boolean | null;
-		createdAt: Date;
-	}[];
-}): KnowMeChatSessionData {
+function formatChatSession(session: any): KnowMeChatSessionData {
 	return {
 		id: session.id,
 		profileId: session.profileId,
@@ -415,7 +389,7 @@ function formatChatSession(session: {
 		rateLimitRemaining: session.rateLimitRemaining,
 		startedAt: session.startedAt,
 		lastActivityAt: session.lastActivityAt,
-		messages: session.messages.map((m) => ({
+		messages: (session.messages ?? []).map((m: any) => ({
 			id: m.id,
 			role: m.role as "user" | "assistant" | "system",
 			content: m.content,
@@ -442,14 +416,14 @@ export async function saveOwnerTraining(
 	context?: string
 ): Promise<KnowMeActionResponse<{ trainingId: string }>> {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
 		// Verify the user owns this profile
-		const profile = await prisma.knowMeProfile.findUnique({
-			where: { id: profileId },
+		const profile = await db.query.knowMeProfiles.findFirst({
+			where: eq(knowMeProfiles.id, profileId),
 		});
 
 		if (!profile || profile.userId !== session.user.id) {
@@ -477,7 +451,7 @@ export async function saveOwnerTraining(
 		for (let i = 0; i < chunks.length; i++) {
 			const chunk = chunks[i];
 			if (!chunk) continue;
-			
+
 			const embedding = await generateEmbedding(chunk.text);
 
 			vectorsToUpsert.push({
@@ -499,24 +473,21 @@ export async function saveOwnerTraining(
 		await upsertVectorsBatch(vectorsToUpsert, profileId);
 
 		// Save training record to database for tracking
-		await prisma.knowMePersonalData.create({
-			data: {
-				profileId,
-				dataType: "OWNER_TRAINING",
-				title: `Training: ${question.slice(0, 100)}`,
-				contentText: `Q: ${question}\n\nA: ${approvedAnswer}${context ? `\n\nContext: ${context}` : ""}`,
-				isActive: true,
-			},
+		await db.insert(knowMePersonalData).values({
+			profileId,
+			dataType: "OWNER_TRAINING",
+			title: `Training: ${question.slice(0, 100)}`,
+			contentText: `Q: ${question}\n\nA: ${approvedAnswer}${context ? `\n\nContext: ${context}` : ""}`,
+			isActive: true,
 		});
 
 		// Update profile embedding count
-		await prisma.knowMeProfile.update({
-			where: { id: profileId },
-			data: {
-				totalEmbeddingsCount: { increment: chunks.length },
+		await db.update(knowMeProfiles)
+			.set({
+				totalEmbeddingsCount: sql`${knowMeProfiles.totalEmbeddingsCount} + ${chunks.length}`,
 				lastUpdatedAt: new Date(),
-			},
-		});
+			})
+			.where(eq(knowMeProfiles.id, profileId));
 
 		return {
 			success: true,
@@ -537,20 +508,20 @@ export async function approveResponseAsTraining(
 	messageId: string
 ): Promise<KnowMeActionResponse<{ trainingId: string }>> {
 	try {
-		const session = await auth();
+		const session = await getSession(headers());
 		if (!session?.user?.id) {
 			return { success: false, error: "Not authenticated" };
 		}
 
 		// Get the message and its session
-		const message = await prisma.knowMeChatMessage.findUnique({
-			where: { id: messageId },
-			include: {
+		const message = await db.query.knowMeChatMessages.findFirst({
+			where: eq(knowMeChatMessages.id, messageId),
+			with: {
 				session: {
-					include: {
+					with: {
 						profile: true,
 						messages: {
-							orderBy: { createdAt: "asc" },
+							orderBy: (m: any, { asc }: any) => [asc(m.createdAt)],
 						},
 					},
 				},
@@ -568,7 +539,7 @@ export async function approveResponseAsTraining(
 
 		// Find the user's question that preceded this response
 		const messages = message.session.messages;
-		const messageIndex = messages.findIndex((m) => m.id === messageId);
+		const messageIndex = messages.findIndex((m: any) => m.id === messageId);
 
 		if (messageIndex <= 0) {
 			return { success: false, error: "Could not find the original question" };

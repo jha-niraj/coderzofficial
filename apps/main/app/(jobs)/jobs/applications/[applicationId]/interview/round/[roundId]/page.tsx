@@ -3,8 +3,10 @@ import { notFound, redirect } from "next/navigation"
 import { 
     Loader2 
 } from "lucide-react"
-import { auth } from "@repo/auth"
-import { prisma } from "@repo/prisma"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { db, jobApplications, jobs, companies, interviewProcesses, interviewRounds, interviewPrepProgress } from "@repo/db"
+import { eq, and, asc } from "drizzle-orm"
 import { 
     RoundContent, type Application as RoundApplication, type InterviewRound 
 } from "./round-content"
@@ -18,16 +20,9 @@ interface RoundPageProps {
 
 export async function generateMetadata({ params }: RoundPageProps) {
     const { roundId } = await params
-    
-    const round = await prisma.interviewRound.findUnique({
-        where: { id: roundId },
-        select: { title: true }
-    })
-
+    const [round] = await db.select({ title: interviewRounds.title }).from(interviewRounds).where(eq(interviewRounds.id, roundId)).limit(1)
     return {
-        title: round 
-            ? `${round.title} | Interview Round`
-            : "Interview Round | CodeDot.AI",
+        title: round ? `${round.title} | Interview Round` : "Interview Round | CodeDot.AI",
         description: "Prepare for your interview round"
     }
 }
@@ -48,45 +43,49 @@ function parseJsonArray(value: unknown): string[] {
 }
 
 async function getRoundData(applicationId: string, roundId: string, userId: string) {
-    const application = await prisma.jobApplication.findFirst({
-        where: {
-            id: applicationId,
-            userId: userId
-        },
-        include: {
-            job: {
-                include: {
-                    company: {
-                        select: {
-                            id: true,
-                            name: true,
-                            slug: true,
-                            logoUrl: true
-                        }
-                    },
-                    interviewProcess: {
-                        include: {
-                            rounds: {
-                                orderBy: { roundNumber: "asc" }
-                            }
-                        }
-                    }
-                }
-            },
-            prepProgress: true
-        }
+    const app = await db.query.jobApplications.findFirst({
+        where: and(eq(jobApplications.id, applicationId), eq(jobApplications.userId, userId)),
     })
+    if (!app) return null
 
-    if (!application) return null
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, app.jobId)).limit(1)
+    if (!job) return null
 
-    const round = application.job.interviewProcess?.rounds.find(r => r.id === roundId)
+    const [company] = await db.select({ id: companies.id, name: companies.name, slug: companies.slug, logoUrl: companies.logoUrl })
+        .from(companies).where(eq(companies.id, job.companyId)).limit(1)
+
+    const [round] = await db.select().from(interviewRounds).where(eq(interviewRounds.id, roundId)).limit(1)
     if (!round) return null
 
-    return { application, round }
+    let processRounds: (typeof interviewRounds.$inferSelect)[] = []
+    if (job.interviewProcessId) {
+        processRounds = await db.select().from(interviewRounds)
+            .where(eq(interviewRounds.processId, job.interviewProcessId))
+            .orderBy(asc(interviewRounds.roundNumber))
+    }
+
+    const proc = job.interviewProcessId
+        ? await db.query.interviewProcesses.findFirst({ where: eq(interviewProcesses.id, job.interviewProcessId) })
+        : null
+
+    const prep = await db.query.interviewPrepProgress.findFirst({ where: eq(interviewPrepProgress.applicationId, app.id) })
+
+    return {
+        application: {
+            ...app,
+            job: {
+                ...job,
+                company: company ?? { id: "", name: "", slug: null, logoUrl: null },
+                interviewProcess: proc ? { ...proc, rounds: processRounds } : null,
+            },
+            prepProgress: prep ?? null,
+        },
+        round,
+    }
 }
 
 export default async function RoundPage({ params }: RoundPageProps) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         redirect("/signin")
     }

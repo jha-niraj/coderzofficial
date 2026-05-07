@@ -1,8 +1,8 @@
 import {
-    LayoutDashboard, Users, CreditCard, FolderKanban, Mic, ClipboardCheck,
-    Trophy, MessageSquare, MessageCircle, Lightbulb, BarChart3, Settings,
+    LayoutDashboard, Users, CreditCard, FolderKanban, Mic,
+    MessageCircle, Lightbulb, BarChart3, Settings,
     Shield, FileText, type LucideIcon, Coins, Receipt, ArrowLeftRight,
-    UserCheck, BookOpen, Flame, Zap, Vote, Flag, Activity, Database, User,
+    UserCheck, Activity, Database, User,
     Lock, Building2, GraduationCap, Briefcase, School
 } from "lucide-react"
 
@@ -124,37 +124,6 @@ export const adminNavigation: NavigationConfig = {
                             icon: Activity },
                     ]
                 },
-                {
-                    name: "Assessments",
-                    path: "main/assessments",
-                    icon: ClipboardCheck,
-                    requiredPermission: "assessments",
-                    children: [
-                        { name: "Topics", path: "main/assessments", icon: BookOpen },
-                        { name: "Questions", path: "main/assessments/questions", icon: FileText },
-                    ]
-                },
-                {
-                    name: "Challenges",
-                    path: "main/challenges",
-                    icon: Trophy,
-                    requiredPermission: "challenges",
-                    children: [
-                        { name: "Forge Tracks", path: "main/challenges/forge", icon: Flame },
-                        { name: "Crucible Events", path: "main/challenges/crucible", icon: Zap },
-                        { name: "Collective", path: "main/challenges/collective", icon: Vote },
-                    ]
-                },
-                {
-                    name: "Communities",
-                    path: "main/communities",
-                    icon: MessageSquare,
-                    requiredPermission: "communities",
-                    children: [
-                        { name: "All Communities", path: "main/communities", icon: MessageSquare },
-                        { name: "Reports", path: "main/communities/reports", icon: Flag },
-                    ]
-                },
 
             ]
         },
@@ -257,9 +226,6 @@ export const defaultPermissionsByRole: Record<string, AdminPermissions> = {
         credits: ["read", "write", "delete", "full"],
         projects: ["read", "write", "delete", "full"],
         mocks: ["read", "write", "delete", "full"],
-        assessments: ["read", "write", "delete", "full"],
-        challenges: ["read", "write", "delete", "full"],
-        communities: ["read", "write", "delete", "full"],
         feedback: ["read", "write", "delete", "full"],
         analytics: ["read", "write", "full"],
         admin_management: ["read", "write", "delete", "full"],
@@ -294,7 +260,6 @@ export const defaultPermissionsByRole: Record<string, AdminPermissions> = {
         mocks: ["read"],
         assessments: ["read"],
         challenges: ["read"],
-        communities: ["read", "write", "delete", "full"],
         feedback: ["read", "write", "delete"],
         analytics: ["read"],
     },

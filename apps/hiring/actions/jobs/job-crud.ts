@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companies, companyMembers, jobs, jobApplications, interviewProcesses, interviewRounds } from "@repo/db"
+import { eq, and, desc, inArray, ilike, or, sql, asc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type { CreateJobInput } from "@/types"
 
@@ -10,14 +12,14 @@ import type { CreateJobInput } from "@/types"
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return null
     }
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     return member
@@ -43,36 +45,34 @@ export async function createJob(input: CreateJobInput) {
 
         const slug = generateSlug(input.title)
 
-        const job = await prisma.job.create({
-            data: {
-                companyId: member.companyId,
-                postedById: member.id,
-                title: input.title,
-                slug,
-                description: input.description,
-                requirements: input.requirements || [],
-                responsibilities: input.responsibilities || [],
-                benefits: input.benefits || [],
-                location: input.location,
-                locationType: input.locationType,
-                employmentType: input.employmentType,
-                experienceMin: input.experienceMin,
-                experienceMax: input.experienceMax,
-                salaryMin: input.salaryMin,
-                salaryMax: input.salaryMax,
-                salaryCurrency: input.salaryCurrency || "INR",
-                salaryDisclosed: input.salaryDisclosed ?? true,
-                skillsRequired: input.skillsRequired || [],
-                skillsPreferred: input.skillsPreferred || [],
-                hasAssignment: input.hasAssignment || false,
-                assignmentDetails: input.assignmentDetails,
-                assignmentDeadlineDays: input.assignmentDeadlineDays,
-                interviewProcessId: input.interviewProcessId,
-                customQuestions: JSON.parse(JSON.stringify(input.customQuestions || [])),
-                visibility: input.visibility || "PUBLIC",
-                status: input.status || "DRAFT"
-            }
-        })
+        const [job] = await db.insert(jobs).values({
+            companyId: member.companyId,
+            postedById: member.id,
+            title: input.title,
+            slug,
+            description: input.description,
+            requirements: input.requirements || [],
+            responsibilities: input.responsibilities || [],
+            benefits: input.benefits || [],
+            location: input.location,
+            locationType: input.locationType,
+            employmentType: input.employmentType,
+            experienceMin: input.experienceMin,
+            experienceMax: input.experienceMax,
+            salaryMin: input.salaryMin,
+            salaryMax: input.salaryMax,
+            salaryCurrency: input.salaryCurrency || "INR",
+            salaryDisclosed: input.salaryDisclosed ?? true,
+            skillsRequired: input.skillsRequired || [],
+            skillsPreferred: input.skillsPreferred || [],
+            hasAssignment: input.hasAssignment || false,
+            assignmentDetails: input.assignmentDetails,
+            assignmentDeadlineDays: input.assignmentDeadlineDays,
+            interviewProcessId: input.interviewProcessId,
+            customQuestions: JSON.parse(JSON.stringify(input.customQuestions || [])),
+            visibility: input.visibility || "PUBLIC",
+            status: input.status || "DRAFT"
+        }).returning()
 
         revalidatePath("/jobs")
         return { success: true, data: job }
@@ -90,42 +90,46 @@ export async function updateJob(jobId: string, input: Partial<CreateJobInput>) {
         }
 
         // Verify job belongs to company
-        const existingJob = await prisma.job.findFirst({
-            where: { id: jobId, companyId: member.companyId }
+        const existingJob = await db.query.jobs.findFirst({
+            where: and(eq(jobs.id, jobId), eq(jobs.companyId, member.companyId))
         })
 
         if (!existingJob) {
             return { success: false, error: "Job not found" }
         }
 
-        const job = await prisma.job.update({
-            where: { id: jobId },
-            data: {
-                title: input.title,
-                description: input.description,
-                requirements: input.requirements,
-                responsibilities: input.responsibilities,
-                benefits: input.benefits,
-                location: input.location,
-                locationType: input.locationType,
-                employmentType: input.employmentType,
-                experienceMin: input.experienceMin,
-                experienceMax: input.experienceMax,
-                salaryMin: input.salaryMin,
-                salaryMax: input.salaryMax,
-                salaryCurrency: input.salaryCurrency,
-                salaryDisclosed: input.salaryDisclosed,
-                skillsRequired: input.skillsRequired,
-                skillsPreferred: input.skillsPreferred,
-                hasAssignment: input.hasAssignment,
-                assignmentDetails: input.assignmentDetails,
-                assignmentDeadlineDays: input.assignmentDeadlineDays,
-                interviewProcessId: input.interviewProcessId,
-                customQuestions: input.customQuestions ? JSON.parse(JSON.stringify(input.customQuestions)) : undefined,
-                visibility: input.visibility,
-                status: input.status
-            }
-        })
+        const updateData: Record<string, unknown> = {}
+        if (input.title !== undefined) updateData.title = input.title
+        if (input.description !== undefined) updateData.description = input.description
+        if (input.requirements !== undefined) updateData.requirements = input.requirements
+        if (input.responsibilities !== undefined) updateData.responsibilities = input.responsibilities
+        if (input.benefits !== undefined) updateData.benefits = input.benefits
+        if (input.location !== undefined) updateData.location = input.location
+        if (input.locationType !== undefined) updateData.locationType = input.locationType
+        if (input.employmentType !== undefined) updateData.employmentType = input.employmentType
+        if (input.experienceMin !== undefined) updateData.experienceMin = input.experienceMin
+        if (input.experienceMax !== undefined) updateData.experienceMax = input.experienceMax
+        if (input.salaryMin !== undefined) updateData.salaryMin = input.salaryMin
+        if (input.salaryMax !== undefined) updateData.salaryMax = input.salaryMax
+        if (input.salaryCurrency !== undefined) updateData.salaryCurrency = input.salaryCurrency
+        if (input.salaryDisclosed !== undefined) updateData.salaryDisclosed = input.salaryDisclosed
+        if (input.skillsRequired !== undefined) updateData.skillsRequired = input.skillsRequired
+        if (input.skillsPreferred !== undefined) updateData.skillsPreferred = input.skillsPreferred
+        if (input.hasAssignment !== undefined) updateData.hasAssignment = input.hasAssignment
+        if (input.assignmentDetails !== undefined) updateData.assignmentDetails = input.assignmentDetails
+        if (input.assignmentDeadlineDays !== undefined) updateData.assignmentDeadlineDays = input.assignmentDeadlineDays
+        if (input.interviewProcessId !== undefined) updateData.interviewProcessId = input.interviewProcessId
+        if (input.customQuestions !== undefined) updateData.customQuestions = JSON.parse(JSON.stringify(input.customQuestions))
+        if (input.visibility !== undefined) updateData.visibility = input.visibility
+        if (input.status !== undefined) updateData.status = input.status
+
+        const updatedJobs = await db.update(jobs)
+            .set(updateData)
+            .where(eq(jobs.id, jobId))
+            .returning()
+
+        const job = updatedJobs[0]
+        if (!job) return { success: false, error: "Failed to update job" }
 
         revalidatePath("/jobs")
         revalidatePath(`/jobs/${job.slug}`)
@@ -146,47 +150,63 @@ export async function getJobs(filters: {
             return { success: false, error: "Unauthorized" }
         }
 
-        const where: Record<string, unknown> = {
-            companyId: member.companyId
-        }
+        const conditions = [eq(jobs.companyId, member.companyId)]
 
         if (filters.status && filters.status.length > 0) {
-            where.status = { in: filters.status }
+            conditions.push(inArray(jobs.status, filters.status as ("DRAFT" | "ACTIVE" | "PAUSED" | "CLOSED" | "FILLED")[]))
         }
 
         if (filters.search) {
-            where.OR = [
-                { title: { contains: filters.search, mode: "insensitive" } },
-                { description: { contains: filters.search, mode: "insensitive" } }
-            ]
+            conditions.push(
+                or(
+                    ilike(jobs.title, `%${filters.search}%`),
+                    ilike(jobs.description, `%${filters.search}%`)
+                )!
+            )
         }
 
-        const jobs = await prisma.job.findMany({
-            where,
-            include: {
-                interviewProcess: {
-                    include: {
-                        rounds: {
-                            orderBy: { roundNumber: "asc" }
-                        }
-                    }
-                },
+        const jobList = await db.query.jobs.findMany({
+            where: and(...conditions),
+            with: {
                 postedBy: {
-                    select: {
+                    columns: {
                         displayName: true,
                         email: true
                     }
                 },
-                _count: {
-                    select: {
-                        applications: true
-                    }
+                applications: {
+                    columns: { id: true }
                 }
             },
-            orderBy: { createdAt: "desc" }
+            orderBy: [desc(jobs.createdAt)]
         })
 
-        return { success: true, data: jobs }
+        // Get interview process info separately since it's not in jobsRelations
+        const processIds = [...new Set(jobList.map(j => j.interviewProcessId).filter(Boolean))] as string[]
+        const processMap = new Map<string, { id: string; name: string; rounds: { id: string; roundNumber: number; roundType: string; title: string }[] }>()
+        if (processIds.length > 0) {
+            const processList = await db.query.interviewProcesses.findMany({
+                where: inArray(interviewProcesses.id, processIds),
+                with: {
+                    rounds: {
+                        orderBy: [asc(interviewRounds.roundNumber)],
+                        columns: { id: true, roundNumber: true, roundType: true, title: true }
+                    }
+                },
+                columns: { id: true, name: true }
+            })
+            for (const p of processList) {
+                processMap.set(p.id, p)
+            }
+        }
+
+        const jobsWithCount = jobList.map(job => ({
+            ...job,
+            interviewProcess: job.interviewProcessId ? processMap.get(job.interviewProcessId) ?? null : null,
+            _count: { applications: job.applications.length }
+        }))
+
+        return { success: true, data: jobsWithCount }
     } catch (error) {
         console.error("Error fetching jobs:", error)
         return { success: false, error: "Failed to fetch jobs" }
@@ -200,26 +220,17 @@ export async function getJobById(jobId: string) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const job = await prisma.job.findFirst({
-            where: { id: jobId, companyId: member.companyId },
-            include: {
-                interviewProcess: {
-                    include: {
-                        rounds: {
-                            orderBy: { roundNumber: "asc" }
-                        }
-                    }
-                },
+        const job = await db.query.jobs.findFirst({
+            where: and(eq(jobs.id, jobId), eq(jobs.companyId, member.companyId)),
+            with: {
                 postedBy: {
-                    select: {
+                    columns: {
                         displayName: true,
                         email: true
                     }
                 },
-                _count: {
-                    select: {
-                        applications: true
-                    }
+                applications: {
+                    columns: { id: true }
                 }
             }
         })
@@ -228,7 +239,15 @@ export async function getJobById(jobId: string) {
             return { success: false, error: "Job not found" }
         }
 
-        return { success: true, data: job }
+        // Get interview process separately
+        const interviewProcess = job.interviewProcessId
+            ? await db.query.interviewProcesses.findFirst({
+                where: eq(interviewProcesses.id, job.interviewProcessId),
+                with: { rounds: { orderBy: [asc(interviewRounds.roundNumber)] } }
+              })
+            : null
+
+        return { success: true, data: { ...job, interviewProcess, _count: { applications: job.applications.length } } }
     } catch (error) {
         console.error("Error fetching job:", error)
         return { success: false, error: "Failed to fetch job" }
@@ -242,26 +261,17 @@ export async function getJobBySlug(slug: string) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const job = await prisma.job.findFirst({
-            where: { slug, companyId: member.companyId },
-            include: {
-                interviewProcess: {
-                    include: {
-                        rounds: {
-                            orderBy: { roundNumber: "asc" }
-                        }
-                    }
-                },
+        const job = await db.query.jobs.findFirst({
+            where: and(eq(jobs.slug, slug), eq(jobs.companyId, member.companyId)),
+            with: {
                 postedBy: {
-                    select: {
+                    columns: {
                         displayName: true,
                         email: true
                     }
                 },
-                _count: {
-                    select: {
-                        applications: true
-                    }
+                applications: {
+                    columns: { id: true }
                 }
             }
         })
@@ -270,7 +280,15 @@ export async function getJobBySlug(slug: string) {
             return { success: false, error: "Job not found" }
         }
 
-        return { success: true, data: job }
+        // Get interview process separately
+        const interviewProcess = job.interviewProcessId
+            ? await db.query.interviewProcesses.findFirst({
+                where: eq(interviewProcesses.id, job.interviewProcessId),
+                with: { rounds: { orderBy: [asc(interviewRounds.roundNumber)] } }
+              })
+            : null
+
+        return { success: true, data: { ...job, interviewProcess, _count: { applications: job.applications.length } } }
     } catch (error) {
         console.error("Error fetching job:", error)
         return { success: false, error: "Failed to fetch job" }
@@ -284,9 +302,7 @@ export async function deleteJob(jobId: string) {
             return { success: false, error: "Unauthorized" }
         }
 
-        await prisma.job.deleteMany({
-            where: { id: jobId, companyId: member.companyId }
-        })
+        await db.delete(jobs).where(and(eq(jobs.id, jobId), eq(jobs.companyId, member.companyId)))
 
         revalidatePath("/jobs")
         return { success: true }

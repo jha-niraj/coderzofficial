@@ -1,9 +1,21 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import {
+    db,
+    pathfinderGoals,
+    pathfinderVerifications,
+    pathfinderDailySessions,
+    pathfinderSubGoals,
+    pathfinderGoalPurchases,
+    users,
+    creditTransactions,
+    subTransactions,
+    earnings,
+} from '@repo/db'
+import { eq, and, desc, asc, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
-import { Currency, Module } from '@repo/prisma/client'
 
 // ================================================================================
 // GET PUBLIC GOALS (for explore page)
@@ -11,24 +23,20 @@ import { Currency, Module } from '@repo/prisma/client'
 
 export async function getPublicPathfinderGoals() {
     try {
-        const goals = await prisma.pathfinderGoal.findMany({
-            where: { isPublic: true },
-            orderBy: { createdAt: 'desc' },
-            include: {
+        const goals = await db.query.pathfinderGoals.findMany({
+            where: eq(pathfinderGoals.isPublic, true),
+            orderBy: [desc(pathfinderGoals.createdAt)],
+            with: {
                 user: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         username: true,
                         image: true,
                     },
                 },
-                _count: {
-                    select: {
-                        dailySessions: true,
-                        subGoals: true,
-                    },
-                },
+                dailySessions: true,
+                subGoals: true,
             },
         })
 
@@ -45,14 +53,11 @@ export async function getPublicPathfinderGoals() {
 
 export async function getPublicPathfinderGoalById(goalId: string) {
     try {
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: {
-                id: goalId,
-                isPublic: true,
-            },
-            include: {
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.isPublic, true)),
+            with: {
                 user: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         username: true,
@@ -60,11 +65,11 @@ export async function getPublicPathfinderGoalById(goalId: string) {
                     },
                 },
                 dailySessions: {
-                    orderBy: { date: 'asc' },
-                    include: {
+                    orderBy: [asc(pathfinderDailySessions.date)],
+                    with: {
                         subGoals: {
-                            orderBy: { order: 'asc' },
-                            select: {
+                            orderBy: [asc(pathfinderSubGoals.order)],
+                            columns: {
                                 id: true,
                                 title: true,
                                 description: true,
@@ -96,14 +101,11 @@ export async function getPublicPathfinderGoalById(goalId: string) {
 /** Fetch a public goal by slug (for explore URL). If multiple creators have same slug, returns first match. */
 export async function getPublicPathfinderGoalBySlugOnly(slug: string) {
     try {
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: {
-                slug,
-                isPublic: true,
-            },
-            include: {
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.slug, slug), eq(pathfinderGoals.isPublic, true)),
+            with: {
                 user: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         username: true,
@@ -111,11 +113,11 @@ export async function getPublicPathfinderGoalBySlugOnly(slug: string) {
                     },
                 },
                 dailySessions: {
-                    orderBy: { date: 'asc' },
-                    include: {
+                    orderBy: [asc(pathfinderDailySessions.date)],
+                    with: {
                         subGoals: {
-                            orderBy: { order: 'asc' },
-                            select: {
+                            orderBy: [asc(pathfinderSubGoals.order)],
+                            columns: {
                                 id: true,
                                 title: true,
                                 description: true,
@@ -147,15 +149,15 @@ export async function getPublicPathfinderGoalBySlugOnly(slug: string) {
 
 export async function getPublicPathfinderGoalBySlug(slug: string, creatorId: string) {
     try {
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: {
-                slug,
-                userId: creatorId,
-                isPublic: true,
-            },
-            include: {
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(
+                eq(pathfinderGoals.slug, slug),
+                eq(pathfinderGoals.userId, creatorId),
+                eq(pathfinderGoals.isPublic, true)
+            ),
+            with: {
                 user: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         username: true,
@@ -163,11 +165,11 @@ export async function getPublicPathfinderGoalBySlug(slug: string, creatorId: str
                     },
                 },
                 dailySessions: {
-                    orderBy: { date: 'asc' },
-                    include: {
+                    orderBy: [asc(pathfinderDailySessions.date)],
+                    with: {
                         subGoals: {
-                            orderBy: { order: 'asc' },
-                            select: {
+                            orderBy: [asc(pathfinderSubGoals.order)],
+                            columns: {
                                 id: true,
                                 title: true,
                                 description: true,
@@ -202,19 +204,19 @@ export async function getPublicPathfinderGoalBySlug(slug: string, creatorId: str
 
 export async function copyPathfinderGoal(goalId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', slug: null }
         }
 
-        const source = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, isPublic: true },
-            include: {
+        const source = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.isPublic, true)),
+            with: {
                 dailySessions: {
-                    orderBy: { date: 'asc' },
-                    include: {
+                    orderBy: [asc(pathfinderDailySessions.date)],
+                    with: {
                         subGoals: {
-                            orderBy: { order: 'asc' },
+                            orderBy: [asc(pathfinderSubGoals.order)],
                         },
                     },
                 },
@@ -232,10 +234,7 @@ export async function copyPathfinderGoal(goalId: string) {
         const price = source.creditPrice ?? 0
 
         if (price > 0) {
-            const user = await prisma.user.findUnique({
-                where: { id: session.user.id },
-                select: { credits: true },
-            })
+            const [user] = await db.select({ credits: users.credits }).from(users).where(eq(users.id, session.user.id))
             if (!user || user.credits < price) {
                 return {
                     success: false,
@@ -248,15 +247,14 @@ export async function copyPathfinderGoal(goalId: string) {
             }
         }
 
+        // Find available slug
         const slug = await (async () => {
             const base = source.slug
             let s = base
             let i = 0
             while (true) {
-                const exists = await prisma.pathfinderGoal.findUnique({
-                    where: {
-                        userId_slug: { userId: session.user!.id!, slug: s },
-                    },
+                const exists = await db.query.pathfinderGoals.findFirst({
+                    where: and(eq(pathfinderGoals.userId, session.user!.id!), eq(pathfinderGoals.slug, s)),
                 })
                 if (!exists) return s
                 i++
@@ -264,133 +262,116 @@ export async function copyPathfinderGoal(goalId: string) {
             }
         })()
 
-        const result = await prisma.$transaction(async (tx) => {
-            const newGoal = await tx.pathfinderGoal.create({
-                data: {
-                    userId: session.user!.id!,
-                    title: source.title,
-                    slug,
-                    category: source.category,
-                    level: source.level,
-                    focusAreas: source.focusAreas,
-                    targetDate: source.targetDate,
-                    duration: source.duration,
-                    estimatedDays: source.estimatedDays,
-                    overview: source.overview,
-                    learningObjectives: source.learningObjectives,
-                    prerequisites: source.prerequisites,
-                    isPublic: false,
-                    forkedFromId: source.id,
-                    status: 'ACTIVE',
-                    startedAt: new Date(),
-                },
-            })
+        const result = await db.transaction(async (tx) => {
+            const [newGoal] = await tx.insert(pathfinderGoals).values({
+                userId: session.user!.id!,
+                title: source.title,
+                slug,
+                category: source.category,
+                level: source.level,
+                focusAreas: source.focusAreas,
+                targetDate: source.targetDate,
+                duration: source.duration,
+                estimatedDays: source.estimatedDays,
+                overview: source.overview,
+                learningObjectives: source.learningObjectives,
+                prerequisites: source.prerequisites,
+                isPublic: false,
+                forkedFromId: source.id,
+                status: 'ACTIVE',
+                startedAt: new Date(),
+            }).returning()
 
-            await tx.pathfinderVerification.create({
-                data: {
-                    goalId: newGoal.id,
-                    quizStatus: 'PENDING',
-                    codingStatus: 'LOCKED',
-                    mockStatus: 'LOCKED',
-                    projectStatus: 'PENDING',
-                },
+            await tx.insert(pathfinderVerifications).values({
+                goalId: newGoal.id,
+                quizStatus: 'PENDING',
+                codingStatus: 'LOCKED',
+                mockStatus: 'LOCKED',
+                projectStatus: 'PENDING',
             })
 
             for (const ds of source.dailySessions) {
-                const newSession = await tx.pathfinderDailySession.create({
-                    data: {
-                        goalId: newGoal.id,
-                        userId: session.user!.id!,
-                        date: ds.date,
-                        totalSubGoals: ds.totalSubGoals,
-                        totalQuizQuestions: ds.totalQuizQuestions,
-                        totalCodingProblems: ds.totalCodingProblems,
-                    },
-                })
+                const [newSession] = await tx.insert(pathfinderDailySessions).values({
+                    goalId: newGoal.id,
+                    userId: session.user!.id!,
+                    date: ds.date,
+                    totalSubGoals: ds.totalSubGoals,
+                    totalQuizQuestions: ds.totalQuizQuestions,
+                    totalCodingProblems: ds.totalCodingProblems,
+                }).returning()
+
                 for (const sg of ds.subGoals) {
-                    await tx.pathfinderSubGoal.create({
-                        data: {
-                            goalId: newGoal.id,
-                            sessionId: newSession.id,
-                            title: sg.title,
-                            description: sg.description,
-                            source: sg.source,
-                            order: sg.order,
-                            hasCoding: sg.hasCoding,
-                            status: 'PENDING',
-                        },
+                    await tx.insert(pathfinderSubGoals).values({
+                        goalId: newGoal.id,
+                        sessionId: newSession.id,
+                        title: sg.title,
+                        description: sg.description,
+                        source: sg.source,
+                        order: sg.order,
+                        hasCoding: sg.hasCoding,
+                        status: 'PENDING',
                     })
                 }
             }
 
             if (price > 0) {
-                await tx.user.update({
-                    where: { id: session.user!.id! },
-                    data: { credits: { decrement: price } },
-                })
-                const buyerTx = await tx.creditTransaction.create({
-                    data: {
-                        userId: session.user!.id!,
-                        amount: -price,
-                        type: 'SPEND',
-                        description: `Pathfinder: Copy "${source.title}" from creator`,
-                        currency: Currency.INR,
-                    },
-                })
-                await tx.subTransaction.create({
-                    data: {
-                        creditTransactionId: buyerTx.id,
-                        module: Module.PATHFINDER,
-                        referenceId: source.id,
-                        metadata: {
-                            goalTitle: source.title,
-                            creatorId: source.userId,
-                            buyerId: session.user!.id!,
-                        },
-                    },
-                })
+                await tx.update(users)
+                    .set({ credits: sql`${users.credits} - ${price}` })
+                    .where(eq(users.id, session.user!.id!))
 
-                await tx.user.update({
-                    where: { id: source.userId },
-                    data: { credits: { increment: price } },
-                })
-                const creatorTx = await tx.creditTransaction.create({
-                    data: {
-                        userId: source.userId,
-                        amount: price,
-                        type: 'REWARD',
-                        description: `Pathfinder: Sale of goal "${source.title}"`,
-                        currency: Currency.INR,
-                    },
-                })
-                await tx.subTransaction.create({
-                    data: {
-                        creditTransactionId: creatorTx.id,
-                        module: Module.PATHFINDER,
-                        referenceId: source.id,
-                        metadata: {
-                            goalTitle: source.title,
-                            buyerId: session.user!.id!,
-                        },
-                    },
-                })
+                const [buyerTx] = await tx.insert(creditTransactions).values({
+                    userId: session.user!.id!,
+                    amount: -price,
+                    type: 'SPEND',
+                    description: `Pathfinder: Copy "${source.title}" from creator`,
+                    currency: 'INR',
+                }).returning()
 
-                await tx.earning.create({
-                    data: {
-                        userId: source.userId,
-                        module: Module.PATHFINDER,
-                        referenceId: source.id,
-                        amount: price,
-                        sourceUserId: session.user!.id!,
-                    },
-                })
-
-                await tx.pathfinderGoalPurchase.create({
-                    data: {
-                        goalId: source.id,
+                await tx.insert(subTransactions).values({
+                    creditTransactionId: buyerTx.id,
+                    module: 'PATHFINDER',
+                    referenceId: source.id,
+                    metadata: {
+                        goalTitle: source.title,
+                        creatorId: source.userId,
                         buyerId: session.user!.id!,
-                        creditsPaid: price,
                     },
+                })
+
+                await tx.update(users)
+                    .set({ credits: sql`${users.credits} + ${price}` })
+                    .where(eq(users.id, source.userId))
+
+                const [creatorTx] = await tx.insert(creditTransactions).values({
+                    userId: source.userId,
+                    amount: price,
+                    type: 'REWARD',
+                    description: `Pathfinder: Sale of goal "${source.title}"`,
+                    currency: 'INR',
+                }).returning()
+
+                await tx.insert(subTransactions).values({
+                    creditTransactionId: creatorTx.id,
+                    module: 'PATHFINDER',
+                    referenceId: source.id,
+                    metadata: {
+                        goalTitle: source.title,
+                        buyerId: session.user!.id!,
+                    },
+                })
+
+                await tx.insert(earnings).values({
+                    userId: source.userId,
+                    module: 'PATHFINDER',
+                    referenceId: source.id,
+                    amount: price,
+                    sourceUserId: session.user!.id!,
+                })
+
+                await tx.insert(pathfinderGoalPurchases).values({
+                    goalId: source.id,
+                    buyerId: session.user!.id!,
+                    creditsPaid: price,
                 })
             }
 

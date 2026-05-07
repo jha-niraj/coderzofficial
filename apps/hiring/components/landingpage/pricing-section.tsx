@@ -66,7 +66,7 @@ const plans = [
 
 export default function PricingSection() {
     const [currency, setCurrency] = useState<"INR" | "USD">("INR")
-    const { data: session, status } = useSession()
+    const { data: session } = useSession()
     const router = useRouter()
 
     const handlePlanClick = (planId: string) => {
@@ -82,7 +82,7 @@ export default function PricingSection() {
         }
 
         // For PRO plan, check authentication
-        if (status === "authenticated" && session) {
+        if (session) {
             // User is logged in, redirect to billing
             router.push(`/billing?plan=${planId}&currency=${currency}`)
         } else {

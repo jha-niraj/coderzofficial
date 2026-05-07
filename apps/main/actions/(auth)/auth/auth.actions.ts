@@ -1,9 +1,11 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, users } from "@repo/db"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { sendEmail } from "@/utils/mail"
 import bcryptjs from "bcryptjs"
+import { eq } from "drizzle-orm"
 
 interface AuthResponse {
     success: boolean
@@ -13,8 +15,8 @@ interface AuthResponse {
 
 export async function sendVerificationOTP(email: string): Promise<AuthResponse> {
     try {
-        const user = await prisma.user.findUnique({
-            where: { email }
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email)
         })
 
         if (!user) {
@@ -31,13 +33,10 @@ export async function sendVerificationOTP(email: string): Promise<AuthResponse> 
         expiry.setMinutes(expiry.getMinutes() + 10) // 10 minutes expiry
 
         // Update user with OTP
-        await prisma.user.update({
-            where: { email },
-            data: {
-                verifyOTP: otp,
-                verifyOTPExpiry: expiry
-            }
-        })
+        await db.update(users).set({
+            verifyOTP: otp,
+            verifyOTPExpiry: expiry
+        }).where(eq(users.email, email))
 
         // Send OTP email
         await sendEmail({
@@ -56,8 +55,8 @@ export async function sendVerificationOTP(email: string): Promise<AuthResponse> 
 
 export async function verifyOTP(email: string, otp: string): Promise<AuthResponse> {
     try {
-        const user = await prisma.user.findUnique({
-            where: { email }
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email)
         })
 
         if (!user) {
@@ -81,16 +80,13 @@ export async function verifyOTP(email: string, otp: string): Promise<AuthRespons
         }
 
         // Verify the user
-        await prisma.user.update({
-            where: { email },
-            data: {
-                emailVerified: true,
-                verifyOTP: null,
-                verifyOTPExpiry: null,
-                verifyToken: null,
-                verifyTokenExpiry: null
-            }
-        })
+        await db.update(users).set({
+            emailVerified: true,
+            verifyOTP: null,
+            verifyOTPExpiry: null,
+            verifyToken: null,
+            verifyTokenExpiry: null
+        }).where(eq(users.email, email))
 
         // Send welcome email
         await sendEmail({
@@ -108,8 +104,8 @@ export async function verifyOTP(email: string, otp: string): Promise<AuthRespons
 
 export async function resendVerificationOTP(email: string): Promise<AuthResponse> {
     try {
-        const user = await prisma.user.findUnique({
-            where: { email }
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email)
         })
 
         if (!user) {
@@ -126,13 +122,10 @@ export async function resendVerificationOTP(email: string): Promise<AuthResponse
         expiry.setMinutes(expiry.getMinutes() + 10) // 10 minutes expiry
 
         // Update user with new OTP
-        await prisma.user.update({
-            where: { email },
-            data: {
-                verifyOTP: otp,
-                verifyOTPExpiry: expiry
-            }
-        })
+        await db.update(users).set({
+            verifyOTP: otp,
+            verifyOTPExpiry: expiry
+        }).where(eq(users.email, email))
 
         // Send OTP email
         await sendEmail({
@@ -151,8 +144,8 @@ export async function resendVerificationOTP(email: string): Promise<AuthResponse
 
 export async function sendPasswordResetOTP(email: string): Promise<AuthResponse> {
     try {
-        const user = await prisma.user.findUnique({
-            where: { email }
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email)
         })
 
         if (!user) {
@@ -165,13 +158,10 @@ export async function sendPasswordResetOTP(email: string): Promise<AuthResponse>
         expiry.setMinutes(expiry.getMinutes() + 10) // 10 minutes expiry
 
         // Update user with reset OTP
-        await prisma.user.update({
-            where: { email },
-            data: {
-                resetOTP: otp,
-                resetOTPExpiry: expiry
-            }
-        })
+        await db.update(users).set({
+            resetOTP: otp,
+            resetOTPExpiry: expiry
+        }).where(eq(users.email, email))
 
         // Send reset OTP email
         await sendEmail({
@@ -190,8 +180,8 @@ export async function sendPasswordResetOTP(email: string): Promise<AuthResponse>
 
 export async function resetPasswordWithOTP(email: string, otp: string, newPassword: string): Promise<AuthResponse> {
     try {
-        const user = await prisma.user.findUnique({
-            where: { email }
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, email)
         })
 
         if (!user) {
@@ -214,16 +204,13 @@ export async function resetPasswordWithOTP(email: string, otp: string, newPasswo
         const hashedPassword = await bcryptjs.hash(newPassword, 10)
 
         // Update password and clear reset OTP
-        await prisma.user.update({
-            where: { email },
-            data: {
-                hashedPassword,
-                resetOTP: null,
-                resetOTPExpiry: null,
-                resetToken: null,
-                restTokenExpiry: null
-            }
-        })
+        await db.update(users).set({
+            hashedPassword,
+            resetOTP: null,
+            resetOTPExpiry: null,
+            resetToken: null,
+            restTokenExpiry: null
+        }).where(eq(users.email, email))
 
         // Send confirmation email
         await sendEmail({
@@ -244,13 +231,13 @@ export async function changePassword(
     newPassword: string
 ): Promise<AuthResponse> {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.email) {
             return { success: false, error: "Not authenticated" }
         }
 
-        const user = await prisma.user.findUnique({
-            where: { email: session.user.email },
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, session.user.email)
         })
 
         if (!user) {
@@ -271,13 +258,10 @@ export async function changePassword(
         }
 
         const hashedPassword = await bcryptjs.hash(newPassword, 10)
-        await prisma.user.update({
-            where: { email: session.user.email },
-            data: {
-                hashedPassword,
-                mustChangePassword: false,
-            },
-        })
+        await db.update(users).set({
+            hashedPassword,
+            mustChangePassword: false,
+        }).where(eq(users.email, session.user.email))
 
         return { success: true, message: "Password updated successfully" }
     } catch (error) {

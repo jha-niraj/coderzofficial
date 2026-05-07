@@ -1,13 +1,29 @@
 "use server";
 
-import prisma from "@repo/prisma";
-import { auth } from '@repo/auth';
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    users,
+    userProjectV2Progress,
+    studios,
+    pathfinderGoals,
+    activityEntries,
+    dailyActivities,
+    userBadges,
+    creditTransfers,
+    referrals,
+    mockVoiceSession,
+    communityPosts,
+    userStats,
+} from "@repo/db";
+import { eq, and, or, gte, desc, asc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 // Get user's home page data
 export async function getHomeData() {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" };
         }
@@ -17,9 +33,10 @@ export async function getHomeData() {
         // Fetch all data in parallel for performance
         const [
             user,
+            userStatsRow,
             inProgressProjects,
             recentStudios,
-            pathfinderGoals,
+            pathfinderGoalRows,
             recentActivity,
             activityCalendar,
             achievements,
@@ -28,10 +45,10 @@ export async function getHomeData() {
             referralStats,
             recentMockSessions,
         ] = await Promise.all([
-            // User stats with UserStats relation for streaks
-            prisma.user.findUnique({
-                where: { id: userId },
-                select: {
+            // User stats
+            db.query.users.findFirst({
+                where: eq(users.id, userId),
+                columns: {
                     id: true,
                     name: true,
                     image: true,
@@ -39,31 +56,28 @@ export async function getHomeData() {
                     currentXp: true,
                     totalXp: true,
                     currentLevel: true,
-                    userStats: {
-                        select: {
-                            currentStreak: true,
-                            longestStreak: true,
-                            lastActivityDate: true,
-                        },
-                    },
-                    _count: {
-                        select: {
-                            followers: true,
-                            following: true,
-                        },
-                    },
                 },
             }),
 
-            // In-progress projects (limit 6) - using ProjectV2
-            prisma.userProjectV2Progress.findMany({
-                where: {
-                    userId,
-                    status: "IN_PROGRESS",
+            // UserStats (streak info) — separate query
+            db.query.userStats.findFirst({
+                where: eq(userStats.userId, userId),
+                columns: {
+                    currentStreak: true,
+                    longestStreak: true,
+                    lastActivityDate: true,
                 },
-                include: {
+            }),
+
+            // In-progress projects (limit 6)
+            db.query.userProjectV2Progress.findMany({
+                where: and(
+                    eq(userProjectV2Progress.userId, userId),
+                    eq(userProjectV2Progress.status, "IN_PROGRESS")
+                ),
+                with: {
                     project: {
-                        select: {
+                        columns: {
                             id: true,
                             slug: true,
                             title: true,
@@ -73,37 +87,33 @@ export async function getHomeData() {
                         },
                     },
                 },
-                orderBy: { startedAt: "desc" },
-                take: 6,
+                orderBy: desc(userProjectV2Progress.startedAt),
+                limit: 6,
             }),
 
             // Recent studios (limit 6)
-            prisma.studio.findMany({
-                where: { userId },
-                select: {
+            db.query.studios.findMany({
+                where: eq(studios.userId, userId),
+                columns: {
                     id: true,
                     slug: true,
                     title: true,
                     description: true,
                     emoji: true,
                     updatedAt: true,
-                    _count: {
-                        select: {
-                            quizzes: true,
-                            flashcardDecks: true,
-                        },
-                    },
                 },
-                orderBy: { updatedAt: "desc" },
-                take: 6,
+                with: {
+                    quizzes: { columns: { id: true } },
+                    flashcardDecks: { columns: { id: true } },
+                },
+                orderBy: desc(studios.updatedAt),
+                limit: 6,
             }),
 
-            // Pathfinder goals (replaces weekly goals)
-            prisma.pathfinderGoal.findMany({
-                where: { userId },
-                orderBy: { createdAt: "desc" },
-                take: 10,
-                select: {
+            // Pathfinder goals
+            db.query.pathfinderGoals.findMany({
+                where: eq(pathfinderGoals.userId, userId),
+                columns: {
                     id: true,
                     slug: true,
                     title: true,
@@ -115,39 +125,40 @@ export async function getHomeData() {
                     totalSubGoals: true,
                     completedSubGoals: true,
                 },
+                orderBy: desc(pathfinderGoals.createdAt),
+                limit: 10,
             }),
 
             // Recent activity from ActivityEntry (limit 10)
-            prisma.activityEntry.findMany({
-                where: { userId },
-                orderBy: { createdAt: "desc" },
-                take: 10,
+            db.query.activityEntries.findMany({
+                where: eq(activityEntries.userId, userId),
+                orderBy: desc(activityEntries.createdAt),
+                limit: 10,
             }),
 
             // Activity calendar data (last 365 days)
-            prisma.dailyActivity.findMany({
-                where: {
-                    userId,
-                    date: {
-                        gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000),
-                    },
-                },
-                select: {
+            db.query.dailyActivities.findMany({
+                where: and(
+                    eq(dailyActivities.userId, userId),
+                    gte(dailyActivities.date, new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+                ),
+                columns: {
                     date: true,
                     totalXpEarned: true,
                     activitiesCount: true,
                 },
-                orderBy: { date: "asc" },
+                orderBy: asc(dailyActivities.date),
             }),
 
-            // Recent achievements from new badges system (limit 5)
-            prisma.userBadge.findMany({
-                where: { userId, status: "CLAIMED" },
-                orderBy: { claimedAt: "desc" },
-                take: 5,
-                include: {
+            // Recent achievements from badges system (limit 5)
+            db.query.userBadges.findMany({
+                where: and(
+                    eq(userBadges.userId, userId),
+                    eq(userBadges.status, "CLAIMED")
+                ),
+                with: {
                     badge: {
-                        select: {
+                        columns: {
                             id: true,
                             name: true,
                             description: true,
@@ -157,50 +168,53 @@ export async function getHomeData() {
                         },
                     },
                 },
+                orderBy: desc(userBadges.claimedAt),
+                limit: 5,
             }),
 
             // Leaderboard position
             getLeaderboardPosition(userId),
 
-            // Recent credit transfers (sent and received)
-            prisma.creditTransfer.findMany({
-                where: {
-                    OR: [{ senderId: userId }, { receiverId: userId }],
-                },
-                include: {
+            // Recent credit transfers
+            db.query.creditTransfers.findMany({
+                where: or(
+                    eq(creditTransfers.senderId, userId),
+                    eq(creditTransfers.receiverId, userId)
+                ),
+                with: {
                     sender: {
-                        select: { id: true, name: true, image: true, username: true },
+                        columns: { id: true, name: true, image: true, username: true },
                     },
                     receiver: {
-                        select: { id: true, name: true, image: true, username: true },
+                        columns: { id: true, name: true, image: true, username: true },
                     },
                 },
-                orderBy: { createdAt: "desc" },
-                take: 5,
+                orderBy: desc(creditTransfers.createdAt),
+                limit: 5,
             }),
 
             // Referral stats
             getReferralStats(userId),
 
             // Recent mock voice sessions (limit 6)
-            prisma.mockVoiceSession.findMany({
-                where: { userId },
-                include: {
+            db.query.mockVoiceSession.findMany({
+                where: eq(mockVoiceSession.userId, userId),
+                with: {
                     mock: {
-                        select: {
+                        columns: {
                             id: true,
                             title: true,
                             category: true,
                         },
                     },
                 },
-                orderBy: { createdAt: "desc" },
-                take: 6,
+                orderBy: desc(mockVoiceSession.createdAt),
+                limit: 6,
             }),
         ]);
 
         // Transform pathfinder goals for home
-        const pathfinderGoalsForHome = pathfinderGoals.map((g) => ({
+        const pathfinderGoalsForHome = pathfinderGoalRows.map((g) => ({
             id: g.id,
             slug: g.slug,
             title: g.title,
@@ -226,8 +240,8 @@ export async function getHomeData() {
         const transformedUser = user
             ? {
                 ...user,
-                currentStreak: user.userStats?.currentStreak || 0,
-                longestStreak: user.userStats?.longestStreak || 0,
+                currentStreak: userStatsRow?.currentStreak || 0,
+                longestStreak: userStatsRow?.longestStreak || 0,
             }
             : null;
 
@@ -262,12 +276,26 @@ export async function getHomeData() {
             unlockedAt: ub.claimedAt ?? ub.completedAt ?? ub.unlockedAt ?? new Date(),
         }));
 
+        // Normalize studios to include _count shape for client compatibility
+        const normalizedStudios = recentStudios.map(s => ({
+            id: s.id,
+            slug: s.slug,
+            title: s.title,
+            description: s.description,
+            emoji: s.emoji,
+            updatedAt: s.updatedAt,
+            _count: {
+                quizzes: s.quizzes.length,
+                flashcardDecks: s.flashcardDecks.length,
+            },
+        }));
+
         return {
             success: true,
             data: {
                 user: transformedUser,
                 inProgressProjects,
-                recentStudios,
+                recentStudios: normalizedStudios,
                 pathfinderGoals: pathfinderGoalsForHome,
                 recentActivity: transformedActivity,
                 activityCalendar: transformedCalendar,
@@ -287,13 +315,13 @@ export async function getHomeData() {
 // Get leaderboard position
 async function getLeaderboardPosition(userId: string) {
     try {
-        const users = await prisma.user.findMany({
-            select: { id: true, totalXp: true },
-            orderBy: { totalXp: "desc" },
+        const allUsers = await db.query.users.findMany({
+            columns: { id: true, totalXp: true },
+            orderBy: desc(users.totalXp),
         });
 
-        const position = users.findIndex((u) => u.id === userId) + 1;
-        const totalUsers = users.length;
+        const position = allUsers.findIndex((u) => u.id === userId) + 1;
+        const totalUsers = allUsers.length;
         const percentile = Math.round(((totalUsers - position) / totalUsers) * 100);
 
         return { position, totalUsers, percentile };
@@ -305,11 +333,11 @@ async function getLeaderboardPosition(userId: string) {
 // Get referral stats
 async function getReferralStats(userId: string) {
     try {
-        const referrals = await prisma.referral.findMany({
-            where: { referrerId: userId },
-            include: {
+        const userReferrals = await db.query.referrals.findMany({
+            where: eq(referrals.referrerId, userId),
+            with: {
                 referredUser: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         image: true,
@@ -317,16 +345,16 @@ async function getReferralStats(userId: string) {
                     },
                 },
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: desc(referrals.createdAt),
         });
 
         // Calculate credits earned from referrals (assuming 50 credits per referral)
-        const creditsEarned = referrals.length * 50;
+        const creditsEarned = userReferrals.length * 50;
 
         return {
-            totalReferrals: referrals.length,
+            totalReferrals: userReferrals.length,
             creditsEarned,
-            recentReferrals: referrals.slice(0, 5).map((r) => ({
+            recentReferrals: userReferrals.slice(0, 5).map((r) => ({
                 id: r.referredUser.id,
                 name: r.referredUser.name,
                 image: r.referredUser.image,
@@ -341,36 +369,30 @@ async function getReferralStats(userId: string) {
 // Get activities for a specific date (for activity day detail sheet)
 export async function getActivitiesByDate(dateStr: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated", data: [] };
         }
 
         const date = new Date(dateStr);
         date.setHours(0, 0, 0, 0);
-        const nextDay = new Date(date);
-        nextDay.setDate(nextDay.getDate() + 1);
+        const dateOnly = date.toISOString().split('T')[0];
 
-        const dailyActivity = await prisma.dailyActivity.findFirst({
-            where: {
-                userId: session.user.id,
-                date: {
-                    gte: date,
-                    lt: nextDay,
-                },
-            },
-            select: { id: true },
+        const dailyActivity = await db.query.dailyActivities.findFirst({
+            where: and(
+                eq(dailyActivities.userId, session.user.id),
+                eq(dailyActivities.date, dateOnly)
+            ),
+            columns: { id: true },
         });
 
         if (!dailyActivity) {
             return { success: true, data: [] };
         }
 
-        const activities = await prisma.activityEntry.findMany({
-            where: {
-                dailyActivityId: dailyActivity.id,
-            },
-            orderBy: { createdAt: "desc" },
+        const activities = await db.query.activityEntries.findMany({
+            where: eq(activityEntries.dailyActivityId, dailyActivity.id),
+            orderBy: desc(activityEntries.createdAt),
         });
 
         const transformed = activities.map((a) => ({
@@ -392,13 +414,11 @@ export async function getActivitiesByDate(dateStr: string) {
 // Get community highlights
 export async function getCommunityHighlights() {
     try {
-        const posts = await prisma.communityPost.findMany({
-            where: {
-                officialChannel: { not: null },
-            },
-            include: {
+        const posts = await db.query.communityPosts.findMany({
+            where: sql`${communityPosts.officialChannel} IS NOT NULL`,
+            with: {
                 author: {
-                    select: {
+                    columns: {
                         id: true,
                         name: true,
                         image: true,
@@ -406,8 +426,8 @@ export async function getCommunityHighlights() {
                     },
                 },
             },
-            orderBy: [{ likeCount: "desc" }, { createdAt: "desc" }],
-            take: 3,
+            orderBy: [desc(communityPosts.likeCount), desc(communityPosts.createdAt)],
+            limit: 3,
         });
 
         // Transform to match expected format

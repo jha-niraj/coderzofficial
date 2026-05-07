@@ -1,7 +1,9 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, pathfinderGroups, pathfinderGoals } from '@repo/db'
+import { eq, and, asc, sql, max } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 // ================================================================================
@@ -29,19 +31,14 @@ export interface UpdateGroupInput {
 
 export async function createPathfinderGroup(input: CreateGroupInput) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
         // Check if group with same name exists
-        const existing = await prisma.pathfinderGroup.findUnique({
-            where: {
-                userId_name: {
-                    userId: session.user.id,
-                    name: input.name,
-                },
-            },
+        const existing = await db.query.pathfinderGroups.findFirst({
+            where: and(eq(pathfinderGroups.userId, session.user.id), eq(pathfinderGroups.name, input.name)),
         })
 
         if (existing) {
@@ -49,21 +46,19 @@ export async function createPathfinderGroup(input: CreateGroupInput) {
         }
 
         // Get max order
-        const maxOrder = await prisma.pathfinderGroup.aggregate({
-            where: { userId: session.user.id },
-            _max: { order: true },
-        })
+        const [maxResult] = await db
+            .select({ maxOrder: max(pathfinderGroups.order) })
+            .from(pathfinderGroups)
+            .where(eq(pathfinderGroups.userId, session.user.id))
 
-        const group = await prisma.pathfinderGroup.create({
-            data: {
-                userId: session.user.id,
-                name: input.name,
-                emoji: input.emoji || '📁',
-                color: input.color || '#7c3aed',
-                description: input.description,
-                order: (maxOrder._max.order || 0) + 1,
-            },
-        })
+        const [group] = await db.insert(pathfinderGroups).values({
+            userId: session.user.id,
+            name: input.name,
+            emoji: input.emoji || '📁',
+            color: input.color || '#7c3aed',
+            description: input.description,
+            order: (maxResult?.maxOrder || 0) + 1,
+        }).returning()
 
         revalidatePath('/pathfinder')
         return { success: true, group }
@@ -79,25 +74,22 @@ export async function createPathfinderGroup(input: CreateGroupInput) {
 
 export async function getUserPathfinderGroups() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized', groups: [] }
         }
 
-        const groups = await prisma.pathfinderGroup.findMany({
-            where: { userId: session.user.id },
-            orderBy: { order: 'asc' },
-            include: {
+        const groups = await db.query.pathfinderGroups.findMany({
+            where: eq(pathfinderGroups.userId, session.user.id),
+            orderBy: [asc(pathfinderGroups.order)],
+            with: {
                 goals: {
-                    select: {
+                    columns: {
                         id: true,
                         title: true,
                         status: true,
                         progressPercent: true,
                     },
-                },
-                _count: {
-                    select: { goals: true },
                 },
             },
         })
@@ -115,13 +107,13 @@ export async function getUserPathfinderGroups() {
 
 export async function updatePathfinderGroup(input: UpdateGroupInput) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const group = await prisma.pathfinderGroup.findFirst({
-            where: { id: input.id, userId: session.user.id },
+        const group = await db.query.pathfinderGroups.findFirst({
+            where: and(eq(pathfinderGroups.id, input.id), eq(pathfinderGroups.userId, session.user.id)),
         })
 
         if (!group) {
@@ -130,13 +122,8 @@ export async function updatePathfinderGroup(input: UpdateGroupInput) {
 
         // Check name uniqueness if changing name
         if (input.name && input.name !== group.name) {
-            const existing = await prisma.pathfinderGroup.findUnique({
-                where: {
-                    userId_name: {
-                        userId: session.user.id,
-                        name: input.name,
-                    },
-                },
+            const existing = await db.query.pathfinderGroups.findFirst({
+                where: and(eq(pathfinderGroups.userId, session.user.id), eq(pathfinderGroups.name, input.name)),
             })
 
             if (existing) {
@@ -144,15 +131,15 @@ export async function updatePathfinderGroup(input: UpdateGroupInput) {
             }
         }
 
-        const updated = await prisma.pathfinderGroup.update({
-            where: { id: input.id },
-            data: {
-                name: input.name,
-                emoji: input.emoji,
-                color: input.color,
-                description: input.description,
-            },
-        })
+        const [updated] = await db.update(pathfinderGroups)
+            .set({
+                ...(input.name !== undefined && { name: input.name }),
+                ...(input.emoji !== undefined && { emoji: input.emoji }),
+                ...(input.color !== undefined && { color: input.color }),
+                ...(input.description !== undefined && { description: input.description }),
+            })
+            .where(eq(pathfinderGroups.id, input.id))
+            .returning()
 
         revalidatePath('/pathfinder')
         return { success: true, group: updated }
@@ -168,28 +155,25 @@ export async function updatePathfinderGroup(input: UpdateGroupInput) {
 
 export async function deletePathfinderGroup(groupId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const group = await prisma.pathfinderGroup.findFirst({
-            where: { id: groupId, userId: session.user.id },
+        const group = await db.query.pathfinderGroups.findFirst({
+            where: and(eq(pathfinderGroups.id, groupId), eq(pathfinderGroups.userId, session.user.id)),
         })
 
         if (!group) {
             return { success: false, error: 'Group not found' }
         }
 
-        // Move all goals in this group to ungrouped (set groupId to null)
-        await prisma.pathfinderGoal.updateMany({
-            where: { groupId },
-            data: { groupId: null },
-        })
+        // Move all goals in this group to ungrouped
+        await db.update(pathfinderGoals)
+            .set({ groupId: null })
+            .where(eq(pathfinderGoals.groupId, groupId))
 
-        await prisma.pathfinderGroup.delete({
-            where: { id: groupId },
-        })
+        await db.delete(pathfinderGroups).where(eq(pathfinderGroups.id, groupId))
 
         revalidatePath('/pathfinder')
         return { success: true }
@@ -205,13 +189,13 @@ export async function deletePathfinderGroup(groupId: string) {
 
 export async function assignGoalToGroup(goalId: string, groupId: string | null) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const goal = await prisma.pathfinderGoal.findFirst({
-            where: { id: goalId, userId: session.user.id },
+        const goal = await db.query.pathfinderGoals.findFirst({
+            where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
         })
 
         if (!goal) {
@@ -220,8 +204,8 @@ export async function assignGoalToGroup(goalId: string, groupId: string | null) 
 
         // Verify group belongs to user if not null
         if (groupId) {
-            const group = await prisma.pathfinderGroup.findFirst({
-                where: { id: groupId, userId: session.user.id },
+            const group = await db.query.pathfinderGroups.findFirst({
+                where: and(eq(pathfinderGroups.id, groupId), eq(pathfinderGroups.userId, session.user.id)),
             })
 
             if (!group) {
@@ -229,10 +213,9 @@ export async function assignGoalToGroup(goalId: string, groupId: string | null) 
             }
         }
 
-        await prisma.pathfinderGoal.update({
-            where: { id: goalId },
-            data: { groupId },
-        })
+        await db.update(pathfinderGoals)
+            .set({ groupId })
+            .where(eq(pathfinderGoals.id, goalId))
 
         revalidatePath('/pathfinder')
         return { success: true }
@@ -248,18 +231,16 @@ export async function assignGoalToGroup(goalId: string, groupId: string | null) 
 
 export async function reorderPathfinderGroups(groupIds: string[]) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        // Update order for each group
         await Promise.all(
             groupIds.map((id, index) =>
-                prisma.pathfinderGroup.updateMany({
-                    where: { id, userId: session.user.id },
-                    data: { order: index },
-                })
+                db.update(pathfinderGroups)
+                    .set({ order: index })
+                    .where(and(eq(pathfinderGroups.id, id), eq(pathfinderGroups.userId, session.user.id)))
             )
         )
 

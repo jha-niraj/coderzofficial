@@ -1,11 +1,18 @@
 "use server"
 
-import { auth } from "@repo/auth"
-import { prisma } from "@repo/prisma"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db,
+    codebaseProject,
+    codebaseFile,
+    codebaseAskSession,
+} from "@repo/db"
+import { eq, and, desc } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 async function getUser() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
     return session.user
 }
@@ -13,11 +20,14 @@ async function getUser() {
 export async function getCodebaseProjects() {
     const user = await getUser()
     if (!user) return { success: false, error: "Unauthorized", projects: [] }
-    const projects = await prisma.codebaseProject.findMany({
-        where: { userId: user.id },
-        orderBy: { updatedAt: "desc" },
-        include: {
-            _count: { select: { files: true, sessions: true, issues: true, interviews: true } },
+    const projects = await db.query.codebaseProject.findMany({
+        where: eq(codebaseProject.userId, user.id),
+        orderBy: [desc(codebaseProject.updatedAt)],
+        with: {
+            files: { columns: { id: true } },
+            askSessions: { columns: { id: true } },
+            optimizationIssues: { columns: { id: true } },
+            interviews: { columns: { id: true } },
         },
     })
     return { success: true, projects }
@@ -26,10 +36,13 @@ export async function getCodebaseProjects() {
 export async function getCodebaseProject(slug: string) {
     const user = await getUser()
     if (!user) return { success: false, error: "Unauthorized", project: null }
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: user.id },
-        include: {
-            _count: { select: { files: true, sessions: true, issues: true, interviews: true } },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, user.id)),
+        with: {
+            files: { columns: { id: true } },
+            askSessions: { columns: { id: true } },
+            optimizationIssues: { columns: { id: true } },
+            interviews: { columns: { id: true } },
         },
     })
     if (!project) return { success: false, error: "Not found", project: null }
@@ -39,15 +52,15 @@ export async function getCodebaseProject(slug: string) {
 export async function getCodebaseProjectFiles(slug: string) {
     const user = await getUser()
     if (!user) return { success: false, error: "Unauthorized", files: [] }
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: user.id },
-        select: { id: true },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, user.id)),
+        columns: { id: true },
     })
     if (!project) return { success: false, error: "Not found", files: [] }
-    const files = await prisma.codebaseFile.findMany({
-        where: { projectId: project.id },
-        select: { id: true, filePath: true, fileName: true, extension: true, lineCount: true, language: true },
-        orderBy: { filePath: "asc" },
+    const files = await db.query.codebaseFile.findMany({
+        where: eq(codebaseFile.projectId, project.id),
+        columns: { id: true, filePath: true, fileName: true, extension: true, lineCount: true, language: true },
+        orderBy: [codebaseFile.filePath],
     })
     return { success: true, files }
 }
@@ -55,14 +68,14 @@ export async function getCodebaseProjectFiles(slug: string) {
 export async function getCodebaseFileContent(slug: string, filePath: string) {
     const user = await getUser()
     if (!user) return { success: false, error: "Unauthorized", content: null }
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: user.id },
-        select: { id: true },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, user.id)),
+        columns: { id: true },
     })
     if (!project) return { success: false, error: "Not found", content: null }
-    const file = await prisma.codebaseFile.findFirst({
-        where: { projectId: project.id, filePath },
-        select: { content: true, language: true, lineCount: true },
+    const file = await db.query.codebaseFile.findFirst({
+        where: and(eq(codebaseFile.projectId, project.id), eq(codebaseFile.filePath, filePath)),
+        columns: { content: true, language: true, lineCount: true },
     })
     if (!file) return { success: false, error: "File not found", content: null }
     return { success: true, content: file.content, language: file.language, lineCount: file.lineCount }
@@ -71,12 +84,12 @@ export async function getCodebaseFileContent(slug: string, filePath: string) {
 export async function deleteCodebaseProject(slug: string) {
     const user = await getUser()
     if (!user) return { success: false, error: "Unauthorized" }
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: user.id },
-        select: { id: true },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, user.id)),
+        columns: { id: true },
     })
     if (!project) return { success: false, error: "Not found" }
-    await prisma.codebaseProject.delete({ where: { id: project.id } })
+    await db.delete(codebaseProject).where(eq(codebaseProject.id, project.id))
     revalidatePath("/ai/codesage")
     return { success: true }
 }
@@ -84,34 +97,47 @@ export async function deleteCodebaseProject(slug: string) {
 export async function getUserPortfolioProjectsWithGitHub() {
     const user = await getUser()
     if (!user) return { success: false, projects: [] }
-    const projects = await prisma.portfolioProject.findMany({
-        where: { userId: user.id },
-        include: { projectLinks: { where: { linkType: "GITHUB" }, take: 1 } },
-        orderBy: { startDate: "desc" },
-    })
-    const withGitHub = projects
-        .filter(p => p.projectLinks.length > 0)
-        .map(p => ({
-            id: p.id,
-            name: p.projectName,
-            githubUrl: p.projectLinks[0]!.url,
-        }))
-    return { success: true, projects: withGitHub }
+    try {
+        const { portfolioProjects, projectLinks } = await import('@repo/db')
+        const projects = await db.query.portfolioProjects.findMany({
+            where: eq((portfolioProjects as any).userId, user.id),
+            with: {
+                projectLinks: {
+                    where: (pl: any, { eq }: any) => eq(pl.linkType, "GITHUB"),
+                    limit: 1,
+                },
+            },
+            orderBy: (pp: any, { desc }: any) => [desc(pp.startDate)],
+        })
+        const withGitHub = projects
+            .filter((p: any) => p.projectLinks.length > 0)
+            .map((p: any) => ({
+                id: p.id,
+                name: p.projectName,
+                githubUrl: p.projectLinks[0]!.url,
+            }))
+        return { success: true, projects: withGitHub }
+    } catch {
+        return { success: false, projects: [] }
+    }
 }
 
 export async function getAskSessions(slug: string) {
     const user = await getUser()
     if (!user) return { success: false, sessions: [] }
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: user.id },
-        select: { id: true },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, user.id)),
+        columns: { id: true },
     })
     if (!project) return { success: false, sessions: [] }
-    const sessions = await prisma.codebaseAskSession.findMany({
-        where: { projectId: project.id, userId: user.id },
-        orderBy: { updatedAt: "desc" },
-        select: { id: true, title: true, createdAt: true, updatedAt: true },
-        take: 20,
+    const sessions = await db.query.codebaseAskSession.findMany({
+        where: and(
+            eq(codebaseAskSession.projectId, project.id),
+            eq(codebaseAskSession.userId, user.id)
+        ),
+        orderBy: [desc(codebaseAskSession.updatedAt)],
+        columns: { id: true, title: true, createdAt: true, updatedAt: true },
+        limit: 20,
     })
     return { success: true, sessions }
 }
@@ -119,8 +145,11 @@ export async function getAskSessions(slug: string) {
 export async function getAskSession(sessionId: string) {
     const user = await getUser()
     if (!user) return { success: false, session: null }
-    const session = await prisma.codebaseAskSession.findUnique({
-        where: { id: sessionId, userId: user.id },
+    const session = await db.query.codebaseAskSession.findFirst({
+        where: and(
+            eq(codebaseAskSession.id, sessionId),
+            eq(codebaseAskSession.userId, user.id)
+        ),
     })
     if (!session) return { success: false, session: null }
     return { success: true, session }
@@ -129,15 +158,17 @@ export async function getAskSession(sessionId: string) {
 export async function createAskSession(slug: string) {
     const user = await getUser()
     if (!user) return { success: false, error: "Unauthorized", sessionId: null }
-    const project = await prisma.codebaseProject.findUnique({
-        where: { slug, userId: user.id },
-        select: { id: true },
+    const project = await db.query.codebaseProject.findFirst({
+        where: and(eq(codebaseProject.slug, slug), eq(codebaseProject.userId, user.id)),
+        columns: { id: true },
     })
     if (!project) return { success: false, error: "Not found", sessionId: null }
-    const session = await prisma.codebaseAskSession.create({
-        data: { projectId: project.id, userId: user.id, messages: [] },
-    })
-    return { success: true, sessionId: session.id }
+    const [session] = await db.insert(codebaseAskSession).values({
+        projectId: project.id,
+        userId: user.id,
+        messages: [] as any,
+    }).returning()
+    return { success: true, sessionId: session!.id }
 }
 
 export async function saveAskSession(
@@ -147,16 +178,22 @@ export async function saveAskSession(
 ) {
     const user = await getUser()
     if (!user) return { success: false }
-    await prisma.codebaseAskSession.update({
-        where: { id: sessionId, userId: user.id },
-        data: { messages: messages as never, title: title ?? undefined, updatedAt: new Date() },
-    })
+    await db.update(codebaseAskSession)
+        .set({ messages: messages as any, title: title ?? undefined, updatedAt: new Date() })
+        .where(and(
+            eq(codebaseAskSession.id, sessionId),
+            eq(codebaseAskSession.userId, user.id)
+        ))
     return { success: true }
 }
 
 export async function deleteAskSession(sessionId: string) {
     const user = await getUser()
     if (!user) return { success: false }
-    await prisma.codebaseAskSession.delete({ where: { id: sessionId, userId: user.id } })
+    await db.delete(codebaseAskSession)
+        .where(and(
+            eq(codebaseAskSession.id, sessionId),
+            eq(codebaseAskSession.userId, user.id)
+        ))
     return { success: true }
 }

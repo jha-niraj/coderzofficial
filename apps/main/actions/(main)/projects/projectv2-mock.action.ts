@@ -1,11 +1,18 @@
 "use server"
 
-import { auth } from "@repo/auth";
-import prisma from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    users,
+    creditTransactions,
+    projectsV2,
+    projectV2MockSessions,
+    projectV2KnowledgeBases,
+} from "@repo/db";
+import { eq, and, sql } from "drizzle-orm";
 import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
-import { CreditType, Currency } from "@repo/prisma/client"
-
 
 const MOCK_CREDIT_COST = 30
 
@@ -26,35 +33,32 @@ interface MockKnowledgeBase {
  */
 export async function generateProjectMockKnowledgeBase(projectSlug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        // Get project with sprints/tasks and knowledge base
-        const project = await prisma.projectV2.findUnique({
-            where: { slug: projectSlug },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, projectSlug),
+            with: {
                 sprints: {
-                    orderBy: { orderIndex: 'asc' },
-                    take: 3,
-                    include: {
+                    orderBy: (sprints: any, { asc }: any) => [asc(sprints.orderIndex)],
+                    limit: 3,
+                    with: {
                         tasks: {
-                            include: {
+                            with: {
                                 taskDetail: {
-                                    select: {
-                                        subTasks: true
-                                    }
+                                    columns: { subTasks: true }
                                 }
                             },
-                            orderBy: { orderIndex: 'asc' },
-                            take: 5
+                            orderBy: (tasks: any, { asc }: any) => [asc(tasks.orderIndex)],
+                            limit: 5
                         }
                     }
                 },
                 knowledge: true
             }
-        })
+        });
 
         if (!project) {
             return { success: false, error: "Project not found" }
@@ -64,7 +68,6 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
             return { success: false, error: "This project does not include assessments" }
         }
 
-        // Check if knowledge base already exists (cast to any for dynamic field check)
         const knowledgeData = project.knowledge as any
         if (knowledgeData?.mockKnowledgeBase) {
             return {
@@ -76,21 +79,17 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
             }
         }
 
-        // Check user credits
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { credits: true, name: true, username: true }
-        })
+        const [user] = await db.select({ credits: users.credits, name: users.name, username: users.username })
+            .from(users)
+            .where(eq(users.id, session.user.id));
 
         if (!user || user.credits < MOCK_CREDIT_COST) {
             return { success: false, error: "Insufficient credits", requiredCredits: MOCK_CREDIT_COST }
         }
 
-        // Build project context for AI (concise to save tokens)
         const stacks = project.stacks as any
-        // Flatten tasks from sprints
-        const allTasks = project.sprints.flatMap(s => s.tasks)
-        const taskSummary = allTasks.slice(0, 10).map(t => {
+        const allTasks = project.sprints.flatMap((s: any) => s.tasks)
+        const taskSummary = allTasks.slice(0, 10).map((t: any) => {
             const subtasksData = (t.taskDetail?.subTasks as any[]) || []
             return {
                 title: t.title,
@@ -103,10 +102,9 @@ export async function generateProjectMockKnowledgeBase(projectSlug: string) {
             Description: ${project.description?.substring(0, 300) || 'N/A'}
             Technologies: ${project.technologies.slice(0, 8).join(', ')}
             Stack: Frontend: ${stacks?.frontend || 'N/A'}, Backend: ${stacks?.backend || 'N/A'}, Database: ${stacks?.database || 'N/A'}
-            Key Tasks: ${taskSummary.slice(0, 5).map(t => `${t.title} (${t.subtasks.join(', ')})`).join('; ')}
+            Key Tasks: ${taskSummary.slice(0, 5).map((t: any) => `${t.title} (${t.subtasks.join(', ')})`).join('; ')}
         `
 
-        // Generate knowledge base with OpenAI
         const completion = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [
@@ -150,7 +148,6 @@ Return JSON with structure:
             return { success: false, error: "Invalid response format from AI" }
         }
 
-        // Create the knowledge base string for ElevenLabs
         const knowledgeBaseText = `
 PROJECT OVERVIEW: ${knowledgeBase.overview}
 
@@ -170,39 +167,38 @@ PRACTICAL SCENARIOS:
 ${knowledgeBase.practicalScenarios.map((s, i) => `${i + 1}. ${s}`).join('\n')}
 `
 
-        // Deduct credits and save knowledge base
-        await prisma.$transaction(async (tx: any) => {
-            // Update user credits
-            await tx.user.update({
-                where: { id: session.user.id },
-                data: { credits: { decrement: MOCK_CREDIT_COST } }
-            })
+        await db.transaction(async (tx) => {
+            await tx.update(users)
+                .set({ credits: sql`${users.credits} - ${MOCK_CREDIT_COST}` })
+                .where(eq(users.id, session.user.id));
 
-            // Create credit transaction
-            await tx.creditTransaction.create({
-                data: {
-                    userId: session.user.id,
-                    currency: Currency.NA,
-                    amount: MOCK_CREDIT_COST,
-                    type: CreditType.SPEND,
-                    description: `Mock Interview generated for project: ${project.title}`
-                }
-            })
+            await tx.insert(creditTransactions).values({
+                userId: session.user.id,
+                currency: "NA",
+                amount: MOCK_CREDIT_COST,
+                type: "SPEND",
+                description: `Mock Interview generated for project: ${project.title}`
+            });
 
-            // Upsert knowledge base with mock data
-            await tx.projectV2KnowledgeBase.upsert({
-                where: { projectId: project.id },
-                create: {
+            const existing = await tx.query.projectV2KnowledgeBases.findFirst({
+                where: eq(projectV2KnowledgeBases.projectId, project.id)
+            });
+
+            if (existing) {
+                await tx.update(projectV2KnowledgeBases)
+                    .set({
+                        mockKnowledgeBase: knowledgeBaseText,
+                        mockQuestionsData: knowledgeBase as any
+                    })
+                    .where(eq(projectV2KnowledgeBases.id, existing.id));
+            } else {
+                await tx.insert(projectV2KnowledgeBases).values({
                     projectId: project.id,
                     mockKnowledgeBase: knowledgeBaseText,
                     mockQuestionsData: knowledgeBase as any
-                },
-                update: {
-                    mockKnowledgeBase: knowledgeBaseText,
-                    mockQuestionsData: knowledgeBase as any
-                }
-            })
-        })
+                });
+            }
+        });
 
         return {
             success: true,
@@ -223,17 +219,15 @@ ${knowledgeBase.practicalScenarios.map((s, i) => `${i + 1}. ${s}`).join('\n')}
  */
 export async function createProjectMockSession(projectSlug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        const project = await prisma.projectV2.findUnique({
-            where: { slug: projectSlug },
-            include: {
-                knowledge: true
-            }
-        })
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, projectSlug),
+            with: { knowledge: true }
+        });
 
         if (!project) {
             return { success: false, error: "Project not found" }
@@ -244,29 +238,24 @@ export async function createProjectMockSession(projectSlug: string) {
             return { success: false, error: "Mock interview knowledge base not generated yet" }
         }
 
-        // Get user info
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { name: true, username: true }
-        })
+        const [user] = await db.select({ name: users.name, username: users.username })
+            .from(users)
+            .where(eq(users.id, session.user.id));
 
-        // Create session using existing model
-        const mockSession = await prisma.projectV2MockSession.create({
-            data: {
-                userId: session.user.id,
-                projectId: project.id,
-                agentId: process.env.NEXT_PUBLIC_ELEVENLABS_MOCKVOICE!,
-                status: 'SCHEDULED',
-                scheduledAt: new Date()
-            }
-        })
+        const [mockSession] = await db.insert(projectV2MockSessions).values({
+            userId: session.user.id,
+            projectId: project.id,
+            agentId: process.env.NEXT_PUBLIC_ELEVENLABS_MOCKVOICE!,
+            status: 'SCHEDULED',
+            scheduledAt: new Date()
+        }).returning();
 
         const mockKnowledgeBase = knowledgeData.mockKnowledgeBase as string
 
         return {
             success: true,
-            sessionId: mockSession.id,
-            agentId: mockSession.agentId,
+            sessionId: mockSession!.id,
+            agentId: mockSession!.agentId,
             knowledgeBase: mockKnowledgeBase,
             variables: {
                 username: user?.name?.split(' ')[0] || user?.username || 'there',
@@ -291,23 +280,22 @@ export async function updateProjectMockSessionStatus(
     conversationId?: string
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        await prisma.projectV2MockSession.update({
-            where: {
-                id: sessionId,
-                userId: session.user.id
-            },
-            data: {
+        await db.update(projectV2MockSessions)
+            .set({
                 status,
                 conversationId,
                 startedAt: status === 'IN_PROGRESS' ? new Date() : undefined,
                 completedAt: status === 'COMPLETED' ? new Date() : undefined
-            }
-        })
+            })
+            .where(and(
+                eq(projectV2MockSessions.id, sessionId),
+                eq(projectV2MockSessions.userId, session.user.id)
+            ));
 
         return { success: true }
     } catch (error) {
@@ -321,19 +309,19 @@ export async function updateProjectMockSessionStatus(
  */
 export async function getProjectMockSession(sessionId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        const mockSession = await prisma.projectV2MockSession.findUnique({
-            where: {
-                id: sessionId,
-                userId: session.user.id
-            },
-            include: {
+        const mockSession = await db.query.projectV2MockSessions.findFirst({
+            where: and(
+                eq(projectV2MockSessions.id, sessionId),
+                eq(projectV2MockSessions.userId, session.user.id)
+            ),
+            with: {
                 project: {
-                    select: {
+                    columns: {
                         title: true,
                         slug: true,
                         description: true,
@@ -341,7 +329,7 @@ export async function getProjectMockSession(sessionId: string) {
                     }
                 }
             }
-        })
+        });
 
         if (!mockSession) {
             return { success: false, error: "Session not found" }
@@ -362,7 +350,7 @@ export async function processProjectMockCompletion(
     conversationId: string
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
@@ -373,7 +361,6 @@ export async function processProjectMockCompletion(
             return { success: false, error: "ElevenLabs API not configured" }
         }
 
-        // Get conversation from ElevenLabs
         const response = await fetch(`https://api.elevenlabs.io/v1/convai/conversations/${conversationId}`, {
             method: 'GET',
             headers: {
@@ -391,19 +378,16 @@ export async function processProjectMockCompletion(
             duration = Math.floor((data.metadata?.duration || 0) / 1000)
         }
 
-        // Update session with transcript
-        await prisma.projectV2MockSession.update({
-            where: { id: sessionId },
-            data: {
+        await db.update(projectV2MockSessions)
+            .set({
                 status: 'COMPLETED',
                 completedAt: new Date(),
                 conversationId,
                 transcript: JSON.stringify(transcript),
                 duration
-            }
-        })
+            })
+            .where(eq(projectV2MockSessions.id, sessionId));
 
-        // Generate AI feedback if we have transcript
         if (transcript.length > 0) {
             const transcriptText = transcript
                 .map((t: any) => `${t.role}: ${t.message}`)
@@ -434,9 +418,8 @@ Return JSON: {"overallScore": 0-100, "communication": {"score": 0-100, "feedback
             if (feedbackContent) {
                 try {
                     const feedback = JSON.parse(feedbackContent)
-                    await prisma.projectV2MockSession.update({
-                        where: { id: sessionId },
-                        data: {
+                    await db.update(projectV2MockSessions)
+                        .set({
                             score: feedback.overallScore,
                             technicalScore: feedback.technical?.score,
                             communicationScore: feedback.communication?.score,
@@ -444,18 +427,17 @@ Return JSON: {"overallScore": 0-100, "communication": {"score": 0-100, "feedback
                             feedback: feedback.detailedFeedback,
                             strengths: feedback.strengths || [],
                             improvements: feedback.improvements || []
-                        }
-                    })
-
-                    // Update leaderboard
-                    try {
-                        const mockSession = await prisma.projectV2MockSession.findUnique({
-                            where: { id: sessionId },
-                            select: { projectId: true }
                         })
-                        if (mockSession) {
+                        .where(eq(projectV2MockSessions.id, sessionId));
+
+                    try {
+                        const mockSessionRow = await db.query.projectV2MockSessions.findFirst({
+                            where: eq(projectV2MockSessions.id, sessionId),
+                            columns: { projectId: true }
+                        });
+                        if (mockSessionRow) {
                             const { updateProjectScore } = await import("./leaderboard.action")
-                            await updateProjectScore(mockSession.projectId, session.user.id)
+                            await updateProjectScore(mockSessionRow.projectId, session.user.id)
                         }
                     } catch (e) {
                         console.error("Failed to update leaderboard:", e)
@@ -480,36 +462,36 @@ Return JSON: {"overallScore": 0-100, "communication": {"score": 0-100, "feedback
  */
 export async function getProjectMockAttempts(projectSlug: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        const project = await prisma.projectV2.findUnique({
-            where: { slug: projectSlug },
-            select: { id: true }
-        })
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, projectSlug),
+            columns: { id: true }
+        });
 
         if (!project) {
             return { success: false, error: "Project not found" }
         }
 
-        const attempts = await prisma.projectV2MockSession.findMany({
-            where: {
-                userId: session.user.id,
-                projectId: project.id,
-                status: 'COMPLETED'
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 10,
-            select: {
+        const attempts = await db.query.projectV2MockSessions.findMany({
+            where: and(
+                eq(projectV2MockSessions.userId, session.user.id),
+                eq(projectV2MockSessions.projectId, project.id),
+                eq(projectV2MockSessions.status, 'COMPLETED')
+            ),
+            orderBy: (sessions: any, { desc }: any) => [desc(sessions.createdAt)],
+            limit: 10,
+            columns: {
                 id: true,
                 score: true,
                 duration: true,
                 completedAt: true,
                 createdAt: true
             }
-        })
+        });
 
         return { success: true, attempts }
     } catch (error) {
@@ -523,12 +505,10 @@ export async function getProjectMockAttempts(projectSlug: string) {
  */
 export async function hasProjectMockKnowledgeBase(projectSlug: string) {
     try {
-        const project = await prisma.projectV2.findUnique({
-            where: { slug: projectSlug },
-            include: {
-                knowledge: true
-            }
-        })
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.slug, projectSlug),
+            with: { knowledge: true }
+        });
 
         if (!project) {
             return { success: false, error: "Project not found" }

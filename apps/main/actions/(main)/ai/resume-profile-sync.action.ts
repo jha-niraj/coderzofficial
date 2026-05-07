@@ -1,7 +1,9 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, resumeDraft, users } from '@repo/db'
+import { eq, and } from 'drizzle-orm'
 import type {
     ResumeDraftContent,
     ResumeExperienceEntry,
@@ -50,7 +52,7 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
     | { success: false; error: string }
 > {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized. Please sign in.' }
         }
@@ -58,74 +60,25 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
         const userId = session.user.id
 
         // ── 1. Fetch user and all profile data in one go ──────────────────────
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                name: true,
-                email: true,
-                username: true,
-                bio: true,
-                occupation: true, // used as "current role / title"
-                website: true,
-                // Social links hold github, linkedin, etc.
-                socialLinks: {
-                    select: { platform: true, url: true },
-                },
-                // Work experience
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, userId),
+            with: {
+                socialLinks: true,
                 experiences: {
-                    orderBy: { startDate: 'desc' },
-                    select: {
-                        id: true,
-                        companyName: true,
-                        roleTitle: true,
-                        startDate: true,
-                        endDate: true,
-                        isCurrentlyWorking: true,
-                        bulletPoints: true,
-                        description: true,
-                    },
+                    orderBy: (e: any, { desc }: any) => [desc(e.startDate)],
                 },
-                // Portfolio projects
                 portfolioProjects: {
-                    orderBy: { startDate: 'desc' },
-                    select: {
-                        id: true,
-                        projectName: true,
-                        description: true,
-                        bulletPoints: true,
-                        technologies: true,
-                        projectLinks: {
-                            select: { linkType: true, url: true },
-                        },
-                    },
+                    orderBy: (p: any, { desc }: any) => [desc(p.startDate)],
+                    with: { projectLinks: true },
                 },
-                // Education
                 educations: {
-                    orderBy: { startDate: 'desc' },
-                    select: {
-                        id: true,
-                        institution: true,
-                        degree: true,
-                        startDate: true,
-                        endDate: true,
-                        bulletPoints: true,
-                    },
+                    orderBy: (e: any, { desc }: any) => [desc(e.startDate)],
                 },
-                // Skills
                 skills: {
-                    orderBy: [{ category: 'asc' }, { order: 'asc' }],
-                    select: { name: true, level: true, category: true },
+                    orderBy: (s: any, { asc }: any) => [asc(s.category), asc(s.order)],
                 },
-                // Certifications
                 certifications: {
-                    orderBy: { issuedDate: 'desc' },
-                    select: {
-                        id: true,
-                        name: true,
-                        issuer: true,
-                        issuedDate: true,
-                        link: true,
-                    },
+                    orderBy: (c: any, { desc }: any) => [desc(c.issuedDate)],
                 },
             },
         })
@@ -134,39 +87,38 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
             return { success: false, error: 'User not found.' }
         }
 
-        // ── 2. Fetch ProjectV2 submissions via UserProjectV2Progress ──────────
-        const projectSubmissions = await prisma.projectV2Submission.findMany({
-            where: { userId },
-            orderBy: { createdAt: 'desc' },
-            select: {
-                id: true,
-                githubUrl: true,
-                liveUrl: true,
-                project: {
-                    select: {
-                        title: true,
-                        slug: true,
-                        technologies: true,
-                        shortDescription: true,
+        // ── 2. Fetch ProjectV2 submissions ───────────────────────────────────
+        // Note: Using raw query since projectV2Submission may not be in the typed relations
+        const projectSubmissions: any[] = []
+        try {
+            const { projectV2Submissions } = await import('@repo/db')
+            const subs = await db.query.projectV2Submissions.findMany({
+                where: eq((projectV2Submissions as any).userId, userId),
+                orderBy: (s: any, { desc }: any) => [desc(s.createdAt)],
+                with: {
+                    project: {
+                        columns: {
+                            title: true,
+                            slug: true,
+                            technologies: true,
+                            shortDescription: true,
+                        },
                     },
                 },
-            },
-        })
+            })
+            projectSubmissions.push(...subs)
+        } catch {
+            // projectV2Submissions may not exist — skip silently
+        }
 
         // ── 3. Resolve social links ───────────────────────────────────────────
         const socialMap = new Map<string, string | null>(
-            user.socialLinks.map((s: { platform: string; url: string | null }) => [s.platform.toUpperCase(), s.url])
+            (user.socialLinks ?? []).map((s: { platform: string; url: string | null }) => [s.platform.toUpperCase(), s.url])
         )
-        const github =
-            socialMap.get('GITHUB') ?? null
-        const linkedin =
-            socialMap.get('LINKEDIN') ?? null
-        const portfolio =
-            socialMap.get('PORTFOLIO') ?? null
-        const website =
-            user.website ??
-            socialMap.get('WEBSITE') ??
-            null
+        const github = socialMap.get('GITHUB') ?? null
+        const linkedin = socialMap.get('LINKEDIN') ?? null
+        const portfolio = socialMap.get('PORTFOLIO') ?? null
+        const website = (user as any).website ?? socialMap.get('WEBSITE') ?? null
 
         // ── 4. Map header ─────────────────────────────────────────────────────
         const toOptionalString = (v: string | null | undefined): string | undefined =>
@@ -185,12 +137,7 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
         }
 
         // ── 5. Map experience ─────────────────────────────────────────────────
-        const experience: ResumeExperienceEntry[] = user.experiences.map((e: {
-            id: string; companyName: string; roleTitle: string; startDate: Date;
-            endDate: Date | null; isCurrentlyWorking: boolean; bulletPoints: string[] | null;
-            description: string | null;
-        }) => {
-            // Prefer bulletPoints; fall back to splitting description by newline
+        const experience: ResumeExperienceEntry[] = (user.experiences ?? []).map((e: any) => {
             let bullets: string[] = e.bulletPoints ?? []
             if (!bullets.length && e.description) {
                 bullets = e.description
@@ -215,55 +162,45 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
 
         // ── 6. Map portfolio projects ─────────────────────────────────────────
         type ProjectLink = { linkType: string; url: string }
-        const portfolioProjectsMapped: ResumeProjectEntry[] =
-            user.portfolioProjects.map((p: {
-                id: string; projectName: string; description: string | null;
-                bulletPoints: string[] | null; technologies: string[] | null;
-                projectLinks: ProjectLink[];
-            }) => {
-                let bullets: string[] = p.bulletPoints ?? []
-                if (!bullets.length && p.description) {
-                    bullets = [p.description]
-                }
-                const githubLink =
-                    p.projectLinks.find(
-                        (l: ProjectLink) =>
-                            l.linkType.toUpperCase() === 'GITHUB' ||
-                            l.linkType.toUpperCase() === 'GITHUB_REPO'
-                    )?.url ?? undefined
-                const liveLink =
-                    p.projectLinks.find(
-                        (l: ProjectLink) =>
-                            l.linkType.toUpperCase() === 'LIVE_SITE' ||
-                            l.linkType.toUpperCase() === 'DEMO' ||
-                            l.linkType.toUpperCase() === 'LIVE'
-                    )?.url ?? undefined
-                return {
-                    id: p.id,
-                    name: p.projectName,
-                    description: p.description ?? '',
-                    technologies: p.technologies ?? [],
-                    github: githubLink,
-                    liveUrl: liveLink,
-                    bullets,
-                }
-            })
+        const portfolioProjectsMapped: ResumeProjectEntry[] = (user.portfolioProjects ?? []).map((p: any) => {
+            let bullets: string[] = p.bulletPoints ?? []
+            if (!bullets.length && p.description) {
+                bullets = [p.description]
+            }
+            const githubLink =
+                p.projectLinks.find(
+                    (l: ProjectLink) =>
+                        l.linkType.toUpperCase() === 'GITHUB' ||
+                        l.linkType.toUpperCase() === 'GITHUB_REPO'
+                )?.url ?? undefined
+            const liveLink =
+                p.projectLinks.find(
+                    (l: ProjectLink) =>
+                        l.linkType.toUpperCase() === 'LIVE_SITE' ||
+                        l.linkType.toUpperCase() === 'DEMO' ||
+                        l.linkType.toUpperCase() === 'LIVE'
+                )?.url ?? undefined
+            return {
+                id: p.id,
+                name: p.projectName,
+                description: p.description ?? '',
+                technologies: p.technologies ?? [],
+                github: githubLink,
+                liveUrl: liveLink,
+                bullets,
+            }
+        })
 
         // ── 7. Map BuildrHQ platform project submissions ──────────────────────
-        type ProjectSub = { id: string; githubUrl: string | null; liveUrl: string | null; project: { title: string; slug: string; technologies: string[] | null; shortDescription: string | null } }
-        const platformProjectsMapped: ResumeProjectEntry[] = projectSubmissions.map(
-            (sub: ProjectSub) => ({
-                id: shortId(),
-                name: sub.project.title,
-                description:
-                    sub.project.shortDescription ??
-                    'Built on BuildrHQ',
-                technologies: sub.project.technologies ?? [],
-                github: sub.githubUrl ?? undefined,
-                liveUrl: sub.liveUrl ?? undefined,
-                bullets: ['Built on BuildrHQ'],
-            })
-        )
+        const platformProjectsMapped: ResumeProjectEntry[] = projectSubmissions.map((sub: any) => ({
+            id: shortId(),
+            name: sub.project.title,
+            description: sub.project.shortDescription ?? 'Built on BuildrHQ',
+            technologies: sub.project.technologies ?? [],
+            github: sub.githubUrl ?? undefined,
+            liveUrl: sub.liveUrl ?? undefined,
+            bullets: ['Built on BuildrHQ'],
+        }))
 
         const projects: ResumeProjectEntry[] = [
             ...portfolioProjectsMapped,
@@ -271,10 +208,7 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
         ]
 
         // ── 8. Map education ──────────────────────────────────────────────────
-        const education: ResumeEducationEntry[] = user.educations.map((e: {
-            id: string; institution: string; degree: string | null;
-            startDate: Date | null; endDate: Date | null; bulletPoints: string[] | null;
-        }) => ({
+        const education: ResumeEducationEntry[] = (user.educations ?? []).map((e: any) => ({
             id: e.id,
             institution: e.institution,
             degree: e.degree ?? undefined,
@@ -285,20 +219,16 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
         }))
 
         // ── 9. Map skills ─────────────────────────────────────────────────────
-        const skills: ResumeSkillGroup[] = buildSkillGroups(user.skills)
+        const skills: ResumeSkillGroup[] = buildSkillGroups(user.skills ?? [])
 
         // ── 10. Map certifications ────────────────────────────────────────────
-        const certifications: ResumeCertificationEntry[] = user.certifications.map(
-            (c: { id: string; name: string; issuer: string | null; issuedDate: Date | null; link: string | null }) => ({
-                id: c.id,
-                name: c.name,
-                issuer: c.issuer ?? undefined,
-                date: c.issuedDate
-                    ? c.issuedDate.toISOString().slice(0, 10)
-                    : undefined,
-                url: c.link ?? undefined,
-            })
-        )
+        const certifications: ResumeCertificationEntry[] = (user.certifications ?? []).map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            issuer: c.issuer ?? undefined,
+            date: c.issuedDate ? c.issuedDate.toISOString().slice(0, 10) : undefined,
+            url: c.link ?? undefined,
+        }))
 
         // ── 11. Compose final content ─────────────────────────────────────────
         const mappedContent: ResumeDraftContent = {
@@ -312,10 +242,9 @@ export async function syncProfileToResumeDraft(draftId?: string): Promise<
 
         // ── 12. Optionally persist to an existing draft ───────────────────────
         if (draftId) {
-            await prisma.resumeDraft.update({
-                where: { id: draftId },
-                data: { content: JSON.parse(JSON.stringify(mappedContent)) },
-            })
+            await db.update(resumeDraft)
+                .set({ content: JSON.parse(JSON.stringify(mappedContent)) })
+                .where(eq(resumeDraft.id, draftId))
         }
 
         return { success: true, content: mappedContent }

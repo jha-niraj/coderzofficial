@@ -1,16 +1,18 @@
 // Analytics Actions - Server actions for analytics/reporting
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, jobs, jobApplications } from "@repo/db"
+import { eq, and, count, sum, gte, lt, inArray, desc, isNotNull } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
     return member
 }
@@ -25,121 +27,169 @@ export async function getAnalyticsOverview() {
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
         const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
 
-        const [
-            totalJobs,
-            activeJobs,
-            totalApplications,
-            recentApplications,
-            previousPeriodApplications,
-            hiredCount,
-            rejectedCount,
-            viewsSum,
-            interviewsScheduled
-        ] = await Promise.all([
-            prisma.job.count({ where: { companyId: member.companyId } }),
-            prisma.job.count({ where: { companyId: member.companyId, status: "ACTIVE" } }),
-            prisma.jobApplication.count({ where: { job: { companyId: member.companyId } } }),
-            prisma.jobApplication.count({
-                where: {
-                    job: { companyId: member.companyId },
-                    createdAt: { gte: thirtyDaysAgo }
-                }
-            }),
-            prisma.jobApplication.count({
-                where: {
-                    job: { companyId: member.companyId },
-                    createdAt: { gte: sixtyDaysAgo, lt: thirtyDaysAgo }
-                }
-            }),
-            prisma.jobApplication.count({
-                where: { job: { companyId: member.companyId }, status: "HIRED" }
-            }),
-            prisma.jobApplication.count({
-                where: { job: { companyId: member.companyId }, status: "REJECTED" }
-            }),
-            prisma.job.aggregate({
-                where: { companyId: member.companyId },
-                _sum: { viewsCount: true }
-            }),
-            prisma.jobApplication.count({
-                where: {
-                    job: { companyId: member.companyId },
-                    status: { in: ["INTERVIEW_SCHEDULED", "INTERVIEWED"] }
-                }
-            })
-        ])
+        // Get company job IDs
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        const [totalJobsResult] = await db
+            .select({ count: count() })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+
+        const [activeJobsResult] = await db
+            .select({ count: count() })
+            .from(jobs)
+            .where(and(eq(jobs.companyId, member.companyId), eq(jobs.status, "ACTIVE")))
+
+        let totalApplications = 0
+        let recentApplications = 0
+        let previousPeriodApplications = 0
+        let hiredCount = 0
+        let rejectedCount = 0
+        let interviewsScheduled = 0
+
+        if (jobIds.length > 0) {
+            const totalAppsRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(inArray(jobApplications.jobId, jobIds))
+
+            const recentAppsRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.jobId, jobIds),
+                    gte(jobApplications.createdAt, thirtyDaysAgo)
+                ))
+
+            const prevAppsRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.jobId, jobIds),
+                    gte(jobApplications.createdAt, sixtyDaysAgo),
+                    lt(jobApplications.createdAt, thirtyDaysAgo)
+                ))
+
+            const hiredRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "HIRED")))
+
+            const rejectedRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(inArray(jobApplications.jobId, jobIds), eq(jobApplications.status, "REJECTED")))
+
+            const interviewsRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.jobId, jobIds),
+                    inArray(jobApplications.status, ["INTERVIEW_SCHEDULED", "INTERVIEWED"])
+                ))
+
+            totalApplications = totalAppsRows[0]?.count ?? 0
+            recentApplications = recentAppsRows[0]?.count ?? 0
+            previousPeriodApplications = prevAppsRows[0]?.count ?? 0
+            hiredCount = hiredRows[0]?.count ?? 0
+            rejectedCount = rejectedRows[0]?.count ?? 0
+            interviewsScheduled = interviewsRows[0]?.count ?? 0
+        }
+
+        const viewsSumResult = await db
+            .select({ total: sum(jobs.viewsCount) })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
 
         const applicationChange = previousPeriodApplications > 0
             ? Math.round(((recentApplications - previousPeriodApplications) / previousPeriodApplications) * 100)
             : recentApplications > 0 ? 100 : 0
 
-        const pipelineData = await prisma.jobApplication.groupBy({
-            by: ["status"],
-            where: { job: { companyId: member.companyId } },
-            _count: true
-        })
-
-        const pipeline = {
-            applied: pipelineData.find(p => p.status === "APPLIED")?._count || 0,
-            reviewing: pipelineData.find(p => p.status === "UNDER_REVIEW")?._count || 0,
-            shortlisted: pipelineData.find(p => p.status === "SHORTLISTED")?._count || 0,
-            interviewing: pipelineData.filter(p => ["INTERVIEW_SCHEDULED", "INTERVIEWED"].includes(p.status)).reduce((a, b) => a + b._count, 0),
-            offered: pipelineData.find(p => p.status === "OFFER_EXTENDED")?._count || 0,
-            hired: hiredCount,
-            rejected: rejectedCount
+        // Pipeline data
+        let pipeline = {
+            applied: 0, reviewing: 0, shortlisted: 0,
+            interviewing: 0, offered: 0, hired: hiredCount, rejected: rejectedCount
         }
 
-        const topJobs = await prisma.job.findMany({
-            where: { companyId: member.companyId },
-            select: {
-                id: true,
-                title: true,
-                slug: true,
-                viewsCount: true,
-                applicationsCount: true,
-                status: true,
-                createdAt: true
-            },
-            orderBy: { applicationsCount: "desc" },
-            take: 5
-        })
+        if (jobIds.length > 0) {
+            const pipelineData = await db.query.jobApplications.findMany({
+                where: inArray(jobApplications.jobId, jobIds),
+                columns: { status: true }
+            })
 
-        const hiredApplications = await prisma.jobApplication.findMany({
-            where: {
-                job: { companyId: member.companyId },
-                status: "HIRED",
-                appliedAt: { not: null }
-            },
-            select: { appliedAt: true, updatedAt: true }
-        })
+            const statusCounts = pipelineData.reduce((acc, app) => {
+                acc[app.status] = (acc[app.status] || 0) + 1
+                return acc
+            }, {} as Record<string, number>)
+
+            pipeline = {
+                applied: statusCounts["APPLIED"] || 0,
+                reviewing: statusCounts["UNDER_REVIEW"] || 0,
+                shortlisted: statusCounts["SHORTLISTED"] || 0,
+                interviewing: (statusCounts["INTERVIEW_SCHEDULED"] || 0) + (statusCounts["INTERVIEWED"] || 0),
+                offered: statusCounts["OFFER_EXTENDED"] || 0,
+                hired: hiredCount,
+                rejected: rejectedCount
+            }
+        }
+
+        const topJobs = await db
+            .select({
+                id: jobs.id,
+                title: jobs.title,
+                slug: jobs.slug,
+                viewsCount: jobs.viewsCount,
+                applicationsCount: jobs.applicationsCount,
+                status: jobs.status,
+                createdAt: jobs.createdAt
+            })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+            .orderBy(desc(jobs.applicationsCount))
+            .limit(5)
 
         let avgTimeToHire = 0
-        if (hiredApplications.length > 0) {
-            const totalDays = hiredApplications.reduce((sum, app) => {
-                if (app.appliedAt) {
-                    const days = Math.ceil((app.updatedAt.getTime() - app.appliedAt.getTime()) / (1000 * 60 * 60 * 24))
-                    return sum + days
-                }
-                return sum
-            }, 0)
-            avgTimeToHire = Math.round(totalDays / hiredApplications.length)
+        if (jobIds.length > 0) {
+            const hiredApplications = await db.query.jobApplications.findMany({
+                where: and(
+                    inArray(jobApplications.jobId, jobIds),
+                    eq(jobApplications.status, "HIRED"),
+                    isNotNull(jobApplications.appliedAt)
+                ),
+                columns: { appliedAt: true, updatedAt: true }
+            })
+
+            if (hiredApplications.length > 0) {
+                const totalDays = hiredApplications.reduce((sum, app) => {
+                    if (app.appliedAt) {
+                        const days = Math.ceil((app.updatedAt.getTime() - app.appliedAt.getTime()) / (1000 * 60 * 60 * 24))
+                        return sum + days
+                    }
+                    return sum
+                }, 0)
+                avgTimeToHire = Math.round(totalDays / hiredApplications.length)
+            }
         }
 
         return {
             success: true,
             data: {
                 overview: {
-                    totalJobs,
-                    activeJobs,
+                    totalJobs: totalJobsResult?.count ?? 0,
+                    activeJobs: activeJobsResult?.count ?? 0,
                     totalApplications,
                     recentApplications,
                     applicationChange,
-                    totalViews: viewsSum._sum.viewsCount || 0,
+                    totalViews: Number(viewsSumResult[0]?.total) || 0,
                     hiredCount,
                     interviewsScheduled,
                     avgTimeToHire: `${avgTimeToHire}d`,
-                    conversionRate: totalApplications > 0 
-                        ? Math.round((hiredCount / totalApplications) * 100) 
+                    conversionRate: totalApplications > 0
+                        ? Math.round((hiredCount / totalApplications) * 100)
                         : 0
                 },
                 pipeline,
@@ -158,25 +208,42 @@ export async function getRecruiterPerformance() {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const members = await prisma.companyMember.findMany({
-            where: { companyId: member.companyId },
-            include: {
-                _count: {
-                    select: {
-                        postedJobs: true,
-                        reviewedApplications: true
-                    }
-                }
-            }
+        const memberList = await db.query.companyMembers.findMany({
+            where: eq(companyMembers.companyId, member.companyId)
         })
 
-        const performance = members.map(m => ({
+        const memberIds = memberList.map(m => m.id)
+
+        // Get jobs posted per member
+        let jobCountMap = new Map<string, number>()
+        let reviewedCountMap = new Map<string, number>()
+
+        if (memberIds.length > 0) {
+            const jobCounts = await db
+                .select({ postedById: jobs.postedById, cnt: count() })
+                .from(jobs)
+                .where(and(eq(jobs.companyId, member.companyId), inArray(jobs.postedById, memberIds)))
+                .groupBy(jobs.postedById)
+            jobCountMap = new Map(jobCounts.map(r => [r.postedById, r.cnt]))
+
+            const reviewedCounts = await db
+                .select({ reviewedById: jobApplications.reviewedById, cnt: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.reviewedById, memberIds),
+                    isNotNull(jobApplications.reviewedById)
+                ))
+                .groupBy(jobApplications.reviewedById)
+            reviewedCountMap = new Map(reviewedCounts.map(r => [r.reviewedById!, r.cnt]))
+        }
+
+        const performance = memberList.map(m => ({
             id: m.id,
-            name: m.displayName || m.email.split("@")[0] || "Unknown",
+            name: m.displayName || m.email?.split("@")[0] || "Unknown",
             image: null, // CompanyMember doesn't store image, would need separate User lookup
             role: m.role,
-            jobsPosted: m._count.postedJobs,
-            applicationsReviewed: m._count.reviewedApplications
+            jobsPosted: jobCountMap.get(m.id) || 0,
+            applicationsReviewed: reviewedCountMap.get(m.id) || 0
         }))
 
         return { success: true, data: performance }

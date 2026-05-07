@@ -1,10 +1,10 @@
 "use server"
 
-import { auth } from '@repo/auth';
-import prisma from '@repo/prisma';
-import { 
-    CreditType, Currency, XpTransactionProps 
-} from '@repo/prisma/client';
+import { getSession } from '@repo/auth';
+import { headers } from 'next/headers';
+import { db, users, levels, xpTransactions, creditTransactions, userLevelProgress } from '@repo/db';
+import { eq } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 // Level configuration - this could be moved to database later
 const LEVEL_CONFIG = [
@@ -23,11 +23,12 @@ const LEVEL_CONFIG = [
 // Initialize levels in database (call this once)
 export async function initializeLevels() {
     try {
-        const existingLevels = await prisma.level.count();
-        
-        if (existingLevels === 0) {
-            await prisma.level.createMany({
-                data: LEVEL_CONFIG.map(config => ({
+        const existingLevels = await db.select({ count: sql<number>`count(*)` }).from(levels);
+        const count = Number(existingLevels[0]?.count ?? 0);
+
+        if (count === 0) {
+            await db.insert(levels).values(
+                LEVEL_CONFIG.map(config => ({
                     level: config.level,
                     title: config.title,
                     xpRequired: config.xpRequired,
@@ -37,10 +38,10 @@ export async function initializeLevels() {
                     icon: config.icon,
                     color: config.color
                 }))
-            });
+            );
             console.log('Levels initialized successfully');
         }
-        
+
         return { success: true };
     } catch (error) {
         console.error('Error initializing levels:', error);
@@ -53,7 +54,7 @@ function calculateLevelFromXp(totalXp: number) {
     let currentLevel = 1;
     let nextLevelXp = 0;
     let currentLevelXp = 0;
-    
+
     for (const config of LEVEL_CONFIG) {
         if (totalXp >= config.xpRequired) {
             currentLevel = config.level;
@@ -65,11 +66,11 @@ function calculateLevelFromXp(totalXp: number) {
             break;
         }
     }
-    
+
     const progressInCurrentLevel = totalXp - currentLevelXp;
     const xpNeededForNextLevel = nextLevelXp - currentLevelXp;
     const progressPercentage = xpNeededForNextLevel > 0 ? (progressInCurrentLevel / xpNeededForNextLevel) * 100 : 100;
-    
+
     return {
         currentLevel,
         progressInCurrentLevel,
@@ -81,47 +82,42 @@ function calculateLevelFromXp(totalXp: number) {
 }
 
 // Add XP to user and handle level ups
-export async function addXpToUser(userId: string, xpAmount: number, description: string, type: XpTransactionProps = XpTransactionProps.REWARD) {
+export async function addXpToUser(userId: string, xpAmount: number, description: string, type: "EARN" | "SPEND" | "REWARD" | "BONUS" | "PENALTY" = "REWARD") {
     try {
-        return await prisma.$transaction(async (tx: any) => {
+        return await db.transaction(async (tx) => {
             // Get current user data
-            const user = await tx.user.findUnique({
-                where: { id: userId },
-                select: { currentXp: true, totalXp: true, currentLevel: true }
+            const user = await tx.query.users.findFirst({
+                where: eq(users.id, userId),
+                columns: { currentXp: true, totalXp: true, currentLevel: true }
             });
-            
+
             if (!user) {
                 throw new Error('User not found');
             }
-            
+
             // Calculate new XP values
             const newCurrentXp = user.currentXp + xpAmount;
             const newTotalXp = user.totalXp + xpAmount;
-            
+
             // Calculate what level user should be
             const levelInfo = calculateLevelFromXp(newTotalXp);
             const shouldLevelUp = levelInfo.currentLevel > user.currentLevel;
-            
+
             // Update user XP and level
-            const updatedUser = await tx.user.update({
-                where: { id: userId },
-                data: {
-                    currentXp: newCurrentXp,
-                    totalXp: newTotalXp,
-                    currentLevel: levelInfo.currentLevel
-                }
-            });
-            
+            const [updatedUser] = await tx.update(users).set({
+                currentXp: newCurrentXp,
+                totalXp: newTotalXp,
+                currentLevel: levelInfo.currentLevel
+            }).where(eq(users.id, userId)).returning();
+
             // Create XP transaction
-            await tx.xpTransaction.create({
-                data: {
-                    userId,
-                    amount: xpAmount,
-                    description,
-                    type
-                }
+            await tx.insert(xpTransactions).values({
+                userId,
+                amount: xpAmount,
+                description,
+                type
             });
-            
+
             // Handle level ups
             const levelUps = [];
             if (shouldLevelUp) {
@@ -129,55 +125,43 @@ export async function addXpToUser(userId: string, xpAmount: number, description:
                     const levelConfig = LEVEL_CONFIG.find(l => l.level === level);
                     if (levelConfig && levelConfig.xpReward > 0) {
                         // Add level up bonus XP
-                        await tx.user.update({
-                            where: { id: userId },
-                            data: {
-                                currentXp: { increment: levelConfig.xpReward },
-                                totalXp: { increment: levelConfig.xpReward }
-                            }
-                        });
-                        
+                        await tx.update(users).set({
+                            currentXp: sql`${users.currentXp} + ${levelConfig.xpReward}`,
+                            totalXp: sql`${users.totalXp} + ${levelConfig.xpReward}`
+                        }).where(eq(users.id, userId));
+
                         // Add credits reward if any
                         if (levelConfig.creditsReward > 0) {
-                            await tx.user.update({
-                                where: { id: userId },
-                                data: {
-                                    credits: { increment: levelConfig.creditsReward }
-                                }
-                            });
-                            
+                            await tx.update(users).set({
+                                credits: sql`${users.credits} + ${levelConfig.creditsReward}`
+                            }).where(eq(users.id, userId));
+
                             // Create credit transaction for level reward
-                            await tx.creditTransaction.create({
-                                data: {
-                                    userId,
-                                    amount: levelConfig.creditsReward,
-                                    type: CreditType.BONUS,
-                                    currency: Currency.INR,
-                                    description: `Level ${level} achievement bonus`
-                                }
+                            await tx.insert(creditTransactions).values({
+                                userId,
+                                amount: levelConfig.creditsReward,
+                                type: 'BONUS',
+                                currency: 'INR',
+                                description: `Level ${level} achievement bonus`
                             });
                         }
-                        
+
                         // Create XP transaction for level bonus
-                        await tx.xpTransaction.create({
-                            data: {
-                                userId,
-                                amount: levelConfig.xpReward,
-                                description: `Level ${level} achievement bonus`,
-                                type: XpTransactionProps.BONUS
-                            }
+                        await tx.insert(xpTransactions).values({
+                            userId,
+                            amount: levelConfig.xpReward,
+                            description: `Level ${level} achievement bonus`,
+                            type: 'BONUS'
                         });
-                        
+
                         // Record level progress
-                        await tx.userLevelProgress.create({
-                            data: {
-                                userId,
-                                level,
-                                xpEarned: levelConfig.xpReward,
-                                creditsEarned: levelConfig.creditsReward
-                            }
+                        await tx.insert(userLevelProgress).values({
+                            userId,
+                            level,
+                            xpEarned: levelConfig.xpReward,
+                            creditsEarned: levelConfig.creditsReward
                         });
-                        
+
                         levelUps.push({
                             level,
                             title: levelConfig.title,
@@ -188,7 +172,7 @@ export async function addXpToUser(userId: string, xpAmount: number, description:
                     }
                 }
             }
-            
+
             return {
                 success: true,
                 newCurrentXp: newCurrentXp + (levelUps.reduce((sum, l) => sum + l.xpReward, 0)),
@@ -210,44 +194,45 @@ export async function addXpToUser(userId: string, xpAmount: number, description:
 // Get user's level information
 export async function getUserLevelInfo(userId?: string) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         const targetUserId = userId || session?.user?.id;
-        
+
         if (!targetUserId) {
             throw new Error('User not authenticated');
         }
-        
-        const user = await prisma.user.findUnique({
-            where: { id: targetUserId },
-            select: {
+
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, targetUserId),
+            columns: {
                 currentXp: true,
                 totalXp: true,
                 currentLevel: true,
                 credits: true,
-                levelProgressHistory: {
-                    include: {
-                        levelInfo: true
-                    },
-                    orderBy: {
-                        achievedAt: 'desc'
-                    },
-                    take: 3
-                }
             }
         });
-        
+
         if (!user) {
             throw new Error('User not found');
         }
-        
+
+        // Get recent level progress history
+        const levelProgressHistory = await db.query.userLevelProgress.findMany({
+            where: eq(userLevelProgress.userId, targetUserId),
+            with: {
+                levelInfo: true
+            },
+            orderBy: (userLevelProgress, { desc }) => [desc(userLevelProgress.achievedAt)],
+            limit: 3
+        });
+
         // Ensure totalXp is set (fallback to currentXp for existing users)
         const totalXp = user.totalXp || user.currentXp;
-        
+
         // Get level information
         const levelInfo = calculateLevelFromXp(totalXp);
         const currentLevelConfig = LEVEL_CONFIG.find(l => l.level === user.currentLevel);
         const nextLevelConfig = LEVEL_CONFIG.find(l => l.level === user.currentLevel + 1);
-        
+
         return {
             success: true,
             data: {
@@ -258,7 +243,7 @@ export async function getUserLevelInfo(userId?: string) {
                 levelInfo,
                 currentLevelConfig,
                 nextLevelConfig,
-                recentLevelUps: user.levelProgressHistory || []
+                recentLevelUps: levelProgressHistory || []
             }
         };
     } catch (error) {
@@ -273,64 +258,57 @@ export async function getUserLevelInfo(userId?: string) {
 // Convert XP to Credits (updated to work with currentXp)
 export async function convertCurrentXpToCredits(xpAmount: number) {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             throw new Error('User not authenticated');
         }
-        
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { currentXp: true, credits: true }
+
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: { currentXp: true, credits: true }
         });
-        
+
         if (!user) {
             throw new Error('User not found');
         }
-        
+
         if (user.currentXp < xpAmount) {
             throw new Error('Insufficient current XP');
         }
-        
+
         const creditsToAdd = Math.floor(xpAmount / 10); // 10 XP = 1 Credit
-        
-        const result = await prisma.$transaction(async (tx: any) => {
+
+        const result = await db.transaction(async (tx) => {
             // Update user XP and credits
-            const updatedUser = await tx.user.update({
-                where: { id: session.user.id },
-                data: {
-                    currentXp: { decrement: xpAmount },
-                    credits: { increment: creditsToAdd }
-                }
-            });
-            
+            const [updatedUser] = await tx.update(users).set({
+                currentXp: sql`${users.currentXp} - ${xpAmount}`,
+                credits: sql`${users.credits} + ${creditsToAdd}`
+            }).where(eq(users.id, session.user.id!)).returning();
+
             // Create XP transaction (spending)
-            await tx.xpTransaction.create({
-                data: {
-                    userId: session.user.id,
-                    amount: -xpAmount,
-                    description: `Converted ${xpAmount} XP to ${creditsToAdd} credits`,
-                    type: XpTransactionProps.SPEND
-                }
+            await tx.insert(xpTransactions).values({
+                userId: session.user.id!,
+                amount: -xpAmount,
+                description: `Converted ${xpAmount} XP to ${creditsToAdd} credits`,
+                type: 'SPEND'
             });
-            
+
             // Create credit transaction
-            await tx.creditTransaction.create({
-                data: {
-                    userId: session.user.id,
-                    amount: creditsToAdd,
-                    type: CreditType.BONUS,
-                    currency: Currency.INR,
-                    description: `Converted from ${xpAmount} XP`
-                }
+            await tx.insert(creditTransactions).values({
+                userId: session.user.id!,
+                amount: creditsToAdd,
+                type: 'BONUS',
+                currency: 'INR',
+                description: `Converted from ${xpAmount} XP`
             });
-            
+
             return updatedUser;
         });
-        
+
         return {
             success: true,
-            newCurrentXp: result.currentXp,
-            newCredits: result.credits,
+            newCurrentXp: result!.currentXp,
+            newCredits: result!.credits,
             creditsGained: creditsToAdd
         };
     } catch (error) {
@@ -345,16 +323,16 @@ export async function convertCurrentXpToCredits(xpAmount: number) {
 // Get XP and Credits for navbar display
 export async function fetchCurrentXpAndCredits() {
     try {
-        const session = await auth();
+        const session = await getSession(headers());
         if (!session?.user?.id) {
             return { currentXp: 0, credits: 0 };
         }
-        
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: { currentXp: true, credits: true }
+
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: { currentXp: true, credits: true }
         });
-        
+
         return {
             currentXp: user?.currentXp || 0,
             credits: user?.credits || 0
@@ -368,14 +346,14 @@ export async function fetchCurrentXpAndCredits() {
 // Get all levels for reference
 export async function getAllLevels() {
     try {
-        const levels = await prisma.level.findMany({
-            where: { isActive: true },
-            orderBy: { level: 'asc' }
+        const levelsData = await db.query.levels.findMany({
+            where: eq(levels.isActive, true),
+            orderBy: (levels, { asc }) => [asc(levels.level)]
         });
-        
+
         return {
             success: true,
-            data: levels.length > 0 ? levels : LEVEL_CONFIG
+            data: levelsData.length > 0 ? levelsData : LEVEL_CONFIG
         };
     } catch (error) {
         console.error('Error fetching levels:', error);
@@ -385,4 +363,4 @@ export async function getAllLevels() {
             data: LEVEL_CONFIG
         };
     }
-} 
+}

@@ -1,10 +1,12 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, companySubscriptions, jobs, jobApplications, interviewProcesses } from "@repo/db"
+import { eq, and, count, gte } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import { 
-    HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType 
+import {
+    HIRING_SUBSCRIPTION_PLANS, type HiringSubscriptionPlanType
 } from "@/lib/dodopayments"
 import type { SubscriptionDetails, UsageStats } from "@/types"
 
@@ -16,12 +18,12 @@ export type { SubscriptionDetails, UsageStats }
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     return member
@@ -45,8 +47,8 @@ export async function getCurrentSubscription(): Promise<{
             return { success: false, subscription: null, error: "Unauthorized" }
         }
 
-        const subscription = await prisma.companySubscription.findUnique({
-            where: { companyId: member.companyId }
+        const subscription = await db.query.companySubscriptions.findFirst({
+            where: eq(companySubscriptions.companyId, member.companyId)
         })
 
         if (!subscription) {
@@ -73,7 +75,7 @@ export async function getCurrentSubscription(): Promise<{
                     currentPeriodEnd: null,
                     amount: 0,
                     currency: "INR",
-                    billingCycle: "monthly",
+                    billingCycle: "monthly"
                 }
             }
         }
@@ -101,7 +103,7 @@ export async function getCurrentSubscription(): Promise<{
                 currentPeriodEnd: subscription.currentPeriodEnd,
                 amount: subscription.amount,
                 currency: subscription.currency,
-                billingCycle: subscription.billingCycle,
+                billingCycle: subscription.billingCycle
             }
         }
     } catch (error) {
@@ -125,15 +127,15 @@ export async function getUsageStats(): Promise<{
         }
 
         // Get subscription limits
-        const subscription = await prisma.companySubscription.findUnique({
-            where: { companyId: member.companyId }
+        const subscription = await db.query.companySubscriptions.findFirst({
+            where: eq(companySubscriptions.companyId, member.companyId)
         })
 
         const limits = subscription || {
             maxJobPosts: HIRING_SUBSCRIPTION_PLANS.FREE.maxJobPosts,
             maxApplications: HIRING_SUBSCRIPTION_PLANS.FREE.maxApplications,
             maxInterviewTemplates: HIRING_SUBSCRIPTION_PLANS.FREE.maxInterviewTemplates,
-            maxTeamMembers: HIRING_SUBSCRIPTION_PLANS.FREE.maxTeamMembers,
+            maxTeamMembers: HIRING_SUBSCRIPTION_PLANS.FREE.maxTeamMembers
         }
 
         // Get current month usage
@@ -141,43 +143,58 @@ export async function getUsageStats(): Promise<{
         startOfMonth.setDate(1)
         startOfMonth.setHours(0, 0, 0, 0)
 
-        // Count active jobs
-        const activeJobs = await prisma.job.count({
-            where: {
-                companyId: member.companyId,
-                status: "ACTIVE",
-            }
-        })
-
         // Count applications this month
-        const applicationsThisMonth = await prisma.jobApplication.count({
-            where: {
-                job: { companyId: member.companyId },
-                appliedAt: { gte: startOfMonth }
-            }
-        })
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        let applicationsThisMonth = 0
+        if (jobIds.length > 0) {
+            const { inArray } = await import("drizzle-orm")
+            const appsRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.jobId, jobIds),
+                    gte(jobApplications.appliedAt, startOfMonth)
+                ))
+            applicationsThisMonth = appsRows[0]?.count ?? 0
+        }
 
         // Count interview templates
-        const interviewTemplates = await prisma.interviewProcess.count({
-            where: { companyId: member.companyId }
-        })
+        const interviewTemplatesRows = await db
+            .select({ count: count() })
+            .from(interviewProcesses)
+            .where(eq(interviewProcesses.companyId, member.companyId))
 
         // Count team members
-        const teamMembers = await prisma.companyMember.count({
-            where: { companyId: member.companyId }
-        })
+        const teamMembersRows = await db
+            .select({ count: count() })
+            .from(companyMembers)
+            .where(eq(companyMembers.companyId, member.companyId))
+
+        // Count active jobs
+        const activeJobsRows = await db
+            .select({ count: count() })
+            .from(jobs)
+            .where(and(
+                eq(jobs.companyId, member.companyId),
+                eq(jobs.status, "ACTIVE")
+            ))
 
         return {
             success: true,
             usage: {
-                jobsUsed: activeJobs,
+                jobsUsed: activeJobsRows[0]?.count ?? 0,
                 jobsLimit: limits.maxJobPosts,
                 applicationsUsed: applicationsThisMonth,
                 applicationsLimit: limits.maxApplications,
-                templatesUsed: interviewTemplates,
+                templatesUsed: interviewTemplatesRows[0]?.count ?? 0,
                 templatesLimit: limits.maxInterviewTemplates,
-                teamMembers: teamMembers,
-                teamLimit: limits.maxTeamMembers,
+                teamMembers: teamMembersRows[0]?.count ?? 0,
+                teamLimit: limits.maxTeamMembers
             }
         }
     } catch (error) {
@@ -199,8 +216,8 @@ export async function cancelSubscription(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const subscription = await prisma.companySubscription.findUnique({
-            where: { companyId: member.companyId }
+        const subscription = await db.query.companySubscriptions.findFirst({
+            where: eq(companySubscriptions.companyId, member.companyId)
         })
 
         if (!subscription) {
@@ -212,13 +229,12 @@ export async function cancelSubscription(): Promise<{
         }
 
         // Mark subscription as cancelled (will remain active until period end)
-        await prisma.companySubscription.update({
-            where: { id: subscription.id },
-            data: {
+        await db.update(companySubscriptions)
+            .set({
                 status: "CANCELLED",
-                cancelledAt: new Date(),
-            }
-        })
+                cancelledAt: new Date()
+            })
+            .where(eq(companySubscriptions.id, subscription.id))
 
         revalidatePath("/billing")
 
@@ -253,7 +269,7 @@ export async function checkSubscriptionLimit(action: 'job' | 'application' | 'te
                         allowed: false,
                         message: `Job post limit reached (${usage.jobsLimit}). Please upgrade your plan.`,
                         currentUsage: usage.jobsUsed,
-                        limit: usage.jobsLimit,
+                        limit: usage.jobsLimit
                     }
                 }
                 break
@@ -263,7 +279,7 @@ export async function checkSubscriptionLimit(action: 'job' | 'application' | 'te
                         allowed: false,
                         message: `Monthly application limit reached (${usage.applicationsLimit}). Please upgrade your plan.`,
                         currentUsage: usage.applicationsUsed,
-                        limit: usage.applicationsLimit,
+                        limit: usage.applicationsLimit
                     }
                 }
                 break
@@ -273,7 +289,7 @@ export async function checkSubscriptionLimit(action: 'job' | 'application' | 'te
                         allowed: false,
                         message: `Interview template limit reached (${usage.templatesLimit}). Please upgrade your plan.`,
                         currentUsage: usage.templatesUsed,
-                        limit: usage.templatesLimit,
+                        limit: usage.templatesLimit
                     }
                 }
                 break
@@ -283,7 +299,7 @@ export async function checkSubscriptionLimit(action: 'job' | 'application' | 'te
                         allowed: false,
                         message: `Team member limit reached (${usage.teamLimit}). Please upgrade your plan.`,
                         currentUsage: usage.teamMembers,
-                        limit: usage.teamLimit,
+                        limit: usage.teamLimit
                     }
                 }
                 break

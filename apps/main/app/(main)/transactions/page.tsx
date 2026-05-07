@@ -39,7 +39,7 @@ interface CreditTransferOut {
 }
 
 export default function TransactionsPage() {
-	const { status } = useSession()
+	const { data: session, isPending } = useSession()
 	const [transactions, setTransactions] = useState<CreditTransaction[]>([])
 	const [transfers, setTransfers] = useState<CreditTransferOut[]>([])
 	const [isLoading, setIsLoading] = useState(true)
@@ -71,10 +71,10 @@ export default function TransactionsPage() {
 	}
 
 	useEffect(() => {
-		if (status === "authenticated") {
+		if (session && !isPending) {
 			fetchData()
 		}
-	}, [status])
+	}, [session, isPending])
 
 	const getTransactionIcon = (type: string) => {
 		switch (type) {
@@ -128,7 +128,7 @@ export default function TransactionsPage() {
 		}
 	}
 
-	if (status === "loading" || isLoading) {
+	if (isPending || isLoading) {
 		return (
 			<div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
 				<div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -142,7 +142,7 @@ export default function TransactionsPage() {
 		)
 	}
 
-	if (status === "unauthenticated") {
+	if (!session && !isPending) {
 		return (
 			<div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
 				<div className="container mx-auto px-4 py-8 max-w-6xl">

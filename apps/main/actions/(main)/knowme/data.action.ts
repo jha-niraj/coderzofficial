@@ -2,14 +2,21 @@
 
 /**
  * KnowMe Data Management Server Actions
- * 
+ *
  * Handles personal data and platform connections
  */
 
-import { auth } from "@repo/auth";
-import { prisma } from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    knowMeProfiles,
+    knowMePersonalData,
+    knowMePlatformConnections,
+    knowMeExternalData,
+} from "@repo/db";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import type { KnowMePlatform, KnowMeDataType } from "@repo/prisma/client";
 import type {
   KnowMeActionResponse,
   KnowMePersonalDataItem,
@@ -34,17 +41,17 @@ export async function getPersonalData(): Promise<
   KnowMeActionResponse<KnowMePersonalDataItem[]>
 > {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
-      include: {
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
+      with: {
         personalData: {
-          where: { isActive: true },
-          orderBy: { createdAt: "desc" },
+          where: (pd: any, { eq }: any) => eq(pd.isActive, true),
+          orderBy: (pd: any, { desc }: any) => [desc(pd.createdAt)],
         },
       },
     });
@@ -55,7 +62,7 @@ export async function getPersonalData(): Promise<
 
     return {
       success: true,
-      data: profile.personalData.map((pd) => ({
+      data: profile.personalData.map((pd: any) => ({
         id: pd.id,
         dataType: pd.dataType,
         title: pd.title,
@@ -78,7 +85,7 @@ export async function getPersonalData(): Promise<
  * Add personal data (resume, cover letter, etc.)
  */
 export async function addPersonalData(data: {
-  dataType: KnowMeDataType;
+  dataType: string;
   title?: string;
   contentText: string;
   fileName?: string;
@@ -86,13 +93,13 @@ export async function addPersonalData(data: {
   fileSize?: number;
 }): Promise<KnowMeActionResponse<KnowMePersonalDataItem>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
     });
 
     if (!profile) {
@@ -101,48 +108,46 @@ export async function addPersonalData(data: {
 
     // Check for duplicates by content hash
     const contentHash = createContentHash(data.contentText);
-    const existing = await prisma.knowMePersonalData.findFirst({
-      where: {
-        profileId: profile.id,
-        contentHash,
-        isActive: true,
-      },
+    const existing = await db.query.knowMePersonalData.findFirst({
+      where: and(
+        eq(knowMePersonalData.profileId, profile.id),
+        eq(knowMePersonalData.contentHash, contentHash),
+        eq(knowMePersonalData.isActive, true)
+      ),
     });
 
     if (existing) {
       return { success: false, error: "This content already exists" };
     }
 
-    const personalData = await prisma.knowMePersonalData.create({
-      data: {
-        profileId: profile.id,
-        dataType: data.dataType,
-        title: data.title,
-        contentText: data.contentText,
-        contentHash,
-        fileName: data.fileName,
-        fileUrl: data.fileUrl,
-        fileSize: data.fileSize,
-        isActive: true,
-        isIndexed: false,
-      },
-    });
+    const [personalData] = await db.insert(knowMePersonalData).values({
+      profileId: profile.id,
+      dataType: data.dataType as any,
+      title: data.title,
+      contentText: data.contentText,
+      contentHash,
+      fileName: data.fileName,
+      fileUrl: data.fileUrl,
+      fileSize: data.fileSize,
+      isActive: true,
+      isIndexed: false,
+    }).returning();
 
     revalidatePath("/knowme");
 
     return {
       success: true,
       data: {
-        id: personalData.id,
-        dataType: personalData.dataType,
-        title: personalData.title,
-        fileName: personalData.fileName,
-        fileUrl: personalData.fileUrl,
-        fileSize: personalData.fileSize,
-        isActive: personalData.isActive,
-        isIndexed: personalData.isIndexed,
-        createdAt: personalData.createdAt,
-        updatedAt: personalData.updatedAt,
+        id: personalData!.id,
+        dataType: personalData!.dataType,
+        title: personalData!.title,
+        fileName: personalData!.fileName,
+        fileUrl: personalData!.fileUrl,
+        fileSize: personalData!.fileSize,
+        isActive: personalData!.isActive,
+        isIndexed: personalData!.isIndexed,
+        createdAt: personalData!.createdAt,
+        updatedAt: personalData!.updatedAt,
       },
       message: "Data added successfully",
     };
@@ -163,30 +168,29 @@ export async function updatePersonalData(
   }
 ): Promise<KnowMeActionResponse<void>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const personalData = await prisma.knowMePersonalData.findUnique({
-      where: { id: dataId },
-      include: { profile: true },
+    const personalDataItem = await db.query.knowMePersonalData.findFirst({
+      where: eq(knowMePersonalData.id, dataId),
+      with: { profile: true },
     });
 
-    if (!personalData || personalData.profile.userId !== session.user.id) {
+    if (!personalDataItem || personalDataItem.profile.userId !== session.user.id) {
       return { success: false, error: "Data not found" };
     }
 
-    await prisma.knowMePersonalData.update({
-      where: { id: dataId },
-      data: {
+    await db.update(knowMePersonalData)
+      .set({
         ...updates,
         contentHash: updates.contentText
           ? createContentHash(updates.contentText)
           : undefined,
         isIndexed: false, // Needs re-indexing
-      },
-    });
+      })
+      .where(eq(knowMePersonalData.id, dataId));
 
     revalidatePath("/knowme");
 
@@ -204,25 +208,24 @@ export async function deletePersonalData(
   dataId: string
 ): Promise<KnowMeActionResponse<void>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const personalData = await prisma.knowMePersonalData.findUnique({
-      where: { id: dataId },
-      include: { profile: true },
+    const personalDataItem = await db.query.knowMePersonalData.findFirst({
+      where: eq(knowMePersonalData.id, dataId),
+      with: { profile: true },
     });
 
-    if (!personalData || personalData.profile.userId !== session.user.id) {
+    if (!personalDataItem || personalDataItem.profile.userId !== session.user.id) {
       return { success: false, error: "Data not found" };
     }
 
     // Soft delete
-    await prisma.knowMePersonalData.update({
-      where: { id: dataId },
-      data: { isActive: false },
-    });
+    await db.update(knowMePersonalData)
+      .set({ isActive: false })
+      .where(eq(knowMePersonalData.id, dataId));
 
     revalidatePath("/knowme");
 
@@ -244,16 +247,16 @@ export async function getPlatformConnections(): Promise<
   KnowMeActionResponse<KnowMePlatformConnectionItem[]>
 > {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
-      include: {
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
+      with: {
         platformConnections: {
-          orderBy: { createdAt: "desc" },
+          orderBy: (pc: any, { desc }: any) => [desc(pc.createdAt)],
         },
       },
     });
@@ -264,7 +267,7 @@ export async function getPlatformConnections(): Promise<
 
     return {
       success: true,
-      data: profile.platformConnections.map((pc) => ({
+      data: profile.platformConnections.map((pc: any) => ({
         id: pc.id,
         platform: pc.platform,
         platformUsername: pc.platformUsername,
@@ -287,22 +290,22 @@ export async function getPlatformConnections(): Promise<
  * Connect a platform
  */
 export async function connectPlatform(data: {
-  platform: KnowMePlatform;
+  platform: string;
   profileUrl: string;
 }): Promise<KnowMeActionResponse<KnowMePlatformConnectionItem>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
     // Validate URL
-    if (!isValidProfileUrl(data.platform, data.profileUrl)) {
+    if (!isValidProfileUrl(data.platform as any, data.profileUrl)) {
       return { success: false, error: "Invalid profile URL" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
     });
 
     if (!profile) {
@@ -310,13 +313,11 @@ export async function connectPlatform(data: {
     }
 
     // Check if already connected
-    const existing = await prisma.knowMePlatformConnection.findUnique({
-      where: {
-        profileId_platform: {
-          profileId: profile.id,
-          platform: data.platform,
-        },
-      },
+    const existing = await db.query.knowMePlatformConnections.findFirst({
+      where: and(
+        eq(knowMePlatformConnections.profileId, profile.id),
+        eq(knowMePlatformConnections.platform, data.platform as any)
+      ),
     });
 
     if (existing) {
@@ -324,27 +325,25 @@ export async function connectPlatform(data: {
     }
 
     // Extract username
-    const username = extractUsernameFromUrl(data.platform, data.profileUrl);
+    const username = extractUsernameFromUrl(data.platform as any, data.profileUrl);
 
     // Create connection
-    const connection = await prisma.knowMePlatformConnection.create({
-      data: {
-        profileId: profile.id,
-        platform: data.platform,
-        platformUsername: username,
-        profileUrl: data.profileUrl,
-        connectionStatus: "PENDING",
-        isConnected: false,
-        syncFrequencyDays: 10,
-      },
-    });
+    const [connection] = await db.insert(knowMePlatformConnections).values({
+      profileId: profile.id,
+      platform: data.platform as any,
+      platformUsername: username,
+      profileUrl: data.profileUrl,
+      connectionStatus: "PENDING",
+      isConnected: false,
+      syncFrequencyDays: 10,
+    }).returning();
 
     // Trigger initial sync
-    await syncPlatformData(connection.id);
+    await syncPlatformData(connection!.id);
 
     // Fetch updated connection
-    const updatedConnection = await prisma.knowMePlatformConnection.findUnique({
-      where: { id: connection.id },
+    const updatedConnection = await db.query.knowMePlatformConnections.findFirst({
+      where: eq(knowMePlatformConnections.id, connection!.id),
     });
 
     if (!updatedConnection) {
@@ -382,14 +381,14 @@ export async function disconnectPlatform(
   connectionId: string
 ): Promise<KnowMeActionResponse<void>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const connection = await prisma.knowMePlatformConnection.findUnique({
-      where: { id: connectionId },
-      include: { profile: true },
+    const connection = await db.query.knowMePlatformConnections.findFirst({
+      where: eq(knowMePlatformConnections.id, connectionId),
+      with: { profile: true },
     });
 
     if (!connection || connection.profile.userId !== session.user.id) {
@@ -397,14 +396,12 @@ export async function disconnectPlatform(
     }
 
     // Delete external data for this connection
-    await prisma.knowMeExternalData.deleteMany({
-      where: { connectionId },
-    });
+    await db.delete(knowMeExternalData)
+      .where(eq(knowMeExternalData.connectionId, connectionId));
 
     // Delete connection
-    await prisma.knowMePlatformConnection.delete({
-      where: { id: connectionId },
-    });
+    await db.delete(knowMePlatformConnections)
+      .where(eq(knowMePlatformConnections.id, connectionId));
 
     revalidatePath("/knowme");
 
@@ -422,9 +419,9 @@ export async function syncPlatformData(
   connectionId: string
 ): Promise<KnowMeActionResponse<void>> {
   try {
-    const connection = await prisma.knowMePlatformConnection.findUnique({
-      where: { id: connectionId },
-      include: { profile: true },
+    const connection = await db.query.knowMePlatformConnections.findFirst({
+      where: eq(knowMePlatformConnections.id, connectionId),
+      with: { profile: true },
     });
 
     if (!connection) {
@@ -432,14 +429,13 @@ export async function syncPlatformData(
     }
 
     // Update status
-    await prisma.knowMePlatformConnection.update({
-      where: { id: connectionId },
-      data: { connectionStatus: "SYNCING" },
-    });
+    await db.update(knowMePlatformConnections)
+      .set({ connectionStatus: "SYNCING" })
+      .where(eq(knowMePlatformConnections.id, connectionId));
 
     try {
       let externalDataItems: Array<{
-        dataType: KnowMeDataType;
+        dataType: string;
         externalId: string;
         title: string;
         description: string | null;
@@ -456,7 +452,7 @@ export async function syncPlatformData(
 
             // Convert repos to external data
             externalDataItems = githubData.repositories.map((repo) => ({
-              dataType: "GITHUB_REPO" as KnowMeDataType,
+              dataType: "GITHUB_REPO",
               externalId: repo.name,
               title: repo.name,
               description: repo.description,
@@ -469,9 +465,8 @@ export async function syncPlatformData(
             }));
 
             // Update connection metadata
-            await prisma.knowMePlatformConnection.update({
-              where: { id: connectionId },
-              data: {
+            await db.update(knowMePlatformConnections)
+              .set({
                 metadata: {
                   github: {
                     repos: githubData.profile.public_repos,
@@ -481,8 +476,8 @@ export async function syncPlatformData(
                     languages: Object.keys(githubData.summary.primaryLanguages),
                   },
                 },
-              },
-            });
+              })
+              .where(eq(knowMePlatformConnections.id, connectionId));
           }
           break;
 
@@ -496,61 +491,63 @@ export async function syncPlatformData(
 
       // Save external data
       for (const item of externalDataItems) {
-        await prisma.knowMeExternalData.upsert({
-          where: {
-            profileId_connectionId_externalId: {
-              profileId: connection.profileId,
-              connectionId: connection.id,
-              externalId: item.externalId,
-            },
-          },
-          update: {
-            title: item.title,
-            description: item.description,
-            url: item.url,
-            techStack: item.techStack,
-            dateUpdated: new Date(),
-            metrics: item.metrics as unknown as Record<string, number | string | boolean>,
-            isActive: true,
-          },
-          create: {
+        const existingData = await db.query.knowMeExternalData.findFirst({
+          where: and(
+            eq(knowMeExternalData.profileId, connection.profileId),
+            eq(knowMeExternalData.connectionId, connection.id),
+            eq(knowMeExternalData.externalId, item.externalId)
+          ),
+        });
+
+        if (existingData) {
+          await db.update(knowMeExternalData)
+            .set({
+              title: item.title,
+              description: item.description,
+              url: item.url,
+              techStack: item.techStack,
+              dateUpdated: new Date(),
+              metrics: item.metrics as any,
+              isActive: true,
+            })
+            .where(eq(knowMeExternalData.id, existingData.id));
+        } else {
+          await db.insert(knowMeExternalData).values({
             profileId: connection.profileId,
             connectionId: connection.id,
-            dataType: item.dataType,
+            dataType: item.dataType as any,
             externalId: item.externalId,
             title: item.title,
             description: item.description,
             url: item.url,
             techStack: item.techStack,
             dateCreated: item.dateCreated,
-            metrics: item.metrics as unknown as Record<string, number | string | boolean>,
+            metrics: item.metrics as any,
             isActive: true,
-          },
-        });
+          });
+        }
       }
 
       // Update connection status
-      await prisma.knowMePlatformConnection.update({
-        where: { id: connectionId },
-        data: {
+      await db.update(knowMePlatformConnections)
+        .set({
           connectionStatus: "COMPLETED",
           isConnected: true,
           lastSyncedAt: new Date(),
           nextSyncAt: calculateNextUpdate(connection.syncFrequencyDays),
           lastSyncError: null,
-        },
-      });
+        })
+        .where(eq(knowMePlatformConnections.id, connectionId));
 
       return { success: true, message: "Sync completed" };
     } catch (syncError) {
       // Update connection with error
-      await prisma.knowMePlatformConnection.update({
-        where: { id: connectionId },
-        data: {
+      await db.update(knowMePlatformConnections)
+        .set({
           connectionStatus: "FAILED",
           lastSyncError: (syncError as Error).message,
-        },
-      });
+        })
+        .where(eq(knowMePlatformConnections.id, connectionId));
 
       throw syncError;
     }
@@ -565,16 +562,16 @@ export async function syncPlatformData(
  */
 export async function syncAllPlatforms(): Promise<KnowMeActionResponse<void>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
-      include: {
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
+      with: {
         platformConnections: {
-          where: { isConnected: true },
+          where: (pc: any, { eq }: any) => eq(pc.isConnected, true),
         },
       },
     });
@@ -596,4 +593,3 @@ export async function syncAllPlatforms(): Promise<KnowMeActionResponse<void>> {
     return { success: false, error: "Failed to sync platforms" };
   }
 }
-

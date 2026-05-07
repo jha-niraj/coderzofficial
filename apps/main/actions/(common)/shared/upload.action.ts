@@ -1,7 +1,8 @@
 "use server"
 
 import cloudinary from "@/utils/cloudinary";
-import { auth } from '@repo/auth';
+import { getSession } from '@repo/auth';
+import { headers } from 'next/headers';
 
 interface CloudinaryUploadResult {
     secure_url: string;
@@ -11,7 +12,7 @@ interface CloudinaryUploadResult {
 
 export async function uploadImageToCloudinary(formData: FormData) {
     try {
-        const session = await auth();
+        const session = await getSession(await headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required", url: null };
         }
@@ -97,7 +98,7 @@ export async function uploadImageToCloudinary(formData: FormData) {
 
 export async function deleteImageFromCloudinary(publicId: string) {
     try {
-        const session = await auth();
+        const session = await getSession(await headers());
         if (!session?.user?.id) {
             return { success: false, message: "Authentication required" };
         }

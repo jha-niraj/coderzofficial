@@ -1,45 +1,48 @@
 import { NextResponse } from 'next/server';
-import prisma from '@repo/prisma';
-import { auth } from '@repo/auth';
+import { db, users, creditTransferOuts } from '@repo/db';
+import { eq, desc } from 'drizzle-orm';
+import { getSession } from '@repo/auth';
+import { headers } from 'next/headers';
 
 export async function GET() {
-	try {
-		const session = await auth();
+    try {
+        const session = await getSession(await headers());
 
-		if (!session || !session.user?.email) {
-			return NextResponse.json({
-				success: false,
-				error: 'Unauthorized'
-			}, { status: 401 });
-		}
+        if (!session || !session.user?.email) {
+            return NextResponse.json({
+                success: false,
+                error: 'Unauthorized'
+            }, { status: 401 });
+        }
 
-		const user = await prisma.user.findUnique({
-			where: { email: session.user.email }
-		});
+        const user = await db.query.users.findFirst({
+            where: eq(users.email, session.user.email),
+            columns: { id: true },
+        });
 
-		if (!user) {
-			return NextResponse.json({
-				success: false,
-				error: 'User not found'
-			}, { status: 404 });
-		}
+        if (!user) {
+            return NextResponse.json({
+                success: false,
+                error: 'User not found'
+            }, { status: 404 });
+        }
 
-		const transfers = await prisma.creditTransferOut.findMany({
-			where: { userId: user.id },
-			orderBy: { createdAt: 'desc' },
-			take: 100 // Limit to last 100 transfers
-		});
+        const transfers = await db.query.creditTransferOuts.findMany({
+            where: eq(creditTransferOuts.userId, user.id),
+            orderBy: [desc(creditTransferOuts.createdAt)],
+            limit: 100,
+        });
 
-		return NextResponse.json({
-			success: true,
-			transfers
-		});
+        return NextResponse.json({
+            success: true,
+            transfers
+        });
 
-	} catch (error) {
-		console.error('Error fetching transfers:', error);
-		return NextResponse.json({
-			success: false,
-			error: 'Internal server error'
-		}, { status: 500 });
-	}
-} 
+    } catch (error) {
+        console.error('Error fetching transfers:', error);
+        return NextResponse.json({
+            success: false,
+            error: 'Internal server error'
+        }, { status: 500 });
+    }
+}

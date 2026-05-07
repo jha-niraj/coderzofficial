@@ -1,8 +1,9 @@
 "use server"
 
-import { auth } from "@repo/auth";
-import prisma from "@repo/prisma";
-import { ResourceType } from "@repo/prisma/client"
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import { db, projectV2Resources, projectsV2 } from "@repo/db";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache"
 
 /**
@@ -12,16 +13,15 @@ export async function addProjectResource(data: {
     projectId: string
     title: string
     link: string
-    type: ResourceType
+    type: string
     description?: string
 }) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        // Validate inputs
         if (!data.title || data.title.length > 200) {
             return { success: false, error: "Title must be 1-200 characters" }
         }
@@ -30,45 +30,44 @@ export async function addProjectResource(data: {
             return { success: false, error: "Link is required" }
         }
 
-        // Check if project exists
-        const project = await prisma.projectV2.findUnique({
-            where: { id: data.projectId },
-            select: { id: true, createdBy: true }
-        })
+        const [project] = await db
+            .select({ id: projectsV2.id, createdBy: projectsV2.createdBy })
+            .from(projectsV2)
+            .where(eq(projectsV2.id, data.projectId))
+            .limit(1)
 
         if (!project) {
             return { success: false, error: "Project not found" }
         }
 
-        // Check if user is creator (for marking as official)
         const isCreator = project.createdBy === session.user.id
 
-        // Create resource
-        const resource = await prisma.projectV2Resource.create({
-            data: {
+        const [resource] = await db
+            .insert(projectV2Resources)
+            .values({
                 userId: session.user.id,
                 projectId: data.projectId,
                 title: data.title,
                 link: data.link,
-                type: data.type,
+                type: data.type as any,
                 description: data.description,
-                isOfficial: isCreator, // Auto-mark as official if creator adds it
-            },
-            include: {
+                isOfficial: isCreator,
+            })
+            .returning()
+
+        // Fetch with user info
+        const resourceWithUser = await db.query.projectV2Resources.findFirst({
+            where: eq(projectV2Resources.id, resource.id),
+            with: {
                 user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true,
-                    }
+                    columns: { id: true, name: true, image: true }
                 }
             }
         })
 
         revalidatePath(`/projects/[slug]`, 'page')
 
-        return { success: true, resource }
+        return { success: true, resource: resourceWithUser }
 
     } catch (error) {
         console.error("Error adding resource:", error)
@@ -81,32 +80,25 @@ export async function addProjectResource(data: {
  */
 export async function getProjectResources(params: {
     projectId: string
-    type?: ResourceType
+    type?: string
 }) {
     try {
-        const where: any = {
-            projectId: params.projectId
-        }
+        const conditions: any[] = [eq(projectV2Resources.projectId, params.projectId)]
 
         if (params.type) {
-            where.type = params.type
+            conditions.push(eq(projectV2Resources.type, params.type as any))
         }
 
-        const resources = await prisma.projectV2Resource.findMany({
-            where,
+        const resources = await db.query.projectV2Resources.findMany({
+            where: and(...conditions),
             orderBy: [
-                { isOfficial: 'desc' }, // Official resources first
-                { helpfulCount: 'desc' }, // Then by helpful count
-                { createdAt: 'desc' } // Then by recency
+                desc(projectV2Resources.isOfficial),
+                desc(projectV2Resources.helpfulCount),
+                desc(projectV2Resources.createdAt)
             ],
-            include: {
+            with: {
                 user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        username: true,
-                        image: true,
-                    }
+                    columns: { id: true, name: true, image: true }
                 }
             }
         })
@@ -124,15 +116,19 @@ export async function getProjectResources(params: {
  */
 export async function toggleResourceHelpful(resourceId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        const resource = await prisma.projectV2Resource.findUnique({
-            where: { id: resourceId },
-            select: { markedHelpfulBy: true, helpfulCount: true }
-        })
+        const [resource] = await db
+            .select({
+                markedHelpfulBy: projectV2Resources.markedHelpfulBy,
+                helpfulCount: projectV2Resources.helpfulCount
+            })
+            .from(projectV2Resources)
+            .where(eq(projectV2Resources.id, resourceId))
+            .limit(1)
 
         if (!resource) {
             return { success: false, error: "Resource not found" }
@@ -141,28 +137,22 @@ export async function toggleResourceHelpful(resourceId: string) {
         const hasMarked = resource.markedHelpfulBy.includes(session.user.id)
 
         if (hasMarked) {
-            // Remove mark
-            await prisma.projectV2Resource.update({
-                where: { id: resourceId },
-                data: {
-                    markedHelpfulBy: {
-                        set: resource.markedHelpfulBy.filter((id: string) => id !== session.user.id)
-                    },
-                    helpfulCount: { decrement: 1 }
-                }
-            })
+            await db
+                .update(projectV2Resources)
+                .set({
+                    markedHelpfulBy: resource.markedHelpfulBy.filter((id: string) => id !== session.user.id),
+                    helpfulCount: sql`${projectV2Resources.helpfulCount} - 1`,
+                })
+                .where(eq(projectV2Resources.id, resourceId))
             return { success: true, marked: false }
         } else {
-            // Add mark
-            await prisma.projectV2Resource.update({
-                where: { id: resourceId },
-                data: {
-                    markedHelpfulBy: {
-                        push: session.user.id
-                    },
-                    helpfulCount: { increment: 1 }
-                }
-            })
+            await db
+                .update(projectV2Resources)
+                .set({
+                    markedHelpfulBy: [...resource.markedHelpfulBy, session.user.id],
+                    helpfulCount: sql`${projectV2Resources.helpfulCount} + 1`,
+                })
+                .where(eq(projectV2Resources.id, resourceId))
             return { success: true, marked: true }
         }
 
@@ -177,10 +167,10 @@ export async function toggleResourceHelpful(resourceId: string) {
  */
 export async function incrementResourceView(resourceId: string) {
     try {
-        await prisma.projectV2Resource.update({
-            where: { id: resourceId },
-            data: { views: { increment: 1 } }
-        })
+        await db
+            .update(projectV2Resources)
+            .set({ views: sql`${projectV2Resources.views} + 1` })
+            .where(eq(projectV2Resources.id, resourceId))
         return { success: true }
     } catch (error) {
         return { success: false, error: "Failed to increment view" }
@@ -192,16 +182,16 @@ export async function incrementResourceView(resourceId: string) {
  */
 export async function deleteProjectResource(resourceId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" }
         }
 
-        const resource = await prisma.projectV2Resource.findUnique({
-            where: { id: resourceId },
-            include: {
+        const resource = await db.query.projectV2Resources.findFirst({
+            where: eq(projectV2Resources.id, resourceId),
+            with: {
                 project: {
-                    select: { createdBy: true }
+                    columns: { createdBy: true }
                 }
             }
         })
@@ -210,16 +200,13 @@ export async function deleteProjectResource(resourceId: string) {
             return { success: false, error: "Resource not found" }
         }
 
-        // Check if user is resource author or project creator
         const canDelete = resource.userId === session.user.id || resource.project.createdBy === session.user.id
 
         if (!canDelete) {
             return { success: false, error: "Not authorized to delete this resource" }
         }
 
-        await prisma.projectV2Resource.delete({
-            where: { id: resourceId }
-        })
+        await db.delete(projectV2Resources).where(eq(projectV2Resources.id, resourceId))
 
         revalidatePath(`/projects/[slug]`, 'page')
 

@@ -3,8 +3,10 @@ import { notFound, redirect } from "next/navigation"
 import {
     Loader2
 } from "lucide-react"
-import { auth } from "@repo/auth"
-import { prisma } from "@repo/prisma"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { db, jobApplications, jobs, companies } from "@repo/db"
+import { eq, and } from "drizzle-orm"
 import {
     AssignmentContent, type Application as AssignmentApplication
 } from "./assignment-content"
@@ -17,20 +19,11 @@ interface AssignmentPageProps {
 
 export async function generateMetadata({ params }: AssignmentPageProps) {
     const { applicationId } = await params
-
-    const application = await prisma.jobApplication.findUnique({
-        where: { id: applicationId },
-        include: {
-            job: {
-                select: { title: true }
-            }
-        }
-    })
-
+    const [row] = await db.select({ jobTitle: jobs.title })
+        .from(jobApplications).innerJoin(jobs, eq(jobs.id, jobApplications.jobId))
+        .where(eq(jobApplications.id, applicationId)).limit(1)
     return {
-        title: application
-            ? `Assignment - ${application.job.title} | CodeDot.AI`
-            : "Assignment | CodeDot.AI",
+        title: row ? `Assignment - ${row.jobTitle} | CodeDot.AI` : "Assignment | CodeDot.AI",
         description: "Complete your take-home assignment"
     }
 }
@@ -50,32 +43,22 @@ function parseJsonField<T>(value: unknown, defaultValue: T): T {
 }
 
 async function getAssignmentData(applicationId: string, userId: string) {
-    const application = await prisma.jobApplication.findFirst({
-        where: {
-            id: applicationId,
-            userId: userId
-        },
-        include: {
-            job: {
-                include: {
-                    company: {
-                        select: {
-                            id: true,
-                            name: true,
-                            slug: true,
-                            logoUrl: true
-                        }
-                    }
-                }
-            }
-        }
+    const app = await db.query.jobApplications.findFirst({
+        where: and(eq(jobApplications.id, applicationId), eq(jobApplications.userId, userId)),
     })
+    if (!app) return null
 
-    return application
+    const [job] = await db.select().from(jobs).where(eq(jobs.id, app.jobId)).limit(1)
+    if (!job) return null
+
+    const [company] = await db.select({ id: companies.id, name: companies.name, slug: companies.slug, logoUrl: companies.logoUrl })
+        .from(companies).where(eq(companies.id, job.companyId)).limit(1)
+
+    return { ...app, job: { ...job, company: company ?? { id: "", name: "", slug: null, logoUrl: null } } }
 }
 
 export default async function AssignmentPage({ params }: AssignmentPageProps) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         redirect("/signin")
     }

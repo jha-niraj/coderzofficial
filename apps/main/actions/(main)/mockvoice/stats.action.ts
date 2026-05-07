@@ -1,37 +1,35 @@
 'use server'
 
-import { prisma } from '@repo/prisma'
+import { db, mockVoiceSession, mockVoiceRating } from "@repo/db"
+import { eq, inArray, count, avg } from "drizzle-orm"
 
 export async function getMockInterviewStats() {
     try {
-        const [totalVoiceInterviews, activeUsers, ratingsData] = await Promise.all([
+        const [totalVoiceInterviewsRow, activeUsersRows, ratingsDataRow] = await Promise.all([
             // Total voice sessions
-            prisma.mockVoiceSession.count({
-                where: {
-                    status: {
-                        in: ['COMPLETED', 'IN_PROGRESS']
-                    }
-                }
-            }),
-            
+            db
+                .select({ cnt: count() })
+                .from(mockVoiceSession)
+                .where(inArray(mockVoiceSession.status, ['COMPLETED', 'IN_PROGRESS']))
+                .then(([r]) => r),
+
             // Active users (users who have done at least one mock)
-            prisma.mockVoiceSession.groupBy({
-                by: ['userId'],
-                _count: {
-                    userId: true
-                }
-            }),
-            
+            db
+                .selectDistinctOn([mockVoiceSession.userId], { userId: mockVoiceSession.userId })
+                .from(mockVoiceSession),
+
             // Average rating
-            prisma.mockVoiceRating.aggregate({
-                _avg: {
-                    rating: true
-                }
-            })
+            db
+                .select({ avgRating: avg(mockVoiceRating.rating) })
+                .from(mockVoiceRating)
+                .then(([r]) => r),
         ])
 
-        const activeUsersCount = activeUsers.length
-        const averageRating = ratingsData._avg.rating?.toFixed(1) || '4.8'
+        const totalVoiceInterviews = Number(totalVoiceInterviewsRow?.cnt ?? 0)
+        const activeUsersCount = activeUsersRows.length
+        const averageRating = ratingsDataRow?.avgRating
+            ? Number(ratingsDataRow.avgRating).toFixed(1)
+            : '4.8'
 
         return {
             success: true,
@@ -39,20 +37,19 @@ export async function getMockInterviewStats() {
                 totalVoiceInterviews,
                 activeUsers: activeUsersCount,
                 averageRating,
-                successRate: '85' // This can be calculated based on completion rate
-            }
+                successRate: '85',
+            },
         }
     } catch (error) {
         console.error('Error fetching mock interview stats:', error)
-        // Return mock data if there's an error
         return {
             success: false,
             stats: {
                 totalVoiceInterviews: 15420,
                 activeUsers: 8734,
                 averageRating: '4.8',
-                successRate: '85'
-            }
+                successRate: '85',
+            },
         }
     }
 }

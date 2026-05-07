@@ -2,12 +2,19 @@
 
 /**
  * KnowMe API Management Server Actions
- * 
+ *
  * Handles API key generation, management, and usage tracking
  */
 
-import { auth } from "@repo/auth";
-import { prisma } from "@repo/prisma";
+import { getSession } from "@repo/auth";
+import { headers } from "next/headers";
+import {
+    db,
+    knowMeProfiles,
+    knowMeApiRequests,
+    users,
+} from "@repo/db";
+import { eq, and, gte, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { KnowMeActionResponse, KnowMeApiConfig, KnowMeApiUsageStats } from "@/types/knowme";
 import { generateApiKey, hashApiKey, shouldResetRateLimit } from "@/utils/knowme";
@@ -23,14 +30,14 @@ export async function getApiConfig(): Promise<
   KnowMeActionResponse<KnowMeApiConfig>
 > {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
-      select: {
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
+      columns: {
         apiKey: true,
         apiEnabled: true,
         apiRateLimit: true,
@@ -68,21 +75,20 @@ export async function toggleApiAccess(
   enabled: boolean
 ): Promise<KnowMeActionResponse<void>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    await prisma.knowMeProfile.update({
-      where: { userId: session.user.id },
-      data: { apiEnabled: enabled },
-    });
+    await db.update(knowMeProfiles)
+      .set({ apiEnabled: enabled })
+      .where(eq(knowMeProfiles.userId, session.user.id));
 
     revalidatePath("/knowme/settings");
 
-    return { 
-      success: true, 
-      message: enabled ? "API access enabled" : "API access disabled" 
+    return {
+      success: true,
+      message: enabled ? "API access enabled" : "API access disabled"
     };
   } catch (error) {
     console.error("Error toggling API access:", error);
@@ -97,20 +103,16 @@ export async function regenerateApiKey(): Promise<
   KnowMeActionResponse<{ apiKey: string }>
 > {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
     const { key, hash } = generateApiKey();
 
-    await prisma.knowMeProfile.update({
-      where: { userId: session.user.id },
-      data: {
-        apiKey: key,
-        apiKeyHash: hash,
-      },
-    });
+    await db.update(knowMeProfiles)
+      .set({ apiKey: key, apiKeyHash: hash })
+      .where(eq(knowMeProfiles.userId, session.user.id));
 
     revalidatePath("/knowme/settings");
 
@@ -132,7 +134,7 @@ export async function updateApiRateLimit(
   rateLimit: number
 ): Promise<KnowMeActionResponse<void>> {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
@@ -142,10 +144,9 @@ export async function updateApiRateLimit(
       return { success: false, error: "Rate limit must be between 10 and 1000" };
     }
 
-    await prisma.knowMeProfile.update({
-      where: { userId: session.user.id },
-      data: { apiRateLimit: rateLimit },
-    });
+    await db.update(knowMeProfiles)
+      .set({ apiRateLimit: rateLimit })
+      .where(eq(knowMeProfiles.userId, session.user.id));
 
     revalidatePath("/knowme/settings");
 
@@ -167,14 +168,14 @@ export async function getApiUsageStats(): Promise<
   KnowMeActionResponse<KnowMeApiUsageStats>
 > {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
-      select: {
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
+      columns: {
         id: true,
         apiRateLimit: true,
         apiUsageToday: true,
@@ -190,13 +191,12 @@ export async function getApiUsageStats(): Promise<
     // Check if rate limit should reset
     let todayUsage = profile.apiUsageToday;
     if (shouldResetRateLimit(profile.apiLastResetAt)) {
-      await prisma.knowMeProfile.update({
-        where: { id: profile.id },
-        data: {
+      await db.update(knowMeProfiles)
+        .set({
           apiUsageToday: 0,
           apiLastResetAt: new Date(),
-        },
-      });
+        })
+        .where(eq(knowMeProfiles.id, profile.id));
       todayUsage = 0;
     }
 
@@ -205,12 +205,15 @@ export async function getApiUsageStats(): Promise<
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const monthUsage = await prisma.knowMeApiRequest.count({
-      where: {
-        profileId: profile.id,
-        createdAt: { gte: startOfMonth },
-      },
-    });
+    const [monthUsageResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(knowMeApiRequests)
+      .where(and(
+        eq(knowMeApiRequests.profileId, profile.id),
+        gte(knowMeApiRequests.createdAt, startOfMonth)
+      ));
+
+    const monthUsage = Number(monthUsageResult?.count ?? 0);
 
     return {
       success: true,
@@ -245,30 +248,30 @@ export async function getRecentApiRequests(
   >
 > {
   try {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) {
       return { success: false, error: "Not authenticated" };
     }
 
-    const profile = await prisma.knowMeProfile.findUnique({
-      where: { userId: session.user.id },
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: eq(knowMeProfiles.userId, session.user.id),
     });
 
     if (!profile) {
       return { success: false, error: "Profile not found" };
     }
 
-    const requests = await prisma.knowMeApiRequest.findMany({
-      where: { profileId: profile.id },
-      select: {
+    const requests = await db.query.knowMeApiRequests.findMany({
+      where: eq(knowMeApiRequests.profileId, profile.id),
+      columns: {
         id: true,
         endpoint: true,
         responseStatus: true,
         responseTimeMs: true,
         createdAt: true,
       },
-      orderBy: { createdAt: "desc" },
-      take: limit,
+      orderBy: [desc(knowMeApiRequests.createdAt)],
+      limit,
     });
 
     return {
@@ -308,17 +311,14 @@ export async function validateApiRequest(
     const keyHash = hashApiKey(apiKey);
 
     // Find profile by API key hash
-    const profile = await prisma.knowMeProfile.findFirst({
-      where: {
-        apiKeyHash: keyHash,
-        apiEnabled: true,
-      },
-      include: {
+    const profile = await db.query.knowMeProfiles.findFirst({
+      where: and(
+        eq(knowMeProfiles.apiKeyHash, keyHash),
+        eq(knowMeProfiles.apiEnabled, true)
+      ),
+      with: {
         user: {
-          select: {
-            id: true,
-            username: true,
-          },
+          columns: { id: true, username: true },
         },
       },
     });
@@ -334,21 +334,20 @@ export async function validateApiRequest(
 
     // Check rate limit
     let todayUsage = profile.apiUsageToday;
-    
+
     if (shouldResetRateLimit(profile.apiLastResetAt)) {
-      await prisma.knowMeProfile.update({
-        where: { id: profile.id },
-        data: {
+      await db.update(knowMeProfiles)
+        .set({
           apiUsageToday: 0,
           apiLastResetAt: new Date(),
-        },
-      });
+        })
+        .where(eq(knowMeProfiles.id, profile.id));
       todayUsage = 0;
     }
 
     if (todayUsage >= profile.apiRateLimit) {
-      return { 
-        valid: false, 
+      return {
+        valid: false,
         error: "Rate limit exceeded",
         rateLimitRemaining: 0,
       };
@@ -358,7 +357,7 @@ export async function validateApiRequest(
       valid: true,
       profileId: profile.id,
       userId: profile.userId,
-      username: profile.user.username || undefined,
+      username: profile.user?.username || undefined,
       rateLimitRemaining: profile.apiRateLimit - todayUsage,
     };
   } catch (error) {
@@ -381,33 +380,30 @@ export async function recordApiRequest(data: {
   tokensUsed?: number;
 }): Promise<void> {
   try {
-    await prisma.$transaction([
+    await db.transaction(async (tx) => {
       // Create request record
-      prisma.knowMeApiRequest.create({
-        data: {
-          profileId: data.profileId,
-          apiKey: data.apiKey,
-          endpoint: data.endpoint,
-          method: data.method,
-          requestIp: data.requestIp,
-          responseStatus: data.responseStatus,
-          responseTimeMs: data.responseTimeMs,
-          tokensUsed: data.tokensUsed,
-        },
-      }),
+      await tx.insert(knowMeApiRequests).values({
+        profileId: data.profileId,
+        apiKey: data.apiKey,
+        endpoint: data.endpoint,
+        method: data.method,
+        requestIp: data.requestIp,
+        responseStatus: data.responseStatus,
+        responseTimeMs: data.responseTimeMs,
+        tokensUsed: data.tokensUsed,
+      });
+
       // Update usage counters
-      prisma.knowMeProfile.update({
-        where: { id: data.profileId },
-        data: {
-          apiUsageToday: { increment: 1 },
-          apiUsageTotal: { increment: 1 },
-          totalExternalRequests: { increment: 1 },
-        },
-      }),
-    ]);
+      await tx.update(knowMeProfiles)
+        .set({
+          apiUsageToday: sql`${knowMeProfiles.apiUsageToday} + 1`,
+          apiUsageTotal: sql`${knowMeProfiles.apiUsageTotal} + 1`,
+          totalExternalRequests: sql`${knowMeProfiles.totalExternalRequests} + 1`,
+        })
+        .where(eq(knowMeProfiles.id, data.profileId));
+    });
   } catch (error) {
     console.error("Error recording API request:", error);
     // Don't throw - this is non-critical
   }
 }
-

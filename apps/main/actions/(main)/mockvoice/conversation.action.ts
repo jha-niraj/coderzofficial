@@ -1,8 +1,9 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
-import type OpenAI from 'openai'
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import { db, mockVoiceSession, mockInterviewVoice } from "@repo/db"
+import { eq, and, sql } from "drizzle-orm"
 import { openai } from '@/lib/openai-client'
 
 
@@ -45,7 +46,7 @@ export async function getConversationDetails(conversationId: string) {
         }
 
         const data: ConversationDetails = await response.json()
-        
+
         return {
             success: true,
             data
@@ -61,23 +62,21 @@ export async function getConversationDetails(conversationId: string) {
 
 export async function processConversationCompletion(sessionId: string, conversationId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        // Poll conversation details until it's done
         let attempts = 0
-        const maxAttempts = 30 // 30 seconds max
+        const maxAttempts = 30
         let conversationData: ConversationDetails | null = null
 
         while (attempts < maxAttempts) {
             const result = await getConversationDetails(conversationId)
-            
+
             if (result.success && result.data) {
                 conversationData = result.data
 
-                // Check if processing is complete
                 if (conversationData.status === 'done') {
                     break
                 } else if (conversationData.status === 'failed') {
@@ -89,11 +88,11 @@ export async function processConversationCompletion(sessionId: string, conversat
                         metadata: conversationData.metadata,
                         analysis: conversationData.analysis
                     })
-                    // Mark the session as FAILED in the DB so it doesn't stay stuck
-                    await prisma.mockVoiceSession.update({
-                        where: { id: sessionId },
-                        data: { status: 'FAILED' as any }
-                    }).catch(() => { /* best-effort */ })
+                    await db
+                        .update(mockVoiceSession)
+                        .set({ status: 'FAILED' })
+                        .where(eq(mockVoiceSession.id, sessionId))
+                        .catch(() => { /* best-effort */ })
                     return {
                         success: false,
                         error: `Interview session ended unexpectedly: ${reason}`
@@ -101,7 +100,6 @@ export async function processConversationCompletion(sessionId: string, conversat
                 }
             }
 
-            // Wait 1 second before next attempt
             await new Promise(resolve => setTimeout(resolve, 1000))
             attempts++
         }
@@ -110,44 +108,44 @@ export async function processConversationCompletion(sessionId: string, conversat
             throw new Error('Conversation processing timeout')
         }
 
-        // Build transcript text
         const transcriptText = conversationData.transcript
             .map(t => `[${t.role.toUpperCase()}] (${t.time_in_call_secs}s): ${t.message}`)
             .join('\n\n')
 
-        // Calculate duration
         const duration = conversationData.metadata.call_duration_secs
 
-        // Update session with conversation data
-        await prisma.mockVoiceSession.update({
-            where: {
-                id: sessionId,
-                userId: session.user.id
-            },
-            data: {
+        await db
+            .update(mockVoiceSession)
+            .set({
                 conversationId,
                 status: 'COMPLETED',
                 completedAt: new Date(),
                 duration,
                 transcript: transcriptText,
                 metadata: conversationData.metadata as any,
-                // We'll generate AI analysis separately
-            }
-        })
+            })
+            .where(
+                and(
+                    eq(mockVoiceSession.id, sessionId),
+                    eq(mockVoiceSession.userId, session.user.id)
+                )
+            )
 
         // Update mock popularity
-        await prisma.mockInterviewVoice.update({
-            where: {
-                id: (await prisma.mockVoiceSession.findUnique({
-                    where: { id: sessionId },
-                    select: { mockId: true }
-                }))!.mockId
-            },
-            data: {
-                totalSessions: { increment: 1 },
-                popularity: { increment: 1 }
-            }
+        const sessionRow = await db.query.mockVoiceSession.findFirst({
+            where: eq(mockVoiceSession.id, sessionId),
+            columns: { mockId: true },
         })
+
+        if (sessionRow) {
+            await db
+                .update(mockInterviewVoice)
+                .set({
+                    totalSessions: sql`${mockInterviewVoice.totalSessions} + 1`,
+                    popularity: sql`${mockInterviewVoice.popularity} + 1`,
+                })
+                .where(eq(mockInterviewVoice.id, sessionRow.mockId))
+        }
 
         return {
             success: true,
@@ -168,25 +166,17 @@ export async function processConversationCompletion(sessionId: string, conversat
 
 export async function generateAIFeedback(sessionId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: 'Unauthorized' }
         }
 
-        const mockSession = await prisma.mockVoiceSession.findUnique({
-            where: {
-                id: sessionId,
-                userId: session.user.id
-            },
-            include: {
-                mock: {
-                    select: {
-                        title: true,
-                        level: true,
-                        category: true
-                    }
-                }
-            }
+        const mockSession = await db.query.mockVoiceSession.findFirst({
+            where: and(
+                eq(mockVoiceSession.id, sessionId),
+                eq(mockVoiceSession.userId, session.user.id)
+            ),
+            with: { mock: true },
         })
 
         if (!mockSession || !mockSession.transcript) {
@@ -227,21 +217,17 @@ export async function generateAIFeedback(sessionId: string) {
             response_format: { type: 'json_object' }
         })
 
-        const assistantMessage = response.choices[0]?.message;
-
-        if (!assistantMessage || !assistantMessage.content) {
-            throw new Error("No response from assistant");
+        const assistantMessage = response.choices[0]?.message
+        if (!assistantMessage?.content) {
+            throw new Error("No response from assistant")
         }
 
-        const analysis = JSON.parse(assistantMessage.content);
+        const analysis = JSON.parse(assistantMessage.content)
 
-        // Save analysis to database
-        await prisma.mockVoiceSession.update({
-            where: { id: sessionId },
-            data: {
-                aiAnalysis: analysis
-            }
-        })
+        await db
+            .update(mockVoiceSession)
+            .set({ aiAnalysis: analysis })
+            .where(eq(mockVoiceSession.id, sessionId))
 
         return {
             success: true,

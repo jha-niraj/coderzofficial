@@ -1,4 +1,5 @@
-import { prisma } from "@repo/prisma";
+import { db, users } from "@repo/db";
+import { eq } from "drizzle-orm";
 
 function slugifyName(name: string) {
     return name.toLowerCase().replace(/\s+/g, "");
@@ -19,7 +20,9 @@ export async function generateUniqueUsername(name: string): Promise<string> {
     let username = `${baseUsername}${getRandomTag()}`;
     let counter = 1;
 
-    while (await prisma.user.findUnique({ where: { username } })) {
+    while (true) {
+        const existing = await db.select({ id: users.id }).from(users).where(eq(users.username, username)).limit(1);
+        if (existing.length === 0) break;
         username = `${baseUsername}${getRandomTag()}${counter}`;
         counter++;
     }

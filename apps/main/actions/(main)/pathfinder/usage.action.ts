@@ -1,7 +1,9 @@
 'use server'
 
-import { auth } from '@repo/auth'
-import { prisma } from '@repo/prisma'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
+import { db, pathfinderGoals, pathfinderUsageLedger } from '@repo/db'
+import { eq, and } from 'drizzle-orm'
 import {
     openaiTokensToCredits,
     exaCallToCredits,
@@ -39,17 +41,15 @@ export async function logPathfinderUsage(params: {
         creditsCost = exaCallToCredits()
     }
 
-    await prisma.pathfinderUsageLedger.create({
-        data: {
-            goalId,
-            userId,
-            action,
-            provider,
-            inputTokens,
-            outputTokens,
-            creditsCost,
-            deducted: false,
-        },
+    await db.insert(pathfinderUsageLedger).values({
+        goalId,
+        userId,
+        action,
+        provider,
+        inputTokens,
+        outputTokens,
+        creditsCost,
+        deducted: false,
     })
 
     return { creditsCost, inputTokens, outputTokens }
@@ -59,16 +59,16 @@ export async function logPathfinderUsage(params: {
  * Get pending (undeducted) usage for a goal.
  */
 export async function getGoalUsageSummary(goalId: string): Promise<GoalUsageSummary | null> {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const goal = await prisma.pathfinderGoal.findFirst({
-        where: { id: goalId, userId: session.user.id },
+    const goal = await db.query.pathfinderGoals.findFirst({
+        where: and(eq(pathfinderGoals.id, goalId), eq(pathfinderGoals.userId, session.user.id)),
     })
     if (!goal) return null
 
-    const ledger = await prisma.pathfinderUsageLedger.findMany({
-        where: { goalId, deducted: false },
+    const ledger = await db.query.pathfinderUsageLedger.findMany({
+        where: and(eq(pathfinderUsageLedger.goalId, goalId), eq(pathfinderUsageLedger.deducted, false)),
     })
 
     const totalInputTokens = ledger.reduce((s, l) => s + l.inputTokens, 0)

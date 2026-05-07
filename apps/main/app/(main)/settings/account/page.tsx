@@ -1,7 +1,9 @@
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { AccountSettingsContent } from './_components/account-settings-content'
-import { prisma } from '@repo/prisma'
+import { db, users, accounts } from '@repo/db'
+import { eq } from 'drizzle-orm'
 
 export const metadata = {
     title: 'Account Settings | Coderz',
@@ -9,39 +11,26 @@ export const metadata = {
 }
 
 export default async function AccountSettingsPage() {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         redirect('/login')
     }
 
-    // Get user and linked accounts
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            emailVerified: true,
-            hashedPassword: true,
-            createdAt: true,
-        },
-    })
+    const [user] = await db
+        .select({ id: users.id, name: users.name, email: users.email, image: users.image, emailVerified: users.emailVerified, hashedPassword: users.hashedPassword, createdAt: users.createdAt })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1)
 
-    const accounts = await prisma.account.findMany({
-        where: { userId: session.user.id },
-        select: {
-            provider: true,
-            providerAccountId: true,
-        },
-    })
+    if (!user) redirect('/login')
 
-    if (!user) {
-        redirect('/login')
-    }
+    const linkedAccounts = await db
+        .select({ providerId: accounts.providerId })
+        .from(accounts)
+        .where(eq(accounts.userId, session.user.id))
 
-    const linkedProviders = accounts.map((a) => a.provider)
+    const linkedProviders = linkedAccounts.map((a) => a.providerId)
 
     return (
         <div className="space-y-6">
@@ -57,7 +46,7 @@ export default async function AccountSettingsPage() {
                     name: user.name,
                     email: user.email,
                     image: user.image,
-                    emailVerified: user.emailVerified,
+                    emailVerified: user.emailVerified ?? false,
                     hasPassword: !!user.hashedPassword,
                     createdAt: user.createdAt,
                 }}

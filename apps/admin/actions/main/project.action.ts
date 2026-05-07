@@ -1,8 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { getServerSession } from "@repo/auth"
-import { authOptions } from "@repo/auth"
+import { db, adminAccess, adminAuditLogs, projectsV2, userProjectV2Progress } from "@repo/db"
+import { eq, and, ilike, or, count, inArray } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import {
     hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel
@@ -16,21 +17,21 @@ interface Response<T = unknown> {
 
 // Helper to check admin access
 async function checkAdminAccess(requiredModule: AdminPermission, requiredLevel: PermissionLevel) {
-    const session = await getServerSession(authOptions)
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return { authorized: false, error: "Not authenticated" }
     }
 
-    const adminAccess = await prisma.adminAccess.findUnique({
-        where: { userId: session.user.id },
-        include: { user: true }
+    const adminRecord = await db.query.adminAccess.findFirst({
+        where: eq(adminAccess.userId, session.user.id),
+        with: { user: true }
     })
 
-    if (!adminAccess || !hasPermission(adminAccess.permissions as AdminPermissions, requiredModule, requiredLevel)) {
+    if (!adminRecord || !hasPermission(adminRecord.permissions as AdminPermissions, requiredModule, requiredLevel)) {
         return { authorized: false, error: "Not authorized" }
     }
 
-    return { authorized: true, adminAccess }
+    return { authorized: true, adminAccess: adminRecord }
 }
 
 // Get all projects with filters and pagination
@@ -40,59 +41,50 @@ export async function getAllProjects(params?: {
     search?: string
     status?: string
     type?: string
+    visibility?: string
 }): Promise<Response> {
     try {
-        const check = await checkAdminAccess('projects', 'read')
+        const check = await checkAdminAccess("projects", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
         const page = params?.page || 1
         const limit = params?.limit || 20
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where: any = {}
+        const whereConditions = []
 
         if (params?.search) {
-            where.OR = [
-                { title: { contains: params.search, mode: 'insensitive' } },
-                { description: { contains: params.search, mode: 'insensitive' } },
-            ]
+            whereConditions.push(
+                or(
+                    ilike(projectsV2.title, `%${params.search}%`),
+                    ilike(projectsV2.description, `%${params.search}%`)
+                )
+            )
         }
 
-        if (params?.status) {
-            where.status = params.status
+        if (params?.visibility) {
+            whereConditions.push(eq(projectsV2.visibility, params.visibility as any))
         }
 
-        if (params?.type) {
-            where.type = params.type
-        }
+        const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined
 
-        const [projects, total] = await Promise.all([
-            prisma.projectV2.findMany({
-                where,
-                skip,
-                take: limit,
-                include: {
+        const [projects, totalResult] = await Promise.all([
+            db.query.projectsV2.findMany({
+                where: whereClause,
+                with: {
                     creator: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            image: true,
-                        }
-                    },
-                    _count: {
-                        select: {
-                            progress: true,
-                            submissions: true,
-                        }
+                        columns: { id: true, name: true, email: true, image: true }
                     }
                 },
-                orderBy: { createdAt: 'desc' }
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit,
+                offset
             }),
-            prisma.projectV2.count({ where })
+            db.select({ total: count() }).from(projectsV2).where(whereClause)
         ])
+        const total = totalResult[0]?.total ?? 0
 
         return {
             success: true,
@@ -115,35 +107,22 @@ export async function getAllProjects(params?: {
 // Get project by ID
 export async function getProjectById(id: string): Promise<Response> {
     try {
-        const check = await checkAdminAccess('projects', 'read')
+        const check = await checkAdminAccess("projects", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const project = await prisma.projectV2.findUnique({
-            where: { id },
-            include: {
+        const project = await db.query.projectsV2.findFirst({
+            where: eq(projectsV2.id, id),
+            with: {
                 creator: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        image: true,
-                    }
+                    columns: { id: true, name: true, email: true, image: true }
                 },
                 sprints: {
-                    include: {
-                        tasks: true
-                    }
+                    with: { tasks: true }
                 },
-                progress: true,
+                userProgress: true,
                 submissions: true,
-                _count: {
-                    select: {
-                        progress: true,
-                        submissions: true,
-                    }
-                }
             }
         })
 
@@ -162,32 +141,32 @@ export async function getProjectById(id: string): Promise<Response> {
 export async function updateProject(id: string, data: {
     title?: string
     description?: string
-    visibility?: 'PRIVATE' | 'PUBLIC'
-    difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
+    visibility?: "PRIVATE" | "PUBLIC"
+    difficulty?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
 }): Promise<Response> {
     try {
-        const check = await checkAdminAccess('projects', 'write')
+        const check = await checkAdminAccess("projects", "write")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const project = await prisma.projectV2.update({
-            where: { id },
-            data
+        const projectRows = await db.update(projectsV2)
+            .set(data)
+            .where(eq(projectsV2.id, id))
+            .returning()
+        const project = projectRows[0]
+        if (!project) return { success: false, error: "Project not found" }
+
+        await db.insert(adminAuditLogs).values({
+            adminId: check.adminAccess!.id,
+            action: "UPDATE",
+            module: "projects",
+            resourceType: "Project",
+            resourceId: id,
+            description: `Updated project: ${project.title}`
         })
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: check.adminAccess!.id,
-                action: "UPDATE",
-                module: "projects",
-                resourceType: "Project",
-                resourceId: id,
-                description: `Updated project: ${project.title}`
-            }
-        })
-
-        revalidatePath('/projects')
+        revalidatePath("/projects")
         revalidatePath(`/projects/${id}`)
 
         return { success: true, data: project }
@@ -200,30 +179,28 @@ export async function updateProject(id: string, data: {
 // Delete project
 export async function deleteProject(id: string): Promise<Response> {
     try {
-        const check = await checkAdminAccess('projects', 'delete')
+        const check = await checkAdminAccess("projects", "delete")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const project = await prisma.projectV2.findUnique({ where: { id } })
+        const project = await db.query.projectsV2.findFirst({ where: eq(projectsV2.id, id) })
         if (!project) {
             return { success: false, error: "Project not found" }
         }
 
-        await prisma.projectV2.delete({ where: { id } })
+        await db.delete(projectsV2).where(eq(projectsV2.id, id))
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: check.adminAccess!.id,
-                action: "DELETE",
-                module: "projects",
-                resourceType: "Project",
-                resourceId: id,
-                description: `Deleted project: ${project.title}`
-            }
+        await db.insert(adminAuditLogs).values({
+            adminId: check.adminAccess!.id,
+            action: "DELETE",
+            module: "projects",
+            resourceType: "Project",
+            resourceId: id,
+            description: `Deleted project: ${project.title}`
         })
 
-        revalidatePath('/projects')
+        revalidatePath("/projects")
 
         return { success: true, data: null }
     } catch (error) {
@@ -234,32 +211,29 @@ export async function deleteProject(id: string): Promise<Response> {
 
 // Bulk update projects
 export async function bulkUpdateProjects(ids: string[], data: {
-    visibility?: 'PRIVATE' | 'PUBLIC'
-    difficulty?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
+    visibility?: "PRIVATE" | "PUBLIC"
+    difficulty?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED"
 }): Promise<Response> {
     try {
-        const check = await checkAdminAccess('projects', 'write')
+        const check = await checkAdminAccess("projects", "write")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        await prisma.projectV2.updateMany({
-            where: { id: { in: ids } },
-            data
+        await db.update(projectsV2)
+            .set(data)
+            .where(inArray(projectsV2.id, ids))
+
+        await db.insert(adminAuditLogs).values({
+            adminId: check.adminAccess!.id,
+            action: "UPDATE",
+            module: "projects",
+            resourceType: "Project",
+            resourceId: ids.join(","),
+            description: `Bulk updated ${ids.length} projects`
         })
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: check.adminAccess!.id,
-                action: "UPDATE",
-                module: "projects",
-                resourceType: "Project",
-                resourceId: ids.join(','),
-                description: `Bulk updated ${ids.length} projects`
-            }
-        })
-
-        revalidatePath('/projects')
+        revalidatePath("/projects")
 
         return { success: true, data: null }
     } catch (error) {
@@ -271,27 +245,23 @@ export async function bulkUpdateProjects(ids: string[], data: {
 // Bulk delete projects
 export async function bulkDeleteProjects(ids: string[]): Promise<Response> {
     try {
-        const check = await checkAdminAccess('projects', 'delete')
+        const check = await checkAdminAccess("projects", "delete")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        await prisma.projectV2.deleteMany({
-            where: { id: { in: ids } }
+        await db.delete(projectsV2).where(inArray(projectsV2.id, ids))
+
+        await db.insert(adminAuditLogs).values({
+            adminId: check.adminAccess!.id,
+            action: "DELETE",
+            module: "projects",
+            resourceType: "Project",
+            resourceId: ids.join(","),
+            description: `Bulk deleted ${ids.length} projects`
         })
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: check.adminAccess!.id,
-                action: "DELETE",
-                module: "projects",
-                resourceType: "Project",
-                resourceId: ids.join(','),
-                description: `Bulk deleted ${ids.length} projects`
-            }
-        })
-
-        revalidatePath('/projects')
+        revalidatePath("/projects")
 
         return { success: true, data: null }
     } catch (error) {
@@ -303,18 +273,29 @@ export async function bulkDeleteProjects(ids: string[]): Promise<Response> {
 // Get project stats
 export async function getProjectStats(): Promise<Response> {
     try {
-        const check = await checkAdminAccess('projects', 'read')
+        const check = await checkAdminAccess("projects", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const [total, public_, private_, totalStarted, totalCompleted] = await Promise.all([
-            prisma.projectV2.count(),
-            prisma.projectV2.count({ where: { visibility: 'PUBLIC' } }),
-            prisma.projectV2.count({ where: { visibility: 'PRIVATE' } }),
-            prisma.userProjectV2Progress.count({ where: { status: 'IN_PROGRESS' } }),
-            prisma.userProjectV2Progress.count({ where: { status: 'COMPLETED' } }),
+        const [
+            totalResult,
+            publicResult,
+            privateResult,
+            totalStartedResult,
+            totalCompletedResult,
+        ] = await Promise.all([
+            db.select({ total: count() }).from(projectsV2),
+            db.select({ public_: count() }).from(projectsV2).where(eq(projectsV2.visibility, "PUBLIC")),
+            db.select({ private_: count() }).from(projectsV2).where(eq(projectsV2.visibility, "PRIVATE")),
+            db.select({ totalStarted: count() }).from(userProjectV2Progress).where(eq(userProjectV2Progress.status, "IN_PROGRESS")),
+            db.select({ totalCompleted: count() }).from(userProjectV2Progress).where(eq(userProjectV2Progress.status, "COMPLETED")),
         ])
+        const total = totalResult[0]?.total ?? 0
+        const public_ = publicResult[0]?.public_ ?? 0
+        const private_ = privateResult[0]?.private_ ?? 0
+        const totalStarted = totalStartedResult[0]?.totalStarted ?? 0
+        const totalCompleted = totalCompletedResult[0]?.totalCompleted ?? 0
 
         return {
             success: true,

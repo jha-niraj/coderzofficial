@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, jobs } from "@repo/db"
+import { eq, and } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 
 // ============================================
@@ -9,14 +11,14 @@ import { revalidatePath } from "next/cache"
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return null
     }
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
 
     return member
@@ -40,13 +42,12 @@ export async function publishJob(jobId: string) {
             return { success: false, error: "Unauthorized" }
         }
 
-        await prisma.job.updateMany({
-            where: { id: jobId, companyId: member.companyId },
-            data: {
+        await db.update(jobs)
+            .set({
                 status: "ACTIVE",
                 publishedAt: new Date()
-            }
-        })
+            })
+            .where(and(eq(jobs.id, jobId), eq(jobs.companyId, member.companyId)))
 
         revalidatePath("/jobs")
         return { success: true }
@@ -63,10 +64,9 @@ export async function pauseJob(jobId: string) {
             return { success: false, error: "Unauthorized" }
         }
 
-        await prisma.job.updateMany({
-            where: { id: jobId, companyId: member.companyId },
-            data: { status: "PAUSED" }
-        })
+        await db.update(jobs)
+            .set({ status: "PAUSED" })
+            .where(and(eq(jobs.id, jobId), eq(jobs.companyId, member.companyId)))
 
         revalidatePath("/jobs")
         return { success: true }
@@ -83,10 +83,9 @@ export async function closeJob(jobId: string) {
             return { success: false, error: "Unauthorized" }
         }
 
-        await prisma.job.updateMany({
-            where: { id: jobId, companyId: member.companyId },
-            data: { status: "CLOSED" }
-        })
+        await db.update(jobs)
+            .set({ status: "CLOSED" })
+            .where(and(eq(jobs.id, jobId), eq(jobs.companyId, member.companyId)))
 
         revalidatePath("/jobs")
         return { success: true }
@@ -103,8 +102,8 @@ export async function duplicateJob(jobId: string) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const originalJob = await prisma.job.findFirst({
-            where: { id: jobId, companyId: member.companyId }
+        const originalJob = await db.query.jobs.findFirst({
+            where: and(eq(jobs.id, jobId), eq(jobs.companyId, member.companyId))
         })
 
         if (!originalJob) {
@@ -113,35 +112,33 @@ export async function duplicateJob(jobId: string) {
 
         const newSlug = generateSlug(originalJob.title + " Copy")
 
-        const newJob = await prisma.job.create({
-            data: {
-                companyId: member.companyId,
-                postedById: member.id,
-                title: originalJob.title + " (Copy)",
-                slug: newSlug,
-                description: originalJob.description,
-                requirements: originalJob.requirements as string[],
-                responsibilities: originalJob.responsibilities as string[],
-                benefits: originalJob.benefits as string[],
-                location: originalJob.location,
-                locationType: originalJob.locationType,
-                employmentType: originalJob.employmentType,
-                experienceMin: originalJob.experienceMin,
-                experienceMax: originalJob.experienceMax,
-                salaryMin: originalJob.salaryMin,
-                salaryMax: originalJob.salaryMax,
-                salaryCurrency: originalJob.salaryCurrency,
-                salaryDisclosed: originalJob.salaryDisclosed,
-                skillsRequired: originalJob.skillsRequired as string[],
-                skillsPreferred: originalJob.skillsPreferred as string[],
-                hasAssignment: originalJob.hasAssignment,
-                assignmentDetails: originalJob.assignmentDetails ?? undefined,
-                assignmentDeadlineDays: originalJob.assignmentDeadlineDays,
-                interviewProcessId: originalJob.interviewProcessId,
-                visibility: originalJob.visibility,
-                status: "DRAFT"
-            }
-        })
+        const [newJob] = await db.insert(jobs).values({
+            companyId: member.companyId,
+            postedById: member.id,
+            title: originalJob.title + " (Copy)",
+            slug: newSlug,
+            description: originalJob.description,
+            requirements: originalJob.requirements as string[],
+            responsibilities: originalJob.responsibilities as string[],
+            benefits: originalJob.benefits as string[],
+            location: originalJob.location,
+            locationType: originalJob.locationType,
+            employmentType: originalJob.employmentType,
+            experienceMin: originalJob.experienceMin,
+            experienceMax: originalJob.experienceMax,
+            salaryMin: originalJob.salaryMin,
+            salaryMax: originalJob.salaryMax,
+            salaryCurrency: originalJob.salaryCurrency,
+            salaryDisclosed: originalJob.salaryDisclosed,
+            skillsRequired: originalJob.skillsRequired as string[],
+            skillsPreferred: originalJob.skillsPreferred as string[],
+            hasAssignment: originalJob.hasAssignment,
+            assignmentDetails: originalJob.assignmentDetails ?? undefined,
+            assignmentDeadlineDays: originalJob.assignmentDeadlineDays,
+            interviewProcessId: originalJob.interviewProcessId,
+            visibility: originalJob.visibility,
+            status: "DRAFT"
+        }).returning()
 
         revalidatePath("/jobs")
         return { success: true, data: newJob }

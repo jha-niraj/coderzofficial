@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, companyMembers, jobs, jobApplications, memberInvitations } from "@repo/db"
+import { eq, and, count, isNotNull, asc, desc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import type {
     Permission, TeamMember, UpdateTeamMemberPayload,
@@ -13,12 +15,12 @@ import type {
 // ============================================
 
 async function getUserCompany() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.companyMember.findFirst({
-        where: { userId: session.user.id },
-        include: { company: true }
+    const member = await db.query.companyMembers.findFirst({
+        where: eq(companyMembers.userId, session.user.id),
+        with: { company: true }
     })
     return member
 }
@@ -43,44 +45,48 @@ function parsePermissions(permissions: unknown): Permission[] {
  * Get all team members of the current user's company
  */
 export async function getTeamMembers() {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
-            where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+        const currentMember = await db.query.companyMembers.findFirst({
+            where: eq(companyMembers.userId, session.user.id),
+            columns: { companyId: true, role: true }
         })
 
         if (!currentMember) {
             return { success: false, error: "Not a member of any company" }
         }
 
-        const members = await prisma.companyMember.findMany({
-            where: { companyId: currentMember.companyId },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        image: true
-                    }
-                },
-                _count: {
-                    select: {
-                        postedJobs: true
-                    }
-                }
-            },
+        const members = await db.query.companyMembers.findMany({
+            where: eq(companyMembers.companyId, currentMember.companyId),
             orderBy: [
-                { role: "asc" },
-                { createdAt: "asc" },
-            ],
+                asc(companyMembers.role),
+                asc(companyMembers.createdAt)
+            ]
         })
+
+        // Fetch user info separately
+        const { users } = await import("@repo/db")
+        const { inArray } = await import("drizzle-orm")
+        const userIds = [...new Set(members.map(m => m.userId))]
+        const userList = userIds.length > 0
+            ? await db.select({ id: users.id, name: users.name, email: users.email, image: users.image })
+                .from(users)
+                .where(inArray(users.id, userIds))
+            : []
+        const userMap = new Map(userList.map(u => [u.id, u]))
+
+        // Get job counts per member
+        const jobCountsRaw = await db
+            .select({ postedById: jobs.postedById, cnt: count() })
+            .from(jobs)
+            .where(eq(jobs.companyId, currentMember.companyId))
+            .groupBy(jobs.postedById)
+        const jobCountMap = new Map(jobCountsRaw.map(r => [r.postedById, r.cnt]))
 
         const teamMembers: TeamMember[] = members.map((member) => ({
             id: member.id,
@@ -98,14 +104,14 @@ export async function getTeamMembers() {
             lastActiveAt: member.lastActiveAt,
             createdAt: member.createdAt,
             updatedAt: member.updatedAt,
-            user: member.user,
-            jobsPosted: member._count.postedJobs
+            user: userMap.get(member.userId) ?? { id: member.userId, name: null, email: member.email, image: null },
+            jobsPosted: jobCountMap.get(member.id) || 0
         }))
 
         return {
             success: true,
             data: teamMembers,
-            isHead: currentMember.role === "FOUNDER",
+            isHead: currentMember.role === "FOUNDER"
         }
     } catch (error) {
         console.error("Get team members error:", error)
@@ -117,47 +123,45 @@ export async function getTeamMembers() {
  * Get a single team member by ID
  */
 export async function getTeamMember(memberId: string) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
-            where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+        const currentMember = await db.query.companyMembers.findFirst({
+            where: eq(companyMembers.userId, session.user.id),
+            columns: { companyId: true, role: true }
         })
 
         if (!currentMember) {
             return { success: false, error: "Not a member of any company" }
         }
 
-        const member = await prisma.companyMember.findFirst({
-            where: {
-                id: memberId,
-                companyId: currentMember.companyId,
-            },
-            include: {
-                user: {
-                    select: {
-                        id: true,
-                        name: true,
-                        email: true,
-                        image: true
-                    }
-                },
-                _count: {
-                    select: {
-                        postedJobs: true
-                    }
-                }
-            }
+        const member = await db.query.companyMembers.findFirst({
+            where: and(
+                eq(companyMembers.id, memberId),
+                eq(companyMembers.companyId, currentMember.companyId)
+            )
         })
 
         if (!member) {
             return { success: false, error: "Member not found" }
         }
+
+        // Fetch user separately
+        const { users: usersTable2 } = await import("@repo/db")
+        const memberUser = await db.query.users.findFirst({
+            where: eq(usersTable2.id, member.userId),
+            columns: { id: true, name: true, email: true, image: true }
+        })
+
+        const jobsPostedRows = await db
+            .select({ count: count() })
+            .from(jobs)
+            .where(and(eq(jobs.companyId, currentMember.companyId), eq(jobs.postedById, memberId)))
+        const jobsPostedResult = jobsPostedRows[0]
 
         const teamMember: TeamMember = {
             id: member.id,
@@ -175,14 +179,14 @@ export async function getTeamMember(memberId: string) {
             lastActiveAt: member.lastActiveAt,
             createdAt: member.createdAt,
             updatedAt: member.updatedAt,
-            user: member.user,
-            jobsPosted: member._count.postedJobs
+            user: memberUser ?? { id: member.userId, name: null, email: member.email, image: null },
+            jobsPosted: jobsPostedResult?.count ?? 0
         }
 
         return {
             success: true,
             data: teamMember,
-            isHead: currentMember.role === "FOUNDER",
+            isHead: currentMember.role === "FOUNDER"
         }
     } catch (error) {
         console.error("Get team member error:", error)
@@ -198,16 +202,16 @@ export async function getTeamMember(memberId: string) {
  * Update a team member's role and permissions
  */
 export async function updateTeamMember(memberId: string, payload: UpdateTeamMemberPayload) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
-            where: { userId: session.user.id },
-            select: { id: true, companyId: true, role: true },
+        const currentMember = await db.query.companyMembers.findFirst({
+            where: eq(companyMembers.userId, session.user.id),
+            columns: { id: true, companyId: true, role: true }
         })
 
         if (!currentMember) {
@@ -218,11 +222,11 @@ export async function updateTeamMember(memberId: string, payload: UpdateTeamMemb
             return { success: false, error: "Only HEAD can update team members" }
         }
 
-        const targetMember = await prisma.companyMember.findFirst({
-            where: {
-                id: memberId,
-                companyId: currentMember.companyId,
-            },
+        const targetMember = await db.query.companyMembers.findFirst({
+            where: and(
+                eq(companyMembers.id, memberId),
+                eq(companyMembers.companyId, currentMember.companyId)
+            )
         })
 
         if (!targetMember) {
@@ -243,10 +247,9 @@ export async function updateTeamMember(memberId: string, payload: UpdateTeamMemb
         }
 
         if (Object.keys(updateData).length > 0) {
-            await prisma.companyMember.update({
-                where: { id: memberId },
-                data: updateData,
-            })
+            await db.update(companyMembers)
+                .set(updateData)
+                .where(eq(companyMembers.id, memberId))
         }
 
         revalidatePath("/team")
@@ -273,18 +276,20 @@ export async function updateMemberRole(memberId: string, newRole: CompanyMemberR
             return { success: false, error: "You cannot change your own role" }
         }
 
-        const targetMember = await prisma.companyMember.findFirst({
-            where: { id: memberId, companyId: currentMember.companyId }
+        const targetMember = await db.query.companyMembers.findFirst({
+            where: and(
+                eq(companyMembers.id, memberId),
+                eq(companyMembers.companyId, currentMember.companyId)
+            )
         })
 
         if (!targetMember) {
             return { success: false, error: "Member not found" }
         }
 
-        await prisma.companyMember.update({
-            where: { id: memberId },
-            data: { role: newRole }
-        })
+        await db.update(companyMembers)
+            .set({ role: newRole })
+            .where(eq(companyMembers.id, memberId))
 
         revalidatePath("/team")
         return { success: true }
@@ -298,16 +303,16 @@ export async function updateMemberRole(memberId: string, newRole: CompanyMemberR
  * Deactivate a team member (soft delete)
  */
 export async function deactivateTeamMember(memberId: string) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
-            where: { userId: session.user.id },
-            select: { id: true, companyId: true, role: true },
+        const currentMember = await db.query.companyMembers.findFirst({
+            where: eq(companyMembers.userId, session.user.id),
+            columns: { id: true, companyId: true, role: true }
         })
 
         if (!currentMember) {
@@ -322,21 +327,20 @@ export async function deactivateTeamMember(memberId: string) {
             return { success: false, error: "Cannot deactivate yourself" }
         }
 
-        const targetMember = await prisma.companyMember.findFirst({
-            where: {
-                id: memberId,
-                companyId: currentMember.companyId,
-            },
+        const targetMember = await db.query.companyMembers.findFirst({
+            where: and(
+                eq(companyMembers.id, memberId),
+                eq(companyMembers.companyId, currentMember.companyId)
+            )
         })
 
         if (!targetMember) {
             return { success: false, error: "Member not found" }
         }
 
-        await prisma.companyMember.update({
-            where: { id: memberId },
-            data: { isActive: false },
-        })
+        await db.update(companyMembers)
+            .set({ isActive: false })
+            .where(eq(companyMembers.id, memberId))
 
         revalidatePath("/team")
         return { success: true, message: "Team member deactivated" }
@@ -350,16 +354,16 @@ export async function deactivateTeamMember(memberId: string) {
  * Reactivate a team member
  */
 export async function reactivateTeamMember(memberId: string) {
-    const session = await auth()
+    const session = await getSession(headers())
 
     if (!session?.user?.id) {
         return { success: false, error: "Unauthorized" }
     }
 
     try {
-        const currentMember = await prisma.companyMember.findFirst({
-            where: { userId: session.user.id },
-            select: { companyId: true, role: true },
+        const currentMember = await db.query.companyMembers.findFirst({
+            where: eq(companyMembers.userId, session.user.id),
+            columns: { companyId: true, role: true }
         })
 
         if (!currentMember) {
@@ -370,21 +374,20 @@ export async function reactivateTeamMember(memberId: string) {
             return { success: false, error: "Only HEAD can reactivate team members" }
         }
 
-        const targetMember = await prisma.companyMember.findFirst({
-            where: {
-                id: memberId,
-                companyId: currentMember.companyId,
-            },
+        const targetMember = await db.query.companyMembers.findFirst({
+            where: and(
+                eq(companyMembers.id, memberId),
+                eq(companyMembers.companyId, currentMember.companyId)
+            )
         })
 
         if (!targetMember) {
             return { success: false, error: "Member not found" }
         }
 
-        await prisma.companyMember.update({
-            where: { id: memberId },
-            data: { isActive: true },
-        })
+        await db.update(companyMembers)
+            .set({ isActive: true })
+            .where(eq(companyMembers.id, memberId))
 
         revalidatePath("/team")
         return { success: true, message: "Team member reactivated" }
@@ -410,15 +413,18 @@ export async function removeTeamMember(memberId: string) {
             return { success: false, error: "You cannot remove yourself" }
         }
 
-        const targetMember = await prisma.companyMember.findFirst({
-            where: { id: memberId, companyId: currentMember.companyId }
+        const targetMember = await db.query.companyMembers.findFirst({
+            where: and(
+                eq(companyMembers.id, memberId),
+                eq(companyMembers.companyId, currentMember.companyId)
+            )
         })
 
         if (!targetMember) {
             return { success: false, error: "Member not found" }
         }
 
-        await prisma.companyMember.delete({ where: { id: memberId } })
+        await db.delete(companyMembers).where(eq(companyMembers.id, memberId))
 
         revalidatePath("/team")
         return { success: true }
@@ -440,24 +446,50 @@ export async function getTeamStats() {
         const member = await getUserCompany()
         if (!member) return { success: false, error: "Unauthorized" }
 
-        const [membersCount, pendingInvites, jobsPosted, candidatesProcessed] = await Promise.all([
-            prisma.companyMember.count({ where: { companyId: member.companyId } }),
-            prisma.companyInvitation.count({ where: { companyId: member.companyId, status: "PENDING" } }),
-            prisma.job.count({ where: { companyId: member.companyId } }),
-            prisma.jobApplication.count({
-                where: {
-                    job: { companyId: member.companyId },
-                    reviewedById: { not: null }
-                }
-            })
-        ])
+        const membersCountRows = await db
+            .select({ count: count() })
+            .from(companyMembers)
+            .where(eq(companyMembers.companyId, member.companyId))
+
+        const pendingInvitesRows = await db
+            .select({ count: count() })
+            .from(memberInvitations)
+            .where(and(
+                eq(memberInvitations.companyId, member.companyId),
+                eq(memberInvitations.status, "PENDING")
+            ))
+
+        const jobsPostedRows = await db
+            .select({ count: count() })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+
+        // Count applications reviewed (have a reviewedById)
+        const companyJobIds = await db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(eq(jobs.companyId, member.companyId))
+        const jobIds = companyJobIds.map(j => j.id)
+
+        let candidatesProcessed = 0
+        if (jobIds.length > 0) {
+            const { inArray } = await import("drizzle-orm")
+            const processedRows = await db
+                .select({ count: count() })
+                .from(jobApplications)
+                .where(and(
+                    inArray(jobApplications.jobId, jobIds),
+                    isNotNull(jobApplications.reviewedById)
+                ))
+            candidatesProcessed = processedRows[0]?.count ?? 0
+        }
 
         return {
             success: true,
             data: {
-                totalMembers: membersCount,
-                pendingInvites,
-                jobsPosted,
+                totalMembers: membersCountRows[0]?.count ?? 0,
+                pendingInvites: pendingInvitesRows[0]?.count ?? 0,
+                jobsPosted: jobsPostedRows[0]?.count ?? 0,
                 candidatesProcessed
             }
         }

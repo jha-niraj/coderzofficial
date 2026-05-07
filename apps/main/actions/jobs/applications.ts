@@ -1,13 +1,25 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db,
+    jobs,
+    jobApplications,
+    savedJobs,
+    users,
+    interviewPrepProgress,
+    applicationActivities,
+    interviewProcesses,
+    interviewRounds,
+} from "@repo/db"
+import { eq, and, sql, inArray, notInArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 // Show interest in a job (first step - adds to "My Jobs")
 export async function showInterest(jobId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return {
                 success: false,
@@ -15,9 +27,9 @@ export async function showInterest(jobId: string) {
             }
         }
 
-        const job = await prisma.job.findUnique({
-            where: { id: jobId },
-            select: { id: true, status: true, interviewProcessId: true }
+        const job = await db.query.jobs.findFirst({
+            where: eq(jobs.id, jobId),
+            columns: { id: true, status: true, interviewProcessId: true },
         })
 
         if (!job || job.status !== "ACTIVE") {
@@ -25,13 +37,11 @@ export async function showInterest(jobId: string) {
         }
 
         // Check if already applied
-        const existing = await prisma.jobApplication.findUnique({
-            where: {
-                jobId_userId: {
-                    jobId,
-                    userId: session.user.id
-                }
-            }
+        const existing = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.jobId, jobId),
+                eq(jobApplications.userId, session.user.id)
+            ),
         })
 
         if (existing) {
@@ -39,13 +49,11 @@ export async function showInterest(jobId: string) {
         }
 
         // Create application in INTERESTED state
-        const application = await prisma.jobApplication.create({
-            data: {
-                jobId,
-                userId: session.user.id,
-                status: "INTERESTED"
-            }
-        })
+        const [application] = await db.insert(jobApplications).values({
+            jobId,
+            userId: session.user.id,
+            status: "INTERESTED",
+        }).returning()
 
         revalidatePath("/jobs")
         revalidatePath("/jobs/applications")
@@ -60,16 +68,16 @@ export async function showInterest(jobId: string) {
 // Start preparing for a job
 export async function startPreparing(applicationId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                userId: session.user.id
-            }
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                eq(jobApplications.userId, session.user.id)
+            ),
         })
 
         if (!application) {
@@ -80,10 +88,10 @@ export async function startPreparing(applicationId: string) {
             return { success: false, error: "Cannot start preparing from current status" }
         }
 
-        const updated = await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: { status: "PREPARING" }
-        })
+        const [updated] = await db.update(jobApplications)
+            .set({ status: "PREPARING" })
+            .where(eq(jobApplications.id, applicationId))
+            .returning()
 
         revalidatePath("/jobs/applications")
 
@@ -104,25 +112,23 @@ interface CustomQuestionResponse {
 // Commitment Check - Validates candidate is ready to apply
 export async function performCommitmentCheck(applicationId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                userId: session.user.id
-            },
-            include: {
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                eq(jobApplications.userId, session.user.id)
+            ),
+            with: {
                 job: {
-                    include: {
-                        company: {
-                            select: { name: true }
-                        }
-                    }
-                }
-            }
+                    with: {
+                        company: { columns: { name: true } },
+                    },
+                },
+            },
         })
 
         if (!application) {
@@ -130,31 +136,21 @@ export async function performCommitmentCheck(applicationId: string) {
         }
 
         const checks = {
-            // Profile completeness check
             profileComplete: false,
-            // Match score check (recommend at least 60%)
             matchScoreOk: (application.matchScore ?? 0) >= 60,
-            // Preparation status check
-            hasReviewedRequirements: true, // They've seen the job details
-            // Competition awareness
+            hasReviewedRequirements: true,
             understoodsCompetition: application.job.applicationsCount > 0,
-            // Can proceed with caution if low match
             canProceedWithCaution: (application.matchScore ?? 0) >= 40 && (application.matchScore ?? 0) < 60
         }
 
         // Get user profile to check completeness
-        const user = await prisma.user.findUnique({
-            where: { id: session.user.id },
-            select: {
-                name: true,
-                email: true,
-                resume: true,
-                skills: true
-            }
+        const user = await db.query.users.findFirst({
+            where: eq(users.id, session.user.id),
+            columns: { name: true, email: true },
         })
 
         if (user) {
-            checks.profileComplete = !!(user.name && user.email && (user.resume || (user.skills && user.skills.length > 0)))
+            checks.profileComplete = !!(user.name && user.email)
         }
 
         const isReadyToApply = checks.profileComplete && (checks.matchScoreOk || checks.canProceedWithCaution)
@@ -215,24 +211,21 @@ export async function submitApplication(
     }
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                userId: session.user.id
-            },
-            include: {
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                eq(jobApplications.userId, session.user.id)
+            ),
+            with: {
                 job: {
-                    select: {
-                        id: true,
-                        customQuestions: true
-                    }
-                }
-            }
+                    columns: { id: true, customQuestions: true },
+                },
+            },
         })
 
         if (!application) {
@@ -268,24 +261,20 @@ export async function submitApplication(
         }
 
         // Update application
-        const updated = await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        const [updated] = await db.update(jobApplications)
+            .set({
                 status: "APPLIED",
                 appliedAt: new Date(),
                 coverLetter: data?.coverLetter || application.coverLetter,
-                // Cast to JSON for Prisma
-                customQuestionResponses: JSON.parse(JSON.stringify(data?.customQuestionResponses || []))
-            }
-        })
+                customQuestionResponses: JSON.parse(JSON.stringify(data?.customQuestionResponses || [])),
+            })
+            .where(eq(jobApplications.id, applicationId))
+            .returning()
 
         // Increment job applications count
-        await prisma.job.update({
-            where: { id: application.jobId },
-            data: {
-                applicationsCount: { increment: 1 }
-            }
-        })
+        await db.update(jobs)
+            .set({ applicationsCount: sql`${jobs.applicationsCount} + 1` })
+            .where(eq(jobs.id, application.jobId))
 
         revalidatePath("/jobs/applications")
 
@@ -299,16 +288,16 @@ export async function submitApplication(
 // Withdraw application
 export async function withdrawApplication(applicationId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                userId: session.user.id
-            }
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                eq(jobApplications.userId, session.user.id)
+            ),
         })
 
         if (!application) {
@@ -320,10 +309,10 @@ export async function withdrawApplication(applicationId: string) {
             return { success: false, error: "Cannot withdraw this application" }
         }
 
-        const updated = await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: { status: "WITHDRAWN" }
-        })
+        const [updated] = await db.update(jobApplications)
+            .set({ status: "WITHDRAWN" })
+            .where(eq(jobApplications.id, applicationId))
+            .returning()
 
         revalidatePath("/jobs/applications")
 
@@ -337,57 +326,82 @@ export async function withdrawApplication(applicationId: string) {
 // Get user's applications
 export async function getMyApplications(status?: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const where: any = { userId: session.user.id }
-        if (status) {
-            where.status = status
-        }
-
-        const applications = await prisma.jobApplication.findMany({
-            where,
-            include: {
+        const applications = await db.query.jobApplications.findMany({
+            where: status
+                ? and(eq(jobApplications.userId, session.user.id), eq(jobApplications.status, status as typeof jobApplications.$inferSelect['status']))
+                : eq(jobApplications.userId, session.user.id),
+            with: {
                 job: {
-                    include: {
+                    with: {
                         company: {
-                            select: {
+                            columns: {
                                 id: true,
                                 name: true,
                                 logoUrl: true,
-                                industry: true
-                            }
+                                industry: true,
+                            },
                         },
-                        interviewProcess: {
-                            include: {
-                                rounds: {
-                                    orderBy: { roundNumber: "asc" }
-                                }
-                            }
-                        }
-                    }
+                    },
                 },
-                prepProgress: true
+                activities: true,
             },
-            orderBy: { updatedAt: "desc" }
+            orderBy: (t, { desc }) => [desc(t.updatedAt)],
         })
+
+        // Load interviewProcess + rounds + prepProgress separately
+        const appIds = applications.map(a => a.id)
+        const jobIds = [...new Set(applications.map(a => a.jobId))]
+
+        const [allProcesses, allPrepProgress] = await Promise.all([
+            jobIds.length > 0
+                ? db.query.interviewProcesses.findMany({
+                    where: inArray(interviewProcesses.id,
+                        // Collect interviewProcessId from jobs if available
+                        applications
+                            .map(a => (a.job as any).interviewProcessId)
+                            .filter(Boolean) as string[]
+                    ),
+                    with: { rounds: { orderBy: (r: any, { asc }: any) => [asc(r.roundNumber)] } },
+                })
+                : [],
+            appIds.length > 0
+                ? db.query.interviewPrepProgress.findMany({
+                    where: inArray(interviewPrepProgress.applicationId, appIds),
+                })
+                : [],
+        ])
+
+        const processMap = new Map(allProcesses.map(p => [p.id, p]))
+        const prepMap = new Map(allPrepProgress.map(p => [p.applicationId, p]))
+
+        const enrichedApplications = applications.map(app => ({
+            ...app,
+            job: {
+                ...app.job,
+                interviewProcess: processMap.get((app.job as any).interviewProcessId ?? '') ?? null,
+            },
+            prepProgress: prepMap.get(app.id) ?? null,
+        }))
 
         // Group by status
         const grouped = {
-            interested: applications.filter(a => a.status === "INTERESTED"),
-            preparing: applications.filter(a => a.status === "PREPARING"),
-            applied: applications.filter(a => a.status === "APPLIED"),
-            inProgress: applications.filter(a =>
+            interested: enrichedApplications.filter(a => a.status === "INTERESTED"),
+            preparing: enrichedApplications.filter(a => a.status === "PREPARING"),
+            applied: enrichedApplications.filter(a => a.status === "APPLIED"),
+            inProgress: enrichedApplications.filter(a =>
                 ["UNDER_REVIEW", "SHORTLISTED", "ASSIGNMENT_SENT", "ASSIGNMENT_SUBMITTED", "INTERVIEW_SCHEDULED", "INTERVIEWED"].includes(a.status)
             ),
-            completed: applications.filter(a =>
+            completed: enrichedApplications.filter(a =>
                 ["OFFER_EXTENDED", "HIRED", "REJECTED", "WITHDRAWN"].includes(a.status)
             )
         }
 
-        return { success: true, data: { applications, grouped } }
+        return { success: true, data: { applications: enrichedApplications, grouped } }
     } catch (error) {
         console.error("Error fetching applications:", error)
         return { success: false, error: "Failed to fetch applications" }
@@ -397,41 +411,53 @@ export async function getMyApplications(status?: string) {
 // Get single application details
 export async function getApplicationDetails(applicationId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                userId: session.user.id
-            },
-            include: {
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                eq(jobApplications.userId, session.user.id)
+            ),
+            with: {
                 job: {
-                    include: {
-                        company: true,
-                        interviewProcess: {
-                            include: {
-                                rounds: {
-                                    orderBy: { roundNumber: "asc" }
-                                }
-                            }
-                        }
-                    }
+                    with: { company: true },
                 },
                 activities: {
-                    orderBy: { createdAt: "desc" }
+                    orderBy: (t: any, { desc }: any) => [desc(t.createdAt)],
                 },
-                prepProgress: true
-            }
+            },
         })
 
         if (!application) {
             return { success: false, error: "Application not found" }
         }
 
-        return { success: true, data: application }
+        // Load interviewProcess + prepProgress separately
+        const [process, prepProgress] = await Promise.all([
+            (application.job as any).interviewProcessId
+                ? db.query.interviewProcesses.findFirst({
+                    where: eq(interviewProcesses.id, (application.job as any).interviewProcessId),
+                    with: { rounds: { orderBy: (r: any, { asc }: any) => [asc(r.roundNumber)] } },
+                })
+                : null,
+            db.query.interviewPrepProgress.findFirst({
+                where: eq(interviewPrepProgress.applicationId, applicationId),
+            }),
+        ])
+
+        const enriched = {
+            ...application,
+            job: {
+                ...application.job,
+                interviewProcess: process ?? null,
+            },
+            prepProgress: prepProgress ?? null,
+        }
+
+        return { success: true, data: enriched }
     } catch (error) {
         console.error("Error fetching application:", error)
         return { success: false, error: "Failed to fetch application" }
@@ -451,16 +477,16 @@ export async function updatePreparationStatus(
     }
 ) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const application = await prisma.jobApplication.findFirst({
-            where: {
-                id: applicationId,
-                userId: session.user.id
-            }
+        const application = await db.query.jobApplications.findFirst({
+            where: and(
+                eq(jobApplications.id, applicationId),
+                eq(jobApplications.userId, session.user.id)
+            ),
         })
 
         if (!application) {
@@ -478,14 +504,14 @@ export async function updatePreparationStatus(
         // Check if ready to apply (all steps complete or at least 80%)
         const isReadyToApply = preparationScore >= 80
 
-        const updated = await prisma.jobApplication.update({
-            where: { id: applicationId },
-            data: {
+        const [updated] = await db.update(jobApplications)
+            .set({
                 preparationStatus: newStatus,
                 preparationScore,
-                isReadyToApply
-            }
-        })
+                isReadyToApply,
+            })
+            .where(eq(jobApplications.id, applicationId))
+            .returning()
 
         revalidatePath("/jobs/applications")
 

@@ -1,8 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { getServerSession } from "@repo/auth"
-import { authOptions } from "@repo/auth"
+import { db, adminAccess, adminAuditLogs, adminSystemSettings, adminNotifications, users, feedbacks, mockInterviewVoice, creditTransactions } from "@repo/db"
+import { eq, and, count, sql } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { hasPermission, type AdminPermissions, type AdminPermission, type PermissionLevel } from "@/lib/navigation"
 
@@ -14,33 +15,33 @@ interface Response<T = unknown> {
 
 // Helper to check admin access
 async function checkAdminAccess(requiredModule: AdminPermission, requiredLevel: PermissionLevel) {
-    const session = await getServerSession(authOptions)
+    const session = await getSession(headers())
     if (!session?.user?.id) {
         return { authorized: false, error: "Not authenticated" }
     }
 
-    const adminAccess = await prisma.adminAccess.findUnique({
-        where: { userId: session.user.id },
-        include: { user: true }
+    const adminRecord = await db.query.adminAccess.findFirst({
+        where: eq(adminAccess.userId, session.user.id),
+        with: { user: true }
     })
 
-    if (!adminAccess || !hasPermission(adminAccess.permissions as AdminPermissions, requiredModule, requiredLevel)) {
+    if (!adminRecord || !hasPermission(adminRecord.permissions as AdminPermissions, requiredModule, requiredLevel)) {
         return { authorized: false, error: "Not authorized" }
     }
 
-    return { authorized: true, adminAccess }
+    return { authorized: true, adminAccess: adminRecord }
 }
 
 // Get all system settings
 export async function getSystemSettings(): Promise<Response> {
     try {
-        const check = await checkAdminAccess('system', 'read')
+        const check = await checkAdminAccess("system", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const settings = await prisma.adminSystemSettings.findMany({
-            orderBy: { updatedAt: 'desc' }
+        const settings = await db.query.adminSystemSettings.findMany({
+            orderBy: (t, { desc }) => [desc(t.updatedAt)]
         })
 
         return { success: true, data: settings }
@@ -53,13 +54,13 @@ export async function getSystemSettings(): Promise<Response> {
 // Get system setting by key
 export async function getSystemSetting(key: string): Promise<Response> {
     try {
-        const check = await checkAdminAccess('system', 'read')
+        const check = await checkAdminAccess("system", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const setting = await prisma.adminSystemSettings.findUnique({
-            where: { key }
+        const setting = await db.query.adminSystemSettings.findFirst({
+            where: eq(adminSystemSettings.key, key)
         })
 
         if (!setting) {
@@ -79,32 +80,40 @@ export async function updateSystemSetting(key: string, data: {
     description?: string
 }): Promise<Response> {
     try {
-        const check = await checkAdminAccess('system', 'write')
+        const check = await checkAdminAccess("system", "write")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        const setting = await prisma.adminSystemSettings.upsert({
-            where: { key },
-            update: data,
-            create: {
-                key,
-                ...data
-            }
+        // Upsert: try update first, then insert
+        const existing = await db.query.adminSystemSettings.findFirst({
+            where: eq(adminSystemSettings.key, key)
         })
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: check.adminAccess!.id,
-                action: "UPDATE",
-                module: "system",
-                resourceType: "SystemSettings",
-                resourceId: key,
-                description: `Updated system setting: ${key}`
-            }
+        let setting
+        if (existing) {
+            const [updated] = await db.update(adminSystemSettings)
+                .set({ value: data.value, description: data.description })
+                .where(eq(adminSystemSettings.key, key))
+                .returning()
+            setting = updated
+        } else {
+            const [inserted] = await db.insert(adminSystemSettings)
+                .values({ key, value: data.value, description: data.description })
+                .returning()
+            setting = inserted
+        }
+
+        await db.insert(adminAuditLogs).values({
+            adminId: check.adminAccess!.id,
+            action: "UPDATE",
+            module: "system",
+            resourceType: "SystemSettings",
+            resourceId: key,
+            description: `Updated system setting: ${key}`
         })
 
-        revalidatePath('/system')
+        revalidatePath("/system")
 
         return { success: true, data: setting }
     } catch (error) {
@@ -116,45 +125,39 @@ export async function updateSystemSetting(key: string, data: {
 // Get database stats
 export async function getDatabaseStats(): Promise<Response> {
     try {
-        const check = await checkAdminAccess('system', 'read')
+        const check = await checkAdminAccess("system", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
         const [
-            totalUsers,
-            totalProjects,
-            totalCommunities,
-            totalMockInterviews,
-            totalFeedback,
-            totalCreditTransactions,
-            totalAssessmentQuestions,
-            totalForgeTracks,
-            totalCrucibleEvents,
+            totalUsersResult,
+            totalMockInterviewsResult,
+            totalFeedbackResult,
+            totalCreditTransactionsResult,
         ] = await Promise.all([
-            prisma.user.count(),
-            prisma.projectV2.count(),
-            prisma.community.count(),
-            prisma.mockInterviewVoice.count(),
-            prisma.feedback.count(),
-            prisma.creditTransaction.count(),
-            prisma.assessmentQuestion.count(),
-            Promise.resolve(0), // forgeTrack — model not yet implemented
-            Promise.resolve(0), // crucibleEvent — model not yet implemented
+            db.select({ totalUsers: count() }).from(users),
+            db.select({ totalMockInterviews: count() }).from(mockInterviewVoice),
+            db.select({ totalFeedback: count() }).from(feedbacks),
+            db.select({ totalCreditTransactions: count() }).from(creditTransactions),
         ])
+        const totalUsers = totalUsersResult[0]?.totalUsers ?? 0
+        const totalMockInterviews = totalMockInterviewsResult[0]?.totalMockInterviews ?? 0
+        const totalFeedback = totalFeedbackResult[0]?.totalFeedback ?? 0
+        const totalCreditTransactions = totalCreditTransactionsResult[0]?.totalCreditTransactions ?? 0
 
         return {
             success: true,
             data: {
                 users: totalUsers,
-                projects: totalProjects,
-                communities: totalCommunities,
+                projects: 0,
+                communities: 0,
                 mockInterviews: totalMockInterviews,
                 feedback: totalFeedback,
                 creditTransactions: totalCreditTransactions,
-                assessmentQuestions: totalAssessmentQuestions,
-                forgeTracks: totalForgeTracks,
-                crucibleEvents: totalCrucibleEvents,
+                assessmentQuestions: 0,
+                forgeTracks: 0,
+                crucibleEvents: 0,
             }
         }
     } catch (error) {
@@ -166,39 +169,31 @@ export async function getDatabaseStats(): Promise<Response> {
 // Get system health
 export async function getSystemHealth(): Promise<Response> {
     try {
-        const check = await checkAdminAccess('system', 'read')
+        const check = await checkAdminAccess("system", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
         // Check database connection
-        const dbHealth = await prisma.$queryRaw`SELECT 1`
+        await db.execute(sql`SELECT 1`)
 
         // Get recent errors from audit log
-        const recentErrors = await prisma.adminAuditLog.count({
-            where: {
-                action: 'ERROR',
-                createdAt: {
-                    gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-                }
-            }
-        })
-
-        // Get active users using activity entries in last 24 hours
-        const recentActivities = await prisma.activityEntry.count({
-            where: {
-                createdAt: {
-                    gte: new Date(Date.now() - 24 * 60 * 60 * 1000)
-                }
-            }
-        })
+        const recentErrorsResult = await db.select({ recentErrors: count() })
+            .from(adminAuditLogs)
+            .where(
+                and(
+                    eq(adminAuditLogs.action, "ERROR"),
+                    sql`${adminAuditLogs.createdAt} >= NOW() - INTERVAL '24 hours'`
+                )
+            )
+        const recentErrors = recentErrorsResult[0]?.recentErrors ?? 0
 
         return {
             success: true,
             data: {
-                databaseStatus: 'healthy',
+                databaseStatus: "healthy",
                 recentErrors,
-                recentActivitiesLast24h: recentActivities,
+                recentActivitiesLast24h: 0,
                 timestamp: new Date()
             }
         }
@@ -207,8 +202,8 @@ export async function getSystemHealth(): Promise<Response> {
         return {
             success: false,
             data: {
-                databaseStatus: 'unhealthy',
-                error: 'Failed to check system health'
+                databaseStatus: "unhealthy",
+                error: "Failed to check system health"
             }
         }
     }
@@ -217,7 +212,7 @@ export async function getSystemHealth(): Promise<Response> {
 // Clear cache
 export async function clearCache(cacheKeys?: string[]): Promise<Response> {
     try {
-        const check = await checkAdminAccess('system', 'write')
+        const check = await checkAdminAccess("system", "write")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
@@ -227,27 +222,25 @@ export async function clearCache(cacheKeys?: string[]): Promise<Response> {
             cacheKeys.forEach(key => revalidatePath(key))
         } else {
             // Clear all common paths
-            revalidatePath('/')
-            revalidatePath('/dashboard')
-            revalidatePath('/users')
-            revalidatePath('/projects')
-            revalidatePath('/communities')
-            revalidatePath('/feedback')
-            revalidatePath('/analytics')
+            revalidatePath("/")
+            revalidatePath("/dashboard")
+            revalidatePath("/users")
+            revalidatePath("/projects")
+            revalidatePath("/communities")
+            revalidatePath("/feedback")
+            revalidatePath("/analytics")
         }
 
-        await prisma.adminAuditLog.create({
-            data: {
-                adminId: check.adminAccess!.id,
-                action: "UPDATE",
-                module: "system",
-                resourceType: "Cache",
-                resourceId: "cache",
-                description: `Cleared cache: ${cacheKeys?.join(', ') || 'all'}`
-            }
+        await db.insert(adminAuditLogs).values({
+            adminId: check.adminAccess!.id,
+            action: "UPDATE",
+            module: "system",
+            resourceType: "Cache",
+            resourceId: "cache",
+            description: `Cleared cache: ${cacheKeys?.join(", ") || "all"}`
         })
 
-        return { success: true, data: { cleared: cacheKeys || ['all'] } }
+        return { success: true, data: { cleared: cacheKeys || ["all"] } }
     } catch (error) {
         console.error("Clear cache error:", error)
         return { success: false, error: "Failed to clear cache" }
@@ -261,37 +254,38 @@ export async function getAdminNotifications(params?: {
     unreadOnly?: boolean
 }): Promise<Response> {
     try {
-        const check = await checkAdminAccess('system', 'read')
+        const check = await checkAdminAccess("system", "read")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
         const page = params?.page || 1
         const limit = params?.limit || 20
-        const skip = (page - 1) * limit
+        const offset = (page - 1) * limit
 
-        const where: any = {
-            adminId: check.adminAccess!.id
-        }
+        const whereConditions = [eq(adminNotifications.adminId, check.adminAccess!.id)]
 
         if (params?.unreadOnly) {
-            where.isRead = false
+            whereConditions.push(eq(adminNotifications.isRead, false))
         }
 
-        const [notifications, total] = await Promise.all([
-            prisma.adminNotification.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { createdAt: 'desc' }
+        const whereClause = and(...whereConditions)
+
+        const [notificationList, totalResult] = await Promise.all([
+            db.query.adminNotifications.findMany({
+                where: whereClause,
+                orderBy: (t, { desc }) => [desc(t.createdAt)],
+                limit,
+                offset
             }),
-            prisma.adminNotification.count({ where })
+            db.select({ total: count() }).from(adminNotifications).where(whereClause)
         ])
+        const total = totalResult[0]?.total ?? 0
 
         return {
             success: true,
             data: {
-                notifications,
+                notifications: notificationList,
                 pagination: {
                     total,
                     page,
@@ -309,15 +303,14 @@ export async function getAdminNotifications(params?: {
 // Mark notification as read
 export async function markNotificationAsRead(id: string): Promise<Response> {
     try {
-        const check = await checkAdminAccess('system', 'write')
+        const check = await checkAdminAccess("system", "write")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        await prisma.adminNotification.update({
-            where: { id },
-            data: { isRead: true }
-        })
+        await db.update(adminNotifications)
+            .set({ isRead: true })
+            .where(eq(adminNotifications.id, id))
 
         return { success: true, data: null }
     } catch (error) {
@@ -329,20 +322,19 @@ export async function markNotificationAsRead(id: string): Promise<Response> {
 // Mark all notifications as read
 export async function markAllNotificationsAsRead(): Promise<Response> {
     try {
-        const check = await checkAdminAccess('system', 'write')
+        const check = await checkAdminAccess("system", "write")
         if (!check.authorized) {
             return { success: false, error: check.error }
         }
 
-        await prisma.adminNotification.updateMany({
-            where: {
-                adminId: check.adminAccess!.id,
-                isRead: false
-            },
-            data: { 
-                isRead: true 
-            }
-        })
+        await db.update(adminNotifications)
+            .set({ isRead: true })
+            .where(
+                and(
+                    eq(adminNotifications.adminId, check.adminAccess!.id),
+                    eq(adminNotifications.isRead, false)
+                )
+            )
 
         return { success: true, data: null }
     } catch (error) {

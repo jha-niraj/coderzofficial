@@ -1,7 +1,15 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db,
+    companies,
+    companyFollowers,
+    jobs,
+    interviewProcesses,
+} from "@repo/db"
+import { eq, and, or, ilike, inArray, desc, asc, count } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 export interface CompanyFilters {
@@ -31,48 +39,66 @@ export async function browseCompanies(filters: CompanyFilters = {}, page = 1, li
     try {
         const skip = (page - 1) * limit
 
-        const where: Record<string, unknown> = {}
+        const conditions: any[] = []
 
         if (filters.search) {
-            where.OR = [
-                { name: { contains: filters.search, mode: "insensitive" } },
-                { industry: { contains: filters.search, mode: "insensitive" } },
-                { description: { contains: filters.search, mode: "insensitive" } }
-            ]
+            conditions.push(
+                or(
+                    ilike(companies.name, `%${filters.search}%`),
+                    ilike(companies.description, `%${filters.search}%`)
+                )
+            )
         }
 
         if (filters.industry && filters.industry.length > 0) {
-            where.industry = { in: filters.industry }
+            conditions.push(inArray(companies.industry, filters.industry))
         }
 
         if (filters.companySize && filters.companySize.length > 0) {
-            where.companySize = { in: filters.companySize }
+            conditions.push(inArray(companies.companySize, filters.companySize))
         }
 
-        const [companies, total] = await Promise.all([
-            prisma.company.findMany({
-                where,
-                include: {
-                    jobs: {
-                        where: { status: "ACTIVE" },
-                        select: { id: true }
-                    },
-                    interviewProcesses: {
-                        where: { isActive: true },
-                        select: { id: true }
-                    }
-                },
-                orderBy: [
-                    { verificationStatus: "asc" },
-                    { name: "asc" }
-                ],
-                skip,
-                take: limit
+        const whereClause = conditions.length > 0 ? and(...conditions) : undefined
+
+        const [companyRows, [{ total }]] = await Promise.all([
+            db.query.companies.findMany({
+                where: whereClause,
+                orderBy: [asc(companies.verificationStatus), asc(companies.name)],
+                offset: skip,
+                limit,
             }),
-            prisma.company.count({ where })
+            db.select({ total: count() }).from(companies).where(whereClause),
         ])
 
-        const formattedCompanies: CompanyListResult[] = companies.map(company => ({
+        const companyIds = companyRows.map(c => c.id)
+
+        // Load active job counts and interview processes separately
+        const [activeJobRows, processRows] = await Promise.all([
+            companyIds.length > 0
+                ? db.query.jobs.findMany({
+                    where: and(inArray(jobs.companyId, companyIds), eq(jobs.status, "ACTIVE")),
+                    columns: { id: true, companyId: true },
+                })
+                : [],
+            companyIds.length > 0
+                ? db.query.interviewProcesses.findMany({
+                    where: and(inArray(interviewProcesses.companyId, companyIds), eq(interviewProcesses.isActive, true)),
+                    columns: { id: true, companyId: true },
+                })
+                : [],
+        ])
+
+        const jobCountByCompany = new Map<string, number>()
+        for (const job of activeJobRows) {
+            jobCountByCompany.set(job.companyId, (jobCountByCompany.get(job.companyId) || 0) + 1)
+        }
+
+        const processCountByCompany = new Map<string, number>()
+        for (const proc of processRows) {
+            processCountByCompany.set(proc.companyId, (processCountByCompany.get(proc.companyId) || 0) + 1)
+        }
+
+        const formattedCompanies: CompanyListResult[] = companyRows.map(company => ({
             id: company.id,
             name: company.name,
             slug: company.slug,
@@ -83,8 +109,8 @@ export async function browseCompanies(filters: CompanyFilters = {}, page = 1, li
             description: company.description,
             verificationStatus: company.verificationStatus,
             headquarters: company.headquarters,
-            activeJobsCount: company.jobs.length,
-            hasTransparentProcess: company.interviewProcesses.length > 0
+            activeJobsCount: jobCountByCompany.get(company.id) || 0,
+            hasTransparentProcess: (processCountByCompany.get(company.id) || 0) > 0,
         }))
 
         return {
@@ -94,8 +120,8 @@ export async function browseCompanies(filters: CompanyFilters = {}, page = 1, li
                 pagination: {
                     page,
                     limit,
-                    total,
-                    totalPages: Math.ceil(total / limit)
+                    total: Number(total),
+                    totalPages: Math.ceil(Number(total) / limit)
                 }
             }
         }
@@ -108,15 +134,14 @@ export async function browseCompanies(filters: CompanyFilters = {}, page = 1, li
 // Get a single company by slug
 export async function getCompanyBySlug(slug: string) {
     try {
-        const company = await prisma.company.findUnique({
-            where: { slug }
+        const company = await db.query.companies.findFirst({
+            where: eq(companies.slug, slug),
         })
 
         if (!company) {
             return { success: false, error: "Company not found" }
         }
 
-        // Parse social links from JSON
         const socialLinks = (company.socialLinks as Record<string, string> | null) || {}
 
         return {
@@ -148,29 +173,26 @@ export async function getCompanyBySlug(slug: string) {
 // Get company interview processes
 export async function getCompanyInterviewProcesses(slug: string) {
     try {
-        const company = await prisma.company.findUnique({
-            where: { slug },
-            select: { id: true }
+        const company = await db.query.companies.findFirst({
+            where: eq(companies.slug, slug),
+            columns: { id: true },
         })
 
         if (!company) {
             return { success: false, error: "Company not found" }
         }
 
-        const processes = await prisma.interviewProcess.findMany({
-            where: {
-                companyId: company.id,
-                isActive: true
-            },
-            include: {
+        const processes = await db.query.interviewProcesses.findMany({
+            where: and(
+                eq(interviewProcesses.companyId, company.id),
+                eq(interviewProcesses.isActive, true)
+            ),
+            with: {
                 rounds: {
-                    orderBy: { roundNumber: "asc" }
-                }
+                    orderBy: (r: any, { asc: a }: any) => [a(r.roundNumber)],
+                },
             },
-            orderBy: [
-                { isDefault: "desc" },
-                { createdAt: "asc" }
-            ]
+            orderBy: [desc(interviewProcesses.isDefault), asc(interviewProcesses.createdAt)],
         })
 
         return {
@@ -203,29 +225,42 @@ export async function getCompanyInterviewProcesses(slug: string) {
 // Get featured companies
 export async function getFeaturedCompanies(limit = 6) {
     try {
-        const companies = await prisma.company.findMany({
-            where: {
-                verificationStatus: "VERIFIED"
-            },
-            include: {
-                jobs: {
-                    where: { status: "ACTIVE" },
-                    select: { id: true }
-                },
-                interviewProcesses: {
-                    where: { isActive: true },
-                    select: { id: true }
-                }
-            },
-            orderBy: {
-                createdAt: "desc"
-            },
-            take: limit
+        const companyRows = await db.query.companies.findMany({
+            where: eq(companies.verificationStatus, "VERIFIED"),
+            orderBy: desc(companies.createdAt),
+            limit,
         })
+
+        const companyIds = companyRows.map(c => c.id)
+
+        const [activeJobRows, processRows] = await Promise.all([
+            companyIds.length > 0
+                ? db.query.jobs.findMany({
+                    where: and(inArray(jobs.companyId, companyIds), eq(jobs.status, "ACTIVE")),
+                    columns: { id: true, companyId: true },
+                })
+                : [],
+            companyIds.length > 0
+                ? db.query.interviewProcesses.findMany({
+                    where: and(inArray(interviewProcesses.companyId, companyIds), eq(interviewProcesses.isActive, true)),
+                    columns: { id: true, companyId: true },
+                })
+                : [],
+        ])
+
+        const jobCountByCompany = new Map<string, number>()
+        for (const job of activeJobRows) {
+            jobCountByCompany.set(job.companyId, (jobCountByCompany.get(job.companyId) || 0) + 1)
+        }
+
+        const processCountByCompany = new Map<string, number>()
+        for (const proc of processRows) {
+            processCountByCompany.set(proc.companyId, (processCountByCompany.get(proc.companyId) || 0) + 1)
+        }
 
         return {
             success: true,
-            data: companies.map(company => ({
+            data: companyRows.map(company => ({
                 id: company.id,
                 name: company.name,
                 slug: company.slug,
@@ -236,8 +271,8 @@ export async function getFeaturedCompanies(limit = 6) {
                 description: company.description,
                 verificationStatus: company.verificationStatus,
                 headquarters: company.headquarters,
-                activeJobsCount: company.jobs.length,
-                hasTransparentProcess: company.interviewProcesses.length > 0
+                activeJobsCount: jobCountByCompany.get(company.id) || 0,
+                hasTransparentProcess: (processCountByCompany.get(company.id) || 0) > 0,
             }))
         }
     } catch (error) {
@@ -249,22 +284,22 @@ export async function getFeaturedCompanies(limit = 6) {
 // Get company jobs
 export async function getCompanyJobs(slug: string) {
     try {
-        const company = await prisma.company.findUnique({
-            where: { slug },
-            select: { id: true }
+        const company = await db.query.companies.findFirst({
+            where: eq(companies.slug, slug),
+            columns: { id: true },
         })
 
         if (!company) {
             return { success: false, error: "Company not found" }
         }
 
-        const jobs = await prisma.job.findMany({
-            where: {
-                companyId: company.id,
-                status: "ACTIVE",
-                visibility: "PUBLIC"
-            },
-            select: {
+        const jobRows = await db.query.jobs.findMany({
+            where: and(
+                eq(jobs.companyId, company.id),
+                eq(jobs.status, "ACTIVE"),
+                eq(jobs.visibility, "PUBLIC")
+            ),
+            columns: {
                 id: true,
                 title: true,
                 slug: true,
@@ -279,17 +314,14 @@ export async function getCompanyJobs(slug: string) {
                 salaryDisclosed: true,
                 skillsRequired: true,
                 applicationsCount: true,
-                publishedAt: true
+                publishedAt: true,
             },
-            orderBy: [
-                { featured: "desc" },
-                { publishedAt: "desc" }
-            ]
+            orderBy: [desc(jobs.featured), desc(jobs.publishedAt)],
         })
 
         return {
             success: true,
-            data: jobs.map(job => ({
+            data: jobRows.map(job => ({
                 ...job,
                 skillsRequired: job.skillsRequired as string[]
             }))
@@ -303,31 +335,26 @@ export async function getCompanyJobs(slug: string) {
 // Follow a company
 export async function followCompany(companyId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Please sign in to follow companies" }
         }
 
-        // Check if already following
-        const existing = await prisma.companyFollower.findUnique({
-            where: {
-                userId_companyId: {
-                    userId: session.user.id,
-                    companyId
-                }
-            }
+        const existing = await db.query.companyFollowers.findFirst({
+            where: and(
+                eq(companyFollowers.userId, session.user.id),
+                eq(companyFollowers.companyId, companyId)
+            ),
         })
 
         if (existing) {
             return { success: true, data: existing }
         }
 
-        const follow = await prisma.companyFollower.create({
-            data: {
-                userId: session.user.id,
-                companyId
-            }
-        })
+        const [follow] = await db.insert(companyFollowers).values({
+            userId: session.user.id,
+            companyId,
+        }).returning()
 
         revalidatePath("/companies")
         return { success: true, data: follow }
@@ -340,17 +367,17 @@ export async function followCompany(companyId: string) {
 // Unfollow a company
 export async function unfollowCompany(companyId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        await prisma.companyFollower.deleteMany({
-            where: {
-                userId: session.user.id,
-                companyId
-            }
-        })
+        await db.delete(companyFollowers).where(
+            and(
+                eq(companyFollowers.userId, session.user.id),
+                eq(companyFollowers.companyId, companyId)
+            )
+        )
 
         revalidatePath("/companies")
         return { success: true }
@@ -363,29 +390,43 @@ export async function unfollowCompany(companyId: string) {
 // Get followed companies for current user
 export async function getFollowedCompanies() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: false, error: "Unauthorized" }
         }
 
-        const follows = await prisma.companyFollower.findMany({
-            where: { userId: session.user.id },
-            include: {
-                company: {
-                    include: {
-                        jobs: {
-                            where: { status: "ACTIVE" },
-                            select: { id: true }
-                        },
-                        interviewProcesses: {
-                            where: { isActive: true },
-                            select: { id: true }
-                        }
-                    }
-                }
-            },
-            orderBy: { createdAt: "desc" }
+        const follows = await db.query.companyFollowers.findMany({
+            where: eq(companyFollowers.userId, session.user.id),
+            with: { company: true },
+            orderBy: desc(companyFollowers.createdAt),
         })
+
+        const followedCompanyIds = follows.map(f => f.company.id)
+
+        const [activeJobRows, processRows] = await Promise.all([
+            followedCompanyIds.length > 0
+                ? db.query.jobs.findMany({
+                    where: and(inArray(jobs.companyId, followedCompanyIds), eq(jobs.status, "ACTIVE")),
+                    columns: { id: true, companyId: true },
+                })
+                : [],
+            followedCompanyIds.length > 0
+                ? db.query.interviewProcesses.findMany({
+                    where: and(inArray(interviewProcesses.companyId, followedCompanyIds), eq(interviewProcesses.isActive, true)),
+                    columns: { id: true, companyId: true },
+                })
+                : [],
+        ])
+
+        const jobCountByCompany = new Map<string, number>()
+        for (const job of activeJobRows) {
+            jobCountByCompany.set(job.companyId, (jobCountByCompany.get(job.companyId) || 0) + 1)
+        }
+
+        const processCountByCompany = new Map<string, number>()
+        for (const proc of processRows) {
+            processCountByCompany.set(proc.companyId, (processCountByCompany.get(proc.companyId) || 0) + 1)
+        }
 
         return {
             success: true,
@@ -400,9 +441,9 @@ export async function getFollowedCompanies() {
                 description: f.company.description,
                 verificationStatus: f.company.verificationStatus,
                 headquarters: f.company.headquarters,
-                activeJobsCount: f.company.jobs.length,
-                hasTransparentProcess: f.company.interviewProcesses.length > 0,
-                followedAt: f.createdAt
+                activeJobsCount: jobCountByCompany.get(f.company.id) || 0,
+                hasTransparentProcess: (processCountByCompany.get(f.company.id) || 0) > 0,
+                followedAt: f.createdAt,
             }))
         }
     } catch (error) {
@@ -414,18 +455,16 @@ export async function getFollowedCompanies() {
 // Check if user follows a company
 export async function checkFollowStatus(companyId: string) {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: true, data: { isFollowing: false } }
         }
 
-        const follow = await prisma.companyFollower.findUnique({
-            where: {
-                userId_companyId: {
-                    userId: session.user.id,
-                    companyId
-                }
-            }
+        const follow = await db.query.companyFollowers.findFirst({
+            where: and(
+                eq(companyFollowers.userId, session.user.id),
+                eq(companyFollowers.companyId, companyId)
+            ),
         })
 
         return { success: true, data: { isFollowing: !!follow } }
@@ -438,14 +477,14 @@ export async function checkFollowStatus(companyId: string) {
 // Get followed company IDs for current user (for bulk checking)
 export async function getFollowedCompanyIds() {
     try {
-        const session = await auth()
+        const session = await getSession(headers())
         if (!session?.user?.id) {
             return { success: true, data: [] }
         }
 
-        const follows = await prisma.companyFollower.findMany({
-            where: { userId: session.user.id },
-            select: { companyId: true }
+        const follows = await db.query.companyFollowers.findMany({
+            where: eq(companyFollowers.userId, session.user.id),
+            columns: { companyId: true },
         })
 
         return { success: true, data: follows.map(f => f.companyId) }

@@ -1,52 +1,66 @@
-import { auth } from '@repo/auth'
+import { getSession } from '@repo/auth'
+import { headers } from 'next/headers'
 import { redirect } from "next/navigation"
-import prisma from "@repo/prisma"
+import {
+    db,
+    users,
+    projectsV2,
+    projectV2Quizzes,
+    projectV2QuizQuestions,
+    projectV2QuizAttempts,
+    userProjectV2Progress,
+} from "@repo/db"
+import { eq, and, desc } from "drizzle-orm"
 import QuizClient from "./_components/quiz-client"
 import { ProgressGate } from "../_components/progress-gate"
 
 export default async function QuizPage({ params }: { params: Promise<{ slug: string }> }) {
-    const session = await auth()
+    const session = await getSession(headers())
     const { slug } = await params
-    
+
     if (!session?.user?.id) {
         redirect(`/login?callbackUrl=/projects/${slug}/quiz`)
     }
 
-    // Get project with quiz and user progress
-    const project = await prisma.projectV2.findUnique({
-        where: { slug: slug },
-        include: {
-            quiz: {
-                include: {
-                    questions: {
-                        orderBy: { orderIndex: 'asc' }
-                    }
-                }
-            },
-            progress: {
-                where: { userId: session.user.id },
-                select: {
-                    progressPercentage: true,
-                    status: true
-                }
-            }
-        }
-    })
+    // Get project
+    const projectRows = await db
+        .select({
+            id: projectsV2.id,
+            slug: projectsV2.slug,
+            title: projectsV2.title,
+            description: projectsV2.description,
+            includeAssessment: projectsV2.includeAssessment,
+        })
+        .from(projectsV2)
+        .where(eq(projectsV2.slug, slug))
+        .limit(1)
 
-    if (!project) {
+    if (!projectRows[0]) {
         redirect('/projects')
     }
 
-    // Check if project includes assessment
+    const project = projectRows[0]
+
     if (!project.includeAssessment) {
         redirect(`/projects/${slug}`)
     }
 
     // Get user progress
-    const userProgress = project.progress?.[0]
+    const progressRows = await db
+        .select({
+            progressPercentage: userProjectV2Progress.progressPercentage,
+            status: userProjectV2Progress.status,
+        })
+        .from(userProjectV2Progress)
+        .where(and(
+            eq(userProjectV2Progress.userId, session.user.id),
+            eq(userProjectV2Progress.projectId, project.id)
+        ))
+        .limit(1)
+
+    const userProgress = progressRows[0]
     const currentProgress = userProgress?.progressPercentage || 0
-    
-    // Check if user has started the project and has at least 50% progress
+
     if (!userProgress || currentProgress < 50) {
         return (
             <ProgressGate
@@ -57,57 +71,88 @@ export default async function QuizPage({ params }: { params: Promise<{ slug: str
                 projectTitle={project.title}
             />
         )
-    }	// Get user credits
-	const user = await prisma.user.findUnique({
-		where: { id: session.user.id },
-		select: { credits: true }
-	})
+    }
 
-	// Get previous attempts
-	const attempts = await prisma.projectV2QuizAttempt.findMany({
-		where: {
-			userId: session.user.id,
-			projectId: project.id
-		},
-		orderBy: { createdAt: 'desc' },
-		take: 5,
-		select: {
-			id: true,
-			score: true,
-			correctAnswers: true,
-			totalQuestions: true,
-			timeSpent: true,
-			completedAt: true,
-			createdAt: true
-		}
-	})
+    // Get user credits
+    const userRows = await db
+        .select({ credits: users.credits })
+        .from(users)
+        .where(eq(users.id, session.user.id))
+        .limit(1)
 
-	// Format quiz data for client
-	const existingQuiz = project.quiz ? {
-		id: project.quiz.id,
-		totalQuestions: project.quiz.totalQuestions,
-		questions: project.quiz.questions.map(q => ({
-			id: q.id,
-			difficulty: q.difficulty,
-			prompt: q.prompt,
-			options: q.options,
-			correctAnswer: q.correctAnswer,
-			explanation: q.explanation,
-			orderIndex: q.orderIndex
-		}))
-	} : null
+    // Get quiz
+    const quizRows = await db
+        .select({
+            id: projectV2Quizzes.id,
+            totalQuestions: projectV2Quizzes.totalQuestions,
+        })
+        .from(projectV2Quizzes)
+        .where(eq(projectV2Quizzes.projectId, project.id))
+        .limit(1)
 
-	return (
-		<QuizClient
-			project={{
-				id: project.id,
-				slug: project.slug,
-				title: project.title,
-				description: project.description
-			}}
-			existingQuiz={existingQuiz}
-			userCredits={user?.credits || 0}
-			previousAttempts={attempts}
-		/>
-	)
+    const quiz = quizRows[0] || null
+
+    // Get quiz questions
+    const questions = quiz
+        ? await db
+            .select({
+                id: projectV2QuizQuestions.id,
+                difficulty: projectV2QuizQuestions.difficulty,
+                prompt: projectV2QuizQuestions.prompt,
+                options: projectV2QuizQuestions.options,
+                correctAnswer: projectV2QuizQuestions.correctAnswer,
+                explanation: projectV2QuizQuestions.explanation,
+                orderIndex: projectV2QuizQuestions.orderIndex,
+            })
+            .from(projectV2QuizQuestions)
+            .where(eq(projectV2QuizQuestions.quizId, quiz.id))
+            .orderBy(projectV2QuizQuestions.orderIndex)
+        : []
+
+    // Get previous attempts
+    const attempts = await db
+        .select({
+            id: projectV2QuizAttempts.id,
+            score: projectV2QuizAttempts.score,
+            correctAnswers: projectV2QuizAttempts.correctAnswers,
+            totalQuestions: projectV2QuizAttempts.totalQuestions,
+            timeSpent: projectV2QuizAttempts.timeSpent,
+            completedAt: projectV2QuizAttempts.completedAt,
+            createdAt: projectV2QuizAttempts.createdAt,
+        })
+        .from(projectV2QuizAttempts)
+        .where(and(
+            eq(projectV2QuizAttempts.userId, session.user.id),
+            eq(projectV2QuizAttempts.projectId, project.id)
+        ))
+        .orderBy(desc(projectV2QuizAttempts.createdAt))
+        .limit(5)
+
+    const existingQuiz = quiz ? {
+        id: quiz.id,
+        totalQuestions: quiz.totalQuestions,
+        questions: questions.map(q => ({
+            id: q.id,
+            difficulty: q.difficulty,
+            prompt: q.prompt,
+            options: q.options,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation,
+            orderIndex: q.orderIndex,
+        })),
+    } : null
+
+    return (
+        <QuizClient
+            project={{
+                id: project.id,
+                slug: project.slug,
+                title: project.title,
+                description: project.description,
+            }}
+            existingQuiz={existingQuiz}
+            userCredits={userRows[0]?.credits || 0}
+            previousAttempts={attempts}
+        />
+    )
 }

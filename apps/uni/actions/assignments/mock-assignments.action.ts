@@ -1,7 +1,9 @@
 "use server"
 
-import { prisma } from "@repo/prisma";
-import { auth } from "@repo/auth";
+import { db, mockInterviewVoice, mockVoiceSession, universityClasses, classEnrollments, users } from "@repo/db"
+import { eq, and, inArray, desc } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import type { UniversityPermission } from "@/types";
 
 // ============================================
@@ -13,11 +15,10 @@ interface CreateMockAssignmentPayload {
     description: string;
     category: "TECHNICAL" | "BEHAVIORAL" | "HR" | "SYSTEM_DESIGN" | "CODING" | "GENERAL";
     level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
-    duration: number; // in minutes
+    duration: number;
     questionsCount: number;
     knowledgeBase: string;
     tags: string[];
-    // University-specific fields
     classIds: string[];
     deadline?: Date;
     credits?: number;
@@ -29,13 +30,13 @@ interface CreateMockAssignmentPayload {
 // ============================================
 
 async function getCurrentMember() {
-    const session = await auth();
+    const session = await getSession(headers());
     if (!session?.user?.id) throw new Error("Not authenticated");
 
-    const member = await prisma.universityMember.findFirst({
-        where: { userId: session.user.id },
-        include: { 
-            university: { select: { id: true, name: true } },
+    const member = await db.query.universityMembers.findFirst({
+        where: (tbl, { eq }) => eq(tbl.userId, session.user.id),
+        with: {
+            university: { columns: { id: true, name: true } },
         },
     });
 
@@ -46,8 +47,8 @@ async function getCurrentMember() {
 async function hasPermission(member: { permissions: unknown }, permission: UniversityPermission): Promise<boolean> {
     if (!member.permissions) return false;
     try {
-        const permissions = typeof member.permissions === "string" 
-            ? JSON.parse(member.permissions) 
+        const permissions = typeof member.permissions === "string"
+            ? JSON.parse(member.permissions)
             : member.permissions;
         return Array.isArray(permissions) && permissions.includes(permission);
     } catch {
@@ -66,52 +67,51 @@ export async function createMockAssignment(payload: CreateMockAssignmentPayload)
     try {
         const member = await getCurrentMember();
 
-        // Check permission
         if (!await hasPermission(member, "create_assignments")) {
             return { success: false, error: "You don't have permission to create assignments" };
         }
 
-        // Validate classes
         if (payload.classIds.length === 0) {
             return { success: false, error: "Please select at least one class" };
         }
 
-        const validClasses = await prisma.universityClass.findMany({
-            where: {
-                id: { in: payload.classIds },
-                universityId: member.universityId,
-            },
+        const validClasses = await db.query.universityClasses.findMany({
+            where: and(
+                inArray(universityClasses.id, payload.classIds),
+                eq(universityClasses.universityId, member.universityId),
+            ),
         });
 
         if (validClasses.length !== payload.classIds.length) {
             return { success: false, error: "Invalid class selection" };
         }
 
-        // Create the mock interview
-        const mock = await prisma.mockInterviewVoice.create({
-            data: {
-                title: payload.title,
-                description: payload.description,
-                category: payload.category,
-                level: payload.level,
-                duration: payload.duration,
-                questionsCount: payload.questionsCount,
-                knowledgeBase: payload.knowledgeBase,
-                tags: payload.tags,
-                isPublic: false, // University mocks are private
-                isPredefined: false,
-                createdById: member.userId,
-                // University-specific fields
-                isUniversityMock: true,
-                universityId: member.universityId,
-                teacherMemberId: member.id,
-                classIds: payload.classIds,
-                assignmentDeadline: payload.deadline || null,
-                assignmentCredits: payload.credits || null,
-                assignmentInstructions: payload.instructions || null,
-                creditsRequired: payload.credits || 15,
-            },
-        });
+        const mockRows = await db.insert(mockInterviewVoice).values({
+            title: payload.title,
+            description: payload.description,
+            category: payload.category,
+            level: payload.level,
+            duration: payload.duration,
+            questionsCount: payload.questionsCount,
+            knowledgeBase: payload.knowledgeBase,
+            tags: payload.tags,
+            isPublic: false,
+            isPredefined: false,
+            createdById: member.userId,
+            isUniversityMock: true,
+            universityId: member.universityId,
+            teacherMemberId: member.id,
+            classIds: payload.classIds,
+            assignmentDeadline: payload.deadline || null,
+            assignmentCredits: payload.credits || null,
+            assignmentInstructions: payload.instructions || null,
+            creditsRequired: payload.credits || 15,
+        }).returning();
+
+        const mock = mockRows[0];
+        if (!mock) {
+            return { success: false, error: "Failed to create mock assignment" };
+        }
 
         return {
             success: true,
@@ -136,84 +136,44 @@ export async function getMockAssignments(filters?: {
     try {
         const member = await getCurrentMember();
 
-        const whereClause: any = {
-            isUniversityMock: true,
-            universityId: member.universityId,
-        };
-
-        // If not HEAD, only show mocks they created
-        if (member.role !== "HEAD") {
-            whereClause.teacherMemberId = member.id;
-        }
-
-        // Filter by class if provided
-        if (filters?.classId) {
-            whereClause.classIds = { has: filters.classId };
-        }
-
-        // Filter by deadline status
-        if (filters?.status === "active") {
-            whereClause.OR = [
-                { assignmentDeadline: null },
-                { assignmentDeadline: { gte: new Date() } },
-            ];
-        } else if (filters?.status === "past") {
-            whereClause.assignmentDeadline = { lt: new Date() };
-        }
-
-        const mocks = await prisma.mockInterviewVoice.findMany({
-            where: whereClause,
-            select: {
-                id: true,
-                title: true,
-                description: true,
-                category: true,
-                level: true,
-                duration: true,
-                questionsCount: true,
-                classIds: true,
-                assignmentDeadline: true,
-                assignmentCredits: true,
-                assignmentInstructions: true,
-                totalSessions: true,
-                averageRating: true,
-                createdAt: true,
-                _count: {
-                    select: {
-                        sessions: true,
-                    },
-                },
+        const mocks = await db.query.mockInterviewVoice.findMany({
+            where: (tbl, { and, eq }) => {
+                const conditions = [
+                    eq(tbl.isUniversityMock, true),
+                    eq(tbl.universityId, member.universityId),
+                ]
+                if (member.role !== "HEAD") {
+                    conditions.push(eq(tbl.teacherMemberId, member.id))
+                }
+                return and(...conditions)
             },
-            orderBy: { createdAt: "desc" },
+            orderBy: desc(mockInterviewVoice.createdAt),
         });
+
+        // Apply class and status filters in-memory
+        let filtered = mocks
+        if (filters?.classId) {
+            filtered = filtered.filter(m => m.classIds.includes(filters.classId!))
+        }
+        if (filters?.status === "active") {
+            filtered = filtered.filter(m => !m.assignmentDeadline || m.assignmentDeadline >= new Date())
+        } else if (filters?.status === "past") {
+            filtered = filtered.filter(m => m.assignmentDeadline && m.assignmentDeadline < new Date())
+        }
 
         // Get class names
-        const allClassIds = mocks.flatMap(m => m.classIds);
-        const classes = await prisma.universityClass.findMany({
-            where: { id: { in: allClassIds } },
-            select: { id: true, name: true, code: true },
-        });
-        const classMap = new Map(classes.map(c => [c.id, c]));
+        const allClassIds = filtered.flatMap(m => m.classIds)
+        const classes = allClassIds.length > 0
+            ? await db.query.universityClasses.findMany({
+                where: inArray(universityClasses.id, allClassIds),
+                columns: { id: true, name: true, code: true },
+            })
+            : []
+        const classMap = new Map(classes.map(c => [c.id, c]))
 
-        // Get completion stats by counting unique users who completed sessions
-        const enrichedMocks = await Promise.all(mocks.map(async (mock) => {
-            const completedSessions = await prisma.mockVoiceSession.findMany({
-                where: {
-                    mockId: mock.id,
-                    status: "COMPLETED",
-                },
-                select: {
-                    userId: true,
-                },
-                distinct: ["userId"],
-            });
-
-            return {
-                ...mock,
-                classes: mock.classIds.map(id => classMap.get(id)).filter(Boolean),
-                studentsStarted: mock._count.sessions,
-                studentsCompleted: completedSessions.length,
-            };
+        const enrichedMocks = filtered.map(mock => ({
+            ...mock,
+            classes: mock.classIds.map(id => classMap.get(id)).filter(Boolean),
         }));
 
         return {
@@ -241,23 +201,18 @@ export async function updateMockAssignment(
     try {
         const member = await getCurrentMember();
 
-        // Verify ownership
-        const mock = await prisma.mockInterviewVoice.findFirst({
-            where: {
-                id: mockId,
-                universityId: member.universityId,
-                OR: [
-                    { teacherMemberId: member.id },
-                    ...(member.role === "HEAD" ? [{ universityId: member.universityId }] : []),
-                ],
-            },
+        const mock = await db.query.mockInterviewVoice.findFirst({
+            where: and(
+                eq(mockInterviewVoice.id, mockId),
+                eq(mockInterviewVoice.universityId, member.universityId),
+            ),
         });
 
         if (!mock) {
             return { success: false, error: "Mock not found or you don't have access" };
         }
 
-        const updateData: any = {};
+        const updateData: Record<string, unknown> = {};
         if (updates.classIds !== undefined) updateData.classIds = updates.classIds;
         if (updates.deadline !== undefined) updateData.assignmentDeadline = updates.deadline;
         if (updates.credits !== undefined) {
@@ -266,10 +221,7 @@ export async function updateMockAssignment(
         }
         if (updates.instructions !== undefined) updateData.assignmentInstructions = updates.instructions;
 
-        await prisma.mockInterviewVoice.update({
-            where: { id: mockId },
-            data: updateData,
-        });
+        await db.update(mockInterviewVoice).set(updateData).where(eq(mockInterviewVoice.id, mockId));
 
         return { success: true, message: "Mock assignment updated" };
     } catch (error: any) {
@@ -279,39 +231,32 @@ export async function updateMockAssignment(
 }
 
 /**
- * Remove mock assignment (doesn't delete the mock, just removes university linking)
+ * Remove mock assignment
  */
 export async function removeMockAssignment(mockId: string) {
     try {
         const member = await getCurrentMember();
 
-        const mock = await prisma.mockInterviewVoice.findFirst({
-            where: {
-                id: mockId,
-                universityId: member.universityId,
-                OR: [
-                    { teacherMemberId: member.id },
-                    ...(member.role === "HEAD" ? [{ universityId: member.universityId }] : []),
-                ],
-            },
+        const mock = await db.query.mockInterviewVoice.findFirst({
+            where: and(
+                eq(mockInterviewVoice.id, mockId),
+                eq(mockInterviewVoice.universityId, member.universityId),
+            ),
         });
 
         if (!mock) {
             return { success: false, error: "Mock not found or you don't have access" };
         }
 
-        await prisma.mockInterviewVoice.update({
-            where: { id: mockId },
-            data: {
-                isUniversityMock: false,
-                universityId: null,
-                teacherMemberId: null,
-                classIds: [],
-                assignmentDeadline: null,
-                assignmentCredits: null,
-                assignmentInstructions: null,
-            },
-        });
+        await db.update(mockInterviewVoice).set({
+            isUniversityMock: false,
+            universityId: null,
+            teacherMemberId: null,
+            classIds: [],
+            assignmentDeadline: null,
+            assignmentCredits: null,
+            assignmentInstructions: null,
+        }).where(eq(mockInterviewVoice.id, mockId));
 
         return { success: true, message: "Mock assignment removed" };
     } catch (error: any) {
@@ -327,16 +272,12 @@ export async function getMockStudentResults(mockId: string) {
     try {
         const member = await getCurrentMember();
 
-        // Verify access
-        const mock = await prisma.mockInterviewVoice.findFirst({
-            where: {
-                id: mockId,
-                universityId: member.universityId,
-            },
-            select: {
-                classIds: true,
-                title: true,
-            },
+        const mock = await db.query.mockInterviewVoice.findFirst({
+            where: and(
+                eq(mockInterviewVoice.id, mockId),
+                eq(mockInterviewVoice.universityId, member.universityId),
+            ),
+            columns: { classIds: true, title: true },
         });
 
         if (!mock) {
@@ -344,66 +285,51 @@ export async function getMockStudentResults(mockId: string) {
         }
 
         // Get students from the assigned classes
-        const classEnrollments = await prisma.classEnrollment.findMany({
-            where: {
-                classId: { in: mock.classIds },
-                isActive: true,
-            },
-            select: {
-                studentLink: {
-                    select: {
-                        userId: true,
-                    },
+        const classEnrollmentRows = mock.classIds.length > 0
+            ? await db.query.classEnrollments.findMany({
+                where: and(
+                    inArray(classEnrollments.classId, mock.classIds),
+                    eq(classEnrollments.isActive, true),
+                ),
+                with: {
+                    studentLink: { columns: { userId: true } },
                 },
-            },
-        });
+            })
+            : []
 
-        const studentUserIds = classEnrollments.map(ce => ce.studentLink.userId);
+        const studentUserIds = classEnrollmentRows.map(ce => ce.studentLink.userId)
 
-        // Get user info
-        const users = await prisma.user.findMany({
-            where: { id: { in: studentUserIds } },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true,
-            },
-        });
-        const userMap = new Map(users.map(u => [u.id, u]));
+        const userRows = studentUserIds.length > 0
+            ? await db.query.users.findMany({
+                where: inArray(users.id, studentUserIds),
+                columns: { id: true, name: true, email: true, image: true },
+            })
+            : []
+        const userMap = new Map(userRows.map(u => [u.id, u]))
 
         // Get sessions for these students
-        const sessions = await prisma.mockVoiceSession.findMany({
-            where: {
-                mockId,
-                userId: { in: studentUserIds },
-            },
-            select: {
-                userId: true,
-                status: true,
-                startedAt: true,
-                completedAt: true,
-                duration: true,
-                aiAnalysis: true,
-                userRating: true,
-            },
-            orderBy: { createdAt: "desc" },
-        });
+        const sessions = studentUserIds.length > 0
+            ? await db.query.mockVoiceSession.findMany({
+                where: and(
+                    eq(mockVoiceSession.mockId, mockId),
+                    inArray(mockVoiceSession.userId, studentUserIds),
+                ),
+                orderBy: desc(mockVoiceSession.createdAt),
+            })
+            : []
 
         // Group sessions by user (take the latest)
-        const sessionMap = new Map<string, typeof sessions[0]>();
-        sessions.forEach(s => {
+        const sessionMap = new Map<string, (typeof sessions)[0]>();
+        sessions.forEach((s: any) => {
             if (!sessionMap.has(s.userId)) {
                 sessionMap.set(s.userId, s);
             }
         });
 
-        // Combine data
         const studentResults = studentUserIds.map(userId => {
             const user = userMap.get(userId);
-            const session = sessionMap.get(userId);
+            const session = sessionMap.get(userId) as any;
 
-            // Extract score from AI analysis if available
             let score: number | null = null;
             if (session?.aiAnalysis) {
                 const analysis = session.aiAnalysis as any;

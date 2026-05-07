@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import OpenAI from "openai";
-import { prisma } from "@repo/prisma";
-import { auth } from "@repo/auth";
+import { db, practiceProblem } from "@repo/db";
+import { eq } from "drizzle-orm";
+import { getSession } from "@repo/auth";
 
 export async function POST(req: NextRequest) {
-    const session = await auth();
+    const session = await getSession(req.headers);
     if (!session?.user?.id) {
         return new Response("Unauthorized", { status: 401 });
     }
@@ -30,10 +31,17 @@ export async function POST(req: NextRequest) {
         attemptNumber: number;
     };
 
-    const problem = await prisma.practiceProblem.findUnique({
-        where: { slug: problemSlug },
-        select: { title: true, description: true, requirements: true, hints: true, difficulty: true },
-    });
+    const [problem] = await db
+        .select({
+            title: practiceProblem.title,
+            description: practiceProblem.description,
+            requirements: practiceProblem.requirements,
+            hints: practiceProblem.hints,
+            difficulty: practiceProblem.difficulty,
+        })
+        .from(practiceProblem)
+        .where(eq(practiceProblem.slug, problemSlug))
+        .limit(1);
 
     if (!problem) {
         return new Response("Problem not found", { status: 404 });

@@ -1,7 +1,13 @@
 "use server"
 
-import { auth } from "@repo/auth"
-import { prisma } from "@repo/prisma"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
+import {
+    db,
+    codebaseProject,
+    codebaseFile,
+} from "@repo/db"
+import { eq, and } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 // ── Source file detection ─────────────────────────────────────────────────────
@@ -148,7 +154,7 @@ function generateSlug(name: string): string {
 async function uniqueSlug(base: string): Promise<string> {
     let slug = base
     let attempt = 0
-    while (await prisma.codebaseProject.findUnique({ where: { slug }, select: { id: true } })) {
+    while (await db.query.codebaseProject.findFirst({ where: eq(codebaseProject.slug, slug), columns: { id: true } })) {
         attempt++
         slug = `${base}-${attempt}`
     }
@@ -162,7 +168,7 @@ export async function ingestGitHubRepo(input: {
     description?: string
     githubToken?: string
 }) {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: "Unauthorized" }
 
     const parsed = parseGitHubUrl(input.githubUrl)
@@ -172,32 +178,30 @@ export async function ingestGitHubRepo(input: {
     const slug = await uniqueSlug(generateSlug(input.name || repo))
 
     // Create project record with "indexing" status
-    const project = await prisma.codebaseProject.create({
-        data: {
-            userId: session.user.id,
-            name: input.name || repo,
-            slug,
-            description: input.description,
-            sourceType: "github",
-            sourceUrl: input.githubUrl,
-            repoOwner: owner,
-            repoName: repo,
-            branch,
-            indexStatus: "indexing",
-        },
-    })
+    const [project] = await db.insert(codebaseProject).values({
+        userId: session.user.id,
+        name: input.name || repo,
+        slug,
+        description: input.description,
+        sourceType: "github",
+        sourceUrl: input.githubUrl,
+        repoOwner: owner,
+        repoName: repo,
+        branch,
+        indexStatus: "indexing",
+    }).returning()
 
     try {
-        const headers: Record<string, string> = {
+        const headers_: Record<string, string> = {
             Accept: "application/vnd.github.v3+json",
             "User-Agent": "CodeSage/1.0",
         }
-        if (input.githubToken) headers.Authorization = `token ${input.githubToken}`
+        if (input.githubToken) headers_.Authorization = `token ${input.githubToken}`
 
         // Step 1: Get default branch if branch not specified
         let activeBranch = branch
         if (activeBranch === "main") {
-            const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers })
+            const repoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers: headers_ })
             if (repoRes.ok) {
                 const repoData = await repoRes.json() as { default_branch?: string }
                 activeBranch = repoData.default_branch ?? "main"
@@ -207,7 +211,7 @@ export async function ingestGitHubRepo(input: {
         // Step 2: Get recursive file tree
         const treeRes = await fetch(
             `https://api.github.com/repos/${owner}/${repo}/git/trees/${activeBranch}?recursive=1`,
-            { headers }
+            { headers: headers_ }
         )
         if (!treeRes.ok) {
             const errData = await treeRes.json() as { message?: string }
@@ -216,10 +220,9 @@ export async function ingestGitHubRepo(input: {
                 : treeRes.status === 403
                     ? "GitHub rate limit exceeded. Provide a GitHub personal access token to continue."
                     : errData.message ?? `GitHub API error: ${treeRes.status}`
-            await prisma.codebaseProject.update({
-                where: { id: project.id },
-                data: { indexStatus: "failed", errorMessage: errMsg },
-            })
+            await db.update(codebaseProject)
+                .set({ indexStatus: "failed", errorMessage: errMsg })
+                .where(eq(codebaseProject.id, project!.id))
             return { success: false, error: errMsg }
         }
 
@@ -232,10 +235,9 @@ export async function ingestGitHubRepo(input: {
             .slice(0, 500)
 
         if (sourceFiles.length === 0) {
-            await prisma.codebaseProject.update({
-                where: { id: project.id },
-                data: { indexStatus: "failed", errorMessage: "No source files found in repository." },
-            })
+            await db.update(codebaseProject)
+                .set({ indexStatus: "failed", errorMessage: "No source files found in repository." })
+                .where(eq(codebaseProject.id, project!.id))
             return { success: false, error: "No source files found." }
         }
 
@@ -251,7 +253,7 @@ export async function ingestGitHubRepo(input: {
                     try {
                         const res = await fetch(
                             `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(f.path)}?ref=${activeBranch}`,
-                            { headers }
+                            { headers: headers_ }
                         )
                         if (!res.ok) return null
                         const data = await res.json() as { content?: string; encoding?: string }
@@ -281,14 +283,14 @@ export async function ingestGitHubRepo(input: {
         // Step 7: Store files in DB
         const totalLines = fetchedFiles.reduce((sum, f) => sum + f.content.split("\n").length, 0)
 
-        await prisma.codebaseFile.createMany({
-            data: fetchedFiles.map(f => {
+        await db.insert(codebaseFile).values(
+            fetchedFiles.map(f => {
                 const parts = f.path.split("/")
                 const fileName = parts[parts.length - 1] ?? f.path
                 const ext = fileName.split(".").pop() ?? ""
                 const lineCount = f.content.split("\n").length
                 return {
-                    projectId: project.id,
+                    projectId: project!.id,
                     filePath: f.path,
                     fileName,
                     extension: ext,
@@ -297,31 +299,29 @@ export async function ingestGitHubRepo(input: {
                     sizeBytes: f.size,
                     language: detectLanguage(ext),
                 }
-            }),
-        })
+            })
+        )
 
         // Step 8: Update project to ready
-        await prisma.codebaseProject.update({
-            where: { id: project.id },
-            data: {
+        await db.update(codebaseProject)
+            .set({
                 indexStatus: "ready",
                 fileCount: fetchedFiles.length,
                 totalLines,
                 detectedStack,
-                fileTree: fileTree as never,
+                fileTree: fileTree as any,
                 branch: activeBranch,
                 indexedAt: new Date(),
-            },
-        })
+            })
+            .where(eq(codebaseProject.id, project!.id))
 
         revalidatePath("/ai/codesage")
-        return { success: true, slug: project.slug, fileCount: fetchedFiles.length }
+        return { success: true, slug: project!.slug, fileCount: fetchedFiles.length }
     } catch (err) {
         const message = err instanceof Error ? err.message : "Ingestion failed"
-        await prisma.codebaseProject.update({
-            where: { id: project.id },
-            data: { indexStatus: "failed", errorMessage: message },
-        })
+        await db.update(codebaseProject)
+            .set({ indexStatus: "failed", errorMessage: message })
+            .where(eq(codebaseProject.id, project!.id))
         return { success: false, error: message }
     }
 }

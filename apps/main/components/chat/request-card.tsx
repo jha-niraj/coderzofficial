@@ -3,7 +3,7 @@
 import { useState } from "react"
 import {
     acceptFollowRequest, rejectFollowRequest
-} from "@/actions/(main)/community/follow.action"
+} from "@/actions/(main)/social/follow.action"
 import {
     Avatar, AvatarFallback, AvatarImage
 } from "@repo/ui/components/ui/avatar"

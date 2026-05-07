@@ -1,23 +1,21 @@
 "use server"
 
-import { prisma } from "@repo/prisma"
-import { auth } from "@repo/auth"
+import { db, universities, universityMembers, departments, universityClasses, studentUniversityLinks, universityAssignments, universitySubmissions } from "@repo/db"
+import { eq, and, count, sql } from "drizzle-orm"
+import { getSession } from "@repo/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
-import type { 
-    UniversityVerificationStatus,
-    UniversityType
-} from "@repo/prisma/client"
 
 // ============================================
 // HELPERS
 // ============================================
 
 async function getUserUniversity() {
-    const session = await auth()
+    const session = await getSession(headers())
     if (!session?.user?.id) return null
 
-    const member = await prisma.universityMember.findFirst({
-        where: { userId: session.user.id },
+    const member = await db.query.universityMembers.findFirst({
+        where: eq(universityMembers.userId, session.user.id),
     })
 
     return member
@@ -52,7 +50,7 @@ export async function getUniversityDetails(): Promise<{
         state: string | null
         country: string | null
         pincode: string | null
-        verificationStatus: UniversityVerificationStatus
+        verificationStatus: string
         verifiedAt: Date | null
         totalCreditsAllocated: number
         totalCreditsUsed: number
@@ -71,22 +69,19 @@ export async function getUniversityDetails(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const university = await prisma.university.findUnique({
-            where: { id: member.universityId },
-            include: {
-                _count: {
-                    select: {
-                        members: true,
-                        studentLinks: true,
-                        departments: true,
-                    }
-                }
-            }
+        const university = await db.query.universities.findFirst({
+            where: eq(universities.id, member.universityId),
         })
 
         if (!university) {
             return { success: false, error: "University not found" }
         }
+
+        const [memberCountResult, studentCountResult, departmentCountResult] = await Promise.all([
+            db.select({ count: count() }).from(universityMembers).where(eq(universityMembers.universityId, member.universityId)),
+            db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.universityId, member.universityId)),
+            db.select({ count: count() }).from(departments).where(eq(departments.universityId, member.universityId)),
+        ])
 
         return {
             success: true,
@@ -115,9 +110,9 @@ export async function getUniversityDetails(): Promise<{
                 totalCreditsAllocated: university.totalCreditsAllocated,
                 totalCreditsUsed: university.totalCreditsUsed,
                 creditExpiryDate: university.creditExpiryDate,
-                memberCount: university._count.members,
-                studentCount: university._count.studentLinks,
-                departmentCount: university._count.departments,
+                memberCount: memberCountResult[0]?.count ?? 0,
+                studentCount: studentCountResult[0]?.count ?? 0,
+                departmentCount: departmentCountResult[0]?.count ?? 0,
                 createdAt: university.createdAt,
                 updatedAt: university.updatedAt,
             }
@@ -137,7 +132,7 @@ export async function updateUniversityDetails(data: {
     description?: string
     email?: string
     phone?: string
-    universityType?: UniversityType
+    universityType?: string
     affiliatedTo?: string
     accreditation?: string
     establishedYear?: number
@@ -162,10 +157,7 @@ export async function updateUniversityDetails(data: {
             return { success: false, error: "No permission to manage university" }
         }
 
-        await prisma.university.update({
-            where: { id: member.universityId },
-            data,
-        })
+        await db.update(universities).set(data as any).where(eq(universities.id, member.universityId))
 
         revalidatePath("/dashboard/settings")
         return { success: true }
@@ -193,10 +185,7 @@ export async function updateUniversityLogo(logoUrl: string): Promise<{
             return { success: false, error: "No permission to manage university" }
         }
 
-        await prisma.university.update({
-            where: { id: member.universityId },
-            data: { logoUrl }
-        })
+        await db.update(universities).set({ logoUrl }).where(eq(universities.id, member.universityId))
 
         revalidatePath("/dashboard/settings")
         return { success: true }
@@ -224,10 +213,7 @@ export async function updateUniversityBanner(bannerUrl: string): Promise<{
             return { success: false, error: "No permission to manage university" }
         }
 
-        await prisma.university.update({
-            where: { id: member.universityId },
-            data: { bannerUrl }
-        })
+        await db.update(universities).set({ bannerUrl }).where(eq(universities.id, member.universityId))
 
         revalidatePath("/dashboard/settings")
         return { success: true }
@@ -264,7 +250,8 @@ export async function getUniversityStats(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        // Get various counts
+        const uniId = member.universityId
+
         const [
             totalStudents,
             verifiedStudents,
@@ -278,40 +265,35 @@ export async function getUniversityStats(): Promise<{
             pendingSubmissions,
             university,
         ] = await Promise.all([
-            prisma.studentUniversityLink.count({ where: { universityId: member.universityId } }),
-            prisma.studentUniversityLink.count({ where: { universityId: member.universityId, verificationStatus: "VERIFIED" } }),
-            prisma.studentUniversityLink.count({ where: { universityId: member.universityId, verificationStatus: "PENDING" } }),
-            prisma.universityMember.count({ where: { universityId: member.universityId } }),
-            prisma.universityMember.count({ where: { universityId: member.universityId, isActive: true } }),
-            prisma.department.count({ where: { universityId: member.universityId } }),
-            prisma.universityClass.count({ where: { universityId: member.universityId } }),
-            prisma.universityClass.count({ where: { universityId: member.universityId, isActive: true } }),
-            prisma.universityAssignment.count({ where: { class: { universityId: member.universityId } } }),
-            prisma.universitySubmission.count({ 
-                where: { 
-                    assignment: { class: { universityId: member.universityId } },
-                    status: "SUBMITTED",
-                } 
+            db.select({ count: count() }).from(studentUniversityLinks).where(eq(studentUniversityLinks.universityId, uniId)),
+            db.select({ count: count() }).from(studentUniversityLinks).where(and(eq(studentUniversityLinks.universityId, uniId), eq(studentUniversityLinks.verificationStatus, "VERIFIED"))),
+            db.select({ count: count() }).from(studentUniversityLinks).where(and(eq(studentUniversityLinks.universityId, uniId), eq(studentUniversityLinks.verificationStatus, "PENDING"))),
+            db.select({ count: count() }).from(universityMembers).where(eq(universityMembers.universityId, uniId)),
+            db.select({ count: count() }).from(universityMembers).where(and(eq(universityMembers.universityId, uniId), eq(universityMembers.isActive, true))),
+            db.select({ count: count() }).from(departments).where(eq(departments.universityId, uniId)),
+            db.select({ count: count() }).from(universityClasses).where(eq(universityClasses.universityId, uniId)),
+            db.select({ count: count() }).from(universityClasses).where(and(eq(universityClasses.universityId, uniId), eq(universityClasses.isActive, true))),
+            db.select({ count: count() }).from(universityAssignments).innerJoin(universityClasses, eq(universityAssignments.classId, universityClasses.id)).where(eq(universityClasses.universityId, uniId)),
+            db.select({ count: count() }).from(universitySubmissions).where(eq(universitySubmissions.status, "SUBMITTED")),
+            db.query.universities.findFirst({
+                where: eq(universities.id, uniId),
+                columns: { totalCreditsAllocated: true, totalCreditsUsed: true },
             }),
-            prisma.university.findUnique({
-                where: { id: member.universityId },
-                select: { totalCreditsAllocated: true, totalCreditsUsed: true }
-            })
         ])
 
         return {
             success: true,
             stats: {
-                totalStudents,
-                verifiedStudents,
-                pendingStudents,
-                totalFaculty,
-                activeFaculty,
-                totalDepartments,
-                totalClasses,
-                activeClasses,
-                totalAssignments,
-                pendingGrading: pendingSubmissions,
+                totalStudents: totalStudents[0]?.count ?? 0,
+                verifiedStudents: verifiedStudents[0]?.count ?? 0,
+                pendingStudents: pendingStudents[0]?.count ?? 0,
+                totalFaculty: totalFaculty[0]?.count ?? 0,
+                activeFaculty: activeFaculty[0]?.count ?? 0,
+                totalDepartments: totalDepartments[0]?.count ?? 0,
+                totalClasses: totalClasses[0]?.count ?? 0,
+                activeClasses: activeClasses[0]?.count ?? 0,
+                totalAssignments: totalAssignments[0]?.count ?? 0,
+                pendingGrading: pendingSubmissions[0]?.count ?? 0,
                 creditsAllocated: university?.totalCreditsAllocated ?? 0,
                 creditsUsed: university?.totalCreditsUsed ?? 0,
             }
@@ -346,9 +328,9 @@ export async function getUniversityMembers(): Promise<{
             return { success: false, error: "Unauthorized" }
         }
 
-        const members = await prisma.universityMember.findMany({
-            where: { universityId: member.universityId },
-            orderBy: { createdAt: "desc" },
+        const members = await db.query.universityMembers.findMany({
+            where: eq(universityMembers.universityId, member.universityId),
+            orderBy: (universityMembers, { desc }) => [desc(universityMembers.createdAt)],
         })
 
         return {
