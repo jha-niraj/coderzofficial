@@ -6,9 +6,10 @@ import { Sparkles } from "lucide-react";
 interface TextSelectionToolbarProps {
     containerRef: React.RefObject<HTMLElement | null>;
     onAskAI: (selectedText: string, prompt: string) => void;
+    onCopy?: (text: string) => void;
 }
 
-export function TextSelectionToolbar({ containerRef, onAskAI }: TextSelectionToolbarProps) {
+export function TextSelectionToolbar({ containerRef, onAskAI, onCopy }: TextSelectionToolbarProps) {
     const [visible, setVisible] = useState(false);
     const [position, setPosition] = useState({ top: 0, left: 0 });
     const [selectedText, setSelectedText] = useState("");
@@ -73,6 +74,17 @@ export function TextSelectionToolbar({ containerRef, onAskAI }: TextSelectionToo
                 <Sparkles className="w-3.5 h-3.5 text-purple-400" />
                 Ask AI
             </button>
+            {onCopy && (
+                <button
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white hover:bg-neutral-800 rounded-md transition-colors"
+                    onClick={() => {
+                        onCopy(selectedText);
+                        setVisible(false);
+                    }}
+                >
+                    Copy
+                </button>
+            )}
         </div>
     );
 }

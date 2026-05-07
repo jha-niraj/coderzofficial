@@ -66,6 +66,37 @@ export async function updateStudioStep(stepId: string, content: string) {
     }
 }
 
+export async function saveStep({ studioId, stepId, type, content, metadata, source }: {
+    studioId: string;
+    stepId: string;
+    type: string;
+    content: string;
+    metadata?: Record<string, unknown>;
+    source: "AI" | "USER";
+}) {
+    try {
+        const session = await getSession(headers())
+        if (!session?.user?.id) return { success: false, error: "Unauthorized" }
+
+        const step = await db.query.studioSteps.findFirst({
+            where: eq(studioSteps.id, stepId),
+            with: { studio: { columns: { userId: true } } },
+        })
+        if (!step || (step.studio as { userId: string }).userId !== session.user.id) {
+            return { success: false, error: "Unauthorized" }
+        }
+
+        await db.update(studioSteps)
+            .set({ content, metadata: metadata ?? {}, source })
+            .where(eq(studioSteps.id, stepId))
+
+        return { success: true }
+    } catch (error) {
+        console.error("saveStep error:", error)
+        return { success: false, error: "Failed to save step" }
+    }
+}
+
 export async function addStudioStep(studioId: string, data: {
     type: string; content?: string; source: "AI" | "USER"; orderNumber: number
 }) {

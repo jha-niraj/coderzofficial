@@ -2,7 +2,6 @@
 
 import {
     db,
-    learnBookmark,
     projectV2Bookmark,
     communityPostBookmark,
     mockInterviewBookmark,
@@ -40,17 +39,10 @@ export async function getBookmarksSummary() {
 
         // Fetch all bookmarks in parallel
         const [
-            learnBMs,
             projectV2BMs,
             communityPostBMs,
             mockBMs,
         ] = await Promise.all([
-            db.query.learnBookmark.findMany({
-                where: eq(learnBookmark.userId, user.id),
-                with: { learn: { with: { mainCategory: true } } },
-                orderBy: (t, { desc }) => [desc(t.createdAt)],
-                limit: 10,
-            }),
             db.query.projectV2Bookmark.findMany({
                 where: eq(projectV2Bookmark.userId, user.id),
                 orderBy: (t, { desc }) => [desc(t.createdAt)],
@@ -95,7 +87,7 @@ export async function getBookmarksSummary() {
         const postMap = Object.fromEntries(postsData.map(p => [p.id, p]))
         const sessionMap = Object.fromEntries(sessionsData.map(s => [s.id, s]))
 
-        type BookmarkType = 'Learn' | 'project' | 'projectV2' | 'community' | 'mock' | 'v1' | 'v2';
+        type BookmarkType = 'project' | 'projectV2' | 'community' | 'mock' | 'v1' | 'v2';
         const recentSaves: Array<{
             type: BookmarkType;
             id: string;
@@ -107,18 +99,6 @@ export async function getBookmarksSummary() {
             communitySlug?: string;
             savedAt: Date;
         }> = [];
-
-        learnBMs.forEach(b => {
-            recentSaves.push({
-                type: "Learn" as const,
-                id: b.learn.id,
-                title: b.learn.title,
-                slug: b.learn.slug,
-                category: b.learn.mainCategory?.name || "General",
-                thumbnail: b.learn.thumbnail,
-                savedAt: b.createdAt,
-            });
-        });
 
         projectV2BMs.forEach(b => {
             const project = projectMap[b.projectId]
@@ -167,26 +147,13 @@ export async function getBookmarksSummary() {
         return {
             success: true,
             data: {
-                total: learnBMs.length + totalProjects + communityPostBMs.length + mockBMs.length,
-                totalBookmarks: learnBMs.length + totalProjects + communityPostBMs.length + mockBMs.length,
-                Learns: learnBMs.length,
+                total: totalProjects + communityPostBMs.length + mockBMs.length,
+                totalBookmarks: totalProjects + communityPostBMs.length + mockBMs.length,
                 projects: totalProjects,
                 community: communityPostBMs.length,
                 mock: mockBMs.length,
                 studio: 0,
                 byModule: {
-                    Learns: {
-                        count: learnBMs.length,
-                        recent: learnBMs.slice(0, 5).map(b => ({
-                            id: b.learn.id,
-                            title: b.learn.title,
-                            slug: b.learn.slug,
-                            category: b.learn.mainCategory?.name || "General",
-                            difficulty: b.learn.difficulty,
-                            thumbnail: b.learn.thumbnail,
-                            savedAt: b.createdAt,
-                        })),
-                    },
                     projects: {
                         count: totalProjects,
                         recent: projectV2BMs.slice(0, 5).map(b => {
@@ -236,76 +203,6 @@ export async function getBookmarksSummary() {
     } catch (error) {
         console.error("Error fetching bookmarks summary:", error);
         return { success: false, error: "Failed to fetch bookmarks" };
-    }
-}
-
-// ==========================================
-// Learn BOOKMARKS
-// ==========================================
-
-export async function getLearnBookmarks() {
-    try {
-        const user = await getCurrentUser();
-        if (!user) {
-            return { success: false, error: "Unauthorized" };
-        }
-
-        const bookmarks = await db.query.learnBookmark.findMany({
-            where: eq(learnBookmark.userId, user.id),
-            with: {
-                learn: {
-                    with: { mainCategory: true }
-                }
-            },
-            orderBy: (t, { desc }) => [desc(t.createdAt)],
-        });
-
-        return {
-            success: true,
-            data: bookmarks.map(b => ({
-                id: b.learn.id,
-                title: b.learn.title,
-                slug: b.learn.slug,
-                description: b.learn.description,
-                category: b.learn.mainCategory?.name || "General",
-                difficulty: b.learn.difficulty,
-                thumbnail: b.learn.thumbnail,
-                estimatedTime: b.learn.estimatedTime,
-                savedAt: b.createdAt,
-                folder: b.folder,
-                notes: b.notes,
-            })),
-        };
-    } catch (error) {
-        console.error("Error fetching Learn bookmarks:", error);
-        return { success: false, error: "Failed to fetch bookmarks" };
-    }
-}
-
-export async function toggleLearnBookmark(learnId: string) {
-    try {
-        const user = await getCurrentUser();
-        if (!user) {
-            return { success: false, error: "Unauthorized" };
-        }
-
-        const existing = await db.query.learnBookmark.findFirst({
-            where: and(
-                eq(learnBookmark.learnId, learnId),
-                eq(learnBookmark.userId, user.id)
-            ),
-        });
-
-        if (existing) {
-            await db.delete(learnBookmark).where(eq(learnBookmark.id, existing.id));
-            return { success: true, bookmarked: false };
-        } else {
-            await db.insert(learnBookmark).values({ learnId, userId: user.id });
-            return { success: true, bookmarked: true };
-        }
-    } catch (error) {
-        console.error("Error toggling Learn bookmark:", error);
-        return { success: false, error: "Failed to toggle bookmark" };
     }
 }
 
@@ -550,27 +447,6 @@ export async function toggleMockBookmark(sessionId: string) {
 // CHECK BOOKMARK STATUS
 // ==========================================
 
-export async function isLearnBookmarked(learnId: string) {
-    try {
-        const user = await getCurrentUser();
-        if (!user) {
-            return { success: true, bookmarked: false };
-        }
-
-        const bookmark = await db.query.learnBookmark.findFirst({
-            where: and(
-                eq(learnBookmark.learnId, learnId),
-                eq(learnBookmark.userId, user.id)
-            ),
-        });
-
-        return { success: true, bookmarked: !!bookmark };
-    } catch (error) {
-        console.error("Error checking Learn bookmark:", error);
-        return { success: false, bookmarked: false };
-    }
-}
-
 export async function isProjectBookmarked(projectId: string, version: "v1" | "v2" = "v2") {
     try {
         const user = await getCurrentUser();
@@ -625,8 +501,7 @@ export async function getBookmarkStats() {
             return { success: false, error: "Unauthorized" };
         }
 
-        const [[{ value: LearnCount }], [{ value: projectV2Count }], [{ value: communityCount }], [{ value: mockCount }]] = await Promise.all([
-            db.select({ value: count() }).from(learnBookmark).where(eq(learnBookmark.userId, user.id)),
+        const [[{ value: projectV2Count }], [{ value: communityCount }], [{ value: mockCount }]] = await Promise.all([
             db.select({ value: count() }).from(projectV2Bookmark).where(eq(projectV2Bookmark.userId, user.id)),
             db.select({ value: count() }).from(communityPostBookmark).where(eq(communityPostBookmark.userId, user.id)),
             db.select({ value: count() }).from(mockInterviewBookmark).where(eq(mockInterviewBookmark.userId, user.id)),
@@ -635,11 +510,10 @@ export async function getBookmarkStats() {
         return {
             success: true,
             data: {
-                Learns: LearnCount,
                 projects: projectV2Count,
                 community: communityCount,
                 mock: mockCount,
-                total: LearnCount + projectV2Count + communityCount + mockCount,
+                total: projectV2Count + communityCount + mockCount,
             },
         };
     } catch (error) {

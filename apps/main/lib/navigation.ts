@@ -141,6 +141,11 @@ export const mainNavigation: NavigationConfig = {
                     path: 'ai/resume',
                     icon: FileText
                 },
+                {
+                    name: 'Cover Letter',
+                    path: 'ai/resume/cover-letter',
+                    icon: FileText
+                },
             ]
         },
         {

@@ -34,7 +34,7 @@ import type {
 import { getPathFromModule } from "@/types/practice";
 import { MarkdownRenderer } from "@/components/common/markdown-renderer";
 import { useScribe } from "@elevenlabs/react";
-import { TextSelectionToolbar } from "@/app/(main)/learn/[subcategorySlug]/[learnSlug]/_components/text-selection-toolbar";
+import { TextSelectionToolbar } from "@/components/common/text-selection-toolbar";
 import toast from "@repo/ui/components/ui/sonner";
 import { Panel, Group as PanelGroup, Separator as PanelResizeHandle } from "react-resizable-panels";
 import { SDComponentLibrary } from "./sd-component-library";
