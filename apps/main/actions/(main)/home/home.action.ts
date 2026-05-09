@@ -18,7 +18,7 @@ import {
     userStats,
 } from "@repo/db";
 import { eq, and, or, gte, desc, asc, sql } from "drizzle-orm";
-import { revalidatePath } from "next/cache";
+
 
 // Get user's home page data
 export async function getHomeData() {

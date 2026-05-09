@@ -22,7 +22,6 @@ import {
 } from "lucide-react"
 import toast from "@repo/ui/components/ui/sonner"
 import { whisperTranscribe } from "@/actions/(main)/ai/whisper.action"
-import { useCoverLetterStore } from "@/app/store/coverLetterStore"
 import { usePDF } from "react-to-pdf"
 import { MarkdownRenderer } from "@/components/common/markdown-renderer"
 import { Card, CardContent } from "@repo/ui/components/ui/card"
@@ -533,7 +532,7 @@ function VoiceButton({
             }
             // Live preview using WebSpeech API
             if (typeof window !== "undefined" && "webkitSpeechRecognition" in window) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                 
                 const SR = (window as any).webkitSpeechRecognition
                 const sr = new SR() as {
                     continuous: boolean; interimResults: boolean; start(): void; stop(): void
@@ -544,7 +543,7 @@ function VoiceButton({
                 sr.onresult = (e) => {
                     let interim = ""
                     for (let i = e.resultIndex; i < e.results.length; i++) {
-                        interim += e.results[i][0].transcript
+                        interim += e.results[i]![0]!.transcript
                     }
                     setLiveText(interim)
                 }

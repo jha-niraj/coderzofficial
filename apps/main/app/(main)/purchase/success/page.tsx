@@ -47,7 +47,7 @@ export default function PaymentSuccessPage() {
 	const handleDownloadReceipt = () => {
 		// Create a simple text receipt
 		const receiptText = `
-TheCoderz - Payment Receipt
+BuildrHQ - Payment Receipt
 
 Payment ID: ${paymentData.paymentId}
 Credits Purchased: ${paymentData.credits}

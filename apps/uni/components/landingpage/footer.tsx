@@ -24,9 +24,9 @@ const footerLinks = {
         { label: "Data Processing", href: "#" },
     ],
     platforms: [
-        { label: "Main Platform", href: "https://coderzai.xyz" },
-        { label: "Hiring (Onyx)", href: "https://hiring.coderzai.xyz" },
-        { label: "For Students", href: "https://coderzai.xyz" },
+        { label: "Main Platform", href: "https://buildrhq.com" },
+        { label: "BuildrHQ Hiring", href: "https://hiring.buildrhq.com" },
+        { label: "For Students", href: "https://buildrhq.com" },
     ]
 }
 
@@ -48,7 +48,7 @@ export default function Footer() {
                                 <GraduationCap className="w-4 h-4 text-white dark:text-black" />
                             </div>
                             <span className="font-bold text-neutral-900 dark:text-white">
-                                Coder&apos;z Uni
+                                BuildrHQ University
                             </span>
                         </Link>
                         <p className="text-xs text-neutral-500 leading-relaxed max-w-xs mb-6">
@@ -130,7 +130,7 @@ export default function Footer() {
                 </div>
                 <div className="pt-8 border-t border-neutral-200 dark:border-neutral-800 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-[10px] font-mono text-neutral-500">
-                        © {new Date().getFullYear()} Coder&apos;z University.
+                        © {new Date().getFullYear()} BuildrHQ University.
                     </p>
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />

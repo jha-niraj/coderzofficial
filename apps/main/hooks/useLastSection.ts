@@ -48,6 +48,7 @@ export function useLastSection() {
                 }
             }
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pathname, isInitialized])
 
     // Explicitly set the section

@@ -5,12 +5,11 @@ import { headers } from "next/headers";
 import {
     db,
     projectV2Tasks,
-    projectV2Sprints,
     userProjectV2Progress,
     userTaskV2Statuses,
     projectV2FeatureSuggestions,
 } from "@repo/db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { revalidatePath } from 'next/cache'
 
 type ActionResult = {

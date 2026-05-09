@@ -16,17 +16,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
     if (!result.success || !result.user) {
         return {
-            title: "Profile Not Found | The Coderz",
+            title: "Profile Not Found | BuildrHQ",
             description: "This profile could not be found.",
         };
     }
 
     const user = result.user;
-    const title = `${user.name || user.username} | The Coderz`;
+    const title = `${user.name || user.username} | BuildrHQ`;
     const description =
         user.userProfile?.tagline ||
         user.bio ||
-        `Check out ${user.name || user.username}'s profile on The Coderz`;
+        `Check out ${user.name || user.username}'s profile on BuildrHQ`;
 
     return {
         title,
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             description,
             type: "profile",
             images: user.image ? [{ url: user.image }] : [],
-            url: `https://thecoderz.dev/u/${user.username}`,
+            url: `https://buildrhq.com/u/${user.username}`,
         },
         twitter: {
             card: "summary_large_image",

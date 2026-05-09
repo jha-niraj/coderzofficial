@@ -16,7 +16,7 @@ import {
     knowMeQuestionAnalytics,
     knowMePersonalData,
 } from "@repo/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type {
 	KnowMeActionResponse, KnowMeChatSessionData, ChatResponse,
 	ChatMessageSource, EmbeddingMetadata

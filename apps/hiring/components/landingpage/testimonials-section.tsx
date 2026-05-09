@@ -5,7 +5,7 @@ import { TestimonialsColumn } from "./testimonials-column";
 
 const testimonials = [
     {
-        text: "The Coder'z completely transformed my coding journey. The AI interview prep helped me land my first internship at a startup!",
+        text: "BuildrHQ completely transformed my coding journey. The AI interview prep helped me land my first internship at a startup!",
         image: "https://randomuser.me/api/portraits/men/1.jpg",
         name: "Arjun Sharma",
         role: "Computer Science Student",
@@ -35,7 +35,7 @@ const testimonials = [
         role: "MCA Graduate",
     },
     {
-        text: "Learning to code was intimidating until I found The Coder'z. The structured paths made everything click into place.",
+        text: "Learning to code was intimidating until I found BuildrHQ. The structured paths made everything click into place.",
         image: "https://randomuser.me/api/portraits/women/6.jpg",
         name: "Ananya Reddy",
         role: "2nd Year Engineering",

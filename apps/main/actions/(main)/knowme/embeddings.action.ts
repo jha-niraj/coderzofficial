@@ -17,7 +17,6 @@ import type {
 	KnowMeActionResponse, KnowMeEmbeddingJobData
 } from "@/types/knowme";
 import {
-	generateEmbedding,
 	generateEmbeddingsBatch,
 	upsertVectorsBatch,
 	deleteNamespace,

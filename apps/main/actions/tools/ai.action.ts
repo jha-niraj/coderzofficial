@@ -18,10 +18,10 @@ interface ChatResponse {
 }
 
 
-const SYSTEM_PROMPT = `You are CoderzHQ AI Assistant - an intelligent guide for TheCoderz learning platform. You help students navigate and learn effectively on the platform.
+const SYSTEM_PROMPT = `You are BuildrHQ AI Assistant - an intelligent guide for BuildrHQ learning platform. You help students navigate and learn effectively on the platform.
 
 ## Platform Overview:
-TheCoderz is a comprehensive learning platform for aspiring developers featuring:
+BuildrHQ is a comprehensive learning platform for aspiring developers featuring:
 
 ### Core Features:
 1. **Projects Hub** - Hands-on project-based learning with:
@@ -97,7 +97,7 @@ export async function chatWithAI(messages: Message[]): Promise<ChatResponse> {
 
         const completion = await openai.chat.completions.create({
             model: "gpt-4o-mini",
-            messages: chatMessages,
+            messages: chatMessages as unknown as Array<{ role: string; content: string | unknown[] }>,
             temperature: 0.7,
             max_tokens: 500,
         });

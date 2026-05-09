@@ -174,7 +174,7 @@ export async function incrementResourceView(resourceId: string) {
             .set({ views: sql`${projectV2Resources.views} + 1` })
             .where(eq(projectV2Resources.id, resourceId))
         return { success: true }
-    } catch (error) {
+    } catch {
         return { success: false, error: "Failed to increment view" }
     }
 }

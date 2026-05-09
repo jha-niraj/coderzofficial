@@ -193,8 +193,8 @@ export async function generateVerificationContent(goalId: string) {
         const subGoalTitles = dailySessions.flatMap((s: any) => s.subGoals.map((sg: any) => sg.title))
         const uniqueTopics = [...new Set(subGoalTitles)].slice(0, 15) as string[]
         const completedCount = dailySessions.reduce((sum: number, s: any) => sum + s.completedSubGoals, 0)
-        const quizTotal = dailySessions.reduce((sum: number, s: any) => sum + s.correctQuizAnswers, 0)
-        const codingTotal = dailySessions.reduce((sum: number, s: any) => sum + s.solvedCodingProblems, 0)
+        const _quizTotal = dailySessions.reduce((sum: number, s: any) => sum + s.correctQuizAnswers, 0)
+        const _codingTotal = dailySessions.reduce((sum: number, s: any) => sum + s.solvedCodingProblems, 0)
 
         const userContext = {
             goal: {

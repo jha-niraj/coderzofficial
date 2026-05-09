@@ -677,7 +677,7 @@ Rules: Vary difficulty. Return ONLY valid JSON, no markdown.`
     }
 }
 
-function getCategoryEmoji(category: PathfinderCategory): string {
+function _getCategoryEmoji(category: PathfinderCategory): string {
     const emojis: Record<PathfinderCategory, string> = {
         DSA: '🧮',
         WEB_DEVELOPMENT: '🌐',
@@ -693,7 +693,7 @@ function getCategoryEmoji(category: PathfinderCategory): string {
     return emojis[category] || '📚'
 }
 
-function mapToMockCategory(category: PathfinderCategory): 'TECHNICAL' | 'CODING' | 'SYSTEM_DESIGN' | 'GENERAL' {
+function _mapToMockCategory(category: PathfinderCategory): 'TECHNICAL' | 'CODING' | 'SYSTEM_DESIGN' | 'GENERAL' {
     const mapping: Record<PathfinderCategory, 'TECHNICAL' | 'CODING' | 'SYSTEM_DESIGN' | 'GENERAL'> = {
         DSA: 'CODING',
         WEB_DEVELOPMENT: 'TECHNICAL',
@@ -709,6 +709,6 @@ function mapToMockCategory(category: PathfinderCategory): 'TECHNICAL' | 'CODING'
     return mapping[category]
 }
 
-function mapToMockLevel(level: PathfinderLevel): 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT' {
+function _mapToMockLevel(level: PathfinderLevel): 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'EXPERT' {
     return level
 }

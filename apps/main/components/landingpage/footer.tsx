@@ -59,7 +59,7 @@ export default function Footer() {
                                 <div className="w-8 h-8 bg-neutral-900 dark:bg-white rounded-lg flex items-center justify-center text-white dark:text-neutral-900 font-bold">
                                     <Command className="w-4 h-4" />
                                 </div>
-                                <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">The Coder&apos;z</span>
+                                <span className="text-xl font-bold tracking-tight text-neutral-900 dark:text-white">BuildrHQ</span>
                             </Link>
                             <p className="text-neutral-500 dark:text-neutral-400 text-sm mb-8 leading-relaxed max-w-xs">
                                 The operating system for engineering students.
@@ -110,7 +110,7 @@ export default function Footer() {
                 <div className="mt-16 pt-8 border-t border-neutral-200 dark:border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
                         <p className="text-xs text-neutral-500">
-                            © {new Date().getFullYear()} CoderzLab Inc.
+                            © {new Date().getFullYear()} BuildrHQ Inc.
                         </p>
                         <div className="flex items-center gap-2">
                             <span className="relative flex h-2 w-2">
@@ -121,16 +121,16 @@ export default function Footer() {
                         </div>
                     </div>
                     <div className="flex items-center gap-6">
-                        <Link href="https://twitter.com/thecoderzlab" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
+                        <Link href="https://twitter.com/buildrhq" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
                             <Twitter className="w-4 h-4" />
                         </Link>
-                        <Link href="https://github.com/thecoderzofficial" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
+                        <Link href="https://github.com/buildrhq" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
                             <Github className="w-4 h-4" />
                         </Link>
-                        <Link href="https://linkedin.com/company/thecoderzlab" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
+                        <Link href="https://linkedin.com/company/buildrhq" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
                             <Linkedin className="w-4 h-4" />
                         </Link>
-                        <Link href="https://youtube.com/@thecoderzofficial" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
+                        <Link href="https://youtube.com/@buildrhq" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors">
                             <Youtube className="w-4 h-4" />
                         </Link>
                     </div>

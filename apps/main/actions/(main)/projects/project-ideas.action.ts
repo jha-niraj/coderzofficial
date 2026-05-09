@@ -252,7 +252,7 @@ export async function approveProjectIdea(id: string) {
     }
 }
 
-export async function rejectProjectIdea(id: string, reason?: string) {
+export async function rejectProjectIdea(id: string, _reason?: string) {
     try {
         const session = await getSession(headers());
         if (!session?.user?.email) {

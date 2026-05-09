@@ -7,7 +7,7 @@ import {
     projectsV2,
     projectIdeas,
 } from "@repo/db";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 export async function getProjectCategories() {
     try {

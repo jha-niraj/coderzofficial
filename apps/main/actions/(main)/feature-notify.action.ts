@@ -3,7 +3,6 @@
 import { db, featureNotifyInterests } from "@repo/db";
 import { getSession } from "@repo/auth";
 import { headers } from "next/headers";
-import { and, eq } from "drizzle-orm";
 
 export type NotifyInterestInput = {
     section: "AI_TOOLS" | "MOCK_VIDEO" | "MOCK_COMPANYWISE" | "MOCK_PEERTOPEER" | "MOCK_CONNECT" | "AI_PORTFOLIO_AUDIT" | "AI_SYSTEM_ARCHITECT" | "AI_PROJECT_SCOPER" | "AI_OSS_SCOUT" | "AI_DOCUSMITH" | "AI_CODE_SENTINEL" | "AI_TEST_FORGE";

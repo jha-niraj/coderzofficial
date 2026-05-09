@@ -1,12 +1,17 @@
-// ProjectV2 Types for TheCoderz Platform
+// ProjectV2 Types for BuildrHQ Platform
 // This file contains all type definitions for the ProjectV2 system
 
 import {
-    ProjectV2Visibility,
-    ProjectV2Difficulty,
-    UserProjectV2Status,
-    QuizV2Difficulty,
+    projectV2VisibilityEnum,
+    projectV2DifficultyEnum,
+    userProjectV2StatusEnum,
+    quizV2DifficultyEnum,
 } from "@repo/db";
+
+type ProjectV2Visibility = typeof projectV2VisibilityEnum.enumValues[number];
+type ProjectV2Difficulty = typeof projectV2DifficultyEnum.enumValues[number];
+type UserProjectV2Status = typeof userProjectV2StatusEnum.enumValues[number];
+type QuizV2Difficulty = typeof quizV2DifficultyEnum.enumValues[number];
 
 // ============================================================================
 // Core Project Types

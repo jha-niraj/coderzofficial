@@ -104,11 +104,6 @@ interface ExaResult {
 	}[];
 }
 
-interface EvaluateUserQuestionResponseResult {
-	success: boolean
-	data?: any
-	error?: string
-}
 
 // Function to fetch company info using Exa
 async function fetchCompanyInfo(url: string): Promise<CompanyInfo | null> {
@@ -145,7 +140,7 @@ function cleanAndParseJSON(jsonString: string): any {
 	try {
 		// First try direct parsing
 		return JSON.parse(jsonString);
-	} catch (error) {
+	} catch {
 		console.log('Direct parsing failed, attempting to clean JSON...');
 
 		// Remove any markdown code block markers and clean whitespace
@@ -163,7 +158,7 @@ function cleanAndParseJSON(jsonString: string): any {
 		try {
 			// Try parsing the cleaned version
 			return JSON.parse(cleaned);
-		} catch (cleanError) {
+		} catch {
 			console.log('Markdown cleaning failed, attempting to fix JSON structure...');
 
 			try {
@@ -192,7 +187,7 @@ function cleanAndParseJSON(jsonString: string): any {
 
 				// Try parsing the fixed content
 				return JSON.parse(content);
-			} catch (structureError) {
+			} catch {
 				console.log('JSON structure fix failed, attempting to extract evaluation...');
 
 				// Try to extract evaluation components
@@ -240,7 +235,7 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 	try {
 		// First try direct parsing
 		return JSON.parse(jsonString);
-	} catch (error) {
+	} catch {
 		console.log('Direct parsing failed, attempting to clean JSON...');
 
 		try {
@@ -255,7 +250,7 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 
 			// Try parsing the cleaned version
 			return JSON.parse(cleaned);
-		} catch (cleanError) {
+		} catch {
 			console.log('Markdown cleaning failed, attempting to extract JSON object...');
 
 			// Find the first { and last } to extract just the JSON object
@@ -266,7 +261,7 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 				const extractedJson = jsonString.substring(firstBrace, lastBrace + 1);
 				try {
 					return JSON.parse(extractedJson);
-				} catch (extractError) {
+				} catch {
 					console.log('JSON extraction failed, attempting to fix common issues...');
 
 					// Fix common JSON issues - more aggressive cleaning
@@ -287,7 +282,7 @@ function cleanAndParseSimpleJSON(jsonString: string): any {
 
 					try {
 						return JSON.parse(fixedJson);
-					} catch (finalError) {
+					} catch {
 						// Last resort: try to extract JSON using regex
 						const jsonMatch = jsonString.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/);
 						if (jsonMatch) {
@@ -344,7 +339,7 @@ function createFallbackResponse(rawText: string): any {
 					} else {
 						solution = extractedSolution;
 					}
-				} catch (error) {
+				} catch {
 					solution = extractedSolution;
 				}
 			} else {
@@ -498,7 +493,7 @@ async function generateInterviewQuestions(
 					console.log('Returning partial content');
 					return partialContent;
 				}
-			} catch (e) {
+			} catch {
 				console.error('Failed to salvage partial content');
 			}
 

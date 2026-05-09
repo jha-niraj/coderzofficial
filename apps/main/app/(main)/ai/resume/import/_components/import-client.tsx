@@ -48,7 +48,7 @@ export function ImportClient() {
         const interval = setInterval(() => {
             setStageIdx((i) => {
                 const next = Math.min(i + 1, STAGES.length - 1)
-                setImportProgress({ stage: STAGES[next], percent: Math.round(((next + 1) / STAGES.length) * 100) })
+                setImportProgress({ stage: STAGES[next]!, percent: Math.round(((next + 1) / STAGES.length) * 100) })
                 return next
             })
         }, 4000)

@@ -3,9 +3,9 @@
 import { getSession } from "@repo/auth";
 import { headers } from "next/headers";
 import {
-    db, projectV2Errors, projectV2ErrorVotes, projectsV2, userProjectV2Progress, projectV2Tasks, users
+    db, projectV2Errors, projectV2ErrorVotes, projectsV2, userProjectV2Progress, projectV2Tasks
 } from "@repo/db";
-import { eq, and, desc, asc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 

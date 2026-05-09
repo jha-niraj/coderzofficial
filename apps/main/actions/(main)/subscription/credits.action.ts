@@ -8,7 +8,7 @@ import {
     creditTransactions,
     creditTransfers,
 } from "@repo/db"
-import { eq, or, sql, desc } from "drizzle-orm"
+import { eq, sql, desc } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import cuid from "cuid"
 

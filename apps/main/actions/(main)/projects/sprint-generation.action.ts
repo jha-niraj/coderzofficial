@@ -11,7 +11,6 @@ import {
     projectV2Tasks,
 } from "@repo/db";
 import { eq, and } from "drizzle-orm";
-import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
 
 // ============================================================================
@@ -73,7 +72,7 @@ export async function generateSprintWithAI(
     sprintDescription: string
 ): Promise<ActionResult<GeneratedSprint>> {
     try {
-        const user = await getCurrentUser()
+        const _user = await getCurrentUser()
 
         const project = await db.query.projectsV2.findFirst({
             where: eq(projectsV2.id, projectId),

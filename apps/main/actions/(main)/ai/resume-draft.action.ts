@@ -244,7 +244,7 @@ export async function updateResumeDraft(id: string, data: {
     const session = await getSession(headers())
     if (!session?.user?.id) return { success: false, error: 'Unauthorized' }
 
-    const result = await db.update(resumeDraft)
+    const _result = await db.update(resumeDraft)
         .set({
             ...(data.name !== undefined && { name: data.name }),
             ...(data.templateSlug !== undefined && { templateSlug: data.templateSlug }),

@@ -2,7 +2,7 @@
 
 import { getSession } from '@repo/auth'
 import { headers } from 'next/headers'
-import { db, users, osGitHubProfiles, osContributions, osProjectContributors, userOSStats, openSourceProjects } from '@repo/db'
+import { db, osGitHubProfiles, osContributions, osProjectContributors, userOSStats, openSourceProjects } from '@repo/db'
 import { eq, and, inArray, count, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 

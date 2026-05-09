@@ -1,12 +1,11 @@
 "use server";
 
 import Exa from "exa-js";
-import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
 import { getSession } from "@repo/auth";
 import { headers } from "next/headers";
 import { db, practiceProblem } from "@repo/db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 type PracticeModule = 'DSA' | 'SYSTEM_DESIGN' | 'WEB_FRONTEND' | 'WEB_BACKEND'
 type PracticeDifficulty = 'EASY' | 'MEDIUM' | 'HARD'

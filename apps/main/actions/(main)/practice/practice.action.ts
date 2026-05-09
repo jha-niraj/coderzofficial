@@ -574,7 +574,7 @@ export async function getUserPracticeStats(): Promise<PracticeUserStats | null> 
 
     const userId = session.user.id;
 
-    const [modules, sessions, totalProblemsArr] = await Promise.all([
+    const [modules, sessions, _totalProblemsArr] = await Promise.all([
         db.query.practiceModuleProgress.findMany({ where: eq(practiceModuleProgress.userId, userId) }),
         db.query.practiceUserSession.findMany({
             where: eq(practiceUserSession.userId, userId),

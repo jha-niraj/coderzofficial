@@ -1,12 +1,11 @@
 "use server"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { db, users, creditTransactions, adminAuditLogs } from "@repo/db"
 import { eq, and, gte, lte, ilike, or, count, inArray, sql } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 import { checkAdminAccess } from "../admin.action"
-import { Resend } from "resend"
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { adminSendEmail as sendAdminEmail } from "@/lib/emails/adminemail"
 
 // Types
 interface UserFilters {
@@ -550,21 +549,8 @@ export async function getUserStats(): Promise<AdminResponse<any>> {
 }
 
 export async function adminSendEmail({ to, subject, text }: { to: string; subject: string; text: string }): Promise<AdminResponse> {
-    try {
-        const { success, error } = await checkAdminAccess()
-        if (!success) return { success: false, error }
+    const { success, error } = await checkAdminAccess()
+    if (!success) return { success: false, error }
 
-        const result = await resend.emails.send({
-            from: "The Coder'z <noreply@coderzai.xyz>",
-            to,
-            subject,
-            text,
-        })
-        if (result.error) {
-            return { success: false, error: result.error.message || "Failed to send email" }
-        }
-        return { success: true }
-    } catch (err: any) {
-        return { success: false, error: err.message || "Failed to send email" }
-    }
+    return sendAdminEmail({ to, subject, text })
 }

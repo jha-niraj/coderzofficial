@@ -183,13 +183,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
     if (!project) {
         return {
-            title: 'Project Not Found | TheCoderz',
+            title: 'Project Not Found | BuildrHQ',
             description: 'The requested project could not be found'
         }
     }
 
     return {
-        title: `${project.title} - Leaderboard | TheCoderz`,
+        title: `${project.title} - Leaderboard | BuildrHQ`,
         description: `View the leaderboard and top performers for ${project.title}`
     }
 }

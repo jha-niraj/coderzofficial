@@ -17,7 +17,7 @@ export default function Footer() {
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white leading-none">
-                                    Coder&apos;z Hiring
+                                    BuildrHQ Hiring
                                 </span>
                                 <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-widest mt-1">
                                     Recruitment Platform
@@ -42,7 +42,7 @@ export default function Footer() {
                         <div>
                             <h4 className="font-mono text-[10px] uppercase tracking-widest text-neutral-900 dark:text-white mb-6">Resources</h4>
                             <ul className="space-y-4 text-sm text-neutral-500">
-                                <li><Link href="https://coderzai.xyz" target="_blank" className="hover:text-neutral-900 dark:hover:text-white transition-colors">Coder&apos;z Main</Link></li>
+                                <li><Link href="https://buildrhq.com" target="_blank" className="hover:text-neutral-900 dark:hover:text-white transition-colors">BuildrHQ Main</Link></li>
                                 <li><Link href="/help" className="hover:text-neutral-900 dark:hover:text-white transition-colors">Help Center</Link></li>
                                 <li><Link href="/privacy" className="hover:text-neutral-900 dark:hover:text-white transition-colors">Privacy Policy</Link></li>
                                 <li><Link href="/terms" className="hover:text-neutral-900 dark:hover:text-white transition-colors">Terms of Service</Link></li>
@@ -51,16 +51,16 @@ export default function Footer() {
                         <div>
                             <h4 className="font-mono text-[10px] uppercase tracking-widest text-neutral-900 dark:text-white mb-6">Connect</h4>
                             <div className="flex gap-4">
-                                <Link href="https://twitter.com/coderzai" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white"><Twitter className="w-5 h-5" /></Link>
-                                <Link href="https://github.com/coderzai" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white"><Github className="w-5 h-5" /></Link>
-                                <Link href="https://linkedin.com/company/coderzai" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white"><Linkedin className="w-5 h-5" /></Link>
+                                <Link href="https://twitter.com/buildrhq" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white"><Twitter className="w-5 h-5" /></Link>
+                                <Link href="https://github.com/buildrhq" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white"><Github className="w-5 h-5" /></Link>
+                                <Link href="https://linkedin.com/company/buildrhq" target="_blank" className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white"><Linkedin className="w-5 h-5" /></Link>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div className="pt-8 border-t border-neutral-200 dark:border-neutral-800 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div className="text-[10px] text-neutral-500 font-mono">
-                        © {new Date().getFullYear()} Coder&apos;z - All rights reserved
+                        © {new Date().getFullYear()} BuildrHQ - All rights reserved
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />

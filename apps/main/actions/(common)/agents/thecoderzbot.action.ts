@@ -1,6 +1,5 @@
 'use server'
 
-import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
 
 

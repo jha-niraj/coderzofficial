@@ -205,7 +205,7 @@ export default function ReferralsPage() {
                                     Your Referrals
                                 </h2>
                                 <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                                    Track everyone you&apos;ve invited to join TheCoderz
+                                    Track everyone you&apos;ve invited to join BuildrHQ
                                 </p>
                             </div>
                             <div className="space-y-4">

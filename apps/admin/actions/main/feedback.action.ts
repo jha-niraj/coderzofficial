@@ -1,4 +1,5 @@
 "use server"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { db, users, feedbacks, rewards, adminAuditLogs } from "@repo/db"
 import { eq, and, ilike, or, count, sql } from "drizzle-orm"

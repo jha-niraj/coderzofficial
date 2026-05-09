@@ -138,7 +138,7 @@ function SignInForm({ searchParams }: SignInFormProps) {
                     <div className="relative z-10">
                         <Link href="/" className="flex items-center gap-2 mb-8">
                             <Code2 className="h-8 w-8 text-orange-500" />
-                            <span className="font-bold text-xl">The Coderz</span>
+                            <span className="font-bold text-xl">BuildrHQ</span>
                         </Link>
                         <h1 className="text-2xl md:text-3xl font-medium leading-tight tracking-tight">
                             Build projects. Crack interviews. Land your dream job.

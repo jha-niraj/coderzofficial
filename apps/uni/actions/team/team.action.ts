@@ -5,7 +5,7 @@ import { eq, and, desc, asc } from "drizzle-orm"
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import bcrypt from "bcryptjs";
-import { sendEmail } from "@/utils/mail";
+import { sendUniEmail } from "@/lib/emails/uniemail";
 import type {
     UniversityPermission, TeamMember, UpdateTeamMemberPayload, InviteTeamMemberPayload,
     UniversityMemberRole, UniversityMemberJobTitle, MemberInviteStatus, Department
@@ -457,7 +457,24 @@ export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         });
 
-        // TODO: Send invitation email
+        const inviteUrl = `${process.env.NEXT_PUBLIC_UNI_URL || "http://localhost:3001"}/invite?code=${inviteCode}`
+        try {
+            const university = await db.query.universityMembers.findFirst({
+                where: eq(universityMembers.id, currentMember.id),
+                with: { university: true },
+            });
+            await sendUniEmail({
+                email: payload.email,
+                emailType: "MEMBER_INVITATION",
+                universityName: university?.university?.name || "your university",
+                roleName: payload.role,
+                inviterName: session.user.name || session.user.email || undefined,
+                inviteUrl,
+                message: payload.message ?? undefined,
+            });
+        } catch (emailError) {
+            console.error("Failed to send invitation email:", emailError);
+        }
 
         return { success: true, message: "Invitation sent successfully", inviteCode };
     } catch (error) {
@@ -727,7 +744,7 @@ export async function inviteTeacherWithCredentials(payload: InviteTeacherWithCre
 
         // Send email with credentials
         try {
-            await sendEmail({
+            await sendUniEmail({
                 email: payload.email,
                 name: payload.name,
                 emailType: "TEACHER_CREDENTIALS",

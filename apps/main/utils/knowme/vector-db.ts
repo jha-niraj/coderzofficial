@@ -246,7 +246,7 @@ export async function getVector(
 /**
  * Get namespace statistics
  */
-export async function getNamespaceStats(namespace: string): Promise<{
+export async function getNamespaceStats(_namespace: string): Promise<{
 	vectorCount: number;
 	pendingVectorCount: number;
 }> {

@@ -22,14 +22,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: "Coder'z University | Empower Your Institution",
-		template: "%s | Coder'z University"
+		default: "BuildrHQ University | Empower Your Institution",
+		template: "%s | BuildrHQ University"
 	},
 	description: "The complete university management platform. Assign real-world coding projects, track student progress, and connect students directly to job opportunities.",
 	keywords: ["University", "College", "Education", "Student Management", "Coding Assignments", "Placement", "Technical Education", "Academic Platform"],
 	authors: [{ name: "Niraj Jha" }],
-	creator: "Shunya Tech",
-	publisher: "Shunya Tech",
+	creator: "BuildrHQ",
+	publisher: "BuildrHQ",
 	metadataBase: new URL("https://uni.coderzai.xyz"),
 	alternates: {
 		canonical: "/",
@@ -38,24 +38,24 @@ export const metadata: Metadata = {
 		type: "website",
 		locale: "en_US",
 		url: "https://uni.coderzai.xyz",
-		siteName: "Coder'z University",
-		title: "Coder'z University - Empower Your Institution with Industry-Ready Learning",
+		siteName: "BuildrHQ University",
+		title: "BuildrHQ University - Empower Your Institution with Industry-Ready Learning",
 		description: "The complete university management platform. Assign real-world coding projects, track student progress, and connect students directly to job opportunities.",
 		images: [
 			{
 				url: "/mainlogo.jpeg",
 				width: 1024,
 				height: 1024,
-				alt: "Coder'z University - Empower Your Institution",
+				alt: "BuildrHQ University - Empower Your Institution",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Coder'z University - Empower Your Institution",
+		title: "BuildrHQ University - Empower Your Institution",
 		description: "The complete university management platform for technical education.",
 		images: ["/mainlogo.jpeg"],
-		creator: "@thecoderzlab",
+		creator: "@buildrhq",
 	},
 	icons: {
 		icon: [

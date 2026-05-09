@@ -1,14 +1,24 @@
-import { 
-    OSProjectType, 
-    OSProjectStatus, 
-    OSProjectCategory,
-    OSIssueStatus,
-    OSIssueDifficulty,
-    OSContributionType,
-    OSContributionStatus,
-    OSLearnModuleType,
-    OSCertificationStatus
+import {
+    osProjectTypeEnum,
+    osProjectStatusEnum,
+    osProjectCategoryEnum,
+    osIssueStatusEnum,
+    osIssueDifficultyEnum,
+    osContributionTypeEnum,
+    osContributionStatusEnum,
+    osLearnModuleTypeEnum,
+    osCertificationStatusEnum,
 } from '@repo/db'
+
+type OSProjectType = typeof osProjectTypeEnum.enumValues[number]
+type OSProjectStatus = typeof osProjectStatusEnum.enumValues[number]
+type OSProjectCategory = typeof osProjectCategoryEnum.enumValues[number]
+type OSIssueStatus = typeof osIssueStatusEnum.enumValues[number]
+type OSIssueDifficulty = typeof osIssueDifficultyEnum.enumValues[number]
+type OSContributionType = typeof osContributionTypeEnum.enumValues[number]
+type OSContributionStatus = typeof osContributionStatusEnum.enumValues[number]
+type OSLearnModuleType = typeof osLearnModuleTypeEnum.enumValues[number]
+type OSCertificationStatus = typeof osCertificationStatusEnum.enumValues[number]
 
 // ============================================
 // PROJECT TYPES

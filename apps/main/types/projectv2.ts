@@ -1,14 +1,22 @@
 // Project V2 Types based on Prisma Schema
 
 import {
-    ProjectV2Visibility,
-    ProjectV2Difficulty,
-    UserProjectV2Status,
-    TaskKanbanStatus,
-    FeatureSuggestionType,
-    FeatureSuggestionStatus,
-    SuggestionSource
+    projectV2VisibilityEnum,
+    projectV2DifficultyEnum,
+    userProjectV2StatusEnum,
+    taskKanbanStatusEnum,
+    featureSuggestionTypeEnum,
+    featureSuggestionStatusEnum,
+    suggestionSourceEnum,
 } from '@repo/db';
+
+type ProjectV2Visibility = typeof projectV2VisibilityEnum.enumValues[number];
+type ProjectV2Difficulty = typeof projectV2DifficultyEnum.enumValues[number];
+type UserProjectV2Status = typeof userProjectV2StatusEnum.enumValues[number];
+type TaskKanbanStatus = typeof taskKanbanStatusEnum.enumValues[number];
+type FeatureSuggestionType = typeof featureSuggestionTypeEnum.enumValues[number];
+type FeatureSuggestionStatus = typeof featureSuggestionStatusEnum.enumValues[number];
+type SuggestionSource = typeof suggestionSourceEnum.enumValues[number];
 
 // Database return types
 export interface UserFromDB {

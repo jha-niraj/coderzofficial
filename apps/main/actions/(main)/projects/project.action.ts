@@ -7,7 +7,6 @@ import {
     users,
     creditTransactions,
     projectsV2,
-    projectV2Sprints,
     projectV2Tasks,
     userProjectV2Progress,
     userTaskV2Statuses,
@@ -16,10 +15,8 @@ import {
     projectV2QuizAttempts,
     projectV2QuizAnswers,
     projectV2Submissions,
-    projectV2Pages,
-    projectV2KnowledgeBases,
 } from "@repo/db";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 interface ActionResponse {
@@ -37,7 +34,7 @@ async function getCurrentUser() {
 }
 
 // Helper functions for credits and XP
-async function deductCredits(userId: string, amount: number, description: string) {
+async function _deductCredits(userId: string, amount: number, description: string) {
     const [user] = await db.select({ credits: users.credits }).from(users).where(eq(users.id, userId));
 
     if (!user || user.credits < amount) {
@@ -56,7 +53,7 @@ async function deductCredits(userId: string, amount: number, description: string
     });
 }
 
-async function refundCredits(userId: string, amount: number, description: string) {
+async function _refundCredits(userId: string, amount: number, description: string) {
     await db.transaction(async (tx) => {
         await tx.update(users).set({ credits: sql`${users.credits} + ${amount}` }).where(eq(users.id, userId));
         await tx.insert(creditTransactions).values({
@@ -69,7 +66,7 @@ async function refundCredits(userId: string, amount: number, description: string
     });
 }
 
-function generateSlug(title: string): string {
+function _generateSlug(title: string): string {
     return title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')

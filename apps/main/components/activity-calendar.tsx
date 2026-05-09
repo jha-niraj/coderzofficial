@@ -8,7 +8,7 @@ import { Button } from '@repo/ui/components/ui/button';
 import { Badge } from '@repo/ui/components/ui/badge';
 import {
     Flame, TrendingUp, Calendar, ChevronLeft, ChevronRight, BookOpen, Clock,
-    Coins, Trophy, Zap, Target, Code, Brain, Award, Activity as ActivityIcon
+    Coins, Trophy, Zap, Target, Brain, Activity as ActivityIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ActivityType } from '@repo/db';
@@ -212,22 +212,13 @@ const ActivityCalendar: React.FC<ActivityCalendarProps> = ({ className = "" }) =
         switch (type) {
             case ActivityType.DAILY_QUIZ_COMPLETED:
                 return <Target className="w-4 h-4" />;
-            case ActivityType.BEHIND_MAGIC_PROJECT_STARTED:
-                return <Code className="w-4 h-4" />;
-            case ActivityType.BEHIND_MAGIC_PROJECT_SUBMITTED:
+            case ActivityType.LEARN_COMPLETED:
+                return <BookOpen className="w-4 h-4" />;
+            case ActivityType.STARTED_INTERVIEW:
+                return <Brain className="w-4 h-4" />;
+            case ActivityType.REFERRAL_BONUS:
+            case ActivityType.REWARD_RECEIVED:
                 return <Trophy className="w-4 h-4" />;
-            case ActivityType.BEHIND_MAGIC_QUIZ_COMPLETED:
-                return <BookOpen className="w-4 h-4" />;
-            case ActivityType.BEHIND_MAGIC_AI_INTERVIEW:
-                return <Brain className="w-4 h-4" />;
-            case ActivityType.AI_TOOL_USED:
-                return <Brain className="w-4 h-4" />;
-            case ActivityType.LESSON_COMPLETED:
-                return <BookOpen className="w-4 h-4" />;
-            case ActivityType.ASSESSMENT_COMPLETED:
-                return <Award className="w-4 h-4" />;
-            case ActivityType.CERTIFICATION_EARNED:
-                return <Award className="w-4 h-4" />;
             default:
                 return <ActivityIcon className="w-4 h-4" />;
         }
@@ -452,17 +443,13 @@ const ActivityCalendar: React.FC<ActivityCalendarProps> = ({ className = "" }) =
                                                                         switch (type) {
                                                                             case ActivityType.DAILY_QUIZ_COMPLETED:
                                                                                 return { category: 'Quiz', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300' };
-                                                                            case ActivityType.BEHIND_MAGIC_PROJECT_STARTED:
-                                                                            case ActivityType.BEHIND_MAGIC_PROJECT_SUBMITTED:
-                                                                                return { category: 'Project', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' };
-                                                                            case ActivityType.BEHIND_MAGIC_QUIZ_COMPLETED:
-                                                                                return { category: 'Project Quiz', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' };
-                                                                            case ActivityType.BEHIND_MAGIC_AI_INTERVIEW:
+                                                                            case ActivityType.LEARN_COMPLETED:
+                                                                                return { category: 'Learn', color: 'bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300' };
+                                                                            case ActivityType.STARTED_INTERVIEW:
                                                                                 return { category: 'AI Interview', color: 'bg-pink-100 text-pink-700 dark:bg-pink-900 dark:text-pink-300' };
-                                                                            case ActivityType.AI_TOOL_USED:
-                                                                                return { category: 'AI Tool', color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' };
-                                                                            case ActivityType.ASSESSMENT_COMPLETED:
-                                                                                return { category: 'Assessment', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300' };
+                                                                            case ActivityType.REFERRAL_BONUS:
+                                                                            case ActivityType.REWARD_RECEIVED:
+                                                                                return { category: 'Reward', color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300' };
                                                                             default:
                                                                                 return { category: 'Activity', color: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' };
                                                                         }

@@ -106,25 +106,32 @@ function VerifyContent() {
 				setIsVerified(true)
 				toast.success("Email verified successfully!")
 
-				const signInResult = await signIn.email({
-					email: email,
-					password: "verified",
-				})
+				const savedPassword = sessionStorage.getItem("_rp")
+				sessionStorage.removeItem("_rp")
 
-				if (signInResult?.data) {
-					const redirectUri = searchParams.get('redirect_uri');
-					const state = searchParams.get('state');
-					const isLearnPlatformRequest = redirectUri?.includes('learn.');
+				const redirectUri = searchParams.get('redirect_uri');
+				const state = searchParams.get('state');
+				const isLearnPlatformRequest = redirectUri?.includes('learn.');
 
-					if (isLearnPlatformRequest && redirectUri) {
-						setTimeout(() => {
-							const ssoUrl = new URL('/api/auth/signin', window.location.origin);
-							ssoUrl.searchParams.set('redirect_uri', redirectUri);
-							if (state) ssoUrl.searchParams.set('state', state);
-							window.location.href = ssoUrl.toString();
-						}, 1500);
+				if (savedPassword) {
+					const signInResult = await signIn.email({
+						email: email,
+						password: savedPassword,
+					})
+
+					if (signInResult?.data) {
+						if (isLearnPlatformRequest && redirectUri) {
+							setTimeout(() => {
+								const ssoUrl = new URL('/api/auth/signin', window.location.origin);
+								ssoUrl.searchParams.set('redirect_uri', redirectUri);
+								if (state) ssoUrl.searchParams.set('state', state);
+								window.location.href = ssoUrl.toString();
+							}, 1500);
+						} else {
+							setTimeout(() => router.push('/onboarding'), 1500);
+						}
 					} else {
-						setTimeout(() => router.push('/onboarding'), 1500);
+						setTimeout(() => router.push('/signin?verified=true'), 1500);
 					}
 				} else {
 					setTimeout(() => router.push('/signin?verified=true'), 1500);

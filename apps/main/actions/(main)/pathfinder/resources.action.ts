@@ -1,7 +1,6 @@
 'use server'
 
 import Exa from 'exa-js'
-import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
 import { logPathfinderUsage } from './usage.action'
 

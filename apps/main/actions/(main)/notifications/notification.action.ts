@@ -6,11 +6,6 @@ import { db, users, notifications } from "@repo/db"
 import { eq, and, desc, count } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
-interface NotificationResponse {
-    success: boolean
-    data?: any
-    error?: string
-}
 
 async function getCurrentUser() {
     const session = await getSession(headers())

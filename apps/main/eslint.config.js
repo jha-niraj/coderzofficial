@@ -11,6 +11,8 @@ export default [
         ignores: [
             "**/node_modules/**",
             "**/.next/**",
+            "**/.open-next/**",
+            "**/.wrangler/**",
             "**/dist/**",
             "**/build/**",
             "**/*.min.js",
@@ -19,8 +21,7 @@ export default [
     },
     {
         rules: {
-            // Temporarily allow these warnings for existing code
-            "@typescript-eslint/no-explicit-any": "warn",
+            "@typescript-eslint/no-explicit-any": "off",
             "@typescript-eslint/no-unused-vars": ["warn", {
                 argsIgnorePattern: "^_",
                 varsIgnorePattern: "^_"

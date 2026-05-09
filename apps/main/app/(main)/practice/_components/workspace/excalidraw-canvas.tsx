@@ -17,11 +17,11 @@ interface ExcalidrawCanvasProps {
 
 export function ExcalidrawCanvas({ initialData, onChange, darkMode = true }: ExcalidrawCanvasProps) {
     const isInitialRef = useRef(true);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const excalidrawAPIRef = useRef<any>(null);
 
     const handleChange = useCallback(
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         (elements: readonly any[], appState: any) => {
             // Skip the very first onChange call from initialization
             if (isInitialRef.current) {
@@ -41,7 +41,7 @@ export function ExcalidrawCanvas({ initialData, onChange, darkMode = true }: Exc
     );
 
     // Build initial data object
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const initial = initialData as any;
     const initialDataObj = initial?.elements
         ? {
@@ -73,7 +73,7 @@ export function ExcalidrawCanvas({ initialData, onChange, darkMode = true }: Exc
                         toggleTheme: false,
                     },
                 }}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                 
                 excalidrawAPI={(api: any) => {
                     excalidrawAPIRef.current = api;
                 }}

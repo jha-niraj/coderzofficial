@@ -24,7 +24,7 @@ export function AIChat() {
     const pathname = usePathname()
     const { isAISidebarOpen, setIsAISidebarOpen, setIsCollapsed } = useSidebar()
     const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([
-        { role: "assistant", content: "👋 Hey there! I'm CoderzHQ AI - your learning companion. Ask me anything about the platform, projects, challenges, or how to get started!" }
+        { role: "assistant", content: "👋 Hey there! I'm BuildrHQ AI - your learning companion. Ask me anything about the platform, projects, challenges, or how to get started!" }
     ])
     const [input, setInput] = useState("")
     const [isLoading, setIsLoading] = useState(false)
@@ -203,7 +203,7 @@ export function AIChat() {
                         </motion.button>
                     </div>
                     <h2 className="text-xl font-black tracking-tighter flex items-center gap-2">
-                        CoderzHQ AI
+                        BuildrHQ AI
                         <Zap className="h-4 w-4 fill-black dark:fill-white" />
                     </h2>
                 </div>
@@ -240,7 +240,7 @@ export function AIChat() {
                                 )}>
                                     <div className="flex items-center gap-2">
                                         <span className="text-[9px] font-mono text-neutral-400 uppercase tracking-widest">
-                                            {m.role === "user" ? "You" : "CoderzHQ AI"}
+                                            {m.role === "user" ? "You" : "BuildrHQ AI"}
                                         </span>
                                     </div>
                                     <div className={cn(

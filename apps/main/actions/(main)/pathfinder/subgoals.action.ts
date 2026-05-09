@@ -761,7 +761,7 @@ export async function transcribeVoiceRecording(audioBlob: Blob) {
 
         const file = new File([audioBlob], 'recording.webm', { type: 'audio/webm' })
 
-        const response = await openai.audio.transcriptions.create({
+        const response = await (openai as unknown as { audio: OpenAI['audio'] }).audio.transcriptions.create({
             file: file,
             model: 'whisper-1',
             language: 'en',

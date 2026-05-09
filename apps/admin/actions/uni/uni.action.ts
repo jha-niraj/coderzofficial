@@ -1,4 +1,5 @@
 "use server"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { db, universities, universityMembers, studentUniversityLinks, departments, universityClasses } from "@repo/db"
 import { eq, and, count, sql } from "drizzle-orm"

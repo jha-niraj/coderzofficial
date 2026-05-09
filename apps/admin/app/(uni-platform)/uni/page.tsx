@@ -286,7 +286,7 @@ export default function UniversityPlatformPage() {
                 />
                 <ModuleCard
                     title="Placements"
-                    description="Placement jobs (Mock Data)"
+                    description="Placement & job tracking"
                     icon={Briefcase}
                     href="/uni/placements"
                     stats={[
@@ -307,7 +307,7 @@ export default function UniversityPlatformPage() {
                 />
                 <ModuleCard
                     title="Analytics"
-                    description="University analytics (Mock Data)"
+                    description="University analytics & insights"
                     icon={BarChart3}
                     href="/uni/analytics"
                     stats={[

@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
     GraduationCap, Search, Filter, MoreHorizontal, Globe, Activity,
-    ArrowLeft, CheckCircle, Clock, Users, Building2, Download
+    ArrowLeft, CheckCircle, Clock, Users, Building2, Download, ChevronLeft, ChevronRight, School
 } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
@@ -16,56 +16,74 @@ import {
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
+import { getUniversities } from "@/actions/uni/uni.action"
+
+type VerificationStatus = "VERIFIED" | "PENDING" | "REJECTED"
 
 interface University {
     id: string
     name: string
-    website: string
-    emailDomain: string
-    universityType: "PUBLIC" | "PRIVATE" | "DEEMED" | "AUTONOMOUS" | "STATE" | "CENTRAL" | "AFFILIATED" | "COMMUNITY_COLLEGE" | "TECHNICAL_INSTITUTE" | "OTHER"
-    city: string
-    state: string
-    verificationStatus: "VERIFIED" | "PENDING" | "REJECTED"
-    departmentsCount: number
-    studentsCount: number
-    facultyCount: number
-    createdAt: string
+    website?: string | null
+    emailDomain?: string | null
+    universityType: string
+    city?: string | null
+    state?: string | null
+    verificationStatus: VerificationStatus
+    members?: unknown[]
+    studentLinks?: unknown[]
+    departments?: unknown[]
+    createdAt: Date
 }
 
-const mockUniversities: University[] = [
-    { id: "1", name: "Delhi Technical University", website: "dtu.ac.in", emailDomain: "dtu.ac.in", universityType: "PUBLIC", city: "Delhi", state: "Delhi", verificationStatus: "VERIFIED", departmentsCount: 12, studentsCount: 8500, facultyCount: 450, createdAt: "2024-10-15" },
-    { id: "2", name: "IIT Bombay", website: "iitb.ac.in", emailDomain: "iitb.ac.in", universityType: "PUBLIC", city: "Mumbai", state: "Maharashtra", verificationStatus: "VERIFIED", departmentsCount: 18, studentsCount: 12000, facultyCount: 680, createdAt: "2024-09-20" },
-    { id: "3", name: "BITS Pilani", website: "bits-pilani.ac.in", emailDomain: "pilani.bits-pilani.ac.in", universityType: "DEEMED", city: "Pilani", state: "Rajasthan", verificationStatus: "VERIFIED", departmentsCount: 15, studentsCount: 9800, facultyCount: 520, createdAt: "2024-11-01" },
-    { id: "4", name: "VIT Vellore", website: "vit.ac.in", emailDomain: "vit.ac.in", universityType: "PRIVATE", city: "Vellore", state: "Tamil Nadu", verificationStatus: "PENDING", departmentsCount: 0, studentsCount: 0, facultyCount: 0, createdAt: "2024-12-28" },
-    { id: "5", name: "NIT Trichy", website: "nitt.edu", emailDomain: "nitt.edu", universityType: "PUBLIC", city: "Tiruchirappalli", state: "Tamil Nadu", verificationStatus: "VERIFIED", departmentsCount: 10, studentsCount: 6500, facultyCount: 340, createdAt: "2024-08-15" },
-]
+interface Pagination {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+}
+
+const statusColors: Record<VerificationStatus, string> = {
+    VERIFIED: "bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400",
+    PENDING: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400",
+    REJECTED: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+}
 
 export default function UniUniversitiesPage() {
     const [universities, setUniversities] = useState<University[]>([])
+    const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 })
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [currentPage, setCurrentPage] = useState(1)
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setUniversities(mockUniversities)
+    const fetchUniversities = useCallback(async (page: number, status: string) => {
+        setIsLoading(true)
+        try {
+            const result = await getUniversities(page, 20, status !== "all" ? status : undefined)
+            if (result.success && result.data) {
+                setUniversities(result.data as unknown as University[])
+                if (result.pagination) setPagination(result.pagination)
+            }
+        } finally {
             setIsLoading(false)
-        }, 500)
-        return () => clearTimeout(timer)
+        }
     }, [])
 
-    const filteredUniversities = universities.filter(uni => {
-        const matchesSearch = uni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            uni.website.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesStatus = statusFilter === "all" || uni.verificationStatus.toLowerCase() === statusFilter.toLowerCase()
-        return matchesSearch && matchesStatus
-    })
+    useEffect(() => {
+        fetchUniversities(currentPage, statusFilter)
+    }, [currentPage, statusFilter, fetchUniversities])
 
-    const statusColors = {
-        VERIFIED: "bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400",
-        PENDING: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400",
-        REJECTED: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-    }
+    const filteredUniversities = searchQuery
+        ? universities.filter(u =>
+            u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (u.website && u.website.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+        : universities
+
+    const verifiedCount = universities.filter(u => u.verificationStatus === "VERIFIED").length
+    const pendingCount = universities.filter(u => u.verificationStatus === "PENDING").length
+    const totalStudents = universities.reduce((acc, u) => acc + (u.studentLinks?.length ?? 0), 0)
+    const totalDepartments = universities.reduce((acc, u) => acc + (u.departments?.length ?? 0), 0)
 
     if (isLoading) {
         return (
@@ -89,11 +107,9 @@ export default function UniUniversitiesPage() {
                     <div className="flex items-center gap-3">
                         <div className="w-3 h-8 rounded-full bg-violet-500" />
                         <div>
-                            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                Universities
-                            </h1>
+                            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Universities</h1>
                             <p className="text-neutral-500 dark:text-neutral-400">
-                                Manage registered universities
+                                {pagination.total} registered {pagination.total === 1 ? "university" : "universities"}
                             </p>
                         </div>
                     </div>
@@ -101,7 +117,7 @@ export default function UniUniversitiesPage() {
                         <Link href="/uni/universities/verification">
                             <Button variant="outline" size="sm" className="text-amber-600 border-amber-300 hover:bg-amber-50">
                                 <Clock className="w-4 h-4 mr-2" />
-                                Pending ({universities.filter(u => u.verificationStatus === "PENDING").length})
+                                Pending ({pendingCount})
                             </Button>
                         </Link>
                         <Button variant="outline" size="sm">
@@ -111,6 +127,7 @@ export default function UniUniversitiesPage() {
                     </div>
                 </div>
             </div>
+
             <div className="flex items-center gap-4 mb-6">
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -121,55 +138,51 @@ export default function UniUniversitiesPage() {
                         className="pl-10"
                     />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
                     <SelectTrigger className="w-[150px]">
                         <Filter className="w-4 h-4 mr-2" />
                         <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="verified">Verified</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
+                        <SelectItem value="VERIFIED">Verified</SelectItem>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="REJECTED">Rejected</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
+
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div className="flex items-center gap-2 text-neutral-500 text-sm mb-1">
                         <GraduationCap className="w-4 h-4" />
                         Total
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{universities.length}</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{pagination.total}</p>
                 </div>
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div className="flex items-center gap-2 text-violet-500 text-sm mb-1">
                         <CheckCircle className="w-4 h-4" />
                         Verified
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                        {universities.filter(u => u.verificationStatus === "VERIFIED").length}
-                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{verifiedCount}</p>
                 </div>
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div className="flex items-center gap-2 text-blue-500 text-sm mb-1">
                         <Users className="w-4 h-4" />
                         Students
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                        {universities.reduce((acc, u) => acc + u.studentsCount, 0).toLocaleString()}
-                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{totalStudents.toLocaleString()}</p>
                 </div>
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div className="flex items-center gap-2 text-emerald-500 text-sm mb-1">
                         <Building2 className="w-4 h-4" />
                         Departments
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                        {universities.reduce((acc, u) => acc + u.departmentsCount, 0)}
-                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{totalDepartments}</p>
                 </div>
             </div>
+
             <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -185,7 +198,14 @@ export default function UniUniversitiesPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                            {
+                            {filteredUniversities.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-12 text-center text-neutral-500">
+                                        <School className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        <p>No universities found</p>
+                                    </td>
+                                </tr>
+                            ) : (
                                 filteredUniversities.map((uni) => (
                                     <motion.tr
                                         key={uni.id}
@@ -200,25 +220,38 @@ export default function UniUniversitiesPage() {
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-neutral-900 dark:text-white">{uni.name}</p>
-                                                    <a href={`https://${uni.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-neutral-500 hover:underline flex items-center gap-1">
-                                                        <Globe className="w-3 h-3" />
-                                                        {uni.website}
-                                                    </a>
+                                                    {uni.website && (
+                                                        <a
+                                                            href={uni.website.startsWith("http") ? uni.website : `https://${uni.website}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-sm text-neutral-500 hover:underline flex items-center gap-1"
+                                                        >
+                                                            <Globe className="w-3 h-3" />
+                                                            {uni.website.replace(/^https?:\/\//, "")}
+                                                        </a>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-4 text-neutral-900 dark:text-white">{uni.universityType}</td>
-                                        <td className="px-4 py-4 text-neutral-500">{uni.city}, {uni.state}</td>
+                                        <td className="px-4 py-4 text-neutral-900 dark:text-white text-sm">{uni.universityType}</td>
+                                        <td className="px-4 py-4 text-neutral-500 text-sm">
+                                            {[uni.city, uni.state].filter(Boolean).join(", ") || "—"}
+                                        </td>
                                         <td className="px-4 py-4">
                                             <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[uni.verificationStatus])}>
                                                 {uni.verificationStatus}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4">
-                                            <span className="font-mono text-neutral-900 dark:text-white">{uni.studentsCount.toLocaleString()}</span>
+                                            <span className="font-mono text-neutral-900 dark:text-white">
+                                                {(uni.studentLinks?.length ?? 0).toLocaleString()}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-4">
-                                            <span className="font-mono text-neutral-900 dark:text-white">{uni.facultyCount}</span>
+                                            <span className="font-mono text-neutral-900 dark:text-white">
+                                                {uni.members?.length ?? 0}
+                                            </span>
                                         </td>
                                         <td className="px-4 py-4 text-right">
                                             <DropdownMenu>
@@ -237,10 +270,29 @@ export default function UniUniversitiesPage() {
                                         </td>
                                     </motion.tr>
                                 ))
-                            }
+                            )}
                         </tbody>
                     </table>
                 </div>
+
+                {pagination.totalPages > 1 && (
+                    <div className="px-4 py-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+                        <p className="text-sm text-neutral-500">
+                            Showing {((currentPage - 1) * pagination.limit) + 1}–{Math.min(currentPage * pagination.limit, pagination.total)} of {pagination.total}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>
+                                <ChevronLeft className="w-4 h-4" />
+                            </Button>
+                            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                                {currentPage} / {pagination.totalPages}
+                            </span>
+                            <Button variant="outline" size="sm" disabled={currentPage >= pagination.totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                                <ChevronRight className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

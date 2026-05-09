@@ -1,7 +1,7 @@
 "use server"
 
 import { db, users } from "@repo/db"
-import { isNotNull, sql } from "drizzle-orm"
+import { isNotNull } from "drizzle-orm"
 
 export async function getColleges() {
     try {

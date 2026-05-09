@@ -104,7 +104,7 @@ export async function addXpToUser(userId: string, xpAmount: number, description:
             const shouldLevelUp = levelInfo.currentLevel > user.currentLevel;
 
             // Update user XP and level
-            const [updatedUser] = await tx.update(users).set({
+            const [_updatedUser] = await tx.update(users).set({
                 currentXp: newCurrentXp,
                 totalXp: newTotalXp,
                 currentLevel: levelInfo.currentLevel

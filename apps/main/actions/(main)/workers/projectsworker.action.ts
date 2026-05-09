@@ -8,11 +8,6 @@ import { z } from "zod"
 import { ProjectEchoSchema } from "../schemas/projects.schema"
 import crypto from 'crypto'
 
-interface ActionResponse {
-    success: boolean
-    data?: any
-    error?: string
-}
 
 async function getCurrentUser() {
     const session = await getSession(await headers())

@@ -8,16 +8,7 @@ import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { addXpToUser } from "./level.action";
 
-interface FormData {
-    title: string;
-    description: string;
-    category: "BUG" | "FEATURE" | "UI" | "OTHER";
-}
-interface RewardData {
-    type: string;
-    amount: number;
-    description: string;
-}
+
 export async function submitFeedback({
     title,
     description,

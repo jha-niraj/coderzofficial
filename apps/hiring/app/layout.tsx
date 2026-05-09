@@ -22,8 +22,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
 	title: {
-		default: "Coder'z Hiring | AI-Powered Recruitment Platform",
-		template: "%s | Coder'z Hiring"
+		default: "BuildrHQ Hiring | AI-Powered Recruitment Platform",
+		template: "%s | BuildrHQ Hiring"
 	},
 	description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills through real projects, AI-powered assessments, and smart candidate matching.",
 	keywords: [
@@ -38,9 +38,9 @@ export const metadata: Metadata = {
 		"HR Tech",
 		"Applicant Tracking System"
 	],
-	authors: [{ name: "Coder'z Team" }],
-	creator: "Coder'z",
-	publisher: "Coder'z",
+	authors: [{ name: "BuildrHQ Team" }],
+	creator: "BuildrHQ",
+	publisher: "BuildrHQ",
 	metadataBase: new URL("https://hiring.coderzai.xyz"),
 	alternates: {
 		canonical: "/",
@@ -49,24 +49,24 @@ export const metadata: Metadata = {
 		type: "website",
 		locale: "en_US",
 		url: "https://hiring.coderzai.xyz",
-		siteName: "Coder'z Hiring",
-		title: "Coder'z Hiring - AI-Powered Recruitment Platform",
+		siteName: "BuildrHQ Hiring",
+		title: "BuildrHQ Hiring - AI-Powered Recruitment Platform",
 		description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills through real projects and AI-powered assessments.",
 		images: [
 			{
 				url: "/hiring-og.png",
 				width: 1200,
 				height: 630,
-				alt: "Coder'z Hiring - AI-Powered Recruitment Platform",
+				alt: "BuildrHQ Hiring - AI-Powered Recruitment Platform",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Coder'z Hiring - AI-Powered Recruitment Platform",
+		title: "BuildrHQ Hiring - AI-Powered Recruitment Platform",
 		description: "The intelligent hiring platform for tech companies. Find pre-vetted engineers with verified skills.",
 		images: ["/hiring-og.png"],
-		creator: "@coderzai",
+		creator: "@buildrhq",
 	},
 	icons: {
 		icon: [

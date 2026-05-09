@@ -94,6 +94,9 @@ function SignUpForm() {
 
             setContextEmail(email);
 
+            // Store password temporarily so the verify page can auto-login after OTP
+            sessionStorage.setItem("_rp", password);
+
             const ssoCallback = sessionStorage.getItem("sso_callback");
             const params = new URLSearchParams();
             params.set("email", email);
@@ -162,7 +165,7 @@ function SignUpForm() {
                             <div className="p-3 rounded-xl bg-orange-500/10 border border-orange-500/20">
                                 <Code2 className="h-8 w-8 text-orange-500" />
                             </div>
-                            <span className="text-2xl font-bold text-white">TheCoderz</span>
+                            <span className="text-2xl font-bold text-white">BuildrHQ</span>
                         </div>
 
                         <h1 className="text-4xl font-bold text-white mb-4">
@@ -202,7 +205,7 @@ function SignUpForm() {
                         <div className="p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
                             <Code2 className="h-6 w-6 text-orange-500" />
                         </div>
-                        <span className="text-xl font-bold dark:text-white">TheCoderz</span>
+                        <span className="text-xl font-bold dark:text-white">BuildrHQ</span>
                     </div>
                     <div className="text-center mb-8">
                         <h2 className="text-2xl font-bold dark:text-white">Create an account</h2>

@@ -12,7 +12,6 @@ import {
     mockInterviewVoice,
     mockVoiceSession,
     userPracticeSets,
-    userPracticeSetQuestions,
     userPracticeSetAttempts,
 } from "@repo/db"
 import { eq, and, inArray, count } from "drizzle-orm"

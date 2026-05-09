@@ -161,9 +161,9 @@ interface ProfileData {
         followers: number;
         following: number;
     };
-    /* eslint-disable @typescript-eslint/no-explicit-any */
+     
     [key: string]: any;
-    /* eslint-enable @typescript-eslint/no-explicit-any */
+     
 }
 
 export default function ProfilePage() {

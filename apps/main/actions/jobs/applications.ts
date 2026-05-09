@@ -6,14 +6,11 @@ import {
     db,
     jobs,
     jobApplications,
-    savedJobs,
     users,
     interviewPrepProgress,
-    applicationActivities,
     interviewProcesses,
-    interviewRounds,
 } from "@repo/db"
-import { eq, and, sql, inArray, notInArray } from "drizzle-orm"
+import { eq, and, sql, inArray } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 // Show interest in a job (first step - adds to "My Jobs")

@@ -1,7 +1,7 @@
 "use server"
 
 import { db, companies, companyMembers, memberInvitations, jobs, jobApplications } from "@repo/db"
-import { eq, and, count } from "drizzle-orm"
+import { eq, count } from "drizzle-orm"
 
 // ============================================
 // HIRING PLATFORM ADMIN SERVER ACTIONS

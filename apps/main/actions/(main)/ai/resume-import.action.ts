@@ -287,7 +287,7 @@ async function fetchGitHubData(username: string): Promise<string> {
     )
 
     const repoDetails = topRepos.map((r, i) => {
-        const result = langResults[i]
+        const result = langResults[i]!
         const langs = result.status === 'fulfilled' ? Object.keys((result as PromiseFulfilledResult<Record<string, number>>).value) : []
         return `- ${r.name}: ${r.description || 'No description'} | Stars: ${r.stargazers_count} | Languages: ${[r.language, ...langs].filter(Boolean).join(', ')}`
     })

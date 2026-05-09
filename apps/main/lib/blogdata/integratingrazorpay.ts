@@ -174,7 +174,7 @@ const initiatePayment = async (credits: number, price: number) => {
             key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
             amount: amountInSmallestUnit,
             currency: currency,
-            name: 'TheCoderz',
+            name: 'BuildrHQ',
             description: 'Purchase ' + credits + ' Credits',
             image: '/titlelogo.jpeg',
             order_id: data.orderId,

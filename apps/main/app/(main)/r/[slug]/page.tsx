@@ -130,7 +130,7 @@ export default async function PublicResumePage({ params }: { params: Promise<{ s
 
                 {/* Footer */}
                 <div style={{ marginTop: 24, borderTopWidth: 1, borderTopColor: '#f1f5f9', paddingTop: 8, textAlign: 'center', color: '#94a3b8', fontSize: 9 }}>
-                    Built with TheCoderz Resume Builder
+                    Built with BuildrHQ Resume Builder
                 </div>
             </div>
         </div>

@@ -11,7 +11,6 @@ import {
     projectV2KnowledgeBases,
 } from "@repo/db";
 import { eq, and, sql } from "drizzle-orm";
-import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
 
 const MOCK_CREDIT_COST = 30

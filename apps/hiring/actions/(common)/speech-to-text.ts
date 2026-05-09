@@ -1,7 +1,5 @@
 "use server"
 
-import { getSession } from "@repo/auth"
-import { headers } from "next/headers"
 
 const ELEVENLABS_API = "https://api.elevenlabs.io/v1"
 

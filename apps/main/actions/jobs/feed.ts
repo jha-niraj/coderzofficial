@@ -7,14 +7,13 @@ import {
     jobs,
     jobApplications,
     savedJobs,
-    jobRecommendations,
     companies,
     companyFollowers,
     interviewProcesses,
     skills,
     projectsV2,
 } from "@repo/db"
-import { eq, and, inArray, desc, count, ilike, or } from "drizzle-orm"
+import { eq, and, inArray, desc, count, ilike } from "drizzle-orm"
 
 // Types for the feed
 export interface FeedJobResult {

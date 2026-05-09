@@ -1,5 +1,5 @@
 # Object-Oriented Programming (OOP) — Learn Module Masterplan
-**Platform: TheCoderz (BuildRHQ)**
+**Platform: BuildrHQ**
 **SubCategory: OOP Concepts**
 **Total Learns: 40 | Units: 6**
 **Language Examples:** Java (primary) + C++ + Python side-by-side
@@ -961,4 +961,4 @@ SUMMARY(recap) → QUIZ(10-15) → MOCK_INTERVIEW → PROJECT
 
 ---
 
-*Document created for TheCoderz (BuildRHQ) — OOP Concepts Learn Module*
+*Document created for BuildrHQ — OOP Concepts Learn Module*

@@ -1,4 +1,4 @@
-import { db, users } from "@repo/db";
+import { db, users, accounts } from "@repo/db";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 import bcryptjs from "bcryptjs";
@@ -57,6 +57,14 @@ export async function POST(request: NextRequest) {
         if (!user) throw new Error("Failed to create user")
 
         console.log('User created successfully:', user.id);
+
+        // Create a credential account so Better Auth can authenticate via email/password
+        await db.insert(accounts).values({
+            userId: user.id,
+            accountId: user.id,
+            providerId: "credential",
+            password: hashedPassword,
+        });
 
         if (referralCode) {
             console.log('Processing referral...');

@@ -13,7 +13,6 @@ import {
     projectV2QuizAnswers,
 } from "@repo/db";
 import { eq, and, sql } from "drizzle-orm";
-import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
 
 const QUIZ_CREDIT_COST = 25

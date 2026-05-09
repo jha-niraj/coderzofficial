@@ -14,7 +14,7 @@ import {
     knowMePrivacySettings,
     users,
 } from "@repo/db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type {
 	KnowMeProfileBasic,

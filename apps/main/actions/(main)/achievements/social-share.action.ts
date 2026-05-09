@@ -115,11 +115,11 @@ export async function generateShareContent(badgeId: string) {
         // Generate share templates
         const templates = [
             {
-                twitter: `${badge.icon} Just earned the "${badge.name}" badge on @CoderzHQ! ${rarityEmoji}\n\n${badge.description}\n\n#Coding #Achievement #Developer`,
+                twitter: `${badge.icon} Just earned the "${badge.name}" badge on @BuildrHQ! ${rarityEmoji}\n\n${badge.description}\n\n#Coding #Achievement #Developer`,
                 linkedin: `🎉 Achievement Unlocked!\n\nI just earned the "${badge.name}" badge on Coderz - ${badge.description}\n\nIt's a ${badge.rarity.toLowerCase()} achievement worth ${badge.xpReward} XP!\n\n#Developer #Coding #Achievement #Learning`,
             },
             {
-                twitter: `${rarityEmoji} New achievement unlocked: ${badge.name}! ${badge.icon}\n\n${badge.description}\n\nBuilding my coding skills with @CoderzHQ\n\n#DevLife #Coding`,
+                twitter: `${rarityEmoji} New achievement unlocked: ${badge.name}! ${badge.icon}\n\n${badge.description}\n\nBuilding my coding skills with @BuildrHQ\n\n#DevLife #Coding`,
                 linkedin: `${badge.icon} Proud to share that I've achieved the "${badge.name}" badge!\n\n${badge.description}\n\nContinuing my coding journey and loving every step of it.\n\n#Developer #Growth #Achievement`,
             },
         ]
@@ -274,7 +274,7 @@ export async function generateLevelUpShareContent(level: number, title: string) 
         }
 
         const templates = {
-            twitter: `🚀 Level Up! I just reached Level ${level}: "${title}" on @CoderzHQ!\n\nThe coding journey continues! 💪\n\n#Developer #Coding #LevelUp`,
+            twitter: `🚀 Level Up! I just reached Level ${level}: "${title}" on @BuildrHQ!\n\nThe coding journey continues! 💪\n\n#Developer #Coding #LevelUp`,
             linkedin: `🎉 Milestone Achieved!\n\nI've just reached Level ${level}: "${title}" on Coderz!\n\nEvery level represents hours of learning, coding, and growth. Excited to continue this journey!\n\n#Developer #ContinuousLearning #Coding`,
         }
 

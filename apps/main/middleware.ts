@@ -5,7 +5,7 @@ type SessionUser = {
 	email: string
 	name: string
 	image?: string
-	onboardingDone?: boolean
+	onboardingCompleted?: boolean
 }
 
 type SessionData = {
@@ -41,7 +41,7 @@ const protectedRoutes = [
 ]
 
 // Public routes that don't require authentication (allow exploration)
-const publicRoutes = [
+const _publicRoutes = [
 	'/',
 	'/signin',
 	'/register',
@@ -103,7 +103,7 @@ export default async function middleware(req: NextRequest) {
 
 	const session = await getSessionFromRequest(req)
 	const isLoggedIn = !!session?.user
-	const onboardingCompleted = session?.user?.onboardingDone ?? false
+	const onboardingCompleted = session?.user?.onboardingCompleted ?? false
 
 	const isProtected = protectedRoutes.some(r => pathname.startsWith(r))
 

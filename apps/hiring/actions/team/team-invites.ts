@@ -6,6 +6,7 @@ import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { revalidatePath } from "next/cache"
 import { randomBytes } from "crypto"
+import { sendHiringEmail } from "@/lib/emails/hiringemail"
 import type {
     InviteTeamMemberPayload, CompanyMemberRole, PendingInvite,
     CompanyMemberJobTitle
@@ -83,19 +84,38 @@ export async function inviteTeamMember(payload: InviteTeamMemberPayload) {
             return { success: false, error: "An invitation is already pending for this email" }
         }
 
+        const inviteCode = generateInviteCode()
+        const company = await db.query.companyMembers.findFirst({
+            where: eq(companyMembers.id, currentMember.id),
+            with: { company: true },
+        })
+
         // Create invitation
         await db.insert(memberInvitations).values({
             companyId: currentMember.companyId,
             email: payload.email,
             role: payload.role || "RECRUITER",
             jobTitle: payload.jobTitle || "RECRUITER",
-            inviteCode: generateInviteCode(),
+            inviteCode,
             invitedById: currentMember.id,
             message: payload.message,
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
         })
 
-        // TODO: Send invitation email
+        const inviteUrl = `${process.env.NEXT_PUBLIC_HIRING_URL || "http://localhost:3002"}/invite?code=${inviteCode}`
+        try {
+            await sendHiringEmail({
+                email: payload.email,
+                emailType: "MEMBER_INVITATION",
+                inviterName: session.user.name || session.user.email || "A team member",
+                companyName: company?.company?.name || "the company",
+                name: payload.role || "Recruiter",
+                inviteUrl,
+                message: payload.message ?? undefined,
+            })
+        } catch (emailError) {
+            console.error("Failed to send invitation email:", emailError)
+        }
 
         revalidatePath("/team")
         return { success: true, message: "Invitation sent successfully" }
@@ -316,7 +336,19 @@ export async function resendInvitation(invitationId: string) {
             .set({ expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) })
             .where(eq(memberInvitations.id, invitationId))
 
-        // TODO: Send invitation email
+        const inviteUrl = `${process.env.NEXT_PUBLIC_HIRING_URL || "http://localhost:3002"}/invite?code=${invitation.inviteCode}`
+        try {
+            await sendHiringEmail({
+                email: invitation.email,
+                emailType: "MEMBER_INVITATION",
+                companyName: member.company?.name || "the company",
+                name: invitation.role,
+                inviteUrl,
+                message: invitation.message ?? undefined,
+            })
+        } catch (emailError) {
+            console.error("Failed to resend invitation email:", emailError)
+        }
 
         revalidatePath("/team")
         return { success: true }

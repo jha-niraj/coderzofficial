@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import toast from "@repo/ui/components/ui/sonner";
 
 interface PublicProfileClientProps {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     user: any;
     isOwnProfile: boolean;
     isFollowing: boolean;

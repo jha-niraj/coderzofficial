@@ -98,7 +98,7 @@ export default async function UserProfileLeaderboardPage({
     }
 
     // Calculate stats
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const profileData = userProfile as any
     const totalProjects = profileData.UserProjectV2Progress.length
     const completedProjects = profileData.UserProjectV2Progress.filter((p: { status: string }) => p.status === 'COMPLETED').length
@@ -109,7 +109,7 @@ export default async function UserProfileLeaderboardPage({
         <div className="min-h-screen bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-950 dark:to-neutral-900">
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
                 <UserProfileLeaderboardClient
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                     
                     userProfile={userProfile as any}
                     stats={{
                         totalProjects,
@@ -130,13 +130,13 @@ export async function generateMetadata({ params }: { params: Promise<{ username:
 
     if (!user) {
         return {
-            title: 'User Not Found | TheCoderz',
+            title: 'User Not Found | BuildrHQ',
             description: 'The requested user profile could not be found'
         }
     }
 
     return {
-        title: `${user.name || user.username} - Progress | TheCoderz`,
+        title: `${user.name || user.username} - Progress | BuildrHQ`,
         description: `View ${user.name || user.username}'s coding journey and project achievements`
     }
 }

@@ -87,7 +87,7 @@ function OnboardingContent() {
     const searchParams = useSearchParams()
     const [isPending, startTransition] = useTransition()
     const [currentStep, setCurrentStep] = useState(1)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const [_isLoadingPendingInfo, setIsLoadingPendingInfo] = useState(true)
     
     // Get inviteBy from URL (university referral)

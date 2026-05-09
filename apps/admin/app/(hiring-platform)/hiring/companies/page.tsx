@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
     Building2, Search, Filter, MoreHorizontal, Globe, Activity,
-    ArrowLeft, CheckCircle, Clock, Users, Briefcase, Download
+    ArrowLeft, CheckCircle, Clock, Users, Download, ChevronLeft, ChevronRight
 } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
@@ -16,53 +16,69 @@ import {
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from "@repo/ui/components/ui/select"
+import { getCompanies } from "@/actions/hiring/hiring.action"
+
+type VerificationStatus = "VERIFIED" | "PENDING" | "REJECTED"
 
 interface Company {
     id: string
     name: string
-    website: string
-    industry: string
-    size: string
-    verificationStatus: "VERIFIED" | "PENDING" | "REJECTED"
-    membersCount: number
-    jobsCount: number
-    createdAt: string
+    website?: string | null
+    industry?: string | null
+    size?: string | null
+    verificationStatus: VerificationStatus
+    members?: unknown[]
+    createdAt: Date
 }
 
-const mockCompanies: Company[] = [
-    { id: "1", name: "TechCorp Solutions", website: "techcorp.io", industry: "Software", size: "51-200", verificationStatus: "VERIFIED", membersCount: 12, jobsCount: 8, createdAt: "2024-11-15" },
-    { id: "2", name: "DataFlow Analytics", website: "dataflow.com", industry: "Data Analytics", size: "11-50", verificationStatus: "VERIFIED", membersCount: 5, jobsCount: 3, createdAt: "2024-12-01" },
-    { id: "3", name: "CloudNest Technologies", website: "cloudnest.tech", industry: "Cloud Services", size: "201-500", verificationStatus: "PENDING", membersCount: 0, jobsCount: 0, createdAt: "2024-12-28" },
-    { id: "4", name: "InnovateTech Labs", website: "innovatetech.in", industry: "R&D", size: "11-50", verificationStatus: "VERIFIED", membersCount: 8, jobsCount: 5, createdAt: "2024-10-20" },
-    { id: "5", name: "FinServe Global", website: "finserve.com", industry: "Fintech", size: "501-1000", verificationStatus: "VERIFIED", membersCount: 25, jobsCount: 15, createdAt: "2024-09-15" },
-]
+interface Pagination {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+}
+
+const statusColors: Record<VerificationStatus, string> = {
+    VERIFIED: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400",
+    PENDING: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400",
+    REJECTED: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
+}
 
 export default function HiringCompaniesPage() {
     const [companies, setCompanies] = useState<Company[]>([])
+    const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 })
     const [isLoading, setIsLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [currentPage, setCurrentPage] = useState(1)
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setCompanies(mockCompanies)
+    const fetchCompanies = useCallback(async (page: number, status: string) => {
+        setIsLoading(true)
+        try {
+            const result = await getCompanies(page, 20, status !== "all" ? status : undefined)
+            if (result.success && result.data) {
+                setCompanies(result.data as unknown as Company[])
+                if (result.pagination) setPagination(result.pagination)
+            }
+        } finally {
             setIsLoading(false)
-        }, 500)
-        return () => clearTimeout(timer)
+        }
     }, [])
 
-    const filteredCompanies = companies.filter(company => {
-        const matchesSearch = company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            company.website.toLowerCase().includes(searchQuery.toLowerCase())
-        const matchesStatus = statusFilter === "all" || company.verificationStatus.toLowerCase() === statusFilter.toLowerCase()
-        return matchesSearch && matchesStatus
-    })
+    useEffect(() => {
+        fetchCompanies(currentPage, statusFilter)
+    }, [currentPage, statusFilter, fetchCompanies])
 
-    const statusColors = {
-        VERIFIED: "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400",
-        PENDING: "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400",
-        REJECTED: "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400"
-    }
+    const filteredCompanies = searchQuery
+        ? companies.filter(c =>
+            c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (c.website && c.website.toLowerCase().includes(searchQuery.toLowerCase()))
+        )
+        : companies
+
+    const verifiedCount = companies.filter(c => c.verificationStatus === "VERIFIED").length
+    const pendingCount = companies.filter(c => c.verificationStatus === "PENDING").length
+    const totalMembers = companies.reduce((acc, c) => acc + (c.members?.length ?? 0), 0)
 
     if (isLoading) {
         return (
@@ -86,11 +102,9 @@ export default function HiringCompaniesPage() {
                     <div className="flex items-center gap-3">
                         <div className="w-3 h-8 rounded-full bg-emerald-500" />
                         <div>
-                            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">
-                                Companies
-                            </h1>
+                            <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Companies</h1>
                             <p className="text-neutral-500 dark:text-neutral-400">
-                                Manage registered companies
+                                {pagination.total} registered {pagination.total === 1 ? "company" : "companies"}
                             </p>
                         </div>
                     </div>
@@ -98,7 +112,7 @@ export default function HiringCompaniesPage() {
                         <Link href="/hiring/companies/verification">
                             <Button variant="outline" size="sm" className="text-amber-600 border-amber-300 hover:bg-amber-50">
                                 <Clock className="w-4 h-4 mr-2" />
-                                Pending ({companies.filter(c => c.verificationStatus === "PENDING").length})
+                                Pending ({pendingCount})
                             </Button>
                         </Link>
                         <Button variant="outline" size="sm">
@@ -108,6 +122,7 @@ export default function HiringCompaniesPage() {
                     </div>
                 </div>
             </div>
+
             <div className="flex items-center gap-4 mb-6">
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
@@ -118,55 +133,51 @@ export default function HiringCompaniesPage() {
                         className="pl-10"
                     />
                 </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
                     <SelectTrigger className="w-[150px]">
                         <Filter className="w-4 h-4 mr-2" />
                         <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="verified">Verified</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="rejected">Rejected</SelectItem>
+                        <SelectItem value="VERIFIED">Verified</SelectItem>
+                        <SelectItem value="PENDING">Pending</SelectItem>
+                        <SelectItem value="REJECTED">Rejected</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
+
             <div className="grid grid-cols-4 gap-4 mb-6">
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div className="flex items-center gap-2 text-neutral-500 text-sm mb-1">
                         <Building2 className="w-4 h-4" />
                         Total
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{companies.length}</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{pagination.total}</p>
                 </div>
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div className="flex items-center gap-2 text-emerald-500 text-sm mb-1">
                         <CheckCircle className="w-4 h-4" />
                         Verified
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                        {companies.filter(c => c.verificationStatus === "VERIFIED").length}
-                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{verifiedCount}</p>
                 </div>
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div className="flex items-center gap-2 text-blue-500 text-sm mb-1">
                         <Users className="w-4 h-4" />
                         Members
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                        {companies.reduce((acc, c) => acc + c.membersCount, 0)}
-                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{totalMembers}</p>
                 </div>
                 <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
-                    <div className="flex items-center gap-2 text-purple-500 text-sm mb-1">
-                        <Briefcase className="w-4 h-4" />
-                        Active Jobs
+                    <div className="flex items-center gap-2 text-amber-500 text-sm mb-1">
+                        <Clock className="w-4 h-4" />
+                        Pending
                     </div>
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                        {companies.reduce((acc, c) => acc + c.jobsCount, 0)}
-                    </p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{pendingCount}</p>
                 </div>
             </div>
+
             <div className="bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -177,12 +188,19 @@ export default function HiringCompaniesPage() {
                                 <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Size</th>
                                 <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
                                 <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Members</th>
-                                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Jobs</th>
+                                <th className="text-left px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Joined</th>
                                 <th className="text-right px-4 py-3 text-xs font-medium text-neutral-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                            {
+                            {filteredCompanies.length === 0 ? (
+                                <tr>
+                                    <td colSpan={7} className="px-4 py-12 text-center text-neutral-500">
+                                        <Building2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                                        <p>No companies found</p>
+                                    </td>
+                                </tr>
+                            ) : (
                                 filteredCompanies.map((company) => (
                                     <motion.tr
                                         key={company.id}
@@ -197,25 +215,32 @@ export default function HiringCompaniesPage() {
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-neutral-900 dark:text-white">{company.name}</p>
-                                                    <a href={`https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-neutral-500 hover:underline flex items-center gap-1">
-                                                        <Globe className="w-3 h-3" />
-                                                        {company.website}
-                                                    </a>
+                                                    {company.website && (
+                                                        <a
+                                                            href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-sm text-neutral-500 hover:underline flex items-center gap-1"
+                                                        >
+                                                            <Globe className="w-3 h-3" />
+                                                            {company.website.replace(/^https?:\/\//, "")}
+                                                        </a>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-4 text-neutral-900 dark:text-white">{company.industry}</td>
-                                        <td className="px-4 py-4 text-neutral-500">{company.size}</td>
+                                        <td className="px-4 py-4 text-neutral-900 dark:text-white text-sm">{company.industry || "—"}</td>
+                                        <td className="px-4 py-4 text-neutral-500 text-sm">{company.size || "—"}</td>
                                         <td className="px-4 py-4">
                                             <span className={cn("px-2 py-1 rounded-full text-xs font-medium", statusColors[company.verificationStatus])}>
                                                 {company.verificationStatus}
                                             </span>
                                         </td>
                                         <td className="px-4 py-4">
-                                            <span className="font-mono text-neutral-900 dark:text-white">{company.membersCount}</span>
+                                            <span className="font-mono text-neutral-900 dark:text-white">{company.members?.length ?? 0}</span>
                                         </td>
-                                        <td className="px-4 py-4">
-                                            <span className="font-mono text-neutral-900 dark:text-white">{company.jobsCount}</span>
+                                        <td className="px-4 py-4 text-neutral-500 text-sm">
+                                            {new Date(company.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                                         </td>
                                         <td className="px-4 py-4 text-right">
                                             <DropdownMenu>
@@ -227,17 +252,35 @@ export default function HiringCompaniesPage() {
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem>View Details</DropdownMenuItem>
                                                     <DropdownMenuItem>View Members</DropdownMenuItem>
-                                                    <DropdownMenuItem>View Jobs</DropdownMenuItem>
                                                     <DropdownMenuItem className="text-red-600">Suspend</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </td>
                                     </motion.tr>
                                 ))
-                            }
+                            )}
                         </tbody>
                     </table>
                 </div>
+
+                {pagination.totalPages > 1 && (
+                    <div className="px-4 py-3 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+                        <p className="text-sm text-neutral-500">
+                            Showing {((currentPage - 1) * pagination.limit) + 1}–{Math.min(currentPage * pagination.limit, pagination.total)} of {pagination.total}
+                        </p>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" disabled={currentPage <= 1} onClick={() => setCurrentPage(p => p - 1)}>
+                                <ChevronLeft className="w-4 h-4" />
+                            </Button>
+                            <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                                {currentPage} / {pagination.totalPages}
+                            </span>
+                            <Button variant="outline" size="sm" disabled={currentPage >= pagination.totalPages} onClick={() => setCurrentPage(p => p + 1)}>
+                                <ChevronRight className="w-4 h-4" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

@@ -1,6 +1,5 @@
 "use server";
 
-import type OpenAI from 'openai'
 import { openai } from '@/lib/openai-client'
 import { db, practiceProblem } from "@repo/db";
 import { eq } from "drizzle-orm";

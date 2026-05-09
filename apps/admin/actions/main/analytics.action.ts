@@ -1,7 +1,8 @@
 "use server"
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { db, users, feedbacks, payments, mockVoiceSession } from "@repo/db"
-import { eq, gte, lte, and, count, sql } from "drizzle-orm"
+import { eq, gte, lte, and, count } from "drizzle-orm"
 import { checkAdminAccess } from "../admin.action"
 
 interface AdminResponse<T = unknown> {

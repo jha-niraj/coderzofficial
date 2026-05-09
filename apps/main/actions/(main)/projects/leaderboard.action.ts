@@ -7,7 +7,6 @@ import {
     users,
     projectsV2,
     userProjectV2Progress,
-    userTaskV2Statuses,
     projectV2QuizAttempts,
     projectV2MockSessions,
     projectV2Leaderboards,
@@ -15,7 +14,6 @@ import {
 } from "@repo/db";
 import { eq, and, gt, ne, sql } from "drizzle-orm";
 import {
-    calculateTaskScoring, calculateQuizScore, calculateMockScore,
     calculateTotalScore
 } from "@/lib/project-scoring"
 import type {

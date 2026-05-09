@@ -3,10 +3,10 @@
 import { getSession } from "@repo/auth";
 import { headers } from "next/headers";
 import {
-    db, projectV2TaskDetails, userTaskV2DetailAccesses, projectV2Tasks, projectV2Sprints,
-    projectsV2, users, creditTransactions
+    db, projectV2TaskDetails, userTaskV2DetailAccesses, projectV2Tasks,
+    users, creditTransactions
 } from "@repo/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { openai } from "@/lib/openai-client";
 
@@ -214,10 +214,10 @@ Description Steps:
 ${task.description.map((step: string, i: number) => `${i + 1}. ${step}`).join('\n')}
 
 Success Criteria:
-${task.criteria.map((c: string, i: number) => `- ${c}`).join('\n')}
+${task.criteria.map((c: string, _i: number) => `- ${c}`).join('\n')}
 
 Existing Hints:
-${task.hints.map((h: string, i: number) => `- ${h}`).join('\n')}
+${task.hints.map((h: string, _i: number) => `- ${h}`).join('\n')}
 
 Please generate a detailed breakdown with:
 

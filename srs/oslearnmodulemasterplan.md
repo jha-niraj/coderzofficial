@@ -1,5 +1,5 @@
 # Operating Systems — Learn Module Masterplan
-**Platform: TheCoderz (BuildRHQ)**
+**Platform: BuildrHQ**
 **SubCategory: Operating Systems**
 **Total Learns: 44 | Units: 6**
 
@@ -834,4 +834,4 @@ SUMMARY(recap) → QUIZ(10-15) → MOCK_INTERVIEW → PROJECT
 
 ---
 
-*Document created for TheCoderz (BuildRHQ) — Operating Systems Learn Module*
+*Document created for BuildrHQ — Operating Systems Learn Module*

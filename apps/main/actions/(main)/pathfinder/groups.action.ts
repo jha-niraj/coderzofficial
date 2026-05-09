@@ -3,7 +3,7 @@
 import { getSession } from '@repo/auth'
 import { headers } from 'next/headers'
 import { db, pathfinderGroups, pathfinderGoals } from '@repo/db'
-import { eq, and, asc, sql, max } from 'drizzle-orm'
+import { eq, and, asc, max } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 // ================================================================================

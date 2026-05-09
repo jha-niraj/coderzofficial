@@ -12,12 +12,12 @@ import Link from "next/link";
 const faqData = [
     {
         id: "item-1",
-        question: "How do I start learning a programming language on The Coder'z?",
+        question: "How do I start learning a programming language on BuildrHQ?",
         answer: "To get started, simply create an account, choose a language you want to learn, and explore our resources. We offer beginner-friendly content for C, C++, Java, Python, and more. You can start with foundational topics and progress to advanced materials."
     },
     {
         id: "item-2",
-        question: "Are the resources on The Coder'z suitable for beginners?",
+        question: "Are the resources on BuildrHQ suitable for beginners?",
         answer: "Yes! Our resources are designed to cater to all levels, from beginners to advanced learners. For each language, we provide structured content with easy-to-follow explanations, practical examples, and exercises to reinforce your learning."
     },
     {
@@ -32,7 +32,7 @@ const faqData = [
     },
     {
         id: "item-5",
-        question: "Is there a way to practice coding on The Coder'z?",
+        question: "Is there a way to practice coding on BuildrHQ?",
         answer: "Absolutely! Many of our lessons include coding exercises you can complete directly on the platform. We also provide project-based exercises to help you apply what you've learned to real-world scenarios."
     },
     {
@@ -42,18 +42,18 @@ const faqData = [
     },
     {
         id: "item-7",
-        question: "Do I need any prior experience to start learning on The Coder'z?",
+        question: "Do I need any prior experience to start learning on BuildrHQ?",
         answer: "No prior experience is needed! We offer beginner-friendly tutorials and step-by-step guides for every programming language. If you're new to coding, you can start with our foundational courses and work your way up."
     },
     {
         id: "item-8",
-        question: "Are there any costs associated with using The Coder'z?",
-        answer: "The Coder'z offers many free resources, and we also have premium content available for those looking for in-depth tutorials, hands-on projects, and mentorship opportunities. You can explore our pricing options on our site."
+        question: "Are there any costs associated with using BuildrHQ?",
+        answer: "BuildrHQ offers many free resources, and we also have premium content available for those looking for in-depth tutorials, hands-on projects, and mentorship opportunities. You can explore our pricing options on our site."
     },
     {
         id: "item-9",
-        question: "Can I access The Coder'z on mobile devices?",
-        answer: "Yes, The Coder'z is accessible on mobile devices, so you can learn on the go. The website is optimized for mobile, allowing you to access resources, watch tutorials, and even participate in coding exercises from your smartphone or tablet."
+        question: "Can I access BuildrHQ on mobile devices?",
+        answer: "Yes, BuildrHQ is accessible on mobile devices, so you can learn on the go. The website is optimized for mobile, allowing you to access resources, watch tutorials, and even participate in coding exercises from your smartphone or tablet."
     },
 ];
 

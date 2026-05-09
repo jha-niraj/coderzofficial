@@ -176,7 +176,7 @@ export function InterviewProcessForm({ onClose, initialTemplate }: InterviewProc
                 description: processData.description,
                 isDefault: processData.isDefault,
                 estimatedDurationWeeks: processData.estimatedDurationWeeks,
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                 
                 rounds: rounds.map(({ isExpanded: _isExpanded, ...round }) => round)
             }
 

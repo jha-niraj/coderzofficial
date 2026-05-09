@@ -96,7 +96,7 @@ export async function fetchGithubData(username: string): Promise<GithubData> {
 						lastCommit: commitsRes.data[0]?.commit?.committer?.date || null,
 						techStack: Object.keys(languagesRes.data),
 					};
-				} catch (error) {
+				} catch {
 					return {
 						name: repo.name,
 						description: repo.description,

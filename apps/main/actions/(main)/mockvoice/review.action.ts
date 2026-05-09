@@ -3,7 +3,7 @@
 import { getSession } from "@repo/auth"
 import { headers } from "next/headers"
 import { db, mockVoiceSession, mockInterviewVoice } from "@repo/db"
-import { eq, and, isNotNull, avg } from "drizzle-orm"
+import { eq, and, isNotNull } from "drizzle-orm"
 import { revalidatePath } from 'next/cache'
 
 interface SubmitReviewInput {

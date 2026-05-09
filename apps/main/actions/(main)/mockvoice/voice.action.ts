@@ -6,7 +6,6 @@ import { db, users, mockInterviewVoice, mockVoiceSession, creditTransactions } f
 import { eq, and, or, ilike, desc, count, avg } from "drizzle-orm"
 import { revalidatePath } from 'next/cache'
 import { openai } from '@/lib/openai-client'
-import { MOCK_CATEGORIES, MOCK_LEVELS } from '@/app/(main)/mock/voice/_constants/mock-categories'
 
 // ==========================================
 // TYPES

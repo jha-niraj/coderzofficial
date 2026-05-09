@@ -2,17 +2,24 @@
 // KNOWME MODULE - TypeScript Types & Interfaces
 // ============================================
 
-import type {
-	KnowMeStatus,
-	KnowMePrivacy,
-	KnowMePlatform,
-	KnowMeSyncStatus,
-	KnowMeDataType,
-	KnowMeJobStatus,
-	KnowMeJobType,
-	KnowMeQuestionCategory,
-	KnowMeViewerType,
+import {
+	knowMeStatusEnum,
+	knowMePrivacyEnum,
+	knowMePlatformEnum,
+	knowMeSyncStatusEnum,
+	knowMeJobStatusEnum,
+	knowMeJobTypeEnum,
+	type KnowMeDataType,
+	type KnowMeQuestionCategory,
+	type KnowMeViewerType,
 } from "@repo/db";
+
+type KnowMeStatus = typeof knowMeStatusEnum.enumValues[number]
+type KnowMePrivacy = typeof knowMePrivacyEnum.enumValues[number]
+type KnowMePlatform = typeof knowMePlatformEnum.enumValues[number]
+type KnowMeSyncStatus = typeof knowMeSyncStatusEnum.enumValues[number]
+type KnowMeJobStatus = typeof knowMeJobStatusEnum.enumValues[number]
+type KnowMeJobType = typeof knowMeJobTypeEnum.enumValues[number]
 
 // ============================================
 // PROFILE TYPES

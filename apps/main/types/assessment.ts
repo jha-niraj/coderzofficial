@@ -4,12 +4,17 @@
  */
 
 import {
-    AssessmentLanguage,
-    AssessmentMode,
+    assessmentLanguageEnum,
+    assessmentModeEnum,
+    assessmentQuestionTypeEnum,
+    userContentStatusEnum,
     QuestionDifficulty,
-    AssessmentQuestionType,
-    UserContentStatus,
 } from '@repo/db'
+
+type AssessmentLanguage = typeof assessmentLanguageEnum.enumValues[number]
+type AssessmentMode = typeof assessmentModeEnum.enumValues[number]
+type AssessmentQuestionType = typeof assessmentQuestionTypeEnum.enumValues[number]
+type UserContentStatus = typeof userContentStatusEnum.enumValues[number]
 
 // ==================== INPUT TYPES ====================
 

@@ -1,7 +1,7 @@
 'use server'
 
 import { db, mockVoiceSession, mockVoiceRating } from "@repo/db"
-import { eq, inArray, count, avg } from "drizzle-orm"
+import { inArray, count, avg } from "drizzle-orm"
 
 export async function getMockInterviewStats() {
     try {

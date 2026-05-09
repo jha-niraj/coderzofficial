@@ -138,9 +138,9 @@ export default function OnboardingPage() {
                 resume: resumeUrl,
                 learningPreferences: learningGoals,
             })
-            toast.success('Welcome to TheCoderz!')
+            toast.success('Welcome to BuildrHQ!')
             await refetch()
-            window.location.href = '/explore'
+            window.location.href = '/home'
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Failed to complete onboarding')
         } finally {
@@ -196,7 +196,7 @@ export default function OnboardingPage() {
                             <Code className="w-4 h-4 text-white" />
                         </div>
                         <span className="font-semibold text-white group-hover:text-neutral-300 transition-colors">
-                            TheCoderz
+                            BuildrHQ
                         </span>
                     </button>
                     <div className="flex items-center gap-4">
@@ -331,6 +331,16 @@ export default function OnboardingPage() {
                                                         className="text-white border-b border-neutral-700"
                                                         value={university}
                                                         onValueChange={setUniversity}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                const hasMatch = colleges.some(c =>
+                                                                    c.toLowerCase().includes(university.toLowerCase())
+                                                                )
+                                                                if (!hasMatch && university.trim()) {
+                                                                    setOpenCollegePicker(false)
+                                                                }
+                                                            }
+                                                        }}
                                                     />
                                                     <CommandEmpty className="py-4 px-3 text-sm text-neutral-500">
                                                         Press Enter to add &quot;{university}&quot;

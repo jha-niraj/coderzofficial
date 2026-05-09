@@ -1,22 +1,15 @@
 // Practice Module Types
-import type {
-    PracticeModule,
-    PracticeDifficulty,
-    PracticeSessionStatus,
-    PracticeMode,
-    PracticeProblem,
-    PracticeUserSession,
-    PracticeModuleProgress,
-    PracticeLeaderboard,
+import {
+    practiceModuleEnum,
+    practiceDifficultyEnum,
+    practiceSessionStatusEnum,
+    practiceModeEnum,
 } from "@repo/db";
 
-// ── Re-export Prisma enums for convenience ──
-export type {
-    PracticeModule,
-    PracticeDifficulty,
-    PracticeSessionStatus,
-    PracticeMode,
-};
+export type PracticeModule = typeof practiceModuleEnum.enumValues[number];
+export type PracticeDifficulty = typeof practiceDifficultyEnum.enumValues[number];
+export type PracticeSessionStatus = typeof practiceSessionStatusEnum.enumValues[number];
+export type PracticeMode = typeof practiceModeEnum.enumValues[number];
 
 // ── Problem Types ──
 
@@ -267,5 +260,5 @@ export function getModuleFromPath(path: string): PracticeModule | null {
 
 // Helper to get URL path from module enum
 export function getPathFromModule(module: PracticeModule): string {
-    return MODULE_CONFIG[module].path;
+    return MODULE_CONFIG[module]!.path;
 }

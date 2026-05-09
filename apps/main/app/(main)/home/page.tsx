@@ -25,7 +25,7 @@ import {
 } from "./_components/skeletons";
 
 export const metadata = {
-    title: "Home | TheCoderz",
+    title: "Home | BuildrHQ",
     description: "Your personalized learning dashboard",
 };
 

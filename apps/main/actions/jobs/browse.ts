@@ -8,11 +8,9 @@ import {
     jobApplications,
     savedJobs,
     jobRecommendations,
-    companies,
     interviewProcesses,
-    interviewRounds,
 } from "@repo/db"
-import { eq, and, or, ilike, inArray, desc, asc, count, sql } from "drizzle-orm"
+import { eq, and, or, ilike, inArray, desc, count, sql } from "drizzle-orm"
 
 export interface JobFilters {
     search?: string

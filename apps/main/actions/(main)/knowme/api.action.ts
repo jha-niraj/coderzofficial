@@ -12,7 +12,6 @@ import {
     db,
     knowMeProfiles,
     knowMeApiRequests,
-    users,
 } from "@repo/db";
 import { eq, and, gte, desc, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";

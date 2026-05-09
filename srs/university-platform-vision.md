@@ -266,7 +266,7 @@ GET /api/projects/{id}/details
 
 ## Summary
 
-The Coder'z University platform is **NOT** about managing a traditional university. It's about:
+BuildrHQ University platform is **NOT** about managing a traditional university. It's about:
 
 1. **Teachers creating practical assignments** that students complete on the main platform
 2. **Students using credits** to access premium learning features

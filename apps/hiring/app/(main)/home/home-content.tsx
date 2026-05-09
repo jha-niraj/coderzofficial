@@ -71,7 +71,7 @@ interface _ActivityItemProps {
     time: string
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 const _ActivityItem = ({ type, title, subtitle, time }: _ActivityItemProps) => {
     const icons = {
         application: <FileText className="w-4 h-4" />,

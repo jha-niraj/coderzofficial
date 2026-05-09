@@ -6,10 +6,8 @@ import {
     db,
     resumeTemplate,
     resumeTemplateGeneration,
-    templatePurchase,
     users,
     creditTransactions,
-    earnings,
     workExperiences,
     coverLetter,
 } from '@repo/db'

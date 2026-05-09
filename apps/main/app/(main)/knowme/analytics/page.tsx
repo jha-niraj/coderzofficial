@@ -10,7 +10,7 @@ import KnowMeAnalytics from './_components/knowme-analytics';
 import AnalyticsSkeleton from './_components/analytics-skeleton';
 
 export const metadata: Metadata = {
-    title: 'KnowMe Analytics | The Coderz',
+    title: 'KnowMe Analytics | BuildrHQ',
     description: 'View insights and analytics for your AI-powered portfolio assistant.',
 };
 

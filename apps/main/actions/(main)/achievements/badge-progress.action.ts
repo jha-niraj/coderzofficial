@@ -207,7 +207,7 @@ export async function checkLevelMilestones(userId: string, level: number) {
         for (const badge of levelBadges) {
             const req = badge.requirements as unknown as BadgeRequirements
             if (level >= (req.level ?? 0)) {
-                let userBadge = await db.query.userBadges.findFirst({
+                const userBadge = await db.query.userBadges.findFirst({
                     where: and(eq(userBadges.userId, userId), eq(userBadges.badgeId, badge.id)),
                 })
 

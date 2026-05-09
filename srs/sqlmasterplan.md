@@ -1,5 +1,5 @@
 # SQL Learn Module — Complete Syllabus & Learn Mapping
-**Platform: TheCoderz (BuildRHQ)**
+**Platform: BuildrHQ**
 **SubCategory: SQL**
 **Total Learns: 38 | Units: 6**
 
@@ -810,4 +810,4 @@ SUMMARY(recap) → QUIZ(10-15) → MOCK_INTERVIEW → PROJECT
 
 ---
 
-*Document created for TheCoderz (BuildRHQ) — SQL Learn Module*
+*Document created for BuildrHQ — SQL Learn Module*

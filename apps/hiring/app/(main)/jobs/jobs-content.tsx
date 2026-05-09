@@ -53,7 +53,7 @@ interface JobsContentProps {
     interviewProcesses: InterviewProcessView[]
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 export function JobsContent({ initialJobs, stats, interviewProcesses: _interviewProcesses }: JobsContentProps) {
     const [jobs, setJobs] = useState(initialJobs)
     const [search, setSearch] = useState("")

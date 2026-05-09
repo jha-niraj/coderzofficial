@@ -3,7 +3,7 @@
 import { getSession } from '@repo/auth';
 import { headers } from 'next/headers';
 import { db, referrals, users } from "@repo/db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export async function getReferralStats() {
     try {

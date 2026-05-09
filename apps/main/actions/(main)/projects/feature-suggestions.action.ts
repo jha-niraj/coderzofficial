@@ -388,7 +388,7 @@ export async function adoptSuggestionToMyTasks(suggestionId: string, projectSlug
     }
 }
 
-export async function adoptVisitorSuggestionToTasks(suggestionId: string, projectSlug: string) {
+export async function adoptVisitorSuggestionToTasks(suggestionId: string, _projectSlug: string) {
     try {
         const session = await getSession(headers())
         if (!session?.user?.id) {
@@ -555,7 +555,7 @@ export async function adoptVisitorSuggestionToTasks(suggestionId: string, projec
     }
 }
 
-export async function addSuggestionToTasks(suggestionId: string, projectSlug: string) {
+export async function addSuggestionToTasks(suggestionId: string, _projectSlug: string) {
     try {
         const session = await getSession(headers())
         if (!session?.user?.id) {

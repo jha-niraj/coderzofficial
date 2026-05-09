@@ -74,10 +74,10 @@ export async function generateEmbeddingsBatch(
 				model: EMBEDDING_CONFIG.model,
 				input: batch.map((b) => b.text),
 				dimensions: EMBEDDING_CONFIG.dimensions,
-			});
+			}) as { data: Array<{ embedding: number[] }> };
 
 			// Map results back to original indices
-			response.data.forEach((item, batchIndex) => {
+			response.data.forEach((item: { embedding: number[] }, batchIndex: number) => {
 				const originalIndex = batch[batchIndex]?.index ?? 0;
 				embeddings[originalIndex] = item?.embedding ?? [];
 			});

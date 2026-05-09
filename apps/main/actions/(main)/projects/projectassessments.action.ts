@@ -89,7 +89,7 @@ export async function generateTaskQuizQuestions(
             return { success: false, error: "Task not found" };
         }
 
-        const { task, sprint, project } = taskRows[0];
+        const { task, sprint: _sprint, project } = taskRows[0];
 
         // Check if user already has an assessment for this task
         const existingAssessment = await db
@@ -909,7 +909,7 @@ export async function saveSprintMockResult(
             .limit(1);
 
         if (!existingSessionRows[0]) {
-            const newSessionRows = await db
+            const _newSessionRows = await db
                 .insert(projectV2MockSessions)
                 .values({
                     userId: user.id,
@@ -1015,7 +1015,7 @@ export async function getSprintCompletionStatus(
             .from(projectV2Tasks)
             .where(eq(projectV2Tasks.sprintId, sprintId));
 
-        const userProgressRows = await db
+        const _userProgressRows = await db
             .select({ taskStatuses: userProjectV2Progress.tasksCompleted })
             .from(userProjectV2Progress)
             .where(and(

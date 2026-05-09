@@ -3,7 +3,7 @@
 import { getSession } from '@repo/auth'
 import { headers } from 'next/headers'
 import { db, pathfinderSubGoals, mockInterviewVoice } from '@repo/db'
-import { eq, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { createMockVoiceSession } from '@/actions/(main)/mockvoice/session.action'
 
 export async function createPathfinderPracticeMockAndSession(subGoalId: string) {
