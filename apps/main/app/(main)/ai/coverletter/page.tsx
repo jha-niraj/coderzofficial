@@ -5,7 +5,7 @@ import { getCoverLetters } from "@/actions/(main)/ai/cover-letter.action"
 import { CoverLetterClient } from "@/app/(main)/ai/resume/_components/cover-letter-client"
 
 export const metadata = {
-    title: "Cover Letter Generator | Coderz",
+    title: "Cover Letter Generator | BuildrHQ",
     description: "Generate tailored cover letters for any job posting using AI.",
 }
 

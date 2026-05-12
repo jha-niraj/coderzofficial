@@ -319,7 +319,7 @@ export function IntegrationsTab({ isOwnProfile }: IntegrationsTabProps) {
                             ) : (
                                 <div className="space-y-4">
                                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                        Connect your GitHub account to unlock powerful open source features and track your contributions across all Coderz projects.
+                                        Connect your GitHub account to unlock powerful open source features and track your contributions across all BuildrHQ projects.
                                     </p>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl">

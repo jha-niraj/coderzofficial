@@ -30,7 +30,7 @@ export default async function PublicResumePage({ params }: { params: Promise<{ s
                 <Link href="/">
                     <Button variant="ghost" size="sm" className="text-neutral-600">
                         <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
-                        Back to Coderz
+                        Back to BuildrHQ
                     </Button>
                 </Link>
                 <div className="flex items-center gap-2">

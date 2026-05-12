@@ -236,11 +236,14 @@ function AIToolsSheet({ draftId, open, onClose, onContentUpdated }: {
         const res = await tailorResumeForJD(draftId, jd, jobTitle)
         setLoading(null)
         if (!res.success) return toast.error(res.error ?? 'Failed to tailor')
-        // Update the editor live with the new content
-        if (res.updatedContent) onContentUpdated(res.updatedContent as ResumeDraftContent)
+        if (res.updatedContent) {
+            onContentUpdated(res.updatedContent as ResumeDraftContent)
+            // Auto-save the tailored content so changes persist without manual Save click
+            await updateResumeDraft(draftId, { content: res.updatedContent as ResumeDraftContent })
+        }
         setTailorResult({ suggestions: res.suggestions ?? [], keywordsAdded: res.keywordsAdded ?? [], summary: res.summary ?? '' })
         setScoreResult(null)
-        toast.success('Resume updated in place!')
+        toast.success('Resume tailored and saved!')
     }
 
     return (

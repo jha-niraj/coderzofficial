@@ -545,7 +545,7 @@ export function ResumeHub({ drafts: initialDrafts, templates }: Props) {
                             {/* Platform templates */}
                             <div>
                                 <div className="flex items-center gap-2 mb-4">
-                                    <h2 className="text-base font-semibold">Coderz Templates</h2>
+                                    <h2 className="text-base font-semibold">BuildrHQ Templates</h2>
                                     <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 text-xs">Official</Badge>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
