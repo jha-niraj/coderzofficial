@@ -1,0 +1,32 @@
+# Cloudflare Workers edge cache headers
+# /_next/static/ — immutable assets (hashed filenames, safe to cache forever)
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Fonts
+/_next/static/media/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# OG images — cache 30 days, revalidate in background
+/og/*
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+# Static public assets (logo, favicons)
+/mainlogo.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+/mainlogo.ico
+  Cache-Control: public, max-age=86400, stale-while-revalidate=3600
+
+# llms.txt — cache 1 day
+/llms.txt
+  Cache-Control: public, max-age=86400
+
+# robots.txt — cache 1 hour
+/robots.txt
+  Cache-Control: public, max-age=3600
+
+# Security headers for all pages
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin

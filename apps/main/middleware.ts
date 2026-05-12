@@ -88,6 +88,8 @@ const apiRoutes = [
 	'/api/auth/verify-password'
 ]
 
+const PRODUCTION_ORIGIN = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.buildrhq.com'
+
 export default async function middleware(req: NextRequest) {
 	const { nextUrl } = req
 	const pathname = nextUrl.pathname
@@ -99,6 +101,14 @@ export default async function middleware(req: NextRequest) {
 		apiRoutes.some(r => pathname.startsWith(r))
 	) {
 		return NextResponse.next()
+	}
+
+	// Noindex non-production deployments so staging/preview URLs don't pollute Google's index
+	const isProduction = req.nextUrl.origin === PRODUCTION_ORIGIN
+	if (!isProduction) {
+		const res = NextResponse.next()
+		res.headers.set('X-Robots-Tag', 'noindex, nofollow')
+		return res
 	}
 
 	const session = await getSessionFromRequest(req)

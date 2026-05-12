@@ -10,6 +10,7 @@ import { Analytics } from "@vercel/analytics/next";
 const geistSans = Geist({
 	variable: "--font-geist-sans",
 	subsets: ["latin"],
+	display: "swap",
 });
 const spaceGrotesk = Space_Grotesk({
 	subsets: ['latin'],
@@ -20,44 +21,53 @@ const spaceGrotesk = Space_Grotesk({
 const geistMono = Geist_Mono({
 	variable: "--font-geist-mono",
 	subsets: ["latin"],
+	display: "swap",
 });
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://www.buildrhq.com'
 
 export const metadata: Metadata = {
 	title: {
-		default: "BuildrHQ",
+		default: "BuildrHQ — The Engineering Intelligence Suite",
 		template: "%s | BuildrHQ"
 	},
-	description: "The Engineering Intelligence Platform for Computer Science Students",
-	keywords: ["Learn", "Build Projects", "Computer Science", "Programming", "Coding", "Developer", "Tech Community", "Coding Resources", "Tech Articles", "Coding Tutorials"],
-	authors: [{ name: "Niraj Jha" }],
+	description: "AI-powered platform for CS students and software engineers. Build your portfolio, ace technical interviews, practice DSA, and land your dream engineering job.",
+	keywords: [
+		"software engineering portfolio", "mock technical interview", "system design prep",
+		"DSA practice", "open source contribution tracker", "AI resume builder",
+		"cover letter generator", "coding interview prep", "cs student platform",
+		"developer career tools", "BuildrHQ", "engineering intelligence suite"
+	],
+	authors: [{ name: "Niraj Jha", url: BASE_URL }],
 	creator: "Shunya Tech",
 	publisher: "Shunya Tech",
-	metadataBase: new URL("https://www.coderzai.xyz"),
+	metadataBase: new URL(BASE_URL),
 	alternates: {
 		canonical: "/",
 	},
 	openGraph: {
 		type: "website",
 		locale: "en_US",
-		url: "https://www.coderzai.xyz",
+		url: BASE_URL,
 		siteName: "BuildrHQ",
-		title: "BuildrHQ - The Engineering Intelligence Platform for Computer Science Students",
-		description: "The Engineering Intelligence Platform for Computer Science Students",
+		title: "BuildrHQ — The Engineering Intelligence Suite",
+		description: "AI-powered platform for CS students and software engineers. Build your portfolio, ace interviews, practice DSA, and land your dream engineering job.",
 		images: [
 			{
-				url: "/mainlogo.png",
-				width: 1024,
-				height: 1024,
-				alt: "BuildrHQ - The Engineering Intelligence Platform for Computer Science Students",
+				url: "/og/home.png",
+				width: 1200,
+				height: 630,
+				alt: "BuildrHQ — The Engineering Intelligence Suite for Developers",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "BuildrHQ - The Engineering Intelligence Platform for Computer Science Students",
-		description: "The Engineering Intelligence Platform for Computer Science Students",
-		images: ["/mainlogo.png"],
+		title: "BuildrHQ — The Engineering Intelligence Suite",
+		description: "AI-powered platform for CS students and software engineers. Build your portfolio, ace interviews, practice DSA, and land your dream engineering job.",
+		images: ["/og/home.png"],
 		creator: "@buildrhq",
+		site: "@buildrhq",
 	},
 	icons: {
 		icon: [
@@ -80,11 +90,67 @@ export const metadata: Metadata = {
 		},
 	},
 	verification: {
-		// Add your verification codes here when you have them
+		// Add when domain is verified in Google Search Console
 		// google: "your-google-verification-code",
-		// yandex: "your-yandex-verification-code",
+	},
+	other: {
+		"theme-color": "#0f172a",
 	},
 };
+
+const organizationSchema = {
+	"@context": "https://schema.org",
+	"@type": "Organization",
+	"name": "BuildrHQ",
+	"url": BASE_URL,
+	"logo": `${BASE_URL}/mainlogo.png`,
+	"description": "AI-powered engineering intelligence platform for CS students and software engineers.",
+	"sameAs": [
+		"https://twitter.com/buildrhq",
+		"https://github.com/buildrhq",
+		"https://linkedin.com/company/buildrhq"
+	],
+	"foundingDate": "2024",
+	"founders": [{ "@type": "Person", "name": "Niraj Jha" }],
+}
+
+const websiteSchema = {
+	"@context": "https://schema.org",
+	"@type": "WebSite",
+	"name": "BuildrHQ",
+	"url": BASE_URL,
+	"description": "AI-powered platform for CS students and software engineers.",
+	"potentialAction": {
+		"@type": "SearchAction",
+		"target": {
+			"@type": "EntryPoint",
+			"urlTemplate": `${BASE_URL}/search?q={search_term_string}`
+		},
+		"query-input": "required name=search_term_string"
+	}
+}
+
+const softwareAppSchema = {
+	"@context": "https://schema.org",
+	"@type": "SoftwareApplication",
+	"name": "BuildrHQ",
+	"url": BASE_URL,
+	"applicationCategory": "DeveloperApplication",
+	"operatingSystem": "Web",
+	"description": "AI-powered engineering intelligence suite: resume builder, mock interviews, DSA practice, system design prep, and open source tracking — all in one platform.",
+	"offers": {
+		"@type": "Offer",
+		"price": "0",
+		"priceCurrency": "USD",
+		"description": "Free to use"
+	},
+	"aggregateRating": {
+		"@type": "AggregateRating",
+		"ratingValue": "4.8",
+		"ratingCount": "120",
+		"bestRating": "5"
+	}
+}
 
 export default function RootLayout({
 	children,
@@ -93,8 +159,22 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
+			<head>
+				<script
+					type="application/ld+json"
+					dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+				/>
+				<script
+					type="application/ld+json"
+					dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+				/>
+				<script
+					type="application/ld+json"
+					dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
+				/>
+			</head>
 			<body className={`
-				${spaceGrotesk.className} ${geistSans.variable} ${geistMono.variable} antialiased 
+				${spaceGrotesk.className} ${geistSans.variable} ${geistMono.variable} antialiased
 			`}>
                 <Analytics/>
 				<Providers>

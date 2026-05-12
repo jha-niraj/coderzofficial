@@ -1,0 +1,54 @@
+# BuildrHQ — The Engineering Intelligence Suite
+
+## What is BuildrHQ?
+
+BuildrHQ is a developer-first platform that helps computer science students and software engineers master their craft, build standout portfolios, and land their first (or next) engineering role. It combines AI-powered tools, structured learning, and community features in one place.
+
+## Core Features
+
+### AI Resume Builder
+Generate ATS-optimized, recruiter-ready resumes. Paste a job description and the AI tailors your resume bullets to match the role. Supports multiple templates, live preview, and one-click PDF download.
+
+### AI Cover Letter Generator
+Answer 5 targeted questions about yourself and the role. BuildrHQ writes a personalized, professional cover letter with your voice. Supports voice input (speak your answers) and PDF download.
+
+### Mock Interview Platform
+Practice technical interviews with AI. Get real-time feedback on your answers, tone, and structure. Covers system design, DSA, and behavioral rounds. Tracks your improvement over time.
+
+### AI Practice (DSA + System Design)
+Solve coding problems with AI hints that teach rather than spoonfeed. System design challenges with structured evaluation. Progress tracking across all problem categories.
+
+### Project Builder Studio
+Build real projects guided by AI. Get architecture suggestions, code reviews, and step-by-step completion paths. Every project generates verified proof-of-work for your portfolio.
+
+### Open Source Tracker
+Track your GitHub contributions, PRs, and open source activity in one dashboard. Discover beginner-friendly issues. Get AI analysis of your contribution patterns.
+
+### Pathfinder Learning Paths
+Structured AI-generated learning paths for CS topics (DSA, System Design, Web Dev, etc.). Each step has exercises, resources, and AI-verified checkpoints.
+
+### KnowMe AI Profile
+AI-powered developer profile that turns your resume, GitHub, and projects into a shareable intelligence page. Recruiters can ask the AI questions about you directly.
+
+## Who Uses BuildrHQ?
+
+- CS students (freshman → senior) preparing for internships and full-time roles
+- Bootcamp graduates breaking into software engineering
+- Self-taught developers building their first portfolio
+- Developers switching roles or companies
+- Anyone preparing for technical interviews at FAANG and top-tier companies
+
+## Technical Stack
+
+Built with Next.js 15 (App Router), Turborepo, Drizzle ORM, BetterAuth, deployed on Cloudflare Workers.
+
+## Company
+
+Built by Shunya Tech. Founded by Niraj Jha. Based in India.
+
+## Links
+
+- Homepage: https://www.buildrhq.com
+- AI Tools: https://www.buildrhq.com/ai
+- Blog: https://www.buildrhq.com/blogs
+- About: https://www.buildrhq.com/aboutus
