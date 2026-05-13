@@ -1,145 +1,218 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
 import SmoothScroll from "@/components/smoothscroll"
 
 export default function PrivacyPolicy() {
-    const sections = [
-        { id: "collection", title: "1. Information We Collect" },
-        { id: "usage", title: "2. How We Use Data" },
-        { id: "payments", title: "3. Payment Information" },
-        { id: "cookies", title: "4. Cookies & Tracking" },
-        { id: "sharing", title: "5. Data Sharing" },
-        { id: "security", title: "6. Data Security" },
-        { id: "rights", title: "7. Your Rights" },
+    const promises = [
+        {
+            title: "We don't train on your data",
+            description: "Your code, prompts, and projects are never used to train our AI models.",
+        },
+        {
+            title: "Encrypted at rest and in transit",
+            description: "All data is encrypted using industry-standard AES-256 at rest and TLS in transit.",
+        },
+        {
+            title: "You can export anything, anytime",
+            description: "Download all your projects, outputs, and account data at any time with one click.",
+        },
+        {
+            title: "You can delete it all",
+            description: "Request full account and data deletion at any time. We honor it within 30 days.",
+        },
     ]
-
-    const scrollToSection = (id: string) => {
-        document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
-    }
 
     return (
         <SmoothScroll>
             <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-neutral-100 dark:selection:bg-neutral-800">
-                <div className="max-w-7xl mx-auto px-6 py-12 md:py-20">
-                    <div className="mb-16 border-b border-neutral-200 dark:border-neutral-800 pb-10">
-                        <Link href="/" className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white mb-6 transition-colors">
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Return Home
-                        </Link>
-                        <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white tracking-tight mb-4">
-                            Privacy Policy
-                        </h1>
-                        <p className="text-lg text-neutral-500 dark:text-neutral-400">
-                            Last Updated: April 15, 2025
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
-                        <div className="hidden md:block md:col-span-3 lg:col-span-3">
-                            <div className="sticky top-24 space-y-1">
-                                <p className="text-xs font-bold text-neutral-900 dark:text-white uppercase tracking-wider mb-4 px-3">
-                                    Table of Contents
+                <div className="max-w-7xl mx-auto px-6 py-16 md:py-24">
+                    <div className="flex gap-16 items-start">
+                        {/* Sidebar */}
+                        <aside className="hidden lg:block w-[260px] shrink-0">
+                            <div className="sticky top-24">
+                                <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-6">
+                                    Legal documents
                                 </p>
-                                {
-                                    sections.map((section) => (
-                                        <button
-                                            key={section.id}
-                                            onClick={() => scrollToSection(section.id)}
-                                            className="block w-full text-left px-3 py-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg transition-colors"
-                                        >
-                                            {section.title}
-                                        </button>
-                                    ))
-                                }
+                                <nav className="space-y-1 mb-10">
+                                    <Link
+                                        href="/termsofservice"
+                                        className="block px-3 py-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg transition-colors"
+                                    >
+                                        Terms of Service
+                                    </Link>
+                                    <span className="block px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                                        Privacy Policy
+                                    </span>
+                                    <a
+                                        href="mailto:privacy@buildrhq.com"
+                                        className="block px-3 py-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg transition-colors"
+                                    >
+                                        Contact
+                                    </a>
+                                </nav>
+                                <div className="border-t border-neutral-200 dark:border-neutral-800 pt-8">
+                                    <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-3">
+                                        Questions?
+                                    </p>
+                                    <a
+                                        href="mailto:privacy@buildrhq.com"
+                                        className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors break-all"
+                                    >
+                                        privacy@buildrhq.com
+                                    </a>
+                                </div>
                             </div>
-                        </div>
-                        <div className="md:col-span-9 lg:col-span-8 lg:col-start-5 space-y-16">
-                            <section id="collection">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">1. Information We Collect</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-                                    We collect information to provide better services to all our users. This includes:
-                                </p>
-                                <ul className="list-disc pl-5 space-y-2 text-neutral-600 dark:text-neutral-400">
-                                    <li><strong>Personal Information:</strong> Name, email address, and profile picture (via OAuth providers like Google/GitHub).</li>
-                                    <li><strong>Usage Data:</strong> Code submissions, assessment scores, project progress, and AI interaction logs.</li>
-                                    <li><strong>Device Information:</strong> IP address, browser type, and operating system for security and optimization.</li>
-                                </ul>
-                            </section>
-                            <section id="usage">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">2. How We Use Data</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    We use the collected data to:
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                                    {
-                                        [
-                                            "Personalize learning paths",
-                                            "Process credit transactions",
-                                            "Improve AI model accuracy",
-                                            "Prevent fraud and abuse"
-                                        ].map((item, i) => (
-                                            <div key={i} className="p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg text-sm text-neutral-700 dark:text-neutral-300 border border-neutral-100 dark:border-neutral-800">
-                                                {item}
-                                            </div>
-                                        ))
-                                    }
-                                </div>
-                            </section>
-                            <section id="payments">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">3. Payment Information</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    We use <strong>Razorpay</strong> and other third-party payment processors to handle financial transactions.
-                                </p>
-                                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50 rounded-lg text-sm text-blue-800 dark:text-blue-300">
-                                    <strong>Important:</strong> We do not store or collect your payment card details. That information is provided directly to our third-party payment processors whose use of your personal information is governed by their Privacy Policy.
-                                </div>
-                            </section>
-                            <section id="cookies">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">4. Cookies & Tracking</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    We use cookies and similar tracking technologies to track the activity on our Service and hold certain information.
-                                </p>
-                                <ul className="list-disc pl-5 mt-4 space-y-2 text-neutral-600 dark:text-neutral-400">
-                                    <li><strong>Session Cookies:</strong> To operate our Service (e.g., keeping you logged in).</li>
-                                    <li><strong>Preference Cookies:</strong> To remember your preferences (e.g., Theme, Currency).</li>
-                                    <li><strong>Security Cookies:</strong> To facilitate security features.</li>
-                                </ul>
-                            </section>
-                            <section id="sharing">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">5. Data Sharing</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    We do not sell your personal data. We may share data with:
-                                </p>
-                                <ul className="list-disc pl-5 mt-4 space-y-2 text-neutral-600 dark:text-neutral-400">
-                                    <li><strong>Service Providers:</strong> To facilitate our Service (e.g., Cloud hosting, Email delivery).</li>
-                                    <li><strong>Legal Obligations:</strong> If required to do so by law or in response to valid requests by public authorities.</li>
-                                </ul>
-                            </section>
-                            <section id="security">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">6. Data Security</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    The security of your data is important to us, but remember that no method of transmission over the Internet, or method of electronic storage is 100% secure. We strive to use commercially acceptable means to protect your Personal Data, but we cannot guarantee its absolute security.
-                                </p>
-                            </section>
-                            <section id="rights">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">7. Your Rights</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-                                    Depending on your location, you may have the right to:
-                                </p>
-                                <ul className="list-disc pl-5 space-y-2 text-neutral-600 dark:text-neutral-400">
-                                    <li>Access and receive a copy of the personal data we hold about you.</li>
-                                    <li>Rectify any personal data held about you that is inaccurate.</li>
-                                    <li>Request the deletion of your personal data.</li>
-                                </ul>
-                            </section>
-                            <div className="pt-10 border-t border-neutral-200 dark:border-neutral-800">
-                                <p className="text-neutral-500 dark:text-neutral-400">
-                                    Questions about privacy? Contact our Data Protection Officer at <a href="mailto:privacy@thecoderz.com" className="text-neutral-900 dark:text-white underline">privacy@thecoderz.com</a>
+                        </aside>
+
+                        {/* Main content */}
+                        <main className="flex-1 min-w-0">
+                            <div className="mb-12">
+                                <p className="text-sm text-neutral-400 mb-6">Effective May 13, 2026</p>
+                                <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-neutral-900 dark:text-white leading-none mb-6">
+                                    Privacy <em>policy.</em>
+                                </h1>
+                                <p className="text-base text-neutral-500 dark:text-neutral-400 max-w-2xl leading-relaxed">
+                                    We built BuildrHQ with privacy in mind from day one. Here&apos;s exactly what we collect, why we collect it, and what you can do about it.
                                 </p>
                             </div>
 
-                        </div>
+                            {/* Promise grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
+                                {promises.map((p, i) => (
+                                    <div
+                                        key={i}
+                                        className="p-5 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl"
+                                    >
+                                        <p className="text-sm font-semibold text-neutral-900 dark:text-white mb-1">{p.title}</p>
+                                        <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">{p.description}</p>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="space-y-0">
+                                {/* Section 01 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">01</span>
+                                        What We Collect
+                                    </h2>
+                                    <div className="pl-8">
+                                        <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed mb-6">
+                                            We collect only what we need to provide the service.
+                                        </p>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm border-collapse">
+                                                <thead>
+                                                    <tr className="border-b border-neutral-200 dark:border-neutral-800">
+                                                        <th className="text-left py-2 pr-4 text-xs font-mono text-neutral-400 uppercase tracking-widest">Category</th>
+                                                        <th className="text-left py-2 pr-4 text-xs font-mono text-neutral-400 uppercase tracking-widest">Why</th>
+                                                        <th className="text-left py-2 text-xs font-mono text-neutral-400 uppercase tracking-widest">Retention</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                                                    <tr>
+                                                        <td className="py-3 pr-4 text-neutral-700 dark:text-neutral-300">Account info (name, email)</td>
+                                                        <td className="py-3 pr-4 text-neutral-500 dark:text-neutral-400">Authentication &amp; communication</td>
+                                                        <td className="py-3 text-neutral-500 dark:text-neutral-400">Until account deletion</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="py-3 pr-4 text-neutral-700 dark:text-neutral-300">Usage &amp; activity logs</td>
+                                                        <td className="py-3 pr-4 text-neutral-500 dark:text-neutral-400">Platform improvement &amp; fraud prevention</td>
+                                                        <td className="py-3 text-neutral-500 dark:text-neutral-400">90 days rolling</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="py-3 pr-4 text-neutral-700 dark:text-neutral-300">Payment records</td>
+                                                        <td className="py-3 pr-4 text-neutral-500 dark:text-neutral-400">Billing &amp; legal compliance</td>
+                                                        <td className="py-3 text-neutral-500 dark:text-neutral-400">7 years (legal requirement)</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td className="py-3 pr-4 text-neutral-700 dark:text-neutral-300">Device &amp; IP data</td>
+                                                        <td className="py-3 pr-4 text-neutral-500 dark:text-neutral-400">Security &amp; abuse prevention</td>
+                                                        <td className="py-3 text-neutral-500 dark:text-neutral-400">30 days rolling</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 02 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">02</span>
+                                        Who We Share With
+                                    </h2>
+                                    <div className="pl-8 space-y-3 text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                                        <p>We do not sell your personal data. Ever. We share data only with:</p>
+                                        <ul className="list-disc pl-5 space-y-2">
+                                            <li><strong className="text-neutral-700 dark:text-neutral-300">Infrastructure providers</strong> — cloud hosting and database services under strict data processing agreements.</li>
+                                            <li><strong className="text-neutral-700 dark:text-neutral-300">Payment processors</strong> — we use third-party processors and never store your card details ourselves.</li>
+                                            <li><strong className="text-neutral-700 dark:text-neutral-300">Legal authorities</strong> — only when required by law or valid legal process.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Section 03 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">03</span>
+                                        Your Rights
+                                    </h2>
+                                    <div className="pl-8 space-y-3 text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                                        <p>Depending on your location, you have the right to:</p>
+                                        <ul className="list-disc pl-5 space-y-2">
+                                            <li>Access and receive a copy of all personal data we hold about you.</li>
+                                            <li>Correct any inaccurate personal data.</li>
+                                            <li>Request deletion of your account and associated data.</li>
+                                            <li>Object to or restrict certain processing activities.</li>
+                                            <li>Data portability — export everything in a machine-readable format.</li>
+                                        </ul>
+                                        <p>To exercise any of these rights, email us at <a href="mailto:privacy@buildrhq.com" className="text-neutral-900 dark:text-white underline">privacy@buildrhq.com</a>.</p>
+                                    </div>
+                                </div>
+
+                                {/* Section 04 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">04</span>
+                                        Cookies &amp; Analytics
+                                    </h2>
+                                    <div className="pl-8 space-y-3 text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                                        <p>We use a minimal set of cookies to operate the platform:</p>
+                                        <ul className="list-disc pl-5 space-y-2">
+                                            <li><strong className="text-neutral-700 dark:text-neutral-300">Session cookies</strong> — to keep you logged in during your visit.</li>
+                                            <li><strong className="text-neutral-700 dark:text-neutral-300">Preference cookies</strong> — to remember settings like dark mode.</li>
+                                            <li><strong className="text-neutral-700 dark:text-neutral-300">Analytics</strong> — privacy-preserving, aggregated usage metrics only. No cross-site tracking.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Section 05 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">05</span>
+                                        Contact
+                                    </h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed pl-8">
+                                        For privacy-related inquiries or to exercise your rights, contact our Data Protection team at{" "}
+                                        <a href="mailto:privacy@buildrhq.com" className="text-neutral-900 dark:text-white underline">
+                                            privacy@buildrhq.com
+                                        </a>
+                                        . We aim to respond within 5 business days.
+                                    </p>
+                                </div>
+
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                        Questions about our privacy practices? Email{" "}
+                                        <a href="mailto:privacy@buildrhq.com" className="text-neutral-900 dark:text-white underline">
+                                            privacy@buildrhq.com
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                        </main>
                     </div>
                 </div>
             </div>

@@ -1,164 +1,178 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-    Shield, GraduationCap
-} from "lucide-react";
 import Link from "next/link";
 
 export default function PrivacyPage() {
     return (
-        <div className="min-h-screen bg-white dark:bg-neutral-950">
-            <div className="fixed inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:40px_40px]" />
-
-            <div className="relative z-10 max-w-4xl mx-auto px-6 py-20">
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-16"
-                >
-                    <Link href="/" className="inline-flex items-center gap-2 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center">
-                            <GraduationCap className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
-                            CODER&apos;Z <span className="text-violet-500 font-mono font-normal">UNI</span>
-                        </span>
-                    </Link>
-                    <div className="w-16 h-16 bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                        <Shield className="w-8 h-8 text-violet-600 dark:text-violet-400" />
-                    </div>
-                    <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500 mb-2 block">
-                        Legal Document
-                    </span>
-                    <h1 className="text-4xl font-bold tracking-tighter text-neutral-900 dark:text-white">
-                        Privacy Policy
-                    </h1>
-                    <p className="text-neutral-500 mt-4 max-w-xl mx-auto">
-                        Last updated: December 30, 2025
-                    </p>
-                </motion.div>
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-3xl p-8 md:p-12"
-                >
-                    <div className="prose prose-neutral dark:prose-invert max-w-none">
-                        <section className="mb-10">
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-neutral-400">01</span>
-                                Introduction
-                            </h2>
-                            <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                Coder&apos;z Uni (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy.
-                                This Privacy Policy explains how we collect, use, disclose, and safeguard your information
-                                when you use our university education platform services.
+        <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-neutral-100 dark:selection:bg-neutral-800">
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="max-w-7xl mx-auto px-6 py-16 md:py-24"
+            >
+                <div className="flex gap-16 items-start">
+                    {/* Sidebar */}
+                    <aside className="hidden lg:block w-[260px] shrink-0">
+                        <div className="sticky top-24">
+                            <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-2">
+                                BuildrHQ Uni
                             </p>
-                        </section>
-                        <section className="mb-10">
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-neutral-400">02</span>
-                                Information We Collect
-                            </h2>
-                            <div className="space-y-4 text-neutral-600 dark:text-neutral-400">
-                                <p className="font-medium text-neutral-900 dark:text-white">University Information</p>
-                                <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li>University name, website, and description</li>
-                                    <li>Contact information (official email, phone)</li>
-                                    <li>Faculty and staff account credentials</li>
-                                    <li>Department and class information</li>
-                                </ul>
-                                <p className="font-medium text-neutral-900 dark:text-white mt-6">Student Data</p>
-                                <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li>University email for verification</li>
-                                    <li>Academic information (department, semester, batch)</li>
-                                    <li>Assignment submissions and grades</li>
-                                    <li>Platform interaction and learning analytics</li>
-                                </ul>
-                                <p className="font-medium text-neutral-900 dark:text-white mt-6">Usage Data</p>
-                                <ul className="list-disc list-inside space-y-2 ml-4">
-                                    <li>Assignment and assessment completion data</li>
-                                    <li>Platform interaction logs</li>
-                                    <li>Analytics and performance metrics</li>
-                                </ul>
-                            </div>
-                        </section>
-                        <section className="mb-10">
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-neutral-400">03</span>
-                                How We Use Information
-                            </h2>
-                            <ul className="list-disc list-inside space-y-2 text-neutral-600 dark:text-neutral-400 ml-4">
-                                <li>Provide and maintain our educational platform services</li>
-                                <li>Facilitate learning and assignment management</li>
-                                <li>Enable communication between faculty and students</li>
-                                <li>Connect students with placement opportunities</li>
-                                <li>Improve and optimize our platform</li>
-                                <li>Send service-related communications</li>
-                                <li>Ensure platform security and prevent fraud</li>
-                            </ul>
-                        </section>
-                        <section className="mb-10">
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-neutral-400">04</span>
-                                Data Sharing
-                            </h2>
-                            <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                We do not sell your personal information. We may share data with:
+                            <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-6">
+                                Legal documents
                             </p>
-                            <ul className="list-disc list-inside space-y-2 mt-4 text-neutral-600 dark:text-neutral-400 ml-4">
-                                <li>Your registered university administration</li>
-                                <li>Service providers who assist in platform operations</li>
-                                <li>Employers (with student consent for placements)</li>
-                                <li>Law enforcement when required by law</li>
-                            </ul>
-                        </section>
-                        <section className="mb-10">
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-neutral-400">05</span>
-                                Data Security
-                            </h2>
-                            <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                We implement industry-standard security measures including encryption,
-                                access controls, and regular security audits to protect your academic and personal data.
-                            </p>
-                        </section>
-                        <section className="mb-10">
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-neutral-400">06</span>
-                                Your Rights
-                            </h2>
-                            <ul className="list-disc list-inside space-y-2 text-neutral-600 dark:text-neutral-400 ml-4">
-                                <li>Access and export your data</li>
-                                <li>Request correction of inaccurate information</li>
-                                <li>Request data deletion (subject to academic records requirements)</li>
-                                <li>Opt-out of marketing communications</li>
-                            </ul>
-                        </section>
-                        <section>
-                            <h2 className="text-xl font-bold text-neutral-900 dark:text-white mb-4 flex items-center gap-2">
-                                <span className="text-[10px] font-mono text-neutral-400">07</span>
-                                Contact Us
-                            </h2>
-                            <p className="text-neutral-600 dark:text-neutral-400">
-                                For privacy-related inquiries, contact us at{" "}
-                                <a href="mailto:privacy@coderzai.xyz" className="text-violet-600 dark:text-violet-400 hover:underline">
-                                    privacy@coderzai.xyz
+                            <nav className="space-y-1 mb-10">
+                                <Link
+                                    href="/terms"
+                                    className="block px-3 py-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg transition-colors"
+                                >
+                                    Terms of Service
+                                </Link>
+                                <span className="block px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                                    Privacy Policy
+                                </span>
+                                <a
+                                    href="mailto:privacy@buildrhq.com"
+                                    className="block px-3 py-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg transition-colors"
+                                >
+                                    Contact
                                 </a>
+                            </nav>
+                            <div className="border-t border-neutral-200 dark:border-neutral-800 pt-8">
+                                <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-3">
+                                    Questions?
+                                </p>
+                                <a
+                                    href="mailto:privacy@buildrhq.com"
+                                    className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors break-all"
+                                >
+                                    privacy@buildrhq.com
+                                </a>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Main content */}
+                    <main className="flex-1 min-w-0">
+                        <div className="mb-12">
+                            <p className="text-sm text-neutral-400 mb-6">Last updated: December 30, 2025</p>
+                            <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-neutral-900 dark:text-white leading-none mb-6">
+                                Privacy <em>policy.</em>
+                            </h1>
+                            <p className="text-base text-neutral-500 dark:text-neutral-400 max-w-2xl leading-relaxed">
+                                BuildrHQ Uni is committed to protecting your privacy. This policy explains how we collect,
+                                use, disclose, and safeguard your information when you use our university education platform.
                             </p>
-                        </section>
-                    </div>
-                </motion.div>
-                <div className="text-center mt-8">
-                    <Link
-                        href="/"
-                        className="text-sm text-neutral-500 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
-                    >
-                        ← Back to Home
-                    </Link>
+                        </div>
+
+                        <div className="space-y-0">
+                            {/* Section 01 */}
+                            <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                    <span className="font-mono text-xs text-neutral-400 mr-4">01</span>
+                                    Information We Collect
+                                </h2>
+                                <div className="pl-8 space-y-4 text-sm text-neutral-500 dark:text-neutral-400">
+                                    <p className="font-medium text-neutral-700 dark:text-neutral-300">University Information</p>
+                                    <ul className="list-disc pl-5 space-y-2 leading-relaxed">
+                                        <li>University name, website, and description</li>
+                                        <li>Contact information (official email, phone)</li>
+                                        <li>Faculty and staff account credentials</li>
+                                        <li>Department and class information</li>
+                                    </ul>
+                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 pt-2">Student Data</p>
+                                    <ul className="list-disc pl-5 space-y-2 leading-relaxed">
+                                        <li>University email for verification</li>
+                                        <li>Academic information (department, semester, batch)</li>
+                                        <li>Assignment submissions and grades</li>
+                                        <li>Platform interaction and learning analytics</li>
+                                    </ul>
+                                    <p className="font-medium text-neutral-700 dark:text-neutral-300 pt-2">Usage Data</p>
+                                    <ul className="list-disc pl-5 space-y-2 leading-relaxed">
+                                        <li>Assignment and assessment completion data</li>
+                                        <li>Platform interaction logs</li>
+                                        <li>Analytics and performance metrics</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            {/* Section 02 */}
+                            <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                    <span className="font-mono text-xs text-neutral-400 mr-4">02</span>
+                                    How We Use Information
+                                </h2>
+                                <div className="pl-8 text-sm text-neutral-500 dark:text-neutral-400">
+                                    <ul className="list-disc pl-5 space-y-2 leading-relaxed">
+                                        <li>Provide and maintain our educational platform services</li>
+                                        <li>Facilitate learning and assignment management</li>
+                                        <li>Enable communication between faculty and students</li>
+                                        <li>Connect students with placement opportunities</li>
+                                        <li>Improve and optimize our platform</li>
+                                        <li>Send service-related communications</li>
+                                        <li>Ensure platform security and prevent fraud</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            {/* Section 03 */}
+                            <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                    <span className="font-mono text-xs text-neutral-400 mr-4">03</span>
+                                    Data Sharing
+                                </h2>
+                                <div className="pl-8 space-y-3 text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                                    <p>We do not sell your personal information. We may share data with:</p>
+                                    <ul className="list-disc pl-5 space-y-2">
+                                        <li>Your registered university administration</li>
+                                        <li>Service providers who assist in platform operations</li>
+                                        <li>Employers (with student consent for placements)</li>
+                                        <li>Law enforcement when required by law</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            {/* Section 04 */}
+                            <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                    <span className="font-mono text-xs text-neutral-400 mr-4">04</span>
+                                    Data Security
+                                </h2>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed pl-8">
+                                    We implement industry-standard security measures including encryption,
+                                    access controls, and regular security audits to protect your academic and personal data.
+                                </p>
+                            </div>
+
+                            {/* Section 05 */}
+                            <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                    <span className="font-mono text-xs text-neutral-400 mr-4">05</span>
+                                    Your Rights
+                                </h2>
+                                <div className="pl-8 text-sm text-neutral-500 dark:text-neutral-400">
+                                    <ul className="list-disc pl-5 space-y-2 leading-relaxed">
+                                        <li>Access and export your data</li>
+                                        <li>Request correction of inaccurate information</li>
+                                        <li>Request data deletion (subject to academic records requirements)</li>
+                                        <li>Opt-out of marketing communications</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                    For privacy-related inquiries, contact us at{" "}
+                                    <a href="mailto:privacy@buildrhq.com" className="text-neutral-900 dark:text-white underline">
+                                        privacy@buildrhq.com
+                                    </a>
+                                </p>
+                            </div>
+                        </div>
+                    </main>
                 </div>
-            </div>
+            </motion.div>
         </div>
     );
 }

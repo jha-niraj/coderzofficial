@@ -4,8 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
-    Target, Globe, Cpu, Terminal, Layers, ShieldCheck, GitMerge,
-    Zap, Users, FolderCode
+    Target, Globe, Cpu, Terminal, Layers, ShieldCheck
 } from "lucide-react"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
@@ -80,22 +79,18 @@ export default function ProjectsSection() {
         {
             label: "Projects Built",
             value: loading ? "..." : `${formatNumber(stats?.totalProjects || 0)}+`,
-            icon: FolderCode
         },
         {
             label: "Active Builders",
             value: loading ? "..." : `${formatNumber(stats?.activeBuilders || 0)}+`,
-            icon: Users
         },
         {
             label: "Tasks Completed",
             value: loading ? "..." : `${formatNumber(stats?.completedTasks || 0)}+`,
-            icon: GitMerge
         },
         {
             label: "Success Rate",
             value: loading ? "..." : `${stats?.successRate || 94}%`,
-            icon: Zap
         },
     ]
 
@@ -130,15 +125,16 @@ export default function ProjectsSection() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: index * 0.1 }}
-                                className="group bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 hover:border-neutral-300 dark:hover:border-neutral-700 transition-colors"
+                                className="group bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-8 hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors"
                             >
-                                <div className="w-10 h-10 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 flex items-center justify-center mb-4 text-neutral-900 dark:text-white">
-                                    <feature.icon className="w-5 h-5" />
+                                <div className="font-mono text-5xl font-bold text-neutral-200 dark:text-neutral-800 leading-none mb-4 select-none">
+                                    {String(index + 1).padStart(2, '0')}
                                 </div>
-                                <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">
+                                <feature.icon className="w-7 h-7 text-neutral-900 dark:text-white mb-4" />
+                                <h3 className="text-xl font-bold text-neutral-900 dark:text-white">
                                     {feature.title}
                                 </h3>
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed mt-3">
                                     {feature.description}
                                 </p>
                             </motion.div>
@@ -183,21 +179,20 @@ export default function ProjectsSection() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.3 }}
-                    className="mt-20 border-t border-neutral-200 dark:border-neutral-800 pt-10"
+                    className="mt-20"
                 >
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                         {
                             displayStats.map((stat, index) => (
-                                <div key={index} className="flex flex-col items-center md:items-start">
-                                    <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-mono text-2xl font-bold mb-1">
-                                        <stat.icon className="w-5 h-5 text-neutral-400" />
-                                        {loading ? (
-                                            <Skeleton className="h-7 w-16" />
-                                        ) : (
-                                            stat.value
-                                        )}
-                                    </div>
-                                    <div className="text-xs text-neutral-500 uppercase tracking-wider font-medium">
+                                <div key={index} className="flex flex-col items-center md:items-start border-t border-neutral-200 dark:border-neutral-800 pt-6">
+                                    {loading ? (
+                                        <Skeleton className="h-9 w-20 mb-2" />
+                                    ) : (
+                                        <div className="text-3xl font-bold font-mono text-neutral-900 dark:text-white mb-1">
+                                            {stat.value}
+                                        </div>
+                                    )}
+                                    <div className="text-xs text-neutral-500 uppercase tracking-widest font-medium">
                                         {stat.label}
                                     </div>
                                 </div>

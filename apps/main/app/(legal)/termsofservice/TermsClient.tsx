@@ -1,133 +1,195 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
 import SmoothScroll from "@/components/smoothscroll"
 
 export default function TermsOfService() {
-    const sections = [
-        { id: "acceptance", title: "1. Acceptance of Terms" },
-        { id: "eligibility", title: "2. Eligibility & Accounts" },
-        { id: "credits", title: "3. Credits & Payments" },
-        { id: "content", title: "4. User Content & Projects" },
-        { id: "conduct", title: "5. Code of Conduct" },
-        { id: "termination", title: "6. Termination" },
-        { id: "disclaimers", title: "7. Disclaimers & Liability" },
-    ]
-
-    const scrollToSection = (id: string) => {
-        document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
-    }
-
     return (
         <SmoothScroll>
             <div className="min-h-screen bg-white dark:bg-neutral-950 font-sans selection:bg-neutral-100 dark:selection:bg-neutral-800">
-                <div className="max-w-7xl mx-auto px-6 py-12 md:py-20">
-                    <div className="mb-16 border-b border-neutral-200 dark:border-neutral-800 pb-10">
-                        <Link href="/" className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white mb-6 transition-colors">
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Return Home
-                        </Link>
-                        <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 dark:text-white tracking-tight mb-4">
-                            Terms of Service
-                        </h1>
-                        <p className="text-lg text-neutral-500 dark:text-neutral-400">
-                            Last Updated: April 15, 2025
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
-                        <div className="hidden md:block md:col-span-3 lg:col-span-3">
-                            <div className="sticky top-24 space-y-1">
-                                <p className="text-xs font-bold text-neutral-900 dark:text-white uppercase tracking-wider mb-4 px-3">
-                                    Table of Contents
+                <div className="max-w-7xl mx-auto px-6 py-16 md:py-24">
+                    <div className="flex gap-16 items-start">
+                        {/* Sidebar */}
+                        <aside className="hidden lg:block w-[260px] shrink-0">
+                            <div className="sticky top-24">
+                                <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-6">
+                                    Legal documents
                                 </p>
-                                {
-                                    sections.map((section) => (
-                                        <button
-                                            key={section.id}
-                                            onClick={() => scrollToSection(section.id)}
-                                            className="block w-full text-left px-3 py-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg transition-colors"
-                                        >
-                                            {section.title}
-                                        </button>
-                                    ))
-                                }
-                            </div>
-                        </div>
-                        <div className="md:col-span-9 lg:col-span-8 lg:col-start-5 space-y-16">
-
-                            <section id="acceptance">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">1. Acceptance of Terms</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    By accessing or using The Coder&apos;z platform (&quot;Service&quot;), including our projects, certifications, AI tools, and assessment engines, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the Service.
-                                </p>
-                            </section>
-                            <section id="eligibility">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">2. Eligibility & Accounts</h2>
-                                <div className="space-y-4 text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    <p>
-                                        You must be at least 13 years old to use the Service. By creating an account, you represent that the information you provide is accurate and complete.
+                                <nav className="space-y-1 mb-10">
+                                    <span className="block px-3 py-2 text-sm font-semibold text-neutral-900 dark:text-white bg-neutral-100 dark:bg-neutral-800 rounded-lg">
+                                        Terms of Service
+                                    </span>
+                                    <Link
+                                        href="/privacypolicy"
+                                        className="block px-3 py-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg transition-colors"
+                                    >
+                                        Privacy Policy
+                                    </Link>
+                                    <a
+                                        href="mailto:legal@buildrhq.com"
+                                        className="block px-3 py-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-50 dark:hover:bg-neutral-900 rounded-lg transition-colors"
+                                    >
+                                        Contact
+                                    </a>
+                                </nav>
+                                <div className="border-t border-neutral-200 dark:border-neutral-800 pt-8">
+                                    <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-3">
+                                        Questions?
                                     </p>
-                                    <ul className="list-disc pl-5 space-y-2">
-                                        <li>You are responsible for maintaining the security of your account credentials.</li>
-                                        <li>You must notify us immediately of any unauthorized use of your account.</li>
-                                        <li>One person or legal entity may not maintain more than one free account.</li>
-                                    </ul>
+                                    <a
+                                        href="mailto:legal@buildrhq.com"
+                                        className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors break-all"
+                                    >
+                                        legal@buildrhq.com
+                                    </a>
                                 </div>
-                            </section>
-                            <section id="credits">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">3. Credits, Payments & Virtual Items</h2>
-                                <div className="space-y-4 text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    <p>
-                                        The Coder&apos;z utilizes a credit-based system (&quot;Compute Credits&quot;) for accessing premium AI features and assessments.
+                            </div>
+                        </aside>
+
+                        {/* Main content */}
+                        <main className="flex-1 min-w-0">
+                            <div className="mb-12">
+                                <p className="text-sm text-neutral-400 mb-6">Effective May 13, 2026</p>
+                                <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-neutral-900 dark:text-white leading-none mb-6">
+                                    Terms of <em>service.</em>
+                                </h1>
+                                <p className="text-base text-neutral-500 dark:text-neutral-400 max-w-2xl leading-relaxed">
+                                    These terms govern your use of BuildrHQ. By using our platform, you agree to be bound by them. Please read carefully.
+                                </p>
+                            </div>
+
+                            {/* TL;DR */}
+                            <div className="mb-12 bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6">
+                                <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 mb-3">TL;DR</p>
+                                <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                                    You own everything you create. Credits are purchased one-time and don&apos;t expire. You pay for what you use. If we make mistakes, our liability is capped at what you paid us.
+                                </p>
+                            </div>
+
+                            <div className="space-y-0">
+                                {/* Section 01 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">01</span>
+                                        Your Account
+                                    </h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed pl-8">
+                                        You must be at least 13 years old to create an account. By registering, you confirm your information is accurate and complete. You are responsible for maintaining the security of your credentials and must notify us immediately of any unauthorized access. One person or entity may not maintain more than one free account.
                                     </p>
-                                    <div className="bg-neutral-50 dark:bg-neutral-900 p-6 rounded-xl border border-neutral-200 dark:border-neutral-800">
-                                        <h4 className="font-bold text-neutral-900 dark:text-white mb-2">Key Policies:</h4>
-                                        <ul className="list-disc pl-5 space-y-2 text-sm">
-                                            <li><strong>No Expiration:</strong> Purchased credits do not expire unless your account is terminated for violation of terms.</li>
-                                            <li><strong>Non-Refundable:</strong> All credit purchases are final and non-refundable, except as required by law.</li>
-                                            <li><strong>Non-Transferable:</strong> Credits cannot be sold, transferred, or exchanged for cash outside of the platform.</li>
+                                </div>
+
+                                {/* Section 02 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">02</span>
+                                        Credits &amp; Billing
+                                    </h2>
+                                    <div className="pl-8 space-y-3 text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                                        <p>
+                                            BuildrHQ uses a credit-based system for AI features and premium tools. Credits are purchased as one-time transactions and do not expire unless your account is terminated for a violation of these terms.
+                                        </p>
+                                        <ul className="list-disc pl-5 space-y-2">
+                                            <li><strong className="text-neutral-700 dark:text-neutral-300">No Expiration:</strong> Purchased credits persist indefinitely under a standing account.</li>
+                                            <li><strong className="text-neutral-700 dark:text-neutral-300">Non-Refundable:</strong> All purchases are final except where required by law.</li>
+                                            <li><strong className="text-neutral-700 dark:text-neutral-300">Non-Transferable:</strong> Credits cannot be sold, gifted, or exchanged for cash.</li>
                                         </ul>
                                     </div>
                                 </div>
-                            </section>
-                            <section id="content">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">4. User Content & Projects</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-                                    You retain ownership of any code, projects, or content (&quot;User Content&quot;) you submit to the platform. However, by submitting User Content to public repositories or community showcases, you grant The Coder&apos;z a worldwide, non-exclusive license to use, reproduce, and display such content for promotional or educational purposes.
-                                </p>
-                            </section>
-                            <section id="conduct">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">5. Code of Conduct</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-                                    You agree not to engage in any of the following prohibited activities:
-                                </p>
-                                <ul className="list-disc pl-5 space-y-2 text-neutral-600 dark:text-neutral-400">
-                                    <li>Reverse engineering the AI models or assessment algorithms.</li>
-                                    <li>Using bots or scripts to &quot;farm&quot; XP or Credits.</li>
-                                    <li>Harassing, bullying, or intimidating other community members.</li>
-                                    <li>Posting content that infringes on intellectual property rights.</li>
-                                </ul>
-                            </section>
-                            <section id="termination">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">6. Termination</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    We may terminate or suspend your access to the Service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms. Upon termination, your right to use the Service will immediately cease.
-                                </p>
-                            </section>
-                            <section id="disclaimers">
-                                <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-4">7. Disclaimers & Limitation of Liability</h2>
-                                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
-                                    The Service is provided on an &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; basis. The Coder&apos;z makes no warranties, expressed or implied, regarding the accuracy of AI-generated code reviews or the likelihood of employment resulting from our certifications.
-                                </p>
-                            </section>
-                            <div className="pt-10 border-t border-neutral-200 dark:border-neutral-800">
-                                <p className="text-neutral-500 dark:text-neutral-400">
-                                    Questions about these terms? Contact us at <a href="mailto:legal@thecoderz.com" className="text-neutral-900 dark:text-white underline">legal@thecoderz.com</a>
-                                </p>
-                            </div>
 
-                        </div>
+                                {/* Section 03 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">03</span>
+                                        Your Content &amp; Projects
+                                    </h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed pl-8">
+                                        You retain full ownership of all code, projects, and content you create or submit on BuildrHQ. We do not claim intellectual property rights over your work. By sharing content to public showcases, you grant BuildrHQ a limited, non-exclusive license to display that content for promotional and educational purposes only.
+                                    </p>
+                                </div>
+
+                                {/* Section 04 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">04</span>
+                                        AI Outputs
+                                    </h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed pl-8">
+                                        AI-generated content on our platform is provided as-is. We do not guarantee the accuracy, completeness, or fitness of AI outputs for any specific purpose. You are responsible for reviewing and validating any AI-generated code, documents, or suggestions before use in production environments. We do not use your content to train our AI models.
+                                    </p>
+                                </div>
+
+                                {/* Section 05 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">05</span>
+                                        Acceptable Use
+                                    </h2>
+                                    <div className="pl-8 space-y-3 text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                                        <p>You agree not to engage in any of the following:</p>
+                                        <ul className="list-disc pl-5 space-y-2">
+                                            <li>Reverse engineering our AI models or assessment algorithms.</li>
+                                            <li>Using bots or scripts to farm credits or manipulate metrics.</li>
+                                            <li>Harassing, bullying, or intimidating other users.</li>
+                                            <li>Posting content that infringes on intellectual property rights.</li>
+                                            <li>Using the platform for any unlawful or fraudulent purpose.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* Section 06 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">06</span>
+                                        Termination
+                                    </h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed pl-8">
+                                        We may suspend or terminate your access immediately, without prior notice, if you breach these Terms. You may also delete your account at any time. Upon termination, your right to use the Service ceases immediately. Unused credits are forfeited upon termination for a terms violation.
+                                    </p>
+                                </div>
+
+                                {/* Section 07 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">07</span>
+                                        Disclaimers &amp; Liability
+                                    </h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed pl-8">
+                                        The Service is provided &quot;AS IS&quot; and &quot;AS AVAILABLE&quot; without warranties of any kind. BuildrHQ makes no warranties regarding the accuracy of AI-generated outputs or the likelihood of any specific outcome. Our total liability to you for any claim arising from use of the Service is capped at the amount you paid us in the 12 months preceding the claim.
+                                    </p>
+                                </div>
+
+                                {/* Section 08 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">08</span>
+                                        Governing Law
+                                    </h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed pl-8">
+                                        These Terms are governed by and construed in accordance with applicable law. Any disputes arising under these Terms shall be resolved through binding arbitration, except where prohibited by law.
+                                    </p>
+                                </div>
+
+                                {/* Section 09 */}
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <h2 className="flex items-center text-lg font-bold text-neutral-900 dark:text-white mb-4">
+                                        <span className="font-mono text-xs text-neutral-400 mr-4">09</span>
+                                        Changes
+                                    </h2>
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed pl-8">
+                                        We may update these Terms at any time. We will notify you of material changes via email or a prominent notice on the platform. Continued use of BuildrHQ after changes constitutes your acceptance of the updated Terms.
+                                    </p>
+                                </div>
+
+                                <div className="py-10 border-t border-neutral-200 dark:border-neutral-800">
+                                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                                        Questions about these terms? Email us at{" "}
+                                        <a href="mailto:legal@buildrhq.com" className="text-neutral-900 dark:text-white underline">
+                                            legal@buildrhq.com
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                        </main>
                     </div>
                 </div>
             </div>

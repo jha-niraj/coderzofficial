@@ -6,9 +6,10 @@ import {
 import { Badge } from '@repo/ui/components/ui/badge'
 import { Button } from '@repo/ui/components/ui/button'
 import {
-    Clock, Users, Eye, Trophy, Brain, CheckCircle2, Play, Crown, Sparkles
+    Clock, Users, Eye, Trophy, Brain, CheckCircle2, Play, Crown, Sparkles, ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Progress } from '@repo/ui/components/ui/progress'
 import { Skeleton } from '@repo/ui/components/ui/skeleton'
 
@@ -52,169 +53,180 @@ interface ProjectCardProps {
     variant?: 'default' | 'compact'
 }
 
-const difficultyColors = {
-    BEGINNER: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    INTERMEDIATE: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    ADVANCED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
-}
-
 const statusColors = {
-    NOT_STARTED: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400',
-    IN_PROGRESS: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-    COMPLETED: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    SUBMITTED: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
+    NOT_STARTED: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300',
+    IN_PROGRESS: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300',
+    COMPLETED: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300',
+    SUBMITTED: 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300',
 }
 
 export function ProjectCard({ project, showProgress = false }: ProjectCardProps) {
     const description = project.shortDescription || project.description
-    const truncatedDescription = description?.length > 120 ? description.substring(0, 120) + '...' : description
 
     const userProgress = project.progress?.[0]
     const hasStarted = userProgress && userProgress.status !== 'NOT_STARTED'
 
+    const creatorInitial = project.creator?.name
+        ? project.creator.name.charAt(0).toUpperCase()
+        : project.creator?.username
+            ? project.creator.username.charAt(0).toUpperCase()
+            : '?'
+
     return (
-        <Card className="h-full flex flex-col bg-white dark:bg-neutral-900 p-3 shadow-2xl rounded-xl border border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-300">
-            <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        <Badge className={`${difficultyColors[project.difficulty as keyof typeof difficultyColors]} text-xs px-2 py-1`}>
-                            {project.difficulty}
-                        </Badge>
-                        {project.isPlatformSeeded && (
-                            <Badge className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/40 dark:to-yellow-950/40 text-amber-700 dark:text-amber-300 text-[10px] border border-amber-200 dark:border-amber-800 gap-0.5">
-                                <Crown className="w-2.5 h-2.5" />
-                                BuildrHQ
-                            </Badge>
-                        )}
-                        {project.guidedModeEnabled && (
-                            <Badge className="bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 text-[10px] border-0 gap-0.5">
-                                <Sparkles className="w-2.5 h-2.5" />
-                                AI Guided
-                            </Badge>
-                        )}
-                    </div>
-                    <div className="flex flex-wrap gap-1 justify-end">
-                        {
-                            project.technologies.slice(0, 2).map((tech) => (
-                                <Badge key={tech} variant="outline" className="text-xs">
-                                    {tech}
-                                </Badge>
-                            ))
-                        }
-                        {
-                            project.technologies.length > 2 && (
-                                <Badge variant="outline" className="text-xs">
-                                    +{project.technologies.length - 2}
-                                </Badge>
-                            )
-                        }
-                    </div>
+        <Card className="h-full flex flex-col bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden hover:border-neutral-400 dark:hover:border-neutral-600 hover:shadow-sm transition-all duration-200">
+            {/* Top: tech stack tags */}
+            <CardHeader className="px-6 pt-6 pb-4">
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                    {
+                        project.technologies.slice(0, 4).map((tech) => (
+                            <span
+                                key={tech}
+                                className="font-mono text-xs px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-700"
+                            >
+                                {tech}
+                            </span>
+                        ))
+                    }
+                    {
+                        project.technologies.length > 4 && (
+                            <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-500 border border-neutral-200 dark:border-neutral-700">
+                                +{project.technologies.length - 4}
+                            </span>
+                        )
+                    }
                 </div>
-                <h3 className="text-lg font-bold text-neutral-900 dark:text-white line-clamp-2 leading-tight">
+
+                {/* Middle: title + description */}
+                <h3 className="font-bold text-lg text-neutral-900 dark:text-white leading-snug line-clamp-2">
                     {project.title}
                 </h3>
-                {
-                    showProgress && userProgress && (
-                        <Badge className={`${statusColors[userProgress.status as keyof typeof statusColors]} text-xs w-fit mt-2`}>
-                            {userProgress.status.replace('_', ' ')}
-                        </Badge>
-                    )
-                }
+
+                {showProgress && userProgress && (
+                    <Badge className={`${statusColors[userProgress.status as keyof typeof statusColors]} text-xs w-fit mt-2`}>
+                        {userProgress.status.replace('_', ' ')}
+                    </Badge>
+                )}
             </CardHeader>
-            <CardContent className="pb-3 flex-grow space-y-4">
-                <p className="text-sm text-left text-neutral-600 dark:text-neutral-400 line-clamp-2">
-                    {truncatedDescription}
+
+            <CardContent className="px-6 pb-4 flex-grow space-y-4">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2 leading-relaxed">
+                    {description}
                 </p>
-                {
-                    showProgress && userProgress && hasStarted && (
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-xs">
-                                <span className="text-neutral-600 dark:text-neutral-400">Progress</span>
-                                <span className="text-neutral-900 dark:text-white font-medium">
-                                    {userProgress.tasksCompleted}/{userProgress.totalTasks} tasks
-                                </span>
-                            </div>
-                            <Progress value={userProgress.progressPercentage} className="h-2" />
+
+                {showProgress && userProgress && hasStarted && (
+                    <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                            <span className="text-neutral-500 dark:text-neutral-400">Progress</span>
+                            <span className="text-neutral-900 dark:text-white font-medium">
+                                {userProgress.tasksCompleted}/{userProgress.totalTasks} tasks
+                            </span>
                         </div>
-                    )
-                }
-                <div className="flex items-center gap-4 text-xs text-neutral-600 dark:text-neutral-400">
+                        <Progress value={userProgress.progressPercentage} className="h-1.5" />
+                    </div>
+                )}
+
+                <div className="flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-500">
                     <div className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" />
                         <span>{project.estimatedHours}h</span>
                     </div>
-                    {
-                        project._count && (
-                            <div className="flex items-center gap-1">
-                                <Users className="w-3.5 h-3.5" />
-                                <span>{project._count.progress} enrolled</span>
-                            </div>
-                        )
-                    }
-                    {
-                        project.totalViews !== undefined && (
-                            <div className="flex items-center gap-1">
-                                <Eye className="w-3.5 h-3.5" />
-                                <span>{project.totalViews}</span>
-                            </div>
-                        )
-                    }
-                    {
-                        project.includeAssessment && (
-                            <div className="flex items-center gap-1">
-                                <Brain className="w-3.5 h-3.5" />
-                                <span>AI</span>
-                            </div>
-                        )
-                    }
+                    {project._count && (
+                        <div className="flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5" />
+                            <span>{project._count.progress} enrolled</span>
+                        </div>
+                    )}
+                    {project.totalViews !== undefined && (
+                        <div className="flex items-center gap-1">
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{project.totalViews}</span>
+                        </div>
+                    )}
+                    {project.includeAssessment && (
+                        <div className="flex items-center gap-1">
+                            <Brain className="w-3.5 h-3.5" />
+                            <span>AI</span>
+                        </div>
+                    )}
+                    {project.isPlatformSeeded && (
+                        <div className="flex items-center gap-1">
+                            <Crown className="w-3.5 h-3.5" />
+                            <span>BuildrHQ</span>
+                        </div>
+                    )}
+                    {project.guidedModeEnabled && (
+                        <div className="flex items-center gap-1">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Guided</span>
+                        </div>
+                    )}
                 </div>
             </CardContent>
-            <CardFooter className="pt-3 border-t border-neutral-200 dark:border-neutral-800">
-                <div className="w-full flex gap-2">
-                    <Link href={`/projects/${project.slug}`} className="flex-1">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-full rounded-xl border-neutral-200 dark:border-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                        >
-                            <Eye className="w-4 h-4 mr-2" />
-                            View
-                        </Button>
-                    </Link>
-                    {
-                        showProgress && userProgress && (
+
+            {/* Bottom: creator + action */}
+            <CardFooter className="px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
+                <div className="w-full flex items-center justify-between gap-2">
+                    {/* Creator */}
+                    <div className="flex items-center gap-2 min-w-0">
+                        {project.creator?.image ? (
+                            <Image
+                                src={project.creator.image}
+                                alt={project.creator.name || project.creator.username || 'Creator'}
+                                width={24}
+                                height={24}
+                                className="rounded-full object-cover flex-shrink-0"
+                            />
+                        ) : (
+                            <div className="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center flex-shrink-0">
+                                <span className="text-[10px] font-mono font-bold text-neutral-600 dark:text-neutral-300">
+                                    {creatorInitial}
+                                </span>
+                            </div>
+                        )}
+                        <span className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                            {project.creator?.name || project.creator?.username || 'Anonymous'}
+                        </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {showProgress && userProgress ? (
                             <>
-                                {
-                                    userProgress.status === 'IN_PROGRESS' && (
-                                        <Link href={`/projects/${project.slug}/sprints`} className="flex-1">
-                                            <Button size="sm" className="w-full bg-black text-white dark:bg-white dark:text-black hover:opacity-90 rounded-xl">
-                                                <Play className="w-4 h-4 mr-2" />
-                                                Continue
-                                            </Button>
-                                        </Link>
-                                    )
-                                }
-                                {
-                                    userProgress.status === 'COMPLETED' && !project.submissions?.length && (
-                                        <Link href={`/projects/${project.slug}/submit`} className="flex-1">
-                                            <Button size="sm" className="w-full bg-black text-white dark:bg-white dark:text-black hover:opacity-90 rounded-xl">
-                                                <Trophy className="w-4 h-4 mr-2" />
-                                                Submit
-                                            </Button>
-                                        </Link>
-                                    )
-                                }
-                                {
-                                    userProgress.status === 'SUBMITTED' && (
-                                        <Button size="sm" disabled className="flex-1 rounded-xl">
-                                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                                            Submitted
+                                {userProgress.status === 'IN_PROGRESS' && (
+                                    <Link href={`/projects/${project.slug}/sprints`}>
+                                        <Button size="sm" className="bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 rounded-xl text-xs">
+                                            <Play className="w-3.5 h-3.5 mr-1.5" />
+                                            Continue
                                         </Button>
-                                    )
-                                }
+                                    </Link>
+                                )}
+                                {userProgress.status === 'COMPLETED' && !project.submissions?.length && (
+                                    <Link href={`/projects/${project.slug}/submit`}>
+                                        <Button size="sm" className="bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 rounded-xl text-xs">
+                                            <Trophy className="w-3.5 h-3.5 mr-1.5" />
+                                            Submit
+                                        </Button>
+                                    </Link>
+                                )}
+                                {userProgress.status === 'SUBMITTED' && (
+                                    <Button size="sm" disabled className="rounded-xl text-xs">
+                                        <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+                                        Submitted
+                                    </Button>
+                                )}
+                                <Link href={`/projects/${project.slug}`}>
+                                    <Button variant="outline" size="sm" className="rounded-xl border-neutral-200 dark:border-neutral-700 text-xs">
+                                        <Eye className="w-3.5 h-3.5" />
+                                    </Button>
+                                </Link>
                             </>
-                        )
-                    }
+                        ) : (
+                            <Link href={`/projects/${project.slug}`} className="flex items-center gap-1 text-xs font-medium text-neutral-900 dark:text-white hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors">
+                                View Project
+                                <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                        )}
+                    </div>
                 </div>
             </CardFooter>
         </Card>
@@ -223,32 +235,34 @@ export function ProjectCard({ project, showProgress = false }: ProjectCardProps)
 
 export function ProjectCardSkeleton() {
     return (
-        <Card className="h-full flex flex-col bg-white dark:bg-neutral-900 p-3 shadow-2xl rounded-xl border border-neutral-200 dark:border-neutral-800">
-            <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                    <div className="flex flex-wrap gap-1 justify-end">
-                        <Skeleton className="h-6 w-16 rounded-full" />
-                        <Skeleton className="h-6 w-16 rounded-full" />
-                    </div>
+        <Card className="h-full flex flex-col bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl overflow-hidden">
+            <CardHeader className="px-6 pt-6 pb-4">
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                    <Skeleton className="h-5 w-14 rounded-md" />
+                    <Skeleton className="h-5 w-16 rounded-md" />
+                    <Skeleton className="h-5 w-12 rounded-md" />
                 </div>
                 <Skeleton className="h-6 w-full mb-2" />
                 <Skeleton className="h-6 w-3/4" />
             </CardHeader>
-            <CardContent className="pb-3 flex-grow space-y-4">
+            <CardContent className="px-6 pb-4 flex-grow space-y-4">
                 <div className="space-y-2">
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-2/3" />
                 </div>
                 <div className="flex items-center gap-4">
-                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-4 w-10" />
                     <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-4 w-14" />
+                    <Skeleton className="h-4 w-12" />
                 </div>
             </CardContent>
-            <CardFooter className="pt-3 border-t border-neutral-200 dark:border-neutral-800">
-                <div className="w-full flex gap-2">
-                    <Skeleton className="h-9 flex-1 rounded-xl" />
+            <CardFooter className="px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
+                <div className="w-full flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-6 rounded-full" />
+                        <Skeleton className="h-4 w-20" />
+                    </div>
+                    <Skeleton className="h-4 w-20" />
                 </div>
             </CardFooter>
         </Card>

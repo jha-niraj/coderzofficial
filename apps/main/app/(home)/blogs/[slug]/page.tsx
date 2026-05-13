@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowLeft, Clock, Calendar, Tag } from 'lucide-react'
+import { ArrowLeft, Clock, Calendar } from 'lucide-react'
 import { allPosts, getPostBySlug } from '@/content/blog'
 import { authors } from '@/content/authors'
 import { getPostContent } from '@/lib/blog-renderer'
@@ -74,6 +74,10 @@ export default async function BlogPostPage({ params }: Props) {
         "mainEntityOfPage": { "@type": "WebPage", "@id": `${BASE_URL}/blogs/${post.slug}` },
     }
 
+    const publishedDate = new Date(post.publishedAt).toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric'
+    })
+
     return (
         <>
             <script
@@ -81,115 +85,141 @@ export default async function BlogPostPage({ params }: Props) {
                 dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
             />
             <div className="min-h-screen bg-white dark:bg-neutral-950">
-                <div className="max-w-3xl mx-auto px-6 py-12">
+
+                {/* ── Article Header ── */}
+                <div className="max-w-[740px] mx-auto px-6 pt-10 pb-0">
+
                     {/* Back link */}
                     <Link
                         href="/blogs"
-                        className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white mb-8 group transition-colors"
+                        className="inline-flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-900 dark:hover:text-white mb-10 group transition-colors"
                     >
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
                         All posts
                     </Link>
 
-                    {/* Category + tags */}
-                    <div className="flex flex-wrap items-center gap-2 mb-4">
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 font-medium">
+                    {/* Category + tags row */}
+                    <div className="flex flex-wrap items-center gap-2 mb-5">
+                        <span className="text-[11px] font-mono uppercase tracking-widest px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400">
                             {post.category}
                         </span>
                         {post.tags.slice(0, 3).map(tag => (
-                            <span key={tag} className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
-                                <Tag className="w-3 h-3" />{tag}
+                            <span key={tag} className="text-[11px] font-mono text-neutral-400 dark:text-neutral-600">
+                                #{tag}
                             </span>
                         ))}
                     </div>
 
                     {/* Title */}
-                    <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white leading-tight mb-4">
+                    <h1 className="text-3xl md:text-[2.6rem] font-bold text-neutral-900 dark:text-white leading-[1.18] tracking-tight mb-5">
                         {post.title}
                     </h1>
 
                     {/* Description */}
-                    <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-6 leading-relaxed">
+                    <p className="text-lg text-neutral-500 dark:text-neutral-400 leading-relaxed mb-8">
                         {post.description}
                     </p>
 
-                    {/* Meta row */}
-                    <div className="flex items-center gap-4 pb-6 border-b border-neutral-200 dark:border-neutral-800 mb-8">
-                        {author?.avatar && (
-                            <Image src={author.avatar} alt={author.name} width={36} height={36} className="rounded-full" />
-                        )}
-                        <div>
-                            <p className="text-sm font-medium text-neutral-900 dark:text-white">{author?.name}</p>
-                            <p className="text-xs text-neutral-500 dark:text-neutral-400">{author?.role}</p>
+                    {/* Author + meta */}
+                    <div className="flex items-center justify-between py-5 border-t border-b border-neutral-100 dark:border-neutral-800 mb-10">
+                        <div className="flex items-center gap-3">
+                            {author?.avatar && (
+                                <Image
+                                    src={author.avatar}
+                                    alt={author.name}
+                                    width={36}
+                                    height={36}
+                                    className="rounded-full ring-1 ring-neutral-200 dark:ring-neutral-700"
+                                />
+                            )}
+                            <div>
+                                <p className="text-sm font-semibold text-neutral-900 dark:text-white leading-tight">
+                                    {author?.name}
+                                </p>
+                                <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
+                                    {author?.role}
+                                </p>
+                            </div>
                         </div>
-                        <div className="ml-auto flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
-                            <span className="flex items-center gap-1">
+                        <div className="flex items-center gap-4 text-xs text-neutral-400 dark:text-neutral-500 font-mono">
+                            <span className="flex items-center gap-1.5">
                                 <Calendar className="w-3.5 h-3.5" />
-                                {new Date(post.publishedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                {publishedDate}
                             </span>
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1.5">
                                 <Clock className="w-3.5 h-3.5" />
                                 {post.readingTime} min read
                             </span>
                         </div>
                     </div>
+                </div>
 
-                    {/* Hero image */}
-                    <div className="relative w-full aspect-[1200/630] mb-10 rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+                {/* ── Hero image ── */}
+                <div className="max-w-[900px] mx-auto px-6 mb-12">
+                    <div className="relative w-full aspect-[1200/630] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
                         <Image
                             src={post.heroImage}
                             alt={post.title}
                             fill
                             className="object-cover"
                             priority
-                            sizes="(max-width: 768px) 100vw, 768px"
+                            sizes="(max-width: 768px) 100vw, 900px"
                         />
                     </div>
+                </div>
 
-                    {/* Article body */}
+                {/* ── Article body ── */}
+                <div className="max-w-[740px] mx-auto px-6 pb-24">
                     <article
-                        className="prose prose-neutral dark:prose-invert max-w-none
-                            prose-headings:font-bold prose-headings:tracking-tight
-                            prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-4
-                            prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
-                            prose-p:leading-relaxed prose-p:text-neutral-700 dark:prose-p:text-neutral-300
-                            prose-a:text-orange-600 dark:prose-a:text-orange-400 prose-a:no-underline hover:prose-a:underline
-                            prose-strong:text-neutral-900 dark:prose-strong:text-white
-                            prose-code:bg-neutral-100 dark:prose-code:bg-neutral-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-normal
-                            prose-pre:bg-neutral-900 dark:prose-pre:bg-neutral-800 prose-pre:rounded-xl
-                            prose-img:rounded-xl prose-img:shadow-md
-                            prose-ul:text-neutral-700 dark:prose-ul:text-neutral-300
-                            prose-ol:text-neutral-700 dark:prose-ol:text-neutral-300
-                            prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50 dark:prose-blockquote:bg-orange-950/20 prose-blockquote:py-1 prose-blockquote:rounded-r-lg"
+                        className="blog-content"
                         dangerouslySetInnerHTML={{ __html: htmlContent }}
                     />
 
+                    {/* Divider */}
+                    <div className="mt-16 mb-12 border-t border-neutral-100 dark:border-neutral-800" />
+
+                    {/* Author bio */}
+                    {author && (
+                        <div className="flex items-start gap-4 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 mb-8">
+                            <Image
+                                src={author.avatar}
+                                alt={author.name}
+                                width={52}
+                                height={52}
+                                className="rounded-full flex-shrink-0 ring-1 ring-neutral-200 dark:ring-neutral-700"
+                            />
+                            <div>
+                                <p className="text-sm font-mono uppercase tracking-widest text-neutral-400 dark:text-neutral-500 mb-1">
+                                    Written by
+                                </p>
+                                <p className="font-bold text-neutral-900 dark:text-white">
+                                    {author.name}
+                                </p>
+                                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">
+                                    {author.role}
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* CTA */}
-                    <div className="mt-14 p-8 rounded-2xl bg-neutral-950 dark:bg-white text-center">
-                        <h3 className="text-xl font-bold text-white dark:text-neutral-900 mb-2">
-                            Ready to build your engineering career?
+                    <div className="p-8 rounded-2xl bg-neutral-950 dark:bg-neutral-900 border border-neutral-800 text-center">
+                        <p className="text-[11px] font-mono uppercase tracking-widest text-neutral-500 mb-3">
+                            BuildrHQ
+                        </p>
+                        <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">
+                            Build your engineering career.
                         </h3>
-                        <p className="text-neutral-400 dark:text-neutral-600 text-sm mb-5">
-                            Join thousands of developers using BuildrHQ to ace interviews, build portfolios, and land top engineering roles.
+                        <p className="text-neutral-400 text-sm leading-relaxed mb-6 max-w-sm mx-auto">
+                            Join thousands of developers using AI tools, portfolio projects, and mock interviews to land top engineering roles.
                         </p>
                         <Link
                             href="/register"
-                            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
+                            className="inline-flex items-center gap-2 bg-white hover:bg-neutral-100 text-neutral-900 font-semibold px-6 py-3 rounded-xl transition-colors text-sm"
                         >
                             Get started free →
                         </Link>
                     </div>
-
-                    {/* Author bio */}
-                    {author && (
-                        <div className="mt-10 p-6 rounded-2xl border border-neutral-200 dark:border-neutral-800 flex items-start gap-4">
-                            <Image src={author.avatar} alt={author.name} width={48} height={48} className="rounded-full flex-shrink-0" />
-                            <div>
-                                <p className="font-semibold text-neutral-900 dark:text-white">{author.name}</p>
-                                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{author.role}</p>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         </>

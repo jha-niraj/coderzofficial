@@ -12,7 +12,7 @@ import {
 } from "@repo/ui/components/ui/tabs"
 import { Button } from "@repo/ui/components/ui/button"
 import {
-	Receipt, ArrowUpRight, ArrowDownLeft, Calendar, Clock, ExternalLink, 
+	Receipt, ArrowUpRight, ArrowDownLeft, Calendar, Clock, ExternalLink,
 	RefreshCw, CreditCard, Send
 } from "lucide-react"
 import { format } from "date-fns"
@@ -79,43 +79,43 @@ export default function TransactionsPage() {
 	const getTransactionIcon = (type: string) => {
 		switch (type) {
 			case "PURCHASE":
-				return <CreditCard className="h-4 w-4 text-green-600" />
+				return <CreditCard className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
 			case "SPEND":
-				return <ArrowUpRight className="h-4 w-4 text-red-600" />
+				return <ArrowUpRight className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
 			case "BONUS":
-				return <ArrowDownLeft className="h-4 w-4 text-blue-600" />
+				return <ArrowDownLeft className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
 			case "REWARD":
-				return <ArrowDownLeft className="h-4 w-4 text-purple-600" />
+				return <ArrowDownLeft className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
 			default:
-				return <Receipt className="h-4 w-4 text-gray-600" />
+				return <Receipt className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
 		}
 	}
 
 	const getTransactionColor = (type: string) => {
 		switch (type) {
 			case "PURCHASE":
-				return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400"
+				return "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
 			case "SPEND":
-				return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400"
+				return "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
 			case "BONUS":
-				return "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400"
+				return "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
 			case "REWARD":
-				return "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400"
+				return "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
 			default:
-				return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400"
+				return "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
 		}
 	}
 
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "COMPLETED":
-				return "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400"
+				return "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
 			case "PENDING":
-				return "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
+				return "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
 			case "FAILED":
-				return "bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400"
+				return "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
 			default:
-				return "bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-400"
+				return "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700"
 		}
 	}
 
@@ -130,12 +130,19 @@ export default function TransactionsPage() {
 
 	if (isPending || isLoading) {
 		return (
-			<div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-				<div className="container mx-auto px-4 py-8 max-w-6xl">
-					<div className="animate-pulse space-y-8">
-						<div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/3"></div>
-						<div className="h-12 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
-						<div className="h-96 bg-slate-200 dark:bg-slate-700 rounded"></div>
+			<div className="min-h-screen bg-white dark:bg-neutral-950 relative">
+				<div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
+				<div className="container mx-auto px-4 py-16 max-w-5xl">
+					<div className="animate-pulse space-y-6">
+						<div className="h-6 bg-neutral-100 dark:bg-neutral-800 rounded w-1/4"></div>
+						<div className="h-10 bg-neutral-100 dark:bg-neutral-800 rounded w-1/2"></div>
+						<div className="h-4 bg-neutral-100 dark:bg-neutral-800 rounded w-1/3"></div>
+						<div className="h-12 bg-neutral-100 dark:bg-neutral-800 rounded w-full mt-8"></div>
+						<div className="space-y-3 mt-4">
+							{[1, 2, 3, 4].map((i) => (
+								<div key={i} className="h-16 bg-neutral-100 dark:bg-neutral-800 rounded"></div>
+							))}
+						</div>
 					</div>
 				</div>
 			</div>
@@ -144,16 +151,20 @@ export default function TransactionsPage() {
 
 	if (!session && !isPending) {
 		return (
-			<div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-				<div className="container mx-auto px-4 py-8 max-w-6xl">
-					<div className="text-center py-16">
-						<h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+			<div className="min-h-screen bg-white dark:bg-neutral-950 relative">
+				<div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
+				<div className="container mx-auto px-4 py-16 max-w-5xl">
+					<div className="flex flex-col items-center justify-center py-32 text-center">
+						<div className="w-14 h-14 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl flex items-center justify-center mb-6">
+							<Receipt className="h-6 w-6 text-neutral-400" />
+						</div>
+						<h1 className="text-2xl font-bold text-neutral-900 dark:text-white mb-3">
 							Authentication Required
 						</h1>
-						<p className="text-slate-600 dark:text-slate-400 mb-8">
+						<p className="text-neutral-500 dark:text-neutral-400 mb-8 max-w-sm">
 							Please sign in to view your transactions and transfers.
 						</p>
-						<Button asChild className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
+						<Button asChild variant="outline" className="border-neutral-200 dark:border-neutral-800">
 							<Link href="/signin">Sign In</Link>
 						</Button>
 					</div>
@@ -163,200 +174,209 @@ export default function TransactionsPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 dark:from-black dark:via-gray-950 dark:to-black">
-			<div className="container mx-auto px-4 py-16 max-w-6xl">
-				<div className="mb-8">
-					<div className="flex items-center justify-between mb-6">
-						<div className="flex items-center gap-4">
-							<div className="p-3 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl">
-								<Receipt className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-							</div>
-							<div>
-								<h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-									Transaction History
-								</h1>
-								<p className="text-slate-600 dark:text-slate-400">
-									Track your credit purchases, spending, and transfers
-								</p>
-							</div>
-						</div>
+		<div className="min-h-screen bg-white dark:bg-neutral-950 relative">
+			<div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />
+			<div className="container mx-auto px-6 py-16 max-w-5xl relative z-10">
+				{/* Page Header */}
+				<div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
+					<motion.div
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+					>
+						<Badge variant="outline" className="mb-4 bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 px-3 py-1 rounded-full text-neutral-600 dark:text-neutral-400 text-xs">
+							<Receipt className="w-3 h-3 mr-1.5" />
+							Ledger
+						</Badge>
+						<h1 className="text-4xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2">
+							Transaction History
+						</h1>
+						<p className="text-neutral-500 dark:text-neutral-400 font-light">
+							Track your credit purchases, spending, and transfers
+						</p>
+					</motion.div>
+					<motion.div
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						transition={{ delay: 0.15 }}
+					>
 						<Button
 							onClick={fetchData}
 							disabled={refreshing}
 							variant="outline"
-							className="gap-2"
+							className="gap-2 border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900"
 						>
 							<RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
 							Refresh
 						</Button>
-					</div>
+					</motion.div>
 				</div>
+
+				{/* Tabs */}
 				<Tabs defaultValue="transactions" className="space-y-6">
-					<TabsList className="grid w-full grid-cols-2 bg-white dark:bg-neutral-900 shadow-2xl p-2 rounded-xl">
-						<TabsTrigger value="transactions" className="flex items-center gap-2">
-							<CreditCard className="h-4 w-4" />
+					<TabsList className="w-full sm:w-auto grid grid-cols-2 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 p-1 rounded-lg gap-1">
+						<TabsTrigger
+							value="transactions"
+							className="flex items-center gap-2 text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md"
+						>
+							<CreditCard className="h-3.5 w-3.5" />
 							Credit Transactions
 						</TabsTrigger>
-						<TabsTrigger value="transfers" className="flex items-center gap-2">
-							<Send className="h-4 w-4" />
+						<TabsTrigger
+							value="transfers"
+							className="flex items-center gap-2 text-sm data-[state=active]:bg-white dark:data-[state=active]:bg-neutral-800 data-[state=active]:text-neutral-900 dark:data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md"
+						>
+							<Send className="h-3.5 w-3.5" />
 							Platform Transfers
 						</TabsTrigger>
 					</TabsList>
-					<TabsContent value="transactions" className="space-y-4">
-						<Card className="shadow-2xl space-y-4 p-4 border-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm rounded-xl">
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<CreditCard className="h-5 w-5 text-emerald-600" />
+
+					{/* Credit Transactions Tab */}
+					<TabsContent value="transactions">
+						<Card className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-sm rounded-xl overflow-hidden">
+							<CardHeader className="border-b border-neutral-100 dark:border-neutral-800 px-6 py-4">
+								<CardTitle className="flex items-center gap-2 text-base font-semibold text-neutral-900 dark:text-white">
+									<CreditCard className="h-4 w-4 text-neutral-400" />
 									Credit Transactions
-									<Badge variant="secondary" className="ml-auto">
+									<Badge variant="secondary" className="ml-auto bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-mono text-xs">
 										{transactions.length}
 									</Badge>
 								</CardTitle>
 							</CardHeader>
-							<CardContent>
-								{
-									transactions.length === 0 ? (
-										<div className="text-center py-8">
-											<Receipt className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
-											<p className="text-neutral-600 dark:text-neutral-400">
-												No transactions found. Start by purchasing some credits!
-											</p>
-											<Button asChild className="mt-4 bg-gradient-to-r from-emerald-600 to-teal-600">
-												<Link href="/purchase">Buy Credits</Link>
-											</Button>
+							<CardContent className="p-0">
+								{transactions.length === 0 ? (
+									<div className="flex flex-col items-center justify-center py-20 text-center px-6">
+										<div className="w-14 h-14 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl flex items-center justify-center mb-5">
+											<Receipt className="h-6 w-6 text-neutral-400" />
 										</div>
-									) : (
-										<div className="space-y-3">
-											{
-												transactions.map((transaction, index) => (
-													<motion.div
-														key={transaction.id}
-														initial={{ opacity: 0, y: 20 }}
-														animate={{ opacity: 1, y: 0 }}
-														transition={{ delay: index * 0.1 }}
-														className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-950 rounded-lg border border-neutral-200 dark:border-neutral-800"
-													>
-														<div className="flex items-center gap-4">
-															{getTransactionIcon(transaction.type)}
-															<div>
-																<p className="font-medium text-slate-900 dark:text-white">
-																	{transaction.description}
-																</p>
-																<div className="flex items-center gap-2 mt-1">
-																	<Calendar className="h-3 w-3 text-slate-500" />
-																	<span className="text-sm text-slate-500">
-																		{formatDate(transaction.createdAt)}
-																	</span>
-																</div>
-															</div>
+										<p className="text-neutral-900 dark:text-white font-medium mb-1">No transactions yet</p>
+										<p className="text-sm text-neutral-500 dark:text-neutral-400 mb-6 max-w-xs">
+											Start by purchasing some credits to see your transaction history here.
+										</p>
+										<Button asChild variant="outline" className="border-neutral-200 dark:border-neutral-800 hover:bg-neutral-50 dark:hover:bg-neutral-900">
+											<Link href="/purchase">Buy Credits</Link>
+										</Button>
+									</div>
+								) : (
+									<div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+										{transactions.map((transaction, index) => (
+											<motion.div
+												key={transaction.id}
+												initial={{ opacity: 0, y: 10 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ delay: index * 0.05 }}
+												className="flex items-center justify-between px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors"
+											>
+												<div className="flex items-center gap-4">
+													<div className="w-8 h-8 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg flex items-center justify-center flex-shrink-0">
+														{getTransactionIcon(transaction.type)}
+													</div>
+													<div>
+														<p className="text-sm font-medium text-neutral-900 dark:text-white">
+															{transaction.description}
+														</p>
+														<div className="flex items-center gap-1.5 mt-0.5">
+															<Calendar className="h-3 w-3 text-neutral-400" />
+															<span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+																{formatDate(transaction.createdAt)}
+															</span>
 														</div>
-														<div className="text-right">
-															<div className="flex items-center gap-2">
-																<span className={`font-semibold ${transaction.type === 'PURCHASE' || transaction.type === 'BONUS' || transaction.type === 'REWARD'
-																	? 'text-green-600'
-																	: 'text-red-600'
-																	}`}>
-																	{transaction.type === 'PURCHASE' || transaction.type === 'BONUS' || transaction.type === 'REWARD' ? '+' : '-'}
-																	{transaction.amount} credits
-																</span>
-																<Badge className={getTransactionColor(transaction.type)}>
-																	{transaction.type}
-																</Badge>
-															</div>
-															{
-																transaction.currency !== 'NA' && (
-																	<p className="text-sm text-slate-500 mt-1">
-																		{transaction.currency}
-																	</p>
-																)
-															}
-														</div>
-													</motion.div>
-												))
-											}
-										</div>
-									)
-								}
+													</div>
+												</div>
+												<div className="text-right flex flex-col items-end gap-1.5">
+													<span className={`font-bold font-mono text-sm ${
+														transaction.type === 'PURCHASE' || transaction.type === 'BONUS' || transaction.type === 'REWARD'
+															? 'text-neutral-900 dark:text-white'
+															: 'text-neutral-500 dark:text-neutral-400'
+													}`}>
+														{transaction.type === 'PURCHASE' || transaction.type === 'BONUS' || transaction.type === 'REWARD' ? '+' : '-'}
+														{transaction.amount}
+													</span>
+													<div className="flex items-center gap-2">
+														{transaction.currency !== 'NA' && (
+															<span className="text-xs text-neutral-400 font-mono">{transaction.currency}</span>
+														)}
+														<Badge className={`text-xs px-2 py-0 ${getTransactionColor(transaction.type)}`}>
+															{transaction.type}
+														</Badge>
+													</div>
+												</div>
+											</motion.div>
+										))}
+									</div>
+								)}
 							</CardContent>
 						</Card>
 					</TabsContent>
-					<TabsContent value="transfers" className="space-y-4">
-						<Card className="shadow-2xl p-4 border-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm rounded-xl">
-							<CardHeader>
-								<CardTitle className="flex items-center gap-2">
-									<Send className="h-5 w-5 text-teal-600" />
+
+					{/* Platform Transfers Tab */}
+					<TabsContent value="transfers">
+						<Card className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 shadow-sm rounded-xl overflow-hidden">
+							<CardHeader className="border-b border-neutral-100 dark:border-neutral-800 px-6 py-4">
+								<CardTitle className="flex items-center gap-2 text-base font-semibold text-neutral-900 dark:text-white">
+									<Send className="h-4 w-4 text-neutral-400" />
 									Platform Transfers
-									<Badge variant="secondary" className="ml-auto">
+									<Badge variant="secondary" className="ml-auto bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-mono text-xs">
 										{transfers.length}
 									</Badge>
 								</CardTitle>
 							</CardHeader>
-							<CardContent>
-								{
-									transfers.length === 0 ? (
-										<div className="text-center py-8">
-											<Send className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
-											<p className="text-neutral-600 dark:text-neutral-400">
-												No transfers found. Credits transferred to other platforms will appear here.
-											</p>
-											<p className="text-sm text-neutral-500 mt-2">
-												Transfers are initiated from external platforms like TrueFool.
-											</p>
+							<CardContent className="p-0">
+								{transfers.length === 0 ? (
+									<div className="flex flex-col items-center justify-center py-20 text-center px-6">
+										<div className="w-14 h-14 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl flex items-center justify-center mb-5">
+											<Send className="h-6 w-6 text-neutral-400" />
 										</div>
-									) : (
-										<div className="space-y-3">
-											{
-												transfers.map((transfer, index) => (
-													<motion.div
-														key={transfer.id}
-														initial={{ opacity: 0, y: 20 }}
-														animate={{ opacity: 1, y: 0 }}
-														transition={{ delay: index * 0.1 }}
-														className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600"
-													>
-														<div className="flex items-center gap-4">
-															<div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-																<ExternalLink className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-															</div>
-															<div>
-																<p className="font-medium text-slate-900 dark:text-white">
-																	Transfer to {transfer.destinationPlatform}
-																</p>
-																<div className="flex items-center gap-4 mt-1">
-																	<div className="flex items-center gap-1">
-																		<Calendar className="h-3 w-3 text-slate-500" />
-																		<span className="text-sm text-slate-500">
-																			{formatDate(transfer.createdAt)}
-																		</span>
-																	</div>
-																	<div className="flex items-center gap-1">
-																		<Clock className="h-3 w-3 text-slate-500" />
-																		<span className="text-sm text-slate-500 font-mono">
-																			{transfer.transferId.slice(0, 8)}...
-																		</span>
-																	</div>
-																</div>
-															</div>
-														</div>
-														<div className="text-right">
-															<div className="flex items-center gap-2">
-																<span className="font-semibold text-red-600">
-																	-{transfer.creditsTransferred} credits
+										<p className="text-neutral-900 dark:text-white font-medium mb-1">No transfers found</p>
+										<p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-xs">
+											Credits transferred to other platforms will appear here. Transfers are initiated from external platforms like TrueFool.
+										</p>
+									</div>
+								) : (
+									<div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+										{transfers.map((transfer, index) => (
+											<motion.div
+												key={transfer.id}
+												initial={{ opacity: 0, y: 10 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ delay: index * 0.05 }}
+												className="flex items-center justify-between px-6 py-4 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors"
+											>
+												<div className="flex items-center gap-4">
+													<div className="w-8 h-8 bg-neutral-100 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg flex items-center justify-center flex-shrink-0">
+														<ExternalLink className="h-4 w-4 text-neutral-500 dark:text-neutral-400" />
+													</div>
+													<div>
+														<p className="text-sm font-medium text-neutral-900 dark:text-white">
+															Transfer to {transfer.destinationPlatform}
+														</p>
+														<div className="flex items-center gap-3 mt-0.5">
+															<div className="flex items-center gap-1">
+																<Calendar className="h-3 w-3 text-neutral-400" />
+																<span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+																	{formatDate(transfer.createdAt)}
 																</span>
-																<Badge className={getStatusColor(transfer.status)}>
-																	{transfer.status}
-																</Badge>
 															</div>
-															<p className="text-sm text-slate-500 mt-1 capitalize">
-																{transfer.destinationPlatform}
-															</p>
+															<div className="flex items-center gap-1">
+																<Clock className="h-3 w-3 text-neutral-400" />
+																<span className="text-xs text-neutral-500 dark:text-neutral-400 font-mono">
+																	{transfer.transferId.slice(0, 8)}...
+																</span>
+															</div>
 														</div>
-													</motion.div>
-												))
-											}
-										</div>
-									)
-								}
+													</div>
+												</div>
+												<div className="text-right flex flex-col items-end gap-1.5">
+													<span className="font-bold font-mono text-sm text-neutral-500 dark:text-neutral-400">
+														-{transfer.creditsTransferred}
+													</span>
+													<Badge className={`text-xs px-2 py-0 ${getStatusColor(transfer.status)}`}>
+														{transfer.status}
+													</Badge>
+												</div>
+											</motion.div>
+										))}
+									</div>
+								)}
 							</CardContent>
 						</Card>
 					</TabsContent>
@@ -364,4 +384,4 @@ export default function TransactionsPage() {
 			</div>
 		</div>
 	)
-} 
+}
