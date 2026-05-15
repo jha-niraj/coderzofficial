@@ -1,9 +1,24 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getResumeDraftBySlug } from '@/actions/(main)/ai/resume-draft.action'
 import { ResumeDraftContent, PLATFORM_TEMPLATES } from '@/types/resume-draft'
 import { Button } from '@repo/ui/components/ui/button'
 import { Download, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+    const { slug } = await params
+    const res = await getResumeDraftBySlug(slug)
+    if (!res.success || !res.draft) {
+        return { title: 'Resume | BuildrHQ' }
+    }
+    const user = res.draft.user as { name: string | null } | null
+    const name = user?.name ?? 'Developer'
+    return {
+        title: `${name}'s Resume | BuildrHQ`,
+        description: `View ${name}'s professional resume built with BuildrHQ.`,
+    }
+}
 
 export default async function PublicResumePage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params

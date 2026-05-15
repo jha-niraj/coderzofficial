@@ -1,6 +1,12 @@
+import type { Metadata } from 'next'
 import {
     Users, MessageCircle, Sparkles
 } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: 'Messages | BuildrHQ',
+  description: 'Connect and chat with other developers on BuildrHQ.',
+}
 import { Button } from "@repo/ui/components/ui/button"
 import Link from "next/link"
 

@@ -1,15 +1,11 @@
-"use client";
+import type { Metadata } from 'next'
+import ResetPasswordClient from './_components/ResetPasswordClient'
 
-import { Suspense } from "react";
-// import { AppProvider } from "@/app/context/store";
-import ResetPassword from "./_components/resetpassword";
+export const metadata: Metadata = {
+  title: 'Set New Password | BuildrHQ',
+  description: 'Set a new password for your BuildrHQ account.',
+}
 
-export default function Profile() {
-    return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <div>
-                <ResetPassword />
-            </div>
-        </Suspense>
-    );
+export default function ResetPasswordPage() {
+  return <ResetPasswordClient />
 }

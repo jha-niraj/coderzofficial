@@ -1,7 +1,12 @@
-
+import type { Metadata } from 'next'
 import {
     getUserMockSessions, getCreatedVoiceMocks, getPublicVoiceMocks
 } from '@/actions/(main)/mockvoice/voice.action'
+
+export const metadata: Metadata = {
+  title: 'AI Voice Mock Interviews | BuildrHQ',
+  description: 'Practice with AI voice mock interviews. Get real-time feedback and detailed performance analysis.',
+}
 import { VoiceMainContent } from './_components/voice-main-content'
 import { MOCK_CATEGORIES } from './_constants/mock-categories'
 
