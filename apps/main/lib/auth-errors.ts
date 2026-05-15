@@ -1,47 +1,44 @@
 // Authentication error codes and their corresponding user-friendly messages
 export const AUTH_ERROR_MESSAGES = {
-    // Custom error codes from our auth system
+    // BetterAuth error codes (these are what signIn.email() returns in result.error.code)
+    INVALID_EMAIL_OR_PASSWORD: "Incorrect email or password. Please try again",
     USER_NOT_FOUND: "No account found with this email address",
-    INVALID_CREDENTIALS: "Incorrect password. Please try again",
     EMAIL_NOT_VERIFIED: "Please verify your email before signing in",
-    OAUTH_ACCOUNT: "This account was created with Google. Please use Google sign-in",
+    INVALID_PASSWORD: "Incorrect password. Please try again",
+    PASSWORD_TOO_SHORT: "Password must be at least 8 characters",
+    EMAIL_ALREADY_EXISTS: "An account with this email already exists",
+    USER_ALREADY_EXISTS: "An account with this email already exists",
+    SOCIAL_ACCOUNT_ALREADY_LINKED: "This social account is already linked to another user",
+    ACCOUNT_NOT_FOUND: "No account found with this email address",
+
+    // Legacy custom codes kept for backwards compatibility
+    INVALID_CREDENTIALS: "Incorrect email or password. Please try again",
+    OAUTH_ACCOUNT: "This account was created with a social login. Please use Google or GitHub to sign in",
     EMAIL_PASSWORD_REQUIRED: "Please provide both email and password",
     INTERNAL_ERROR: "Server error. Please try again later",
-    
-    // NextAuth error codes
-    CredentialsSignin: "Invalid email or password",
-    CallbackRouteError: "Authentication failed. Please try again",
-    Configuration: "Server error. Please try again later",
-    AccessDenied: "Access denied",
-    Verification: "Email verification required",
-    OAuthSignin: "Sign-in failed. Please try again",
-    OAuthCallback: "Sign-in failed. Please try again",
-    EmailSignin: "Email sign-in failed",
-    SessionRequired: "Please sign in to continue",
-    OAuthAccountNotLinked: "This social account is not linked to any user account",
-    
+
     // Default fallback
-    DEFAULT: "An unexpected error occurred"
+    DEFAULT: "An unexpected error occurred. Please try again"
 } as const;
 
 export type AuthErrorCode = keyof typeof AUTH_ERROR_MESSAGES;
 
 /**
- * Get user-friendly error message
+ * Get user-friendly error message from a BetterAuth error code or message string.
  */
 export function getAuthErrorMessage(error: string | undefined): string {
     if (!error) {
         return AUTH_ERROR_MESSAGES.DEFAULT;
     }
 
-    // Check for exact matches first
+    // Exact match first
     if (error in AUTH_ERROR_MESSAGES) {
         return AUTH_ERROR_MESSAGES[error as AuthErrorCode];
     }
 
-    // Check if the error contains any of our custom error codes
+    // Substring match (BetterAuth sometimes returns full sentences containing the code)
     for (const [code, message] of Object.entries(AUTH_ERROR_MESSAGES)) {
-        if (error.includes(code)) {
+        if (error.toUpperCase().includes(code)) {
             return message;
         }
     }
@@ -50,8 +47,8 @@ export function getAuthErrorMessage(error: string | undefined): string {
 }
 
 /**
- * Check if error requires redirect to verification page
+ * Check if the error means the user needs to verify their email.
  */
 export function shouldRedirectToVerification(error: string | undefined): boolean {
-    return error?.includes("EMAIL_NOT_VERIFIED") === true;
-} 
+    return error?.toUpperCase().includes("EMAIL_NOT_VERIFIED") === true;
+}

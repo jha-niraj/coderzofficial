@@ -71,39 +71,43 @@ function SignInForm({ searchParams }: SignInFormProps) {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        // Client-side validation
+        if (!email.trim()) {
+            toast.error("Please enter your email address");
+            return;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+            toast.error("Please enter a valid email address");
+            return;
+        }
+        if (!password) {
+            toast.error("Please enter your password");
+            return;
+        }
+        if (password.length < 8) {
+            toast.error("Password must be at least 8 characters");
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
-            const validationResponse = await fetch('/api/auth/validate-credentials', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            });
+            const result = await signIn.email({ email: email.trim(), password, callbackURL: callbackUrl });
 
-            const validationData = await validationResponse.json();
-
-            if (!validationData.success) {
-                const errorMessage = getAuthErrorMessage(validationData.error);
+            if (result?.error) {
+                const code = result.error.code ?? result.error.message ?? "";
+                const errorMessage = getAuthErrorMessage(code);
                 toast.error(errorMessage);
-                if (shouldRedirectToVerification(validationData.error)) {
-                    setTimeout(() => router.push("/verify?email=" + encodeURIComponent(email)), 2000);
+                if (shouldRedirectToVerification(code)) {
+                    setTimeout(() => router.push("/verify?email=" + encodeURIComponent(email.trim())), 2000);
                 }
                 return;
             }
 
-            const result = await signIn.email({ email, password, callbackURL: callbackUrl });
-
-            if (result?.error) {
-                toast.error("Sign in failed. Please try again.");
-                return;
-            }
-
-            if (result?.data) {
-                toast.success("Welcome back!");
-                router.push(callbackUrl);
-            } else {
-                toast.error("Sign in failed. Please try again.");
-            }
+            toast.success("Welcome back!");
+            router.push(callbackUrl);
         } catch {
             toast.error("An unexpected error occurred. Please try again.");
         } finally {
@@ -228,8 +232,8 @@ function SignInForm({ searchParams }: SignInFormProps) {
 
                         <Button
                             type="submit"
-                            disabled={isSubmitting}
-                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors mt-2"
+                            disabled={isSubmitting || !email.trim() || !password}
+                            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {isSubmitting ? (
                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</>
